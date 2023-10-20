@@ -28,3 +28,7 @@ dist-ssr
 arangodb/arangodb
 arangodb/backup
 arangodb/dumps
+
+# Server
+server/settings*.json
+server/magic-helper.exe
