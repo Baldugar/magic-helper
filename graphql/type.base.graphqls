@@ -1,0 +1,6 @@
+scalar Time
+
+type MutationResponse {
+    status: Boolean!
+    message: String
+}

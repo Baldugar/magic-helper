@@ -1,0 +1,16 @@
+type User {
+    id: ID!
+    username: String!
+    email: String!
+    roles: [Role!]!
+
+    createdAt: Time!
+    updatedAt: Time!
+    deletedAt: Time
+}
+
+enum Role {
+    ADMIN
+    GM
+    PLAYER
+}

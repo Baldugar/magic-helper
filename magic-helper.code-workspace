@@ -1,0 +1,24 @@
+{
+    "folders": [
+        {
+            "name": "magic-helper",
+            "path": "."
+        },
+        {
+            "name": "client",
+            "path": "client"
+        },
+        {
+            "name": "fetchCards",
+            "path": "fetchCards"
+        },
+        {
+            "name": "JSON2TS",
+            "path": "JSON2TS"
+        },
+        {
+            "path": "server"
+        }
+    ],
+    "settings": {}
+}

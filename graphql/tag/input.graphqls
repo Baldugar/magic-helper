@@ -1,0 +1,6 @@
+input TagInput {
+    name: String!
+    description: String!
+    colors: [Color!]!
+    tagType: TagType!
+}

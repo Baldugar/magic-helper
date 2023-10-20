@@ -1,0 +1,10 @@
+input GetUserCardsParams {
+    userID: ID!
+}
+
+input UpdateUserCardMetaInput {
+    userID: ID!
+    cardID: ID!
+    comment: String!
+    rating: Int!
+}
