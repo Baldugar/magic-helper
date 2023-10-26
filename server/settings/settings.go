@@ -10,27 +10,39 @@ import (
 )
 
 type ArangoDBConfig struct {
-	Addr     string
-	Port     string
-	Name     string
-	User     string
-	Password string
+	Addr     string `json:"addr"`
+	Port     string `json:"port"`
+	Name     string `json:"name"`
+	User     string `json:"user"`
+	Password string `json:"password"`
 }
 
 type LogConfig struct {
-	LogLevel    string
-	LogFile     string
-	LogFilePath string
+	LogLevel    string `json:"logLevel"`
+	LogFile     string `json:"logFile"`
+	LogFilePath string `json:"logFilePath"`
+}
+
+type AdminConfig struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type AuthConfig struct {
+	JWTSecret string `json:"jwtSecret"`
+	Header    string `json:"header"`
 }
 
 // Settings is the main struct that contains the configuration of the application
 type Settings struct {
-	AllowCrossOrigin  bool
-	Logging           LogConfig
-	Domain            string
-	GraphQLPlayground bool
-	HTTPListen        string
-	ArangoDB          ArangoDBConfig
+	AllowCrossOrigin  bool           `json:"allowCrossOrigin"`
+	Logging           LogConfig      `json:"logging"`
+	Domain            string         `json:"domain"`
+	GraphQLPlayground bool           `json:"graphQLPlayground"`
+	HTTPListen        string         `json:"httpListen"`
+	ArangoDB          ArangoDBConfig `json:"arangoDB"`
+	Admin             AdminConfig    `json:"admin"`
+	Auth              AuthConfig     `json:"auth"`
 }
 
 var Current Settings
@@ -62,6 +74,18 @@ func loadSettingsFromFile(settingsFile string) {
 	}
 	if isEmpty(newSettings.HTTPListen) {
 		log.Fatal().Err(err).Msg("error: HTTPListen is missing in the settings file")
+	}
+	if isEmpty(newSettings.Admin.Username) {
+		log.Fatal().Err(err).Msg("error: Admin.Username is missing in the settings file")
+	}
+	if isEmpty(newSettings.Admin.Password) {
+		log.Fatal().Err(err).Msg("error: Admin.Password is missing in the settings file")
+	}
+	if isEmpty(newSettings.Auth.JWTSecret) {
+		log.Fatal().Err(err).Msg("error: Auth.JWTSecret is missing in the settings file")
+	}
+	if isEmpty(newSettings.Auth.Header) {
+		log.Fatal().Err(err).Msg("error: Auth.Header is missing in the settings file")
 	}
 
 	if isEmpty(newSettings.ArangoDB.Addr) {

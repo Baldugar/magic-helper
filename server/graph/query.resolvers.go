@@ -6,29 +6,31 @@ package graph
 
 import (
 	"context"
-	"fmt"
+	"magic-helper/graph/cards"
 	"magic-helper/graph/gentypes"
 	"magic-helper/graph/model"
+	"magic-helper/graph/tags"
+	"magic-helper/graph/users"
 )
 
 // GetCards is the resolver for the getCards field.
 func (r *queryResolver) GetCards(ctx context.Context) ([]*model.MTGACard, error) {
-	panic(fmt.Errorf("not implemented: GetCards - getCards"))
+	return cards.GetCardsQuery(ctx)
 }
 
-// Users is the resolver for the users field.
-func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
-	panic(fmt.Errorf("not implemented: Users - users"))
+// GetUsers is the resolver for the getUsers field.
+func (r *queryResolver) GetUsers(ctx context.Context) ([]*model.User, error) {
+	return users.GetUsersQuery(ctx)
 }
 
-// User is the resolver for the user field.
-func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error) {
-	panic(fmt.Errorf("not implemented: User - user"))
+// GetUser is the resolver for the getUser field.
+func (r *queryResolver) GetUser(ctx context.Context, id string) (*model.User, error) {
+	return users.GetUserByIDQuery(ctx, id)
 }
 
 // GetTags is the resolver for the getTags field.
 func (r *queryResolver) GetTags(ctx context.Context) (*model.GetTagsReturn, error) {
-	panic(fmt.Errorf("not implemented: GetTags - getTags"))
+	return tags.GetTagsQuery(ctx)
 }
 
 // Query returns gentypes.QueryResolver implementation.

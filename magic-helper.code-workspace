@@ -9,14 +9,11 @@
             "path": "client"
         },
         {
-            "name": "fetchCards",
-            "path": "fetchCards"
+            "name": "graphql",
+            "path": "graphql"
         },
         {
-            "name": "JSON2TS",
-            "path": "JSON2TS"
-        },
-        {
+            "name": "server",
             "path": "server"
         }
     ],

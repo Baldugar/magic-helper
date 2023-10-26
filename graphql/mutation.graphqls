@@ -1,6 +1,6 @@
 type Mutation {
     # User
-    createUser(input: CreateUserInput!): CreateUserReturn!
+    register(input: RegisterInput!): RegisterReturn!
     login(input: LoginInput!): User
 
     # Tag

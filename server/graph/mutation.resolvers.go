@@ -9,11 +9,12 @@ import (
 	"fmt"
 	"magic-helper/graph/gentypes"
 	"magic-helper/graph/model"
+	"magic-helper/graph/users"
 )
 
-// CreateUser is the resolver for the createUser field.
-func (r *mutationResolver) CreateUser(ctx context.Context, input model.CreateUserInput) (*model.CreateUserReturn, error) {
-	panic(fmt.Errorf("not implemented: CreateUser - createUser"))
+// Register is the resolver for the register field.
+func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInput) (*model.RegisterReturn, error) {
+	return users.RegisterMutation(ctx, input)
 }
 
 // Login is the resolver for the login field.

@@ -1,7 +1,6 @@
-input CreateUserInput {
-    id: ID!
-    email: String!
+input RegisterInput {
     username: String!
+    password: String!
 }
 
 input LoginInput {

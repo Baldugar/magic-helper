@@ -1,12 +1,11 @@
 type User {
     id: ID!
     username: String!
-    email: String!
     roles: [Role!]!
 
-    createdAt: Time!
-    updatedAt: Time!
-    deletedAt: Time
+    createdAt: Int!
+    updatedAt: Int!
+    deletedAt: Int
 }
 
 enum Role {

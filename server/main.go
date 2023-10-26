@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"magic-helper/arango"
+	"magic-helper/arango/daemons"
 	"magic-helper/settings"
 	"magic-helper/util/logging"
 	"magic-helper/util/muxRouter"
@@ -43,6 +44,9 @@ func main() {
 
 	// Initialize ArangoDB
 	arango.Init(settings.Current.ArangoDB)
+
+	// Initialize the daemons
+	go daemons.PeriodicFetchCards()
 
 	// Start the server
 	log.Info().Msgf("########## Magic Helper Server Startup ##########")

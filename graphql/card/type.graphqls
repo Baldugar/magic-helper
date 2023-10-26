@@ -23,7 +23,7 @@ type CardFace {
 
 type MTGACard {
     card_faces: [CardFace!]
-    cmc: Int!
+    cmc: Float!
     color_identity: [Color!]!
     colors: [Color!]
     flavor_text: String

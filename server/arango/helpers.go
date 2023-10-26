@@ -2,6 +2,11 @@ package arango
 
 import (
 	"context"
+	"magic-helper/arango/types"
+	"magic-helper/graph/model"
+	"magic-helper/settings"
+	"magic-helper/util"
+	"magic-helper/util/auth/password"
 
 	arangoDriver "github.com/arangodb/go-driver"
 	"github.com/rs/zerolog/log"
@@ -19,13 +24,13 @@ func EnsureDatabaseIntegrity(ctx context.Context) {
 
 func ensureDocumentCollections(ctx context.Context) {
 	for _, collection := range DOCUMENT_COLLECTIONS {
-		ensureDocumentCollection(ctx, collection)
+		EnsureDocumentCollection(ctx, collection)
 	}
 }
 
 func ensureEdgeCollections(ctx context.Context) {
 	for _, collection := range EDGE_COLLECTIONS {
-		ensureEdgeCollection(ctx, collection)
+		EnsureEdgeCollection(ctx, collection)
 	}
 }
 
@@ -47,7 +52,7 @@ func ensureIndexes(ctx context.Context) {
 	}
 }
 
-func ensureDocumentCollection(ctx context.Context, collection ArangoDocument) (arangoDriver.Collection, error) {
+func EnsureDocumentCollection(ctx context.Context, collection ArangoDocument) (arangoDriver.Collection, error) {
 	log.Info().Msgf("Ensuring document collection %s", collection)
 	exists, err := DB.CollectionExists(ctx, string(collection))
 	if err != nil {
@@ -64,10 +69,24 @@ func ensureDocumentCollection(ctx context.Context, collection ArangoDocument) (a
 		if collection == USERS_COLLECTION {
 			// Add the admin user
 			log.Info().Msgf("Creating admin user")
-			_, err := c.CreateDocument(ctx, map[string]interface{}{
-				"username": "admin",
-				"email":    "admin@magic-helper.com",
-				"_key":     "admin",
+			now := util.CreateTimestamp()
+			password, err := password.HashPassword(settings.Current.Admin.Password)
+			if err != nil {
+				log.Fatal().Err(err).Msg("Failed to hash password")
+				return nil, err
+			}
+			_, err = c.CreateDocument(ctx, &types.UserDB{
+				Username:       settings.Current.Admin.Username,
+				HashedPassword: password,
+				ID:             "admin",
+				Roles: []model.Role{
+					model.RoleAdmin,
+					model.RoleGm,
+					model.RolePlayer,
+				},
+				CreatedAt: now,
+				UpdatedAt: now,
+				DeletedAt: nil,
 			})
 			if err != nil {
 				log.Fatal().Err(err).Msg("Failed to create admin user")
@@ -85,7 +104,7 @@ func ensureDocumentCollection(ctx context.Context, collection ArangoDocument) (a
 	return c, nil
 }
 
-func ensureEdgeCollection(ctx context.Context, collection ArangoEdge) (arangoDriver.Collection, error) {
+func EnsureEdgeCollection(ctx context.Context, collection ArangoEdge) (arangoDriver.Collection, error) {
 	log.Info().Msgf("Ensuring edge collection %s", collection)
 	exists, err := DB.CollectionExists(ctx, string(collection))
 	if err != nil {
@@ -160,12 +179,12 @@ func ensureView(ctx context.Context, view ViewComposition) (arangoDriver.View, e
 
 func ensureIndex(ctx context.Context, index IndexComposition) (arangoDriver.Index, error) {
 	log.Info().Msgf("Ensuring index %s", index.Name)
-	col, err := ensureDocumentCollection(ctx, index.Collection)
+	col, err := EnsureDocumentCollection(ctx, index.Collection)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to ensure collection")
 		return nil, err
 	}
-	i, exists, err := col.EnsurePersistentIndex(ctx, index.Fields, &arangoDriver.EnsurePersistentIndexOptions{
+	i, wasCreated, err := col.EnsurePersistentIndex(ctx, index.Fields, &arangoDriver.EnsurePersistentIndexOptions{
 		Unique: index.Unique,
 		Name:   string(index.Name),
 	})
@@ -173,10 +192,10 @@ func ensureIndex(ctx context.Context, index IndexComposition) (arangoDriver.Inde
 		log.Fatal().Err(err).Msg("Failed to create index")
 		return nil, err
 	}
-	if !exists {
-		log.Info().Msgf("Created index %s", index.Name)
-	} else {
+	if !wasCreated {
 		log.Info().Msgf("Index %s already exists", index.Name)
+	} else {
+		log.Info().Msgf("Created index %s", index.Name)
 	}
 	return i, nil
 }

@@ -22,18 +22,6 @@ type CardFace struct {
 	TypeLine     *string    `json:"type_line,omitempty"`
 }
 
-type CreateUserInput struct {
-	ID       string `json:"id"`
-	Email    string `json:"email"`
-	Username string `json:"username"`
-}
-
-type CreateUserReturn struct {
-	Status  bool    `json:"status"`
-	Message *string `json:"message,omitempty"`
-	User    *User   `json:"user,omitempty"`
-}
-
 type GetTagsReturn struct {
 	CardTags []*Tag `json:"cardTags"`
 	DeckTags []*Tag `json:"deckTags"`
@@ -58,7 +46,7 @@ type LoginInput struct {
 
 type MTGACard struct {
 	CardFaces     []*CardFace `json:"card_faces,omitempty"`
-	Cmc           int         `json:"cmc"`
+	Cmc           float64     `json:"cmc"`
 	ColorIdentity []Color     `json:"color_identity"`
 	Colors        []Color     `json:"colors,omitempty"`
 	FlavorText    *string     `json:"flavor_text,omitempty"`
@@ -80,6 +68,18 @@ type MTGACard struct {
 type MutationResponse struct {
 	Status  bool    `json:"status"`
 	Message *string `json:"message,omitempty"`
+}
+
+type RegisterInput struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type RegisterReturn struct {
+	Status  bool    `json:"status"`
+	Message *string `json:"message,omitempty"`
+	User    *User   `json:"user,omitempty"`
+	Token   *string `json:"token,omitempty"`
 }
 
 type Tag struct {
@@ -107,7 +107,6 @@ type UpdateUserCardMetaInput struct {
 type User struct {
 	ID        string `json:"id"`
 	Username  string `json:"username"`
-	Email     string `json:"email"`
 	Roles     []Role `json:"roles"`
 	CreatedAt int    `json:"createdAt"`
 	UpdatedAt int    `json:"updatedAt"`

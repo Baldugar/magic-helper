@@ -8,22 +8,23 @@ import (
 type ArangoDocument string
 
 const (
-	USERS_COLLECTION ArangoDocument = "users"
-	CARDS_COLLECTION ArangoDocument = "cards"
-	DECKS_COLLECTION ArangoDocument = "decks"
-	TAGS_COLLECTION  ArangoDocument = "tags"
+	USERS_COLLECTION ArangoDocument = "Users"
+	CARDS_COLLECTION ArangoDocument = "Cards"
+	DECKS_COLLECTION ArangoDocument = "Decks"
+	TAGS_COLLECTION  ArangoDocument = "Tags"
 )
 
 // Edge collections
 type ArangoEdge string
 
 const (
-	USER_DECK_EDGE_COLLECTION ArangoEdge = "user_deck"
-	USER_CARD_EDGE_COLLECTION ArangoEdge = "user_card"
-	DECK_CARD_EDGE_COLLECTION ArangoEdge = "deck_card"
-	USER_TAG_EDGE_COLLECTION  ArangoEdge = "user_tag"
-	TAG_DECK_EDGE_COLLECTION  ArangoEdge = "tag_deck"
-	TAG_CARD_EDGE_COLLECTION  ArangoEdge = "tag_card"
+	USER_DECK_EDGE_COLLECTION ArangoEdge = "UserToDeck"
+	USER_CARD_EDGE_COLLECTION ArangoEdge = "UserToCard"
+	DECK_CARD_EDGE_COLLECTION ArangoEdge = "DeckToCard"
+	USER_TAG_EDGE_COLLECTION  ArangoEdge = "UserToTag"
+	TAG_DECK_EDGE_COLLECTION  ArangoEdge = "TagToDeck"
+	TAG_CARD_EDGE_COLLECTION  ArangoEdge = "TagToCard"
+	TAG_ORIGINAL_TAG_EDGE     ArangoEdge = "TagToOriginalTag"
 )
 
 // Views
@@ -35,18 +36,18 @@ type ViewComposition struct {
 }
 
 const (
-	USERS_VIEW ArangoView = "usersView"
-	CARDS_VIEW ArangoView = "cardsView"
-	DECKS_VIEW ArangoView = "decksView"
-	TAGS_VIEW  ArangoView = "tagsView"
+	USERS_VIEW ArangoView = "UsersView"
+	CARDS_VIEW ArangoView = "CardsView"
+	DECKS_VIEW ArangoView = "DecksView"
+	TAGS_VIEW  ArangoView = "TagsView"
 )
 
 // Indexes
 type ArangoIndex string
 
 const (
-	USER_EMAIL_INDEX    ArangoIndex = "user_email_index"
-	CARD_NAME_SET_INDEX ArangoIndex = "card_name_set_index"
+	USER_USERNAME_INDEX ArangoIndex = "UserUsernameIndex"
+	CARD_NAME_SET_INDEX ArangoIndex = "CardNameSetIndex"
 )
 
 type IndexComposition struct {
@@ -73,6 +74,7 @@ var EDGE_COLLECTIONS = []ArangoEdge{
 	USER_TAG_EDGE_COLLECTION,
 	TAG_DECK_EDGE_COLLECTION,
 	TAG_CARD_EDGE_COLLECTION,
+	TAG_ORIGINAL_TAG_EDGE,
 }
 var falseBool = false
 var ANALYZERS = []arangoDriver.ArangoSearchAnalyzerDefinition{
@@ -145,18 +147,18 @@ var VIEWS = []ViewComposition{
 	},
 }
 var INDEXES = IndexMap{
-	USER_EMAIL_INDEX: {
-		Collection: USERS_COLLECTION,
-		IsEdge:     false,
-		Fields:     []string{"email"},
-		Unique:     true,
-		Name:       USER_EMAIL_INDEX,
-	},
 	CARD_NAME_SET_INDEX: {
 		Collection: CARDS_COLLECTION,
 		IsEdge:     false,
 		Fields:     []string{"name", "set"},
 		Unique:     true,
 		Name:       CARD_NAME_SET_INDEX,
+	},
+	USER_USERNAME_INDEX: {
+		Collection: USERS_COLLECTION,
+		IsEdge:     false,
+		Fields:     []string{"username"},
+		Unique:     true,
+		Name:       USER_USERNAME_INDEX,
 	},
 }

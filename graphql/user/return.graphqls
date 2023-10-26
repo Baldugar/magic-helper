@@ -1,5 +1,6 @@
-type CreateUserReturn {
+type RegisterReturn {
     status: Boolean!
     message: String
     user: User
+    token: String
 }

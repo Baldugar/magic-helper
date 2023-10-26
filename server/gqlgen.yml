@@ -1,6 +1,4 @@
-# Where are all the schema files located? globs are supported eg  src/**/*.graphqls
-schema:
-    - ../graphql/**/*.graphqls
+# Schema routes go here:
 
 exec:
     filename: graph/gentypes/gentypes.go
@@ -62,11 +60,6 @@ models:
             - github.com/99designs/gqlgen/graphql.Int64
             - github.com/99designs/gqlgen/graphql.Int32
     Int:
-        model:
-            - github.com/99designs/gqlgen/graphql.Int
-            - github.com/99designs/gqlgen/graphql.Int64
-            - github.com/99designs/gqlgen/graphql.Int32
-    Time:
         model:
             - github.com/99designs/gqlgen/graphql.Int
             - github.com/99designs/gqlgen/graphql.Int64
