@@ -13,13 +13,13 @@ import (
 )
 
 // Register is the resolver for the register field.
-func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInput) (*model.RegisterReturn, error) {
+func (r *mutationResolver) Register(ctx context.Context, input model.AccessInput) (*model.AccessReturn, error) {
 	return users.RegisterMutation(ctx, input)
 }
 
 // Login is the resolver for the login field.
-func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*model.User, error) {
-	panic(fmt.Errorf("not implemented: Login - login"))
+func (r *mutationResolver) Login(ctx context.Context, input model.AccessInput) (*model.AccessReturn, error) {
+	return users.Login(ctx, input)
 }
 
 // CreateTag is the resolver for the createTag field.

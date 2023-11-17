@@ -8,6 +8,18 @@ import (
 	"strconv"
 )
 
+type AccessInput struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type AccessReturn struct {
+	Status  bool    `json:"status"`
+	Message *string `json:"message,omitempty"`
+	User    *User   `json:"user,omitempty"`
+	Token   *string `json:"token,omitempty"`
+}
+
 type CardFace struct {
 	Colors       []Color    `json:"colors,omitempty"`
 	FlavorText   *string    `json:"flavor_text,omitempty"`
@@ -40,10 +52,6 @@ type ImageUris struct {
 	BorderCrop string `json:"border_crop"`
 }
 
-type LoginInput struct {
-	UserID string `json:"userID"`
-}
-
 type MTGACard struct {
 	CardFaces     []*CardFace `json:"card_faces,omitempty"`
 	Cmc           float64     `json:"cmc"`
@@ -68,18 +76,6 @@ type MTGACard struct {
 type MutationResponse struct {
 	Status  bool    `json:"status"`
 	Message *string `json:"message,omitempty"`
-}
-
-type RegisterInput struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-type RegisterReturn struct {
-	Status  bool    `json:"status"`
-	Message *string `json:"message,omitempty"`
-	User    *User   `json:"user,omitempty"`
-	Token   *string `json:"token,omitempty"`
 }
 
 type Tag struct {

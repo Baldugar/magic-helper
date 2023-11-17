@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"magic-helper/graph/model"
 	"magic-helper/graph/users"
 	"magic-helper/util/auth/session"
 	"net/http"
@@ -101,13 +102,13 @@ func AuthGraphQLAdminHandler(h http.Handler) http.Handler {
 		rawToken := GetTokenFromRequest(r)
 		if rawToken == nil {
 			log.Error().Msgf("Failed to get token from request")
-			http.Error(w, "Trespassers will be shot at", http.StatusUnauthorized)
+			http.Error(w, "You will NOT pass", http.StatusUnauthorized)
 			return
 		}
 		token, err := session.ParseToken(*rawToken)
 		if err != nil {
 			log.Error().Err(err).Msgf("Failed to parse token")
-			http.Error(w, "Trespassers will be shot at", http.StatusUnauthorized)
+			http.Error(w, "You will NOT pass", http.StatusUnauthorized)
 			return
 		}
 		if session.IsTokenExpired(token) {
@@ -115,7 +116,7 @@ func AuthGraphQLAdminHandler(h http.Handler) http.Handler {
 			newToken := session.RefreshSession(*rawToken)
 			if newToken == nil {
 				log.Fatal().Msgf("Failed to refresh session")
-				http.Error(w, "Trespassers will be shot at", http.StatusUnauthorized)
+				http.Error(w, "You will NOT pass", http.StatusUnauthorized)
 				return
 			}
 
@@ -123,26 +124,38 @@ func AuthGraphQLAdminHandler(h http.Handler) http.Handler {
 			token, err = session.ParseToken(*newToken)
 			if err != nil {
 				log.Error().Err(err).Msgf("Failed to parse token")
-				http.Error(w, "Trespassers will be shot at", http.StatusUnauthorized)
+				http.Error(w, "You will NOT pass", http.StatusUnauthorized)
 				return
 			}
 		} else if !session.IsTokenValid(*rawToken) {
 			log.Error().Msgf("Token is not valid")
-			http.Error(w, "Trespassers will be shot at", http.StatusUnauthorized)
+			http.Error(w, "You will NOT pass", http.StatusUnauthorized)
 			return
 		}
 
 		userID := GetUserIDFromToken(token)
 		if userID == nil {
 			log.Error().Msgf("Failed to get user ID from token")
-			http.Error(w, "Trespassers will be shot at", http.StatusUnauthorized)
+			http.Error(w, "You will NOT pass", http.StatusUnauthorized)
 			return
 		}
 
-		_, err = users.GetUserByIDQuery(context.Background(), *userID)
+		user, err := users.GetUserByIDQuery(context.Background(), *userID)
 		if err != nil {
 			log.Error().Msgf("Couldn't get user from database")
+			http.Error(w, "You will NOT pass", http.StatusUnauthorized)
+		}
 
+		isAdmin := false
+		for _, role := range user.Roles {
+			if role == model.RoleAdmin {
+				isAdmin = true
+			}
+		}
+		if !isAdmin {
+			log.Error().Msgf("User is not admin")
+			http.Error(w, "You will NOT pass", http.StatusUnauthorized)
+			return
 		}
 
 		ctx := context.WithValue(r.Context(), "userID", userID)

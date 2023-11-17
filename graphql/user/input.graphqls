@@ -1,8 +1,4 @@
-input RegisterInput {
+input AccessInput {
     username: String!
     password: String!
-}
-
-input LoginInput {
-    userID: ID!
 }

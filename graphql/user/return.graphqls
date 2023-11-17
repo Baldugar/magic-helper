@@ -1,4 +1,4 @@
-type RegisterReturn {
+type AccessReturn {
     status: Boolean!
     message: String
     user: User

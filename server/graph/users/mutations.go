@@ -7,6 +7,7 @@ import (
 	"magic-helper/graph/model"
 	"magic-helper/util"
 	"magic-helper/util/auth/password"
+	"magic-helper/util/auth/session"
 
 	"github.com/rs/zerolog/log"
 )
@@ -16,14 +17,14 @@ var activeSessions map[string]int = make(map[string]int)
 // Create a new user.
 // First check if the user already exists.
 // If not, create the user.
-func RegisterMutation(ctx context.Context, input model.RegisterInput) (*model.RegisterReturn, error) {
+func RegisterMutation(ctx context.Context, input model.AccessInput) (*model.AccessReturn, error) {
 	log.Info().Msgf("CreateUserMutation: Started")
 	// Check if user already exists
 	user, err := GetUserByUsernameQuery(ctx, input.Username)
 	if err != nil {
 		log.Error().Err(err).Msgf("Error querying user")
 		msg := "Error querying user"
-		return &model.RegisterReturn{
+		return &model.AccessReturn{
 			Status:  false,
 			Message: &msg,
 			User:    nil,
@@ -31,10 +32,14 @@ func RegisterMutation(ctx context.Context, input model.RegisterInput) (*model.Re
 	}
 	if user != nil {
 		log.Info().Msgf("User already exists")
-		return &model.RegisterReturn{
-			Status:  false,
+		return &model.AccessReturn{
+			Status:  true,
 			Message: nil,
-			User:    user,
+			User: &model.User{
+				ID:       user.ID,
+				Username: user.Username,
+				Roles:    user.Roles,
+			},
 		}, nil
 	}
 	// Create user
@@ -44,7 +49,7 @@ func RegisterMutation(ctx context.Context, input model.RegisterInput) (*model.Re
 	if err != nil {
 		log.Error().Err(err).Msgf("Error hashing password")
 		msg := "Error encrypting password, please try again later"
-		return &model.RegisterReturn{
+		return &model.AccessReturn{
 			Status:  false,
 			Message: &msg,
 			User:    nil,
@@ -69,7 +74,7 @@ func RegisterMutation(ctx context.Context, input model.RegisterInput) (*model.Re
 	_, err = collection.CreateDocument(ctx, newUser)
 	log.Info().Msgf("CreateUserMutation: Finished")
 
-	return &model.RegisterReturn{
+	return &model.AccessReturn{
 		Status:  true,
 		Message: nil,
 		User: &model.User{
@@ -77,5 +82,63 @@ func RegisterMutation(ctx context.Context, input model.RegisterInput) (*model.Re
 			Username: newUser.Username,
 			Roles:    newUser.Roles,
 		},
+	}, nil
+}
+
+func Login(ctx context.Context, input model.AccessInput) (*model.AccessReturn, error) {
+	log.Info().Msgf("LoginMutation: Started")
+	// Check if user already exists
+	user, err := GetUserByUsernameQuery(ctx, input.Username)
+	if err != nil {
+		log.Error().Err(err).Msgf("Error querying user")
+		msg := "Error querying user"
+		return &model.AccessReturn{
+			Status:  false,
+			Message: &msg,
+			User:    nil,
+		}, err
+	}
+	if user == nil {
+		log.Info().Msgf("User does not exist")
+		msg := "Invalid username or password"
+		return &model.AccessReturn{
+			Status:  false,
+			Message: &msg,
+			User:    nil,
+		}, nil
+	}
+	// Check password
+	if !password.CheckPasswordHash(input.Password, user.HashedPassword) {
+		log.Info().Msgf("Invalid password")
+		msg := "Invalid username or password"
+		return &model.AccessReturn{
+			Status:  false,
+			Message: &msg,
+			User:    nil,
+		}, nil
+	}
+
+	// Create token
+	token, err := session.CreateSession(user.ID)
+	if err != nil {
+		log.Error().Err(err).Msgf("Error creating session")
+		msg := "Error creating session"
+		return &model.AccessReturn{
+			Status:  false,
+			Message: &msg,
+			User:    nil,
+		}, err
+	}
+
+	log.Info().Msgf("LoginMutation: Finished")
+	return &model.AccessReturn{
+		Status:  true,
+		Message: nil,
+		User: &model.User{
+			ID:       user.ID,
+			Username: user.Username,
+			Roles:    user.Roles,
+		},
+		Token: &token,
 	}, nil
 }

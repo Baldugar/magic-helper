@@ -14,9 +14,9 @@ var sessionDuration int = 3600000
 var activeSessions map[string]string = make(map[string]string)
 
 func CreateSession(userID string) (string, error) {
-	if _, ok := activeSessions[userID]; ok {
-		log.Fatal().Msg("Session already exists for user")
-		return "", nil
+	if session, ok := activeSessions[userID]; ok {
+		log.Warn().Msg("Session already exists for user")
+		return session, nil
 	}
 	timestamp := util.CreateTimestamp()
 	token := *GenerateToken(userID, timestamp)

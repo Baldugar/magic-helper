@@ -3,8 +3,10 @@ package users
 import (
 	"context"
 	"magic-helper/arango"
+	"magic-helper/arango/types"
 	"magic-helper/graph/model"
 
+	arangoDriver "github.com/arangodb/go-driver"
 	"github.com/rs/zerolog/log"
 )
 
@@ -67,18 +69,15 @@ func GetUserByIDQuery(ctx context.Context, id string) (*model.User, error) {
 }
 
 // Get User by Username
-func GetUserByUsernameQuery(ctx context.Context, username string) (*model.User, error) {
+func GetUserByUsernameQuery(ctx context.Context, username string) (*types.UserDB, error) {
 	log.Info().Msgf("GetUserQuery: Started")
 	aq := arango.NewQuery(`
 		FOR u IN Users
 		FILTER u.username == @username	
-		RETURN {
-			id: u._key,
-			username: u.username,
-		}
+		RETURN u
 	`)
 	aq.AddBindVar("username", username)
-	var user model.User
+	var user types.UserDB
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {
 		log.Error().Err(err).Msgf("Error querying user")
@@ -86,6 +85,9 @@ func GetUserByUsernameQuery(ctx context.Context, username string) (*model.User, 
 	}
 	defer cursor.Close()
 	_, err = cursor.ReadDocument(ctx, &user)
+	if arangoDriver.IsNoMoreDocuments(err) {
+		return nil, nil
+	}
 	if err != nil {
 		log.Error().Err(err).Msgf("Error reading user")
 		return nil, err
