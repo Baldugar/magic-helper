@@ -1,31 +1,35 @@
 #!/bin/bash
 
-# Copiar el archivo original a una copia temporal
+# Copy the original file to a temporary copy
 cp gqlgen.yml gqlgen_temp.yml
 
-# Crear un archivo temporal para almacenar las rutas de los archivos .graphqls
+# Create a temporary file to store the paths of .graphqls files
 TEMP_FILE=$(mktemp)
 
-# Encontrar todos los archivos .graphqls en el directorio graphql pero excluyendo .history y sus subcarpetas
-find ../graphql -name "*.graphqls" ! -path "../graphql/.history*" > $TEMP_FILE
+# Find all .graphqls files in the graphql directory but exclude .history and its subdirectories
+find ../graphql -name "*.graphqls" ! -path "../graphql/.history*" ! -name "fragment.graphqls" > $TEMP_FILE
 
-# Generar el texto de inserción para el archivo YAML
+printf "Found the following .graphqls files:\n"
+cat $TEMP_FILE
+
+# Generate insertion text for the YAML file
 INSERT_TEXT="schema:\n"
 while read -r line; do
     INSERT_TEXT="${INSERT_TEXT}  - $line\n"
 done < $TEMP_FILE
 
-# Usar sed para insertar el texto en gqlgen_temp.yml
-sed -i "/# Schema routes go here:/a $INSERT_TEXT" gqlgen_temp.yml
+printf "# Schema routes go here:\n" >> gqlgen_temp.yml
+printf "$INSERT_TEXT" >> gqlgen_temp.yml
+cat gqlgen_temp.yml
 
-# Limpiar archivo temporal con rutas
+# Ensure all dependencies are available
+go get github.com/99designs/gqlgen@v0.17.45
+
+# Execute gqlgen with the temporary configuration
+go run github.com/99designs/gqlgen@v0.17.45 generate --config gqlgen_temp.yml
+
+printf "Regeneration complete.\n"
+
+# Remove the temporary configuration copy
 rm $TEMP_FILE
-
-# Asegurarse de que se tienen todas las dependencias
-go get github.com/99designs/gqlgen@v0.17.39
-
-# Ejecutar gqlgen con la configuración temporal
-go run github.com/99designs/gqlgen generate --config gqlgen_temp.yml
-
-# Eliminar la copia temporal de configuración
 rm gqlgen_temp.yml

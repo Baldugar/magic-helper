@@ -1,4 +1,0 @@
-input AccessInput {
-    username: String!
-    password: String!
-}

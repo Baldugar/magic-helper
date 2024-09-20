@@ -1,4 +1,4 @@
-enum Color {
+enum MTGA_Color {
     C
     W
     U
@@ -7,9 +7,23 @@ enum Color {
     G
 }
 
-enum Rarity {
-    common
-    uncommon
-    rare
-    mythic
+enum MTGA_Rarity {
+    COMMON
+    UNCOMMON
+    RARE
+    MYTHIC
+}
+
+enum MTGA_Layout {
+    NORMAL
+    MODAL_DFC
+    TRANSFORM
+    ADVENTURE
+    CLASS
+    SAGA
+    SPLIT
+    PROTOTYPE
+    MUTATE
+    MELD
+    CASE
 }

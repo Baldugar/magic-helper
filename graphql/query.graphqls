@@ -1,9 +1,4 @@
 type Query {
     # Cards
-    getCards: [MTGACard!]!
-    # User
-    getUsers: [User!]!
-    getUser(id: ID!): User
-    # Tags
-    getTags: GetTagsReturn!
+    getCards: [MTGA_Card!]!
 }

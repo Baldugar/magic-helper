@@ -1,4 +1,0 @@
-type GetTagsReturn {
-    cardTags: [Tag!]!
-    deckTags: [Tag!]!
-}

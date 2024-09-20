@@ -6,8 +6,8 @@ import (
 	"github.com/google/uuid"
 )
 
-func CreateTimestamp() int {
-	return int(time.Now().UnixNano() / 1000000)
+func Now() int {
+	return int(time.Now().UnixMilli())
 }
 
 func UUID4() string {

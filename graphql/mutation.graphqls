@@ -1,8 +1,0 @@
-type Mutation {
-    # User
-    register(input: AccessInput!): AccessReturn!
-    login(input: AccessInput!): AccessReturn!
-
-    # Tag
-    createTag(input: TagInput!): Tag!
-}
