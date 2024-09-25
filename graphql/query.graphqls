@@ -1,4 +1,4 @@
 type Query {
     # Cards
-    getCards: [MTGA_Card!]!
+    getMTGACards: [MTGA_Card!]!
 }

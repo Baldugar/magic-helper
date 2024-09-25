@@ -3,7 +3,7 @@ module magic-helper
 go 1.23
 
 require (
-	github.com/99designs/gqlgen v0.17.45
+	github.com/99designs/gqlgen v0.17.54
 	github.com/arangodb/go-driver v1.6.2
 	github.com/gorilla/mux v1.8.1
 	github.com/rs/cors v1.11.1
@@ -11,7 +11,12 @@ require (
 	github.com/vektah/gqlparser/v2 v2.5.16
 )
 
-require golang.org/x/net v0.28.0 // indirect
+require (
+	github.com/gorilla/websocket v1.5.0 // indirect
+	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
+	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	golang.org/x/net v0.29.0 // indirect
+)
 
 require (
 	github.com/agnivade/levenshtein v1.1.1 // indirect

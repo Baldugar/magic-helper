@@ -6,14 +6,14 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"magic-helper/graph/gentypes"
 	"magic-helper/graph/model"
+	"magic-helper/graph/mtga"
 )
 
-// GetCards is the resolver for the getCards field.
-func (r *queryResolver) GetCards(ctx context.Context) ([]*model.MtgaCard, error) {
-	panic(fmt.Errorf("not implemented: GetCards - getCards"))
+// GetMTGACards is the resolver for the getMTGACards field.
+func (r *queryResolver) GetMTGACards(ctx context.Context) ([]*model.MtgaCard, error) {
+	return mtga.GetMTGACards(ctx)
 }
 
 // Query returns gentypes.QueryResolver implementation.

@@ -90,7 +90,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		GetCards func(childComplexity int) int
+		GetMTGACards func(childComplexity int) int
 	}
 
 	Response struct {
@@ -100,7 +100,7 @@ type ComplexityRoot struct {
 }
 
 type QueryResolver interface {
-	GetCards(ctx context.Context) ([]*model.MtgaCard, error)
+	GetMTGACards(ctx context.Context) ([]*model.MtgaCard, error)
 }
 
 type executableSchema struct {
@@ -367,12 +367,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MTGA_Image.Small(childComplexity), true
 
-	case "Query.getCards":
-		if e.complexity.Query.GetCards == nil {
+	case "Query.getMTGACards":
+		if e.complexity.Query.GetMTGACards == nil {
 			break
 		}
 
-		return e.complexity.Query.GetCards(childComplexity), true
+		return e.complexity.Query.GetMTGACards(childComplexity), true
 
 	case "Response.message":
 		if e.complexity.Response.Message == nil {
@@ -477,7 +477,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "../../../graphql/card/enum.graphqls", Input: `enum MTGA_Color {
+	{Name: "../../../graphql/MTGA/enum.graphqls", Input: `enum MTGA_Color {
     C
     W
     U
@@ -507,7 +507,7 @@ enum MTGA_Layout {
     CASE
 }
 `, BuiltIn: false},
-	{Name: "../../../graphql/card/type.graphqls", Input: `type MTGA_Card {
+	{Name: "../../../graphql/MTGA/type.graphqls", Input: `type MTGA_Card {
     ID: ID! @goTag(key: "json", value: "_key")
     cardFaces: [MTGA_CardFace!]
     cmc: Int!
@@ -553,7 +553,7 @@ type MTGA_CardFace {
 `, BuiltIn: false},
 	{Name: "../../../graphql/query.graphqls", Input: `type Query {
     # Cards
-    getCards: [MTGA_Card!]!
+    getMTGACards: [MTGA_Card!]!
 }
 `, BuiltIn: false},
 	{Name: "../../../graphql/type.base.graphqls", Input: `directive @goTag(key: String!, value: String) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
@@ -2164,8 +2164,8 @@ func (ec *executionContext) fieldContext_MTGA_Image_borderCrop(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_getCards(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_getCards(ctx, field)
+func (ec *executionContext) _Query_getMTGACards(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getMTGACards(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2178,7 +2178,7 @@ func (ec *executionContext) _Query_getCards(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetCards(rctx)
+		return ec.resolvers.Query().GetMTGACards(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2195,7 +2195,7 @@ func (ec *executionContext) _Query_getCards(ctx context.Context, field graphql.C
 	return ec.marshalNMTGA_Card2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaCardᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_getCards(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_getMTGACards(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -4486,7 +4486,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "getCards":
+		case "getMTGACards":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -4495,7 +4495,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_getCards(ctx, field)
+				res = ec._Query_getMTGACards(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
