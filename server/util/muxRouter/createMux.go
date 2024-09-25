@@ -4,7 +4,6 @@ import (
 	"magic-helper/graph"
 	"magic-helper/graph/gentypes"
 	"magic-helper/settings"
-	"magic-helper/util/auth"
 	"net/http"
 	"os"
 
@@ -21,12 +20,14 @@ func CreateMux(settings settings.Settings) *mux.Router {
 	graphQLServer := handler.NewDefaultServer(gentypes.NewExecutableSchema(gentypes.Config{Resolvers: &graph.Resolver{}}))
 
 	if settings.GraphQLPlayground {
-		router.Handle("/playground-private", playground.Handler("GraphQL playground", "/graphql-private"))
-		router.Handle("/playground-public", playground.Handler("GraphQL playground", "/graphql-public"))
+		router.Handle("/playground", playground.Handler("GraphQL playground", "/graphql"))
 	}
 
-	router.Handle("/graphql-private", auth.AuthGraphQLPrivateHandler(graphQLServer))
-	router.Handle("/graphql-public", auth.AuthGraphQLPublicHandler(graphQLServer))
+	router.HandleFunc("/config.js", configHandler)
+
+	// router.Handle("/graphql-admin", auth.AuthGraphQLAdminHandler(graphQLServer))
+	// router.Handle("/graphql-private", auth.AuthGraphQLPrivateHandler(graphQLServer))
+	router.Handle("/graphql", Handler(graphQLServer))
 
 	website := http.FileServer(HTMLDir{http.Dir("./website")})
 	router.PathPrefix("/").Handler(website)

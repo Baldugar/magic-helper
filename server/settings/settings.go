@@ -10,27 +10,27 @@ import (
 )
 
 type ArangoDBConfig struct {
-	Addr     string
-	Port     string
-	Name     string
-	User     string
-	Password string
+	Addr     string `json:"addr"`
+	Port     string `json:"port"`
+	Name     string `json:"name"`
+	User     string `json:"user"`
+	Password string `json:"password"`
 }
 
 type LogConfig struct {
-	LogLevel    string
-	LogFile     string
-	LogFilePath string
+	LogLevel    string `json:"logLevel"`
+	LogFile     string `json:"logFile"`
+	LogFilePath string `json:"logFilePath"`
 }
 
 // Settings is the main struct that contains the configuration of the application
 type Settings struct {
-	AllowCrossOrigin  bool
-	Logging           LogConfig
-	Domain            string
-	GraphQLPlayground bool
-	HTTPListen        string
-	ArangoDB          ArangoDBConfig
+	AllowCrossOrigin  bool           `json:"allowCrossOrigin"`
+	Logging           LogConfig      `json:"logging"`
+	Domain            string         `json:"domain"`
+	GraphQLPlayground bool           `json:"graphQLPlayground"`
+	HTTPListen        string         `json:"httpListen"`
+	ArangoDB          ArangoDBConfig `json:"arangoDB"`
 }
 
 var Current Settings

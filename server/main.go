@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"magic-helper/arango"
+	"magic-helper/daemons"
 	"magic-helper/settings"
 	"magic-helper/util/logging"
 	"magic-helper/util/muxRouter"
@@ -17,7 +18,6 @@ import (
 
 type Flags = struct {
 	settingsFile string
-	listen       string
 }
 
 var flags Flags
@@ -43,6 +43,9 @@ func main() {
 
 	// Initialize ArangoDB
 	arango.Init(settings.Current.ArangoDB)
+
+	// Initialize the daemons
+	go daemons.PeriodicFetchMTGACards()
 
 	// Start the server
 	log.Info().Msgf("########## Magic Helper Server Startup ##########")
@@ -78,6 +81,7 @@ func main() {
 		ReadHeaderTimeout: time.Duration(40) * time.Second,
 		Handler:           loggingRouter,
 	}
+
 	log.Fatal().Err(srv.ListenAndServe()).Msg("Failed to start server")
 }
 

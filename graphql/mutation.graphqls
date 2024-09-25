@@ -1,8 +1,0 @@
-type Mutation {
-    # User
-    createUser(input: CreateUserInput!): CreateUserReturn!
-    login(input: LoginInput!): User
-
-    # Tag
-    createTag(input: TagInput!): Tag!
-}

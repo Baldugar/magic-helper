@@ -1,5 +1,0 @@
-type CreateUserReturn {
-    status: Boolean!
-    message: String
-    user: User
-}

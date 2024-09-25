@@ -1,9 +1,0 @@
-input CreateUserInput {
-    id: ID!
-    email: String!
-    username: String!
-}
-
-input LoginInput {
-    userID: ID!
-}
