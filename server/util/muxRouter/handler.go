@@ -1,6 +1,42 @@
 package muxRouter
 
-import "net/http"
+import (
+	"encoding/json"
+	"fmt"
+	"magic-helper/settings"
+	"net/http"
+	"strconv"
+
+	"github.com/rs/zerolog/log"
+)
+
+type ConfigSettings struct {
+	Domain string `json:"domain"`
+	Port   int    `json:"port"`
+}
+
+func configHandler(w http.ResponseWriter, r *http.Request) {
+	s := settings.Current
+
+	port, err := strconv.Atoi(s.HTTPListen)
+	if err != nil {
+		log.Error().Err(err).Msg("error parsing port")
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+	configSetting := &ConfigSettings{
+		Domain: s.Domain,
+		Port:   port,
+	}
+
+	b, err := json.Marshal(configSetting)
+	if err != nil {
+		log.Error().Err(err).Msg("error parsing settings into config.js")
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+
+	w.Header().Set("Content-Type", "application/javascript")
+	fmt.Fprintf(w, "const __envConfig = %s;", string(b))
+}
 
 func Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

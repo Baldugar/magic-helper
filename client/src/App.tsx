@@ -1,8 +1,10 @@
 import { Container, Typography } from '@mui/material'
+import { useEffect } from 'react'
 import './App.css'
 import jsonCards from './assets/cards.json'
 import yugiohCards from './assets/yugioh_cards.json'
 import yugiohCardsGame from './assets/yugioh_cards_game.json'
+import { MTGAFunctions } from './graphql/MTGA/functions'
 import CardsContext from './hooks/cardsContext'
 import { MTGACard } from './types/types'
 
@@ -11,6 +13,9 @@ type YCard = {
 }
 
 function App() {
+    const {
+        queries: { getMTGACards },
+    } = MTGAFunctions
     const cards: MTGACard[] = jsonCards as MTGACard[]
     const yCards = (yugiohCards as { data: Array<YCard> }).data
     const yCardsGame1 = (yugiohCardsGame as { data: Array<YCard> }).data
@@ -39,6 +44,12 @@ function App() {
         'missingCards',
         missingCards.map((c) => c.name),
     )
+
+    useEffect(() => {
+        getMTGACards().then((cards) => {
+            console.log(cards.length)
+        })
+    }, [getMTGACards])
 
     //    console.log(cards.filter((card) => card.card_faces && card.card_faces.filter((cf) => !cf.oracle_text).length > 0))
 

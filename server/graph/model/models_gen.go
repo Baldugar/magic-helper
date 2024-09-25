@@ -8,6 +8,19 @@ import (
 	"strconv"
 )
 
+type MtgaCommonFields interface {
+	IsMtgaCommonFields()
+	GetColors() []MtgaColor
+	GetFlavorText() *string
+	GetImage() *MtgaImage
+	GetLoyalty() *string
+	GetName() string
+	GetPower() *string
+	GetProducedMana() []MtgaColor
+	GetToughness() *string
+	GetTypeLine() string
+}
+
 type MtgaCard struct {
 	ID            string          `json:"_key"`
 	CardFaces     []*MtgaCardFace `json:"cardFaces,omitempty"`
@@ -29,27 +42,85 @@ type MtgaCard struct {
 	TypeLine      string          `json:"typeLine"`
 }
 
+func (MtgaCard) IsMtgaCommonFields() {}
+func (this MtgaCard) GetColors() []MtgaColor {
+	if this.Colors == nil {
+		return nil
+	}
+	interfaceSlice := make([]MtgaColor, 0, len(this.Colors))
+	for _, concrete := range this.Colors {
+		interfaceSlice = append(interfaceSlice, concrete)
+	}
+	return interfaceSlice
+}
+func (this MtgaCard) GetFlavorText() *string { return this.FlavorText }
+func (this MtgaCard) GetImage() *MtgaImage   { return this.Image }
+func (this MtgaCard) GetLoyalty() *string    { return this.Loyalty }
+func (this MtgaCard) GetName() string        { return this.Name }
+func (this MtgaCard) GetPower() *string      { return this.Power }
+func (this MtgaCard) GetProducedMana() []MtgaColor {
+	if this.ProducedMana == nil {
+		return nil
+	}
+	interfaceSlice := make([]MtgaColor, 0, len(this.ProducedMana))
+	for _, concrete := range this.ProducedMana {
+		interfaceSlice = append(interfaceSlice, concrete)
+	}
+	return interfaceSlice
+}
+func (this MtgaCard) GetToughness() *string { return this.Toughness }
+func (this MtgaCard) GetTypeLine() string   { return this.TypeLine }
+
 type MtgaCardFace struct {
-	Image        *MtgaImage  `json:"image,omitempty"`
 	Colors       []MtgaColor `json:"colors,omitempty"`
+	Description  string      `json:"description"`
 	FlavorText   *string     `json:"flavorText,omitempty"`
+	Image        *MtgaImage  `json:"image,omitempty"`
 	Loyalty      *string     `json:"loyalty,omitempty"`
 	ManaCost     string      `json:"manaCost"`
 	Name         string      `json:"name"`
-	Description  string      `json:"description"`
 	Power        *string     `json:"power,omitempty"`
 	ProducedMana []MtgaColor `json:"producedMana,omitempty"`
 	Toughness    *string     `json:"toughness,omitempty"`
 	TypeLine     string      `json:"typeLine"`
 }
 
+func (MtgaCardFace) IsMtgaCommonFields() {}
+func (this MtgaCardFace) GetColors() []MtgaColor {
+	if this.Colors == nil {
+		return nil
+	}
+	interfaceSlice := make([]MtgaColor, 0, len(this.Colors))
+	for _, concrete := range this.Colors {
+		interfaceSlice = append(interfaceSlice, concrete)
+	}
+	return interfaceSlice
+}
+func (this MtgaCardFace) GetFlavorText() *string { return this.FlavorText }
+func (this MtgaCardFace) GetImage() *MtgaImage   { return this.Image }
+func (this MtgaCardFace) GetLoyalty() *string    { return this.Loyalty }
+func (this MtgaCardFace) GetName() string        { return this.Name }
+func (this MtgaCardFace) GetPower() *string      { return this.Power }
+func (this MtgaCardFace) GetProducedMana() []MtgaColor {
+	if this.ProducedMana == nil {
+		return nil
+	}
+	interfaceSlice := make([]MtgaColor, 0, len(this.ProducedMana))
+	for _, concrete := range this.ProducedMana {
+		interfaceSlice = append(interfaceSlice, concrete)
+	}
+	return interfaceSlice
+}
+func (this MtgaCardFace) GetToughness() *string { return this.Toughness }
+func (this MtgaCardFace) GetTypeLine() string   { return this.TypeLine }
+
 type MtgaImage struct {
-	Small      string `json:"small"`
-	Normal     string `json:"normal"`
-	Large      string `json:"large"`
-	Png        string `json:"png"`
 	ArtCrop    string `json:"artCrop"`
 	BorderCrop string `json:"borderCrop"`
+	Large      string `json:"large"`
+	Normal     string `json:"normal"`
+	Png        string `json:"png"`
+	Small      string `json:"small"`
 }
 
 type Query struct {

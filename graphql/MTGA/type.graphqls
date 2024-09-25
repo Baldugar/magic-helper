@@ -1,4 +1,16 @@
-type MTGA_Card {
+interface MTGA_CommonFields {
+    colors: [MTGA_Color!]
+    flavorText: String
+    image: MTGA_Image
+    loyalty: String
+    name: String!
+    power: String
+    producedMana: [MTGA_Color!]
+    toughness: String
+    typeLine: String!
+}
+
+type MTGA_Card implements MTGA_CommonFields {
     ID: ID! @goTag(key: "json", value: "_key")
     cardFaces: [MTGA_CardFace!]
     cmc: Int!
@@ -19,25 +31,25 @@ type MTGA_Card {
     typeLine: String!
 }
 
-type MTGA_Image {
-    small: String!
-    normal: String!
-    large: String!
-    png: String!
-    artCrop: String!
-    borderCrop: String!
-}
-
-type MTGA_CardFace {
-    image: MTGA_Image
+type MTGA_CardFace implements MTGA_CommonFields {
     colors: [MTGA_Color!]
+    description: String!
     flavorText: String
+    image: MTGA_Image
     loyalty: String
     manaCost: String!
     name: String!
-    description: String!
     power: String
     producedMana: [MTGA_Color!]
     toughness: String
     typeLine: String!
+}
+
+type MTGA_Image {
+    artCrop: String!
+    borderCrop: String!
+    large: String!
+    normal: String!
+    png: String!
+    small: String!
 }

@@ -23,6 +23,8 @@ func CreateMux(settings settings.Settings) *mux.Router {
 		router.Handle("/playground", playground.Handler("GraphQL playground", "/graphql"))
 	}
 
+	router.HandleFunc("/config.js", configHandler)
+
 	// router.Handle("/graphql-admin", auth.AuthGraphQLAdminHandler(graphQLServer))
 	// router.Handle("/graphql-private", auth.AuthGraphQLPrivateHandler(graphQLServer))
 	router.Handle("/graphql", Handler(graphQLServer))
