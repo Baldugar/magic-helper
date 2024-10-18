@@ -10,6 +10,7 @@ import (
 func EnsureDatabaseIntegrity(ctx context.Context) {
 	log.Info().Msgf("Ensuring database integrity")
 	ensureDocumentCollections(ctx)
+	ensureEdgeCollections(ctx)
 	log.Info().Msgf("Database integrity ensured")
 }
 
@@ -41,5 +42,36 @@ func EnsureDocumentCollection(ctx context.Context, collection ArangoDocument) (a
 		return nil, err
 	}
 	log.Info().Msgf("Document collection %s already exists", c.Name())
+	return c, nil
+}
+
+func ensureEdgeCollections(ctx context.Context) {
+	for _, edge := range EDGE_COLLECTIONS {
+		EnsureEdgeCollection(ctx, edge)
+	}
+}
+
+func EnsureEdgeCollection(ctx context.Context, edge ArangoEdge) (arangoDriver.Collection, error) {
+	log.Info().Msgf("Ensuring edge collection %s", edge)
+	exists, err := DB.CollectionExists(ctx, string(edge))
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to check if collection exists")
+		return nil, err
+	}
+	if !exists {
+		c, err := DB.CreateCollection(ctx, string(edge), &arangoDriver.CreateCollectionOptions{Type: arangoDriver.CollectionTypeEdge})
+		if err != nil {
+			log.Fatal().Err(err).Msg("Failed to create collection")
+			return nil, err
+		}
+		log.Info().Msgf("Created edge collection %s", c.Name())
+		return c, nil
+	}
+	c, err := DB.Collection(ctx, string(edge))
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to get collection")
+		return nil, err
+	}
+	log.Info().Msgf("Edge collection %s already exists", c.Name())
 	return c, nil
 }

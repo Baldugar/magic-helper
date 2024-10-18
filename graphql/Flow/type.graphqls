@@ -1,0 +1,11 @@
+type Position {
+    x: Int!
+    y: Int!
+    parentID: ID
+}
+
+type FlowZone {
+    ID: ID!
+    name: String!
+    position: Position!
+}

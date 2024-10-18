@@ -1,0 +1,16 @@
+type MTGA_Deck {
+    ID: ID! @goTag(key: "json", value: "_key")
+    name: String!
+    cardFrontImage: String
+    cards: [MTGA_DeckCard!]!
+    zones: [FlowZone!]!
+    type: DeckType!
+}
+
+type MTGA_DeckCard {
+    card: MTGA_Card!
+    count: Int!
+    position: Position!
+    cardPosition: DeckCardPosition!
+    type: MTGA_DeckCardType!
+}

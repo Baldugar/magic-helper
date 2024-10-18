@@ -1,0 +1,34 @@
+input MTGA_CreateDeckInput {
+    name: String!
+    type: DeckType!
+}
+
+input MTGA_DeleteDeckInput {
+    deckID: ID!
+}
+
+input MTGA_UpdateDeckInput {
+    deckID: ID!
+    name: String!
+    type: DeckType!
+    cardFrontImage: String
+    cards: [MTGA_DeckCardInput!]!
+    zones: [FlowZoneInput!]!
+}
+
+input MTGA_DeckCardInput {
+    card: ID!
+    count: Int!
+    position: PositionInput!
+    cardPosition: DeckCardPosition!
+    type: MTGA_DeckCardType!
+}
+
+input MTGA_AddCardToDeckInput {
+    deckID: ID
+    cardID: ID!
+    count: Int!
+    position: PositionInput!
+    cardPosition: DeckCardPosition!
+    type: MTGA_DeckCardType!
+}

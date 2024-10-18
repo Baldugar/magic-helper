@@ -8,3 +8,4 @@ generates:
             namingConvention: keep
             scalars:
                 Time: number
+                Map: Record<string, unknown>

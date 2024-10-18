@@ -16,6 +16,16 @@ func (r *queryResolver) GetMTGACards(ctx context.Context) ([]*model.MtgaCard, er
 	return mtga.GetMTGACards(ctx)
 }
 
+// GetMTGAFilters is the resolver for the getMTGAFilters field.
+func (r *queryResolver) GetMTGAFilters(ctx context.Context) (*model.MtgaFilterEntries, error) {
+	return mtga.GetMTGAFilters(ctx)
+}
+
+// GetMTGADecks is the resolver for the getMTGADecks field.
+func (r *queryResolver) GetMTGADecks(ctx context.Context, deckID *string) ([]*model.MtgaDeck, error) {
+	return mtga.GetMTGADecks(ctx, deckID)
+}
+
 // Query returns gentypes.QueryResolver implementation.
 func (r *Resolver) Query() gentypes.QueryResolver { return &queryResolver{r} }
 

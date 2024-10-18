@@ -38,6 +38,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Mutation() MutationResolver
 	Query() QueryResolver
 }
 
@@ -45,6 +46,12 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	FlowZone struct {
+		ID       func(childComplexity int) int
+		Name     func(childComplexity int) int
+		Position func(childComplexity int) int
+	}
+
 	MTGA_Card struct {
 		CardFaces     func(childComplexity int) int
 		Cmc           func(childComplexity int) int
@@ -54,6 +61,8 @@ type ComplexityRoot struct {
 		FlavorText    func(childComplexity int) int
 		ID            func(childComplexity int) int
 		Image         func(childComplexity int) int
+		Layout        func(childComplexity int) int
+		Legalities    func(childComplexity int) int
 		Loyalty       func(childComplexity int) int
 		ManaCost      func(childComplexity int) int
 		Name          func(childComplexity int) int
@@ -80,6 +89,44 @@ type ComplexityRoot struct {
 		TypeLine     func(childComplexity int) int
 	}
 
+	MTGA_Deck struct {
+		CardFrontImage func(childComplexity int) int
+		Cards          func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Name           func(childComplexity int) int
+		Type           func(childComplexity int) int
+		Zones          func(childComplexity int) int
+	}
+
+	MTGA_DeckCard struct {
+		Card         func(childComplexity int) int
+		CardPosition func(childComplexity int) int
+		Count        func(childComplexity int) int
+		Position     func(childComplexity int) int
+		Type         func(childComplexity int) int
+	}
+
+	MTGA_Filter_CardTypes struct {
+		CardType func(childComplexity int) int
+		Subtypes func(childComplexity int) int
+	}
+
+	MTGA_Filter_Entries struct {
+		Expansions func(childComplexity int) int
+		Legality   func(childComplexity int) int
+		Types      func(childComplexity int) int
+	}
+
+	MTGA_Filter_Expansion struct {
+		Set     func(childComplexity int) int
+		SetName func(childComplexity int) int
+	}
+
+	MTGA_Filter_Legality struct {
+		Formats        func(childComplexity int) int
+		LegalityValues func(childComplexity int) int
+	}
+
 	MTGA_Image struct {
 		ArtCrop    func(childComplexity int) int
 		BorderCrop func(childComplexity int) int
@@ -89,8 +136,23 @@ type ComplexityRoot struct {
 		Small      func(childComplexity int) int
 	}
 
+	Mutation struct {
+		AddCardToMTGADeck func(childComplexity int, input model.MtgaAddCardToDeckInput) int
+		CreateMTGADeck    func(childComplexity int, input model.MtgaCreateDeckInput) int
+		DeleteMTGADeck    func(childComplexity int, input model.MtgaDeleteDeckInput) int
+		UpdateMTGADeck    func(childComplexity int, input model.MtgaUpdateDeckInput) int
+	}
+
+	Position struct {
+		ParentID func(childComplexity int) int
+		X        func(childComplexity int) int
+		Y        func(childComplexity int) int
+	}
+
 	Query struct {
-		GetMTGACards func(childComplexity int) int
+		GetMTGACards   func(childComplexity int) int
+		GetMTGADecks   func(childComplexity int, deckID *string) int
+		GetMTGAFilters func(childComplexity int) int
 	}
 
 	Response struct {
@@ -99,8 +161,16 @@ type ComplexityRoot struct {
 	}
 }
 
+type MutationResolver interface {
+	CreateMTGADeck(ctx context.Context, input model.MtgaCreateDeckInput) (*model.MtgaDeck, error)
+	DeleteMTGADeck(ctx context.Context, input model.MtgaDeleteDeckInput) (bool, error)
+	UpdateMTGADeck(ctx context.Context, input model.MtgaUpdateDeckInput) (*model.MtgaDeck, error)
+	AddCardToMTGADeck(ctx context.Context, input model.MtgaAddCardToDeckInput) (*model.MtgaDeck, error)
+}
 type QueryResolver interface {
 	GetMTGACards(ctx context.Context) ([]*model.MtgaCard, error)
+	GetMTGAFilters(ctx context.Context) (*model.MtgaFilterEntries, error)
+	GetMTGADecks(ctx context.Context, deckID *string) ([]*model.MtgaDeck, error)
 }
 
 type executableSchema struct {
@@ -121,6 +191,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "FlowZone.ID":
+		if e.complexity.FlowZone.ID == nil {
+			break
+		}
+
+		return e.complexity.FlowZone.ID(childComplexity), true
+
+	case "FlowZone.name":
+		if e.complexity.FlowZone.Name == nil {
+			break
+		}
+
+		return e.complexity.FlowZone.Name(childComplexity), true
+
+	case "FlowZone.position":
+		if e.complexity.FlowZone.Position == nil {
+			break
+		}
+
+		return e.complexity.FlowZone.Position(childComplexity), true
 
 	case "MTGA_Card.cardFaces":
 		if e.complexity.MTGA_Card.CardFaces == nil {
@@ -177,6 +268,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MTGA_Card.Image(childComplexity), true
+
+	case "MTGA_Card.layout":
+		if e.complexity.MTGA_Card.Layout == nil {
+			break
+		}
+
+		return e.complexity.MTGA_Card.Layout(childComplexity), true
+
+	case "MTGA_Card.legalities":
+		if e.complexity.MTGA_Card.Legalities == nil {
+			break
+		}
+
+		return e.complexity.MTGA_Card.Legalities(childComplexity), true
 
 	case "MTGA_Card.loyalty":
 		if e.complexity.MTGA_Card.Loyalty == nil {
@@ -325,6 +430,146 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MTGA_CardFace.TypeLine(childComplexity), true
 
+	case "MTGA_Deck.cardFrontImage":
+		if e.complexity.MTGA_Deck.CardFrontImage == nil {
+			break
+		}
+
+		return e.complexity.MTGA_Deck.CardFrontImage(childComplexity), true
+
+	case "MTGA_Deck.cards":
+		if e.complexity.MTGA_Deck.Cards == nil {
+			break
+		}
+
+		return e.complexity.MTGA_Deck.Cards(childComplexity), true
+
+	case "MTGA_Deck.ID":
+		if e.complexity.MTGA_Deck.ID == nil {
+			break
+		}
+
+		return e.complexity.MTGA_Deck.ID(childComplexity), true
+
+	case "MTGA_Deck.name":
+		if e.complexity.MTGA_Deck.Name == nil {
+			break
+		}
+
+		return e.complexity.MTGA_Deck.Name(childComplexity), true
+
+	case "MTGA_Deck.type":
+		if e.complexity.MTGA_Deck.Type == nil {
+			break
+		}
+
+		return e.complexity.MTGA_Deck.Type(childComplexity), true
+
+	case "MTGA_Deck.zones":
+		if e.complexity.MTGA_Deck.Zones == nil {
+			break
+		}
+
+		return e.complexity.MTGA_Deck.Zones(childComplexity), true
+
+	case "MTGA_DeckCard.card":
+		if e.complexity.MTGA_DeckCard.Card == nil {
+			break
+		}
+
+		return e.complexity.MTGA_DeckCard.Card(childComplexity), true
+
+	case "MTGA_DeckCard.cardPosition":
+		if e.complexity.MTGA_DeckCard.CardPosition == nil {
+			break
+		}
+
+		return e.complexity.MTGA_DeckCard.CardPosition(childComplexity), true
+
+	case "MTGA_DeckCard.count":
+		if e.complexity.MTGA_DeckCard.Count == nil {
+			break
+		}
+
+		return e.complexity.MTGA_DeckCard.Count(childComplexity), true
+
+	case "MTGA_DeckCard.position":
+		if e.complexity.MTGA_DeckCard.Position == nil {
+			break
+		}
+
+		return e.complexity.MTGA_DeckCard.Position(childComplexity), true
+
+	case "MTGA_DeckCard.type":
+		if e.complexity.MTGA_DeckCard.Type == nil {
+			break
+		}
+
+		return e.complexity.MTGA_DeckCard.Type(childComplexity), true
+
+	case "MTGA_Filter_CardTypes.cardType":
+		if e.complexity.MTGA_Filter_CardTypes.CardType == nil {
+			break
+		}
+
+		return e.complexity.MTGA_Filter_CardTypes.CardType(childComplexity), true
+
+	case "MTGA_Filter_CardTypes.subtypes":
+		if e.complexity.MTGA_Filter_CardTypes.Subtypes == nil {
+			break
+		}
+
+		return e.complexity.MTGA_Filter_CardTypes.Subtypes(childComplexity), true
+
+	case "MTGA_Filter_Entries.expansions":
+		if e.complexity.MTGA_Filter_Entries.Expansions == nil {
+			break
+		}
+
+		return e.complexity.MTGA_Filter_Entries.Expansions(childComplexity), true
+
+	case "MTGA_Filter_Entries.legality":
+		if e.complexity.MTGA_Filter_Entries.Legality == nil {
+			break
+		}
+
+		return e.complexity.MTGA_Filter_Entries.Legality(childComplexity), true
+
+	case "MTGA_Filter_Entries.types":
+		if e.complexity.MTGA_Filter_Entries.Types == nil {
+			break
+		}
+
+		return e.complexity.MTGA_Filter_Entries.Types(childComplexity), true
+
+	case "MTGA_Filter_Expansion.set":
+		if e.complexity.MTGA_Filter_Expansion.Set == nil {
+			break
+		}
+
+		return e.complexity.MTGA_Filter_Expansion.Set(childComplexity), true
+
+	case "MTGA_Filter_Expansion.setName":
+		if e.complexity.MTGA_Filter_Expansion.SetName == nil {
+			break
+		}
+
+		return e.complexity.MTGA_Filter_Expansion.SetName(childComplexity), true
+
+	case "MTGA_Filter_Legality.formats":
+		if e.complexity.MTGA_Filter_Legality.Formats == nil {
+			break
+		}
+
+		return e.complexity.MTGA_Filter_Legality.Formats(childComplexity), true
+
+	case "MTGA_Filter_Legality.legalityValues":
+		if e.complexity.MTGA_Filter_Legality.LegalityValues == nil {
+			break
+		}
+
+		return e.complexity.MTGA_Filter_Legality.LegalityValues(childComplexity), true
+
 	case "MTGA_Image.artCrop":
 		if e.complexity.MTGA_Image.ArtCrop == nil {
 			break
@@ -367,12 +612,100 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MTGA_Image.Small(childComplexity), true
 
+	case "Mutation.addCardToMTGADeck":
+		if e.complexity.Mutation.AddCardToMTGADeck == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addCardToMTGADeck_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddCardToMTGADeck(childComplexity, args["input"].(model.MtgaAddCardToDeckInput)), true
+
+	case "Mutation.createMTGADeck":
+		if e.complexity.Mutation.CreateMTGADeck == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createMTGADeck_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateMTGADeck(childComplexity, args["input"].(model.MtgaCreateDeckInput)), true
+
+	case "Mutation.deleteMTGADeck":
+		if e.complexity.Mutation.DeleteMTGADeck == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteMTGADeck_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteMTGADeck(childComplexity, args["input"].(model.MtgaDeleteDeckInput)), true
+
+	case "Mutation.updateMTGADeck":
+		if e.complexity.Mutation.UpdateMTGADeck == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateMTGADeck_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateMTGADeck(childComplexity, args["input"].(model.MtgaUpdateDeckInput)), true
+
+	case "Position.parentID":
+		if e.complexity.Position.ParentID == nil {
+			break
+		}
+
+		return e.complexity.Position.ParentID(childComplexity), true
+
+	case "Position.x":
+		if e.complexity.Position.X == nil {
+			break
+		}
+
+		return e.complexity.Position.X(childComplexity), true
+
+	case "Position.y":
+		if e.complexity.Position.Y == nil {
+			break
+		}
+
+		return e.complexity.Position.Y(childComplexity), true
+
 	case "Query.getMTGACards":
 		if e.complexity.Query.GetMTGACards == nil {
 			break
 		}
 
 		return e.complexity.Query.GetMTGACards(childComplexity), true
+
+	case "Query.getMTGADecks":
+		if e.complexity.Query.GetMTGADecks == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getMTGADecks_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetMTGADecks(childComplexity, args["deckID"].(*string)), true
+
+	case "Query.getMTGAFilters":
+		if e.complexity.Query.GetMTGAFilters == nil {
+			break
+		}
+
+		return e.complexity.Query.GetMTGAFilters(childComplexity), true
 
 	case "Response.message":
 		if e.complexity.Response.Message == nil {
@@ -395,7 +728,15 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e, 0, 0, make(chan graphql.DeferredResult)}
-	inputUnmarshalMap := graphql.BuildUnmarshalerMap()
+	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputFlowZoneInput,
+		ec.unmarshalInputMTGA_AddCardToDeckInput,
+		ec.unmarshalInputMTGA_CreateDeckInput,
+		ec.unmarshalInputMTGA_DeckCardInput,
+		ec.unmarshalInputMTGA_DeleteDeckInput,
+		ec.unmarshalInputMTGA_UpdateDeckInput,
+		ec.unmarshalInputPositionInput,
+	)
 	first := true
 
 	switch rc.Operation.Operation {
@@ -428,6 +769,21 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			}
 
 			return &response
+		}
+	case ast.Mutation:
+		return func(ctx context.Context) *graphql.Response {
+			if !first {
+				return nil
+			}
+			first = false
+			ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
+			data := ec._Mutation(ctx, rc.Operation.SelectionSet)
+			var buf bytes.Buffer
+			data.MarshalGQL(&buf)
+
+			return &graphql.Response{
+				Data: buf.Bytes(),
+			}
 		}
 
 	default:
@@ -477,7 +833,31 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "../../../graphql/MTGA/enum.graphqls", Input: `enum MTGA_Color {
+	{Name: "../../../graphql/Flow/input.graphqls", Input: `input FlowZoneInput {
+    ID: ID!
+    name: String!
+    position: PositionInput!
+}
+
+input PositionInput {
+    x: Int!
+    y: Int!
+    parentID: ID
+}
+`, BuiltIn: false},
+	{Name: "../../../graphql/Flow/type.graphqls", Input: `type Position {
+    x: Int!
+    y: Int!
+    parentID: ID
+}
+
+type FlowZone {
+    ID: ID!
+    name: String!
+    position: Position!
+}
+`, BuiltIn: false},
+	{Name: "../../../graphql/MTGA/Card/enum.graphqls", Input: `enum MTGA_Color {
     C
     W
     U
@@ -507,7 +887,7 @@ enum MTGA_Layout {
     CASE
 }
 `, BuiltIn: false},
-	{Name: "../../../graphql/MTGA/type.graphqls", Input: `interface MTGA_CommonFields {
+	{Name: "../../../graphql/MTGA/Card/interface.graphqls", Input: `interface MTGA_CommonFields {
     colors: [MTGA_Color!]
     flavorText: String
     image: MTGA_Image
@@ -518,8 +898,8 @@ enum MTGA_Layout {
     toughness: String
     typeLine: String!
 }
-
-type MTGA_Card implements MTGA_CommonFields {
+`, BuiltIn: false},
+	{Name: "../../../graphql/MTGA/Card/type.graphqls", Input: `type MTGA_Card implements MTGA_CommonFields {
     ID: ID! @goTag(key: "json", value: "_key")
     cardFaces: [MTGA_CardFace!]
     cmc: Int!
@@ -528,6 +908,8 @@ type MTGA_Card implements MTGA_CommonFields {
     description: String
     flavorText: String
     image: MTGA_Image
+    layout: String!
+    legalities: Map!
     loyalty: String
     manaCost: String
     name: String!
@@ -563,12 +945,114 @@ type MTGA_Image {
     small: String!
 }
 `, BuiltIn: false},
+	{Name: "../../../graphql/MTGA/Deck/enum.graphqls", Input: `enum DeckType {
+    STANDARD
+    BRAWL_60
+    BRAWL_100
+}
+
+enum DeckCardPosition {
+    MAIN
+    SIDEBOARD
+}
+
+enum MTGA_DeckCardType {
+    NORMAL
+    COMPANION
+    COMMANDER
+}
+`, BuiltIn: false},
+	{Name: "../../../graphql/MTGA/Deck/input.graphqls", Input: `input MTGA_CreateDeckInput {
+    name: String!
+    type: DeckType!
+}
+
+input MTGA_DeleteDeckInput {
+    deckID: ID!
+}
+
+input MTGA_UpdateDeckInput {
+    deckID: ID!
+    name: String!
+    type: DeckType!
+    cardFrontImage: String
+    cards: [MTGA_DeckCardInput!]!
+    zones: [FlowZoneInput!]!
+}
+
+input MTGA_DeckCardInput {
+    card: ID!
+    count: Int!
+    position: PositionInput!
+    cardPosition: DeckCardPosition!
+    type: MTGA_DeckCardType!
+}
+
+input MTGA_AddCardToDeckInput {
+    deckID: ID
+    cardID: ID!
+    count: Int!
+    position: PositionInput!
+    cardPosition: DeckCardPosition!
+    type: MTGA_DeckCardType!
+}
+`, BuiltIn: false},
+	{Name: "../../../graphql/MTGA/Deck/type.graphqls", Input: `type MTGA_Deck {
+    ID: ID! @goTag(key: "json", value: "_key")
+    name: String!
+    cardFrontImage: String
+    cards: [MTGA_DeckCard!]!
+    zones: [FlowZone!]!
+    type: DeckType!
+}
+
+type MTGA_DeckCard {
+    card: MTGA_Card!
+    count: Int!
+    position: Position!
+    cardPosition: DeckCardPosition!
+    type: MTGA_DeckCardType!
+}
+`, BuiltIn: false},
+	{Name: "../../../graphql/MTGA/Filter/type.graphqls", Input: `type MTGA_Filter_Entries {
+    types: [MTGA_Filter_CardTypes!]!
+    expansions: [MTGA_Filter_Expansion!]!
+    legality: MTGA_Filter_Legality!
+}
+
+type MTGA_Filter_CardTypes {
+    cardType: String!
+    subtypes: [String!]!
+}
+
+type MTGA_Filter_Legality {
+    formats: [String!]!
+    legalityValues: [String!]!
+}
+
+type MTGA_Filter_Expansion {
+    set: String!
+    setName: String!
+}
+`, BuiltIn: false},
+	{Name: "../../../graphql/mutation.graphqls", Input: `type Mutation {
+    # Decks
+    createMTGADeck(input: MTGA_CreateDeckInput!): MTGA_Deck!
+    deleteMTGADeck(input: MTGA_DeleteDeckInput!): Boolean!
+    updateMTGADeck(input: MTGA_UpdateDeckInput!): MTGA_Deck!
+    addCardToMTGADeck(input: MTGA_AddCardToDeckInput!): MTGA_Deck!
+}
+`, BuiltIn: false},
 	{Name: "../../../graphql/query.graphqls", Input: `type Query {
     # Cards
     getMTGACards: [MTGA_Card!]!
+    getMTGAFilters: MTGA_Filter_Entries!
+    # Decks
+    getMTGADecks(deckID: ID): [MTGA_Deck!]!
 }
 `, BuiltIn: false},
 	{Name: "../../../graphql/type.base.graphqls", Input: `directive @goTag(key: String!, value: String) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
+scalar Map
 
 type Response {
     status: Boolean!
@@ -582,6 +1066,66 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
+func (ec *executionContext) field_Mutation_addCardToMTGADeck_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.MtgaAddCardToDeckInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNMTGA_AddCardToDeckInput2magicᚑhelperᚋgraphᚋmodelᚐMtgaAddCardToDeckInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createMTGADeck_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.MtgaCreateDeckInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNMTGA_CreateDeckInput2magicᚑhelperᚋgraphᚋmodelᚐMtgaCreateDeckInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteMTGADeck_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.MtgaDeleteDeckInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNMTGA_DeleteDeckInput2magicᚑhelperᚋgraphᚋmodelᚐMtgaDeleteDeckInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateMTGADeck_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.MtgaUpdateDeckInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNMTGA_UpdateDeckInput2magicᚑhelperᚋgraphᚋmodelᚐMtgaUpdateDeckInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -594,6 +1138,21 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getMTGADecks_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["deckID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("deckID"))
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["deckID"] = arg0
 	return args, nil
 }
 
@@ -634,6 +1193,146 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _FlowZone_ID(ctx context.Context, field graphql.CollectedField, obj *model.FlowZone) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FlowZone_ID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FlowZone_ID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FlowZone",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FlowZone_name(ctx context.Context, field graphql.CollectedField, obj *model.FlowZone) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FlowZone_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FlowZone_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FlowZone",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FlowZone_position(ctx context.Context, field graphql.CollectedField, obj *model.FlowZone) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FlowZone_position(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Position, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Position)
+	fc.Result = res
+	return ec.marshalNPosition2ᚖmagicᚑhelperᚋgraphᚋmodelᚐPosition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FlowZone_position(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FlowZone",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "x":
+				return ec.fieldContext_Position_x(ctx, field)
+			case "y":
+				return ec.fieldContext_Position_y(ctx, field)
+			case "parentID":
+				return ec.fieldContext_Position_parentID(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Position", field.Name)
+		},
+	}
+	return fc, nil
+}
 
 func (ec *executionContext) _MTGA_Card_ID(ctx context.Context, field graphql.CollectedField, obj *model.MtgaCard) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MTGA_Card_ID(ctx, field)
@@ -1005,6 +1704,94 @@ func (ec *executionContext) fieldContext_MTGA_Card_image(ctx context.Context, fi
 				return ec.fieldContext_MTGA_Image_small(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTGA_Image", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_Card_layout(ctx context.Context, field graphql.CollectedField, obj *model.MtgaCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_Card_layout(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Layout, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_Card_layout(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_Card",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_Card_legalities(ctx context.Context, field graphql.CollectedField, obj *model.MtgaCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_Card_legalities(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Legalities, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalNMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_Card_legalities(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_Card",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1912,6 +2699,971 @@ func (ec *executionContext) fieldContext_MTGA_CardFace_typeLine(ctx context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _MTGA_Deck_ID(ctx context.Context, field graphql.CollectedField, obj *model.MtgaDeck) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_Deck_ID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_Deck_ID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_Deck",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_Deck_name(ctx context.Context, field graphql.CollectedField, obj *model.MtgaDeck) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_Deck_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_Deck_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_Deck",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_Deck_cardFrontImage(ctx context.Context, field graphql.CollectedField, obj *model.MtgaDeck) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_Deck_cardFrontImage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CardFrontImage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_Deck_cardFrontImage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_Deck",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_Deck_cards(ctx context.Context, field graphql.CollectedField, obj *model.MtgaDeck) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_Deck_cards(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cards, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.MtgaDeckCard)
+	fc.Result = res
+	return ec.marshalNMTGA_DeckCard2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaDeckCardᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_Deck_cards(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_Deck",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "card":
+				return ec.fieldContext_MTGA_DeckCard_card(ctx, field)
+			case "count":
+				return ec.fieldContext_MTGA_DeckCard_count(ctx, field)
+			case "position":
+				return ec.fieldContext_MTGA_DeckCard_position(ctx, field)
+			case "cardPosition":
+				return ec.fieldContext_MTGA_DeckCard_cardPosition(ctx, field)
+			case "type":
+				return ec.fieldContext_MTGA_DeckCard_type(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTGA_DeckCard", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_Deck_zones(ctx context.Context, field graphql.CollectedField, obj *model.MtgaDeck) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_Deck_zones(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Zones, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.FlowZone)
+	fc.Result = res
+	return ec.marshalNFlowZone2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐFlowZoneᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_Deck_zones(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_Deck",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ID":
+				return ec.fieldContext_FlowZone_ID(ctx, field)
+			case "name":
+				return ec.fieldContext_FlowZone_name(ctx, field)
+			case "position":
+				return ec.fieldContext_FlowZone_position(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type FlowZone", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_Deck_type(ctx context.Context, field graphql.CollectedField, obj *model.MtgaDeck) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_Deck_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.DeckType)
+	fc.Result = res
+	return ec.marshalNDeckType2magicᚑhelperᚋgraphᚋmodelᚐDeckType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_Deck_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_Deck",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type DeckType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_DeckCard_card(ctx context.Context, field graphql.CollectedField, obj *model.MtgaDeckCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_DeckCard_card(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Card, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.MtgaCard)
+	fc.Result = res
+	return ec.marshalNMTGA_Card2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaCard(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_DeckCard_card(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_DeckCard",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ID":
+				return ec.fieldContext_MTGA_Card_ID(ctx, field)
+			case "cardFaces":
+				return ec.fieldContext_MTGA_Card_cardFaces(ctx, field)
+			case "cmc":
+				return ec.fieldContext_MTGA_Card_cmc(ctx, field)
+			case "colorIdentity":
+				return ec.fieldContext_MTGA_Card_colorIdentity(ctx, field)
+			case "colors":
+				return ec.fieldContext_MTGA_Card_colors(ctx, field)
+			case "description":
+				return ec.fieldContext_MTGA_Card_description(ctx, field)
+			case "flavorText":
+				return ec.fieldContext_MTGA_Card_flavorText(ctx, field)
+			case "image":
+				return ec.fieldContext_MTGA_Card_image(ctx, field)
+			case "layout":
+				return ec.fieldContext_MTGA_Card_layout(ctx, field)
+			case "legalities":
+				return ec.fieldContext_MTGA_Card_legalities(ctx, field)
+			case "loyalty":
+				return ec.fieldContext_MTGA_Card_loyalty(ctx, field)
+			case "manaCost":
+				return ec.fieldContext_MTGA_Card_manaCost(ctx, field)
+			case "name":
+				return ec.fieldContext_MTGA_Card_name(ctx, field)
+			case "power":
+				return ec.fieldContext_MTGA_Card_power(ctx, field)
+			case "producedMana":
+				return ec.fieldContext_MTGA_Card_producedMana(ctx, field)
+			case "rarity":
+				return ec.fieldContext_MTGA_Card_rarity(ctx, field)
+			case "set":
+				return ec.fieldContext_MTGA_Card_set(ctx, field)
+			case "setName":
+				return ec.fieldContext_MTGA_Card_setName(ctx, field)
+			case "toughness":
+				return ec.fieldContext_MTGA_Card_toughness(ctx, field)
+			case "typeLine":
+				return ec.fieldContext_MTGA_Card_typeLine(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTGA_Card", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_DeckCard_count(ctx context.Context, field graphql.CollectedField, obj *model.MtgaDeckCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_DeckCard_count(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Count, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_DeckCard_count(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_DeckCard",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_DeckCard_position(ctx context.Context, field graphql.CollectedField, obj *model.MtgaDeckCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_DeckCard_position(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Position, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Position)
+	fc.Result = res
+	return ec.marshalNPosition2ᚖmagicᚑhelperᚋgraphᚋmodelᚐPosition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_DeckCard_position(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_DeckCard",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "x":
+				return ec.fieldContext_Position_x(ctx, field)
+			case "y":
+				return ec.fieldContext_Position_y(ctx, field)
+			case "parentID":
+				return ec.fieldContext_Position_parentID(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Position", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_DeckCard_cardPosition(ctx context.Context, field graphql.CollectedField, obj *model.MtgaDeckCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_DeckCard_cardPosition(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CardPosition, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.DeckCardPosition)
+	fc.Result = res
+	return ec.marshalNDeckCardPosition2magicᚑhelperᚋgraphᚋmodelᚐDeckCardPosition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_DeckCard_cardPosition(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_DeckCard",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type DeckCardPosition does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_DeckCard_type(ctx context.Context, field graphql.CollectedField, obj *model.MtgaDeckCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_DeckCard_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.MtgaDeckCardType)
+	fc.Result = res
+	return ec.marshalNMTGA_DeckCardType2magicᚑhelperᚋgraphᚋmodelᚐMtgaDeckCardType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_DeckCard_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_DeckCard",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MTGA_DeckCardType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_Filter_CardTypes_cardType(ctx context.Context, field graphql.CollectedField, obj *model.MtgaFilterCardTypes) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_Filter_CardTypes_cardType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CardType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_Filter_CardTypes_cardType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_Filter_CardTypes",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_Filter_CardTypes_subtypes(ctx context.Context, field graphql.CollectedField, obj *model.MtgaFilterCardTypes) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_Filter_CardTypes_subtypes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Subtypes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_Filter_CardTypes_subtypes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_Filter_CardTypes",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_Filter_Entries_types(ctx context.Context, field graphql.CollectedField, obj *model.MtgaFilterEntries) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_Filter_Entries_types(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Types, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.MtgaFilterCardTypes)
+	fc.Result = res
+	return ec.marshalNMTGA_Filter_CardTypes2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaFilterCardTypesᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_Filter_Entries_types(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_Filter_Entries",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "cardType":
+				return ec.fieldContext_MTGA_Filter_CardTypes_cardType(ctx, field)
+			case "subtypes":
+				return ec.fieldContext_MTGA_Filter_CardTypes_subtypes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTGA_Filter_CardTypes", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_Filter_Entries_expansions(ctx context.Context, field graphql.CollectedField, obj *model.MtgaFilterEntries) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_Filter_Entries_expansions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Expansions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.MtgaFilterExpansion)
+	fc.Result = res
+	return ec.marshalNMTGA_Filter_Expansion2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaFilterExpansionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_Filter_Entries_expansions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_Filter_Entries",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "set":
+				return ec.fieldContext_MTGA_Filter_Expansion_set(ctx, field)
+			case "setName":
+				return ec.fieldContext_MTGA_Filter_Expansion_setName(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTGA_Filter_Expansion", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_Filter_Entries_legality(ctx context.Context, field graphql.CollectedField, obj *model.MtgaFilterEntries) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_Filter_Entries_legality(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Legality, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.MtgaFilterLegality)
+	fc.Result = res
+	return ec.marshalNMTGA_Filter_Legality2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaFilterLegality(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_Filter_Entries_legality(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_Filter_Entries",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "formats":
+				return ec.fieldContext_MTGA_Filter_Legality_formats(ctx, field)
+			case "legalityValues":
+				return ec.fieldContext_MTGA_Filter_Legality_legalityValues(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTGA_Filter_Legality", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_Filter_Expansion_set(ctx context.Context, field graphql.CollectedField, obj *model.MtgaFilterExpansion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_Filter_Expansion_set(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Set, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_Filter_Expansion_set(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_Filter_Expansion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_Filter_Expansion_setName(ctx context.Context, field graphql.CollectedField, obj *model.MtgaFilterExpansion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_Filter_Expansion_setName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SetName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_Filter_Expansion_setName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_Filter_Expansion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_Filter_Legality_formats(ctx context.Context, field graphql.CollectedField, obj *model.MtgaFilterLegality) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_Filter_Legality_formats(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Formats, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_Filter_Legality_formats(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_Filter_Legality",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_Filter_Legality_legalityValues(ctx context.Context, field graphql.CollectedField, obj *model.MtgaFilterLegality) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_Filter_Legality_legalityValues(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LegalityValues, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_Filter_Legality_legalityValues(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_Filter_Legality",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MTGA_Image_artCrop(ctx context.Context, field graphql.CollectedField, obj *model.MtgaImage) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MTGA_Image_artCrop(ctx, field)
 	if err != nil {
@@ -2176,6 +3928,397 @@ func (ec *executionContext) fieldContext_MTGA_Image_small(ctx context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_createMTGADeck(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createMTGADeck(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateMTGADeck(rctx, fc.Args["input"].(model.MtgaCreateDeckInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.MtgaDeck)
+	fc.Result = res
+	return ec.marshalNMTGA_Deck2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaDeck(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createMTGADeck(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ID":
+				return ec.fieldContext_MTGA_Deck_ID(ctx, field)
+			case "name":
+				return ec.fieldContext_MTGA_Deck_name(ctx, field)
+			case "cardFrontImage":
+				return ec.fieldContext_MTGA_Deck_cardFrontImage(ctx, field)
+			case "cards":
+				return ec.fieldContext_MTGA_Deck_cards(ctx, field)
+			case "zones":
+				return ec.fieldContext_MTGA_Deck_zones(ctx, field)
+			case "type":
+				return ec.fieldContext_MTGA_Deck_type(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTGA_Deck", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createMTGADeck_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteMTGADeck(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteMTGADeck(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteMTGADeck(rctx, fc.Args["input"].(model.MtgaDeleteDeckInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteMTGADeck(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteMTGADeck_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateMTGADeck(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateMTGADeck(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateMTGADeck(rctx, fc.Args["input"].(model.MtgaUpdateDeckInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.MtgaDeck)
+	fc.Result = res
+	return ec.marshalNMTGA_Deck2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaDeck(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateMTGADeck(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ID":
+				return ec.fieldContext_MTGA_Deck_ID(ctx, field)
+			case "name":
+				return ec.fieldContext_MTGA_Deck_name(ctx, field)
+			case "cardFrontImage":
+				return ec.fieldContext_MTGA_Deck_cardFrontImage(ctx, field)
+			case "cards":
+				return ec.fieldContext_MTGA_Deck_cards(ctx, field)
+			case "zones":
+				return ec.fieldContext_MTGA_Deck_zones(ctx, field)
+			case "type":
+				return ec.fieldContext_MTGA_Deck_type(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTGA_Deck", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateMTGADeck_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_addCardToMTGADeck(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_addCardToMTGADeck(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().AddCardToMTGADeck(rctx, fc.Args["input"].(model.MtgaAddCardToDeckInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.MtgaDeck)
+	fc.Result = res
+	return ec.marshalNMTGA_Deck2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaDeck(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_addCardToMTGADeck(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ID":
+				return ec.fieldContext_MTGA_Deck_ID(ctx, field)
+			case "name":
+				return ec.fieldContext_MTGA_Deck_name(ctx, field)
+			case "cardFrontImage":
+				return ec.fieldContext_MTGA_Deck_cardFrontImage(ctx, field)
+			case "cards":
+				return ec.fieldContext_MTGA_Deck_cards(ctx, field)
+			case "zones":
+				return ec.fieldContext_MTGA_Deck_zones(ctx, field)
+			case "type":
+				return ec.fieldContext_MTGA_Deck_type(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTGA_Deck", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_addCardToMTGADeck_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Position_x(ctx context.Context, field graphql.CollectedField, obj *model.Position) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Position_x(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.X, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Position_x(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Position",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Position_y(ctx context.Context, field graphql.CollectedField, obj *model.Position) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Position_y(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Y, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Position_y(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Position",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Position_parentID(ctx context.Context, field graphql.CollectedField, obj *model.Position) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Position_parentID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ParentID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Position_parentID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Position",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_getMTGACards(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_getMTGACards(ctx, field)
 	if err != nil {
@@ -2231,6 +4374,10 @@ func (ec *executionContext) fieldContext_Query_getMTGACards(ctx context.Context,
 				return ec.fieldContext_MTGA_Card_flavorText(ctx, field)
 			case "image":
 				return ec.fieldContext_MTGA_Card_image(ctx, field)
+			case "layout":
+				return ec.fieldContext_MTGA_Card_layout(ctx, field)
+			case "legalities":
+				return ec.fieldContext_MTGA_Card_legalities(ctx, field)
 			case "loyalty":
 				return ec.fieldContext_MTGA_Card_loyalty(ctx, field)
 			case "manaCost":
@@ -2254,6 +4401,127 @@ func (ec *executionContext) fieldContext_Query_getMTGACards(ctx context.Context,
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTGA_Card", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getMTGAFilters(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getMTGAFilters(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetMTGAFilters(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.MtgaFilterEntries)
+	fc.Result = res
+	return ec.marshalNMTGA_Filter_Entries2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaFilterEntries(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getMTGAFilters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "types":
+				return ec.fieldContext_MTGA_Filter_Entries_types(ctx, field)
+			case "expansions":
+				return ec.fieldContext_MTGA_Filter_Entries_expansions(ctx, field)
+			case "legality":
+				return ec.fieldContext_MTGA_Filter_Entries_legality(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTGA_Filter_Entries", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getMTGADecks(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getMTGADecks(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetMTGADecks(rctx, fc.Args["deckID"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.MtgaDeck)
+	fc.Result = res
+	return ec.marshalNMTGA_Deck2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaDeckᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getMTGADecks(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ID":
+				return ec.fieldContext_MTGA_Deck_ID(ctx, field)
+			case "name":
+				return ec.fieldContext_MTGA_Deck_name(ctx, field)
+			case "cardFrontImage":
+				return ec.fieldContext_MTGA_Deck_cardFrontImage(ctx, field)
+			case "cards":
+				return ec.fieldContext_MTGA_Deck_cards(ctx, field)
+			case "zones":
+				return ec.fieldContext_MTGA_Deck_zones(ctx, field)
+			case "type":
+				return ec.fieldContext_MTGA_Deck_type(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTGA_Deck", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getMTGADecks_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -4245,6 +6513,328 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputFlowZoneInput(ctx context.Context, obj interface{}) (model.FlowZoneInput, error) {
+	var it model.FlowZoneInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"ID", "name", "position"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "ID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ID"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "position":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("position"))
+			data, err := ec.unmarshalNPositionInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐPositionInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Position = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTGA_AddCardToDeckInput(ctx context.Context, obj interface{}) (model.MtgaAddCardToDeckInput, error) {
+	var it model.MtgaAddCardToDeckInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"deckID", "cardID", "count", "position", "cardPosition", "type"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "deckID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("deckID"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DeckID = data
+		case "cardID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cardID"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CardID = data
+		case "count":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("count"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Count = data
+		case "position":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("position"))
+			data, err := ec.unmarshalNPositionInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐPositionInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Position = data
+		case "cardPosition":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cardPosition"))
+			data, err := ec.unmarshalNDeckCardPosition2magicᚑhelperᚋgraphᚋmodelᚐDeckCardPosition(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CardPosition = data
+		case "type":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			data, err := ec.unmarshalNMTGA_DeckCardType2magicᚑhelperᚋgraphᚋmodelᚐMtgaDeckCardType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Type = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTGA_CreateDeckInput(ctx context.Context, obj interface{}) (model.MtgaCreateDeckInput, error) {
+	var it model.MtgaCreateDeckInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "type"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "type":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			data, err := ec.unmarshalNDeckType2magicᚑhelperᚋgraphᚋmodelᚐDeckType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Type = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTGA_DeckCardInput(ctx context.Context, obj interface{}) (model.MtgaDeckCardInput, error) {
+	var it model.MtgaDeckCardInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"card", "count", "position", "cardPosition", "type"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "card":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("card"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Card = data
+		case "count":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("count"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Count = data
+		case "position":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("position"))
+			data, err := ec.unmarshalNPositionInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐPositionInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Position = data
+		case "cardPosition":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cardPosition"))
+			data, err := ec.unmarshalNDeckCardPosition2magicᚑhelperᚋgraphᚋmodelᚐDeckCardPosition(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CardPosition = data
+		case "type":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			data, err := ec.unmarshalNMTGA_DeckCardType2magicᚑhelperᚋgraphᚋmodelᚐMtgaDeckCardType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Type = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTGA_DeleteDeckInput(ctx context.Context, obj interface{}) (model.MtgaDeleteDeckInput, error) {
+	var it model.MtgaDeleteDeckInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"deckID"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "deckID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("deckID"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DeckID = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTGA_UpdateDeckInput(ctx context.Context, obj interface{}) (model.MtgaUpdateDeckInput, error) {
+	var it model.MtgaUpdateDeckInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"deckID", "name", "type", "cardFrontImage", "cards", "zones"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "deckID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("deckID"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DeckID = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "type":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			data, err := ec.unmarshalNDeckType2magicᚑhelperᚋgraphᚋmodelᚐDeckType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Type = data
+		case "cardFrontImage":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cardFrontImage"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CardFrontImage = data
+		case "cards":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cards"))
+			data, err := ec.unmarshalNMTGA_DeckCardInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaDeckCardInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Cards = data
+		case "zones":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("zones"))
+			data, err := ec.unmarshalNFlowZoneInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐFlowZoneInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Zones = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputPositionInput(ctx context.Context, obj interface{}) (model.PositionInput, error) {
+	var it model.PositionInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"x", "y", "parentID"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "x":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("x"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.X = data
+		case "y":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("y"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Y = data
+		case "parentID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parentID"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParentID = data
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -4275,6 +6865,55 @@ func (ec *executionContext) _MTGA_CommonFields(ctx context.Context, sel ast.Sele
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
+
+var flowZoneImplementors = []string{"FlowZone"}
+
+func (ec *executionContext) _FlowZone(ctx context.Context, sel ast.SelectionSet, obj *model.FlowZone) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, flowZoneImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FlowZone")
+		case "ID":
+			out.Values[i] = ec._FlowZone_ID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._FlowZone_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "position":
+			out.Values[i] = ec._FlowZone_position(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
 
 var mTGA_CardImplementors = []string{"MTGA_Card", "MTGA_CommonFields"}
 
@@ -4312,6 +6951,16 @@ func (ec *executionContext) _MTGA_Card(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = ec._MTGA_Card_flavorText(ctx, field, obj)
 		case "image":
 			out.Values[i] = ec._MTGA_Card_image(ctx, field, obj)
+		case "layout":
+			out.Values[i] = ec._MTGA_Card_layout(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "legalities":
+			out.Values[i] = ec._MTGA_Card_legalities(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "loyalty":
 			out.Values[i] = ec._MTGA_Card_loyalty(ctx, field, obj)
 		case "manaCost":
@@ -4438,6 +7087,307 @@ func (ec *executionContext) _MTGA_CardFace(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var mTGA_DeckImplementors = []string{"MTGA_Deck"}
+
+func (ec *executionContext) _MTGA_Deck(ctx context.Context, sel ast.SelectionSet, obj *model.MtgaDeck) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mTGA_DeckImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MTGA_Deck")
+		case "ID":
+			out.Values[i] = ec._MTGA_Deck_ID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._MTGA_Deck_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "cardFrontImage":
+			out.Values[i] = ec._MTGA_Deck_cardFrontImage(ctx, field, obj)
+		case "cards":
+			out.Values[i] = ec._MTGA_Deck_cards(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "zones":
+			out.Values[i] = ec._MTGA_Deck_zones(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "type":
+			out.Values[i] = ec._MTGA_Deck_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var mTGA_DeckCardImplementors = []string{"MTGA_DeckCard"}
+
+func (ec *executionContext) _MTGA_DeckCard(ctx context.Context, sel ast.SelectionSet, obj *model.MtgaDeckCard) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mTGA_DeckCardImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MTGA_DeckCard")
+		case "card":
+			out.Values[i] = ec._MTGA_DeckCard_card(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "count":
+			out.Values[i] = ec._MTGA_DeckCard_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "position":
+			out.Values[i] = ec._MTGA_DeckCard_position(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "cardPosition":
+			out.Values[i] = ec._MTGA_DeckCard_cardPosition(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "type":
+			out.Values[i] = ec._MTGA_DeckCard_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var mTGA_Filter_CardTypesImplementors = []string{"MTGA_Filter_CardTypes"}
+
+func (ec *executionContext) _MTGA_Filter_CardTypes(ctx context.Context, sel ast.SelectionSet, obj *model.MtgaFilterCardTypes) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mTGA_Filter_CardTypesImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MTGA_Filter_CardTypes")
+		case "cardType":
+			out.Values[i] = ec._MTGA_Filter_CardTypes_cardType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "subtypes":
+			out.Values[i] = ec._MTGA_Filter_CardTypes_subtypes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var mTGA_Filter_EntriesImplementors = []string{"MTGA_Filter_Entries"}
+
+func (ec *executionContext) _MTGA_Filter_Entries(ctx context.Context, sel ast.SelectionSet, obj *model.MtgaFilterEntries) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mTGA_Filter_EntriesImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MTGA_Filter_Entries")
+		case "types":
+			out.Values[i] = ec._MTGA_Filter_Entries_types(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "expansions":
+			out.Values[i] = ec._MTGA_Filter_Entries_expansions(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "legality":
+			out.Values[i] = ec._MTGA_Filter_Entries_legality(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var mTGA_Filter_ExpansionImplementors = []string{"MTGA_Filter_Expansion"}
+
+func (ec *executionContext) _MTGA_Filter_Expansion(ctx context.Context, sel ast.SelectionSet, obj *model.MtgaFilterExpansion) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mTGA_Filter_ExpansionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MTGA_Filter_Expansion")
+		case "set":
+			out.Values[i] = ec._MTGA_Filter_Expansion_set(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "setName":
+			out.Values[i] = ec._MTGA_Filter_Expansion_setName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var mTGA_Filter_LegalityImplementors = []string{"MTGA_Filter_Legality"}
+
+func (ec *executionContext) _MTGA_Filter_Legality(ctx context.Context, sel ast.SelectionSet, obj *model.MtgaFilterLegality) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mTGA_Filter_LegalityImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MTGA_Filter_Legality")
+		case "formats":
+			out.Values[i] = ec._MTGA_Filter_Legality_formats(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "legalityValues":
+			out.Values[i] = ec._MTGA_Filter_Legality_legalityValues(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var mTGA_ImageImplementors = []string{"MTGA_Image"}
 
 func (ec *executionContext) _MTGA_Image(ctx context.Context, sel ast.SelectionSet, obj *model.MtgaImage) graphql.Marshaler {
@@ -4502,6 +7452,122 @@ func (ec *executionContext) _MTGA_Image(ctx context.Context, sel ast.SelectionSe
 	return out
 }
 
+var mutationImplementors = []string{"Mutation"}
+
+func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mutationImplementors)
+	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
+		Object: "Mutation",
+	})
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		innerCtx := graphql.WithRootFieldContext(ctx, &graphql.RootFieldContext{
+			Object: field.Name,
+			Field:  field,
+		})
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Mutation")
+		case "createMTGADeck":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createMTGADeck(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteMTGADeck":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteMTGADeck(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateMTGADeck":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateMTGADeck(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "addCardToMTGADeck":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_addCardToMTGADeck(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var positionImplementors = []string{"Position"}
+
+func (ec *executionContext) _Position(ctx context.Context, sel ast.SelectionSet, obj *model.Position) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, positionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Position")
+		case "x":
+			out.Values[i] = ec._Position_x(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "y":
+			out.Values[i] = ec._Position_y(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "parentID":
+			out.Values[i] = ec._Position_parentID(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -4531,6 +7597,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_getMTGACards(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getMTGAFilters":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getMTGAFilters(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getMTGADecks":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getMTGADecks(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -4956,6 +8066,102 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) unmarshalNDeckCardPosition2magicᚑhelperᚋgraphᚋmodelᚐDeckCardPosition(ctx context.Context, v interface{}) (model.DeckCardPosition, error) {
+	var res model.DeckCardPosition
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNDeckCardPosition2magicᚑhelperᚋgraphᚋmodelᚐDeckCardPosition(ctx context.Context, sel ast.SelectionSet, v model.DeckCardPosition) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNDeckType2magicᚑhelperᚋgraphᚋmodelᚐDeckType(ctx context.Context, v interface{}) (model.DeckType, error) {
+	var res model.DeckType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNDeckType2magicᚑhelperᚋgraphᚋmodelᚐDeckType(ctx context.Context, sel ast.SelectionSet, v model.DeckType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNFlowZone2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐFlowZoneᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.FlowZone) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNFlowZone2ᚖmagicᚑhelperᚋgraphᚋmodelᚐFlowZone(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNFlowZone2ᚖmagicᚑhelperᚋgraphᚋmodelᚐFlowZone(ctx context.Context, sel ast.SelectionSet, v *model.FlowZone) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._FlowZone(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNFlowZoneInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐFlowZoneInputᚄ(ctx context.Context, v interface{}) ([]*model.FlowZoneInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.FlowZoneInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNFlowZoneInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐFlowZoneInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNFlowZoneInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐFlowZoneInput(ctx context.Context, v interface{}) (*model.FlowZoneInput, error) {
+	res, err := ec.unmarshalInputFlowZoneInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalID(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -4984,6 +8190,11 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNMTGA_AddCardToDeckInput2magicᚑhelperᚋgraphᚋmodelᚐMtgaAddCardToDeckInput(ctx context.Context, v interface{}) (model.MtgaAddCardToDeckInput, error) {
+	res, err := ec.unmarshalInputMTGA_AddCardToDeckInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNMTGA_Card2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaCardᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MtgaCard) graphql.Marshaler {
@@ -5121,6 +8332,292 @@ func (ec *executionContext) marshalNMTGA_Color2ᚕmagicᚑhelperᚋgraphᚋmodel
 	return ret
 }
 
+func (ec *executionContext) unmarshalNMTGA_CreateDeckInput2magicᚑhelperᚋgraphᚋmodelᚐMtgaCreateDeckInput(ctx context.Context, v interface{}) (model.MtgaCreateDeckInput, error) {
+	res, err := ec.unmarshalInputMTGA_CreateDeckInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMTGA_Deck2magicᚑhelperᚋgraphᚋmodelᚐMtgaDeck(ctx context.Context, sel ast.SelectionSet, v model.MtgaDeck) graphql.Marshaler {
+	return ec._MTGA_Deck(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMTGA_Deck2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaDeckᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MtgaDeck) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMTGA_Deck2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaDeck(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNMTGA_Deck2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaDeck(ctx context.Context, sel ast.SelectionSet, v *model.MtgaDeck) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MTGA_Deck(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNMTGA_DeckCard2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaDeckCardᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MtgaDeckCard) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMTGA_DeckCard2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaDeckCard(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNMTGA_DeckCard2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaDeckCard(ctx context.Context, sel ast.SelectionSet, v *model.MtgaDeckCard) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MTGA_DeckCard(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNMTGA_DeckCardInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaDeckCardInputᚄ(ctx context.Context, v interface{}) ([]*model.MtgaDeckCardInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.MtgaDeckCardInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNMTGA_DeckCardInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaDeckCardInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNMTGA_DeckCardInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaDeckCardInput(ctx context.Context, v interface{}) (*model.MtgaDeckCardInput, error) {
+	res, err := ec.unmarshalInputMTGA_DeckCardInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNMTGA_DeckCardType2magicᚑhelperᚋgraphᚋmodelᚐMtgaDeckCardType(ctx context.Context, v interface{}) (model.MtgaDeckCardType, error) {
+	var res model.MtgaDeckCardType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMTGA_DeckCardType2magicᚑhelperᚋgraphᚋmodelᚐMtgaDeckCardType(ctx context.Context, sel ast.SelectionSet, v model.MtgaDeckCardType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNMTGA_DeleteDeckInput2magicᚑhelperᚋgraphᚋmodelᚐMtgaDeleteDeckInput(ctx context.Context, v interface{}) (model.MtgaDeleteDeckInput, error) {
+	res, err := ec.unmarshalInputMTGA_DeleteDeckInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMTGA_Filter_CardTypes2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaFilterCardTypesᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MtgaFilterCardTypes) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMTGA_Filter_CardTypes2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaFilterCardTypes(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNMTGA_Filter_CardTypes2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaFilterCardTypes(ctx context.Context, sel ast.SelectionSet, v *model.MtgaFilterCardTypes) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MTGA_Filter_CardTypes(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNMTGA_Filter_Entries2magicᚑhelperᚋgraphᚋmodelᚐMtgaFilterEntries(ctx context.Context, sel ast.SelectionSet, v model.MtgaFilterEntries) graphql.Marshaler {
+	return ec._MTGA_Filter_Entries(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMTGA_Filter_Entries2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaFilterEntries(ctx context.Context, sel ast.SelectionSet, v *model.MtgaFilterEntries) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MTGA_Filter_Entries(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNMTGA_Filter_Expansion2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaFilterExpansionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MtgaFilterExpansion) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMTGA_Filter_Expansion2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaFilterExpansion(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNMTGA_Filter_Expansion2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaFilterExpansion(ctx context.Context, sel ast.SelectionSet, v *model.MtgaFilterExpansion) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MTGA_Filter_Expansion(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNMTGA_Filter_Legality2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaFilterLegality(ctx context.Context, sel ast.SelectionSet, v *model.MtgaFilterLegality) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MTGA_Filter_Legality(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNMTGA_Rarity2magicᚑhelperᚋgraphᚋmodelᚐMtgaRarity(ctx context.Context, v interface{}) (model.MtgaRarity, error) {
 	var res model.MtgaRarity
 	err := res.UnmarshalGQL(v)
@@ -5129,6 +8626,47 @@ func (ec *executionContext) unmarshalNMTGA_Rarity2magicᚑhelperᚋgraphᚋmodel
 
 func (ec *executionContext) marshalNMTGA_Rarity2magicᚑhelperᚋgraphᚋmodelᚐMtgaRarity(ctx context.Context, sel ast.SelectionSet, v model.MtgaRarity) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) unmarshalNMTGA_UpdateDeckInput2magicᚑhelperᚋgraphᚋmodelᚐMtgaUpdateDeckInput(ctx context.Context, v interface{}) (model.MtgaUpdateDeckInput, error) {
+	res, err := ec.unmarshalInputMTGA_UpdateDeckInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNMap2map(ctx context.Context, v interface{}) (map[string]interface{}, error) {
+	res, err := graphql.UnmarshalMap(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMap2map(ctx context.Context, sel ast.SelectionSet, v map[string]interface{}) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	res := graphql.MarshalMap(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) marshalNPosition2ᚖmagicᚑhelperᚋgraphᚋmodelᚐPosition(ctx context.Context, sel ast.SelectionSet, v *model.Position) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Position(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNPositionInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐPositionInput(ctx context.Context, v interface{}) (*model.PositionInput, error) {
+	res, err := ec.unmarshalInputPositionInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
@@ -5144,6 +8682,38 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -5422,6 +8992,22 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	res := graphql.MarshalBoolean(*v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalID(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalID(*v)
 	return res
 }
 

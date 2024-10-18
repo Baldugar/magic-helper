@@ -15,12 +15,19 @@
         "@emotion/styled": "^11.11.0",
         "@mui/icons-material": "^5.14.8",
         "@mui/material": "^5.14.8",
+        "@xyflow/react": "^12.3.0",
         "graphql-tag": "^2.12.6",
+        "lodash": "^4.17.21",
         "react": "^18.2.0",
-        "react-dom": "^18.2.0"
+        "react-dnd": "^16.0.1",
+        "react-dnd-html5-backend": "^16.0.1",
+        "react-dom": "^18.2.0",
+        "react-router-dom": "^6.27.0",
+        "react-zoom-pan-pinch": "^3.6.1"
     },
     "devDependencies": {
         "@graphql-codegen/cli": "^5.0.2",
+        "@types/lodash": "^4.17.9",
         "@types/react": "^18.2.15",
         "@types/react-dom": "^18.2.7",
         "@typescript-eslint/eslint-plugin": "^6.0.0",

@@ -1,80 +1,104 @@
-import { Container, Typography } from '@mui/material'
-import { useEffect } from 'react'
+import { Box } from '@mui/material'
+import { ReactFlowProvider } from '@xyflow/react'
+import { Suspense, useContext } from 'react'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import './App.css'
-import { MTGAFunctions } from './graphql/MTGA/functions'
+import { DndCustomProvider } from './context/DnD/DnDProvider'
+import { MTGACardsContext } from './context/MTGA/Cards/MTGACardsContext'
+import { MTGACardsProvider } from './context/MTGA/Cards/MTGACardsProvider'
+import { MTGADecksProvider } from './context/MTGA/Decks/MTGADecksProvider'
+import { MTGAFilterProvider } from './context/MTGA/Filter/MTGAFilterProvider'
+import { DeckCreator } from './views/DeckCreator/DeckCreator'
+import { DeckList } from './views/DeckList/DeckList'
+import { FlowView } from './views/FlowView/FlowView'
+
+// const initialNodes = [
+//     { id: '1', position: { x: 0, y: 0 }, data: { label: '1' } },
+//     { id: '2', position: { x: 0, y: 100 }, data: { label: '2' } },
+// ]
+// const initialEdges = [{ id: 'e1-2', source: '1', target: '2' }]
+
+function WrappedApp() {
+    const { cards } = useContext(MTGACardsContext)
+
+    console.log('cards', cards)
+
+    return (
+        <BrowserRouter>
+            <Suspense fallback={<div>🥷🥷🥷🥷</div>}>
+                <Routes>
+                    {/* <DeckCreator /> */}
+                    {/* <ReactFlowProvider>
+                <FlowView />
+            </ReactFlowProvider> */}
+                    <Route path={'/deck'} element={<DeckList />} />
+                    <Route path={'/deck/:deckID'} element={<DeckCreator />} />
+                    <Route
+                        path={'/flow'}
+                        element={
+                            <ReactFlowProvider>
+                                <Box width={'100vw'} height={'100vh'}>
+                                    <FlowView />
+                                </Box>
+                            </ReactFlowProvider>
+                        }
+                    />
+                    <Route path={'/'} element={<Navigate to={'/deck'} />} />
+                </Routes>
+            </Suspense>
+        </BrowserRouter>
+    )
+}
+
+function App() {
+    return (
+        <ReactFlowProvider>
+            <DndCustomProvider>
+                <MTGACardsProvider>
+                    <MTGADecksProvider>
+                        <MTGAFilterProvider>
+                            <WrappedApp />
+                        </MTGAFilterProvider>
+                    </MTGADecksProvider>
+                </MTGACardsProvider>
+            </DndCustomProvider>
+        </ReactFlowProvider>
+    )
+}
+
+export default App
 
 // type YCard = {
 //     name: string
 // }
 
-function App() {
-    const {
-        queries: { getMTGACards },
-    } = MTGAFunctions
-    // const yCards = (yugiohCards as { data: Array<YCard> }).data
-    // const yCardsGame1 = (yugiohCardsGame as { data: Array<YCard> }).data
+// const yCards = (yugiohCards as { data: Array<YCard> }).data
+// const yCardsGame1 = (yugiohCardsGame as { data: Array<YCard> }).data
 
-    // const definiteCards: Array<YCard> = []
-    // for (const card of yCards) {
-    //     const cGameIdx = yCardsGame1.findIndex((c) => c.name === card.name)
-    //     if (cGameIdx !== -1) {
-    //         const cGame = yCardsGame1[cGameIdx]
-    //         definiteCards.push(cGame)
-    //         yCardsGame1.splice(cGameIdx, 1)
-    //     }
-    // }
+// const definiteCards: Array<YCard> = []
+// for (const card of yCards) {
+//     const cGameIdx = yCardsGame1.findIndex((c) => c.name === card.name)
+//     if (cGameIdx !== -1) {
+//         const cGame = yCardsGame1[cGameIdx]
+//         definiteCards.push(cGame)
+//         yCardsGame1.splice(cGameIdx, 1)
+//     }
+// }
 
-    // const yCardsGame2 = (yugiohCardsGame as { data: Array<YCard> }).data
-    // const missingCards: Array<YCard> = []
-    // for (const card of yCardsGame2) {
-    //     const cGameIdx = yCards.findIndex((c) => c.name === card.name)
-    //     if (cGameIdx === -1) {
-    //         missingCards.push(card)
-    //     }
-    // }
+// const yCardsGame2 = (yugiohCardsGame as { data: Array<YCard> }).data
+// const missingCards: Array<YCard> = []
+// for (const card of yCardsGame2) {
+//     const cGameIdx = yCards.findIndex((c) => c.name === card.name)
+//     if (cGameIdx === -1) {
+//         missingCards.push(card)
+//     }
+// }
 
-    // console.log('definiteCards', definiteCards)
-    // console.log(
-    //     'missingCards',
-    //     missingCards.map((c) => c.name),
-    // )
-
-    useEffect(() => {
-        getMTGACards().then((cards) => {
-            console.log(cards.length)
-        })
-    }, [getMTGACards])
-
-    //    console.log(cards.filter((card) => card.card_faces && card.card_faces.filter((cf) => !cf.oracle_text).length > 0))
-
-    return (
-        <Container maxWidth={'sm'}>
-            <Typography variant={'h1'}>Hello World</Typography>
-            {/* <SelectColor />
-                <SelectRarity />
-                <SelectType />
-                <Grid xs={12} container>
-                    <RandomCommanderSelector />
-                </Grid> */}
-        </Container>
-    )
-
-    // return (
-    //     <CardsContext.Provider value={cards}>
-    //         <Container maxWidth={'sm'}>
-    //             <Typography variant={'h1'}>Hello World</Typography>
-    //             {/* <SelectColor />
-    //             <SelectRarity />
-    //             <SelectType />
-    //             <Grid xs={12} container>
-    //                 <RandomCommanderSelector />
-    //             </Grid> */}
-    //         </Container>
-    //     </CardsContext.Provider>
-    // )
-}
-
-export default App
+// console.log('definiteCards', definiteCards)
+// console.log(
+//     'missingCards',
+//     missingCards.map((c) => c.name),
+// )
 
 // const SelectColor = () => {
 //     const [colorsSelected, setColorsSelected] = useState<Record<MCOLOR, TernaryBoolean>>({

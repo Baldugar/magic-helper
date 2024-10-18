@@ -222,6 +222,7 @@ func updateDatabaseCards() {
 			Description: card.OracleText,
 			Power:       card.Power,
 			Toughness:   card.Toughness,
+			Layout:      card.Layout,
 			Loyalty:     card.Loyalty,
 			Set:         card.Set,
 			SetName:     card.SetName,
@@ -249,11 +250,19 @@ func updateDatabaseCards() {
 		for _, color := range card.ColorIdentity {
 			c.ColorIdentity = append(c.ColorIdentity, model.MtgaColor(color))
 		}
+		if len(card.ColorIdentity) == 0 {
+			c.ColorIdentity = append(c.ColorIdentity, model.MtgaColor("C"))
+		}
 
 		if card.ProducedMana != nil {
 			for _, color := range card.ProducedMana {
 				c.ProducedMana = append(c.ProducedMana, model.MtgaColor(*color))
 			}
+		}
+
+		c.Legalities = make(map[string]interface{})
+		for format, legality := range card.Legalities {
+			c.Legalities[format] = legality
 		}
 
 		if card.CardFaces != nil {

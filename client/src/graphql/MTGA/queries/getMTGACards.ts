@@ -1,5 +1,5 @@
 import gql from 'graphql-tag'
-import { MTGA_Fragments } from '../fragments/MTGACard'
+import { MTGA_CardFragments } from '../fragments'
 
 export default gql`
     query getMTGACards {
@@ -7,5 +7,5 @@ export default gql`
             ...MTGA_CardFragment
         }
     }
-    ${MTGA_Fragments}
+    ${MTGA_CardFragments}
 `

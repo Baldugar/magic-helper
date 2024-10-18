@@ -1,0 +1,11 @@
+input FlowZoneInput {
+    ID: ID!
+    name: String!
+    position: PositionInput!
+}
+
+input PositionInput {
+    x: Int!
+    y: Int!
+    parentID: ID
+}
