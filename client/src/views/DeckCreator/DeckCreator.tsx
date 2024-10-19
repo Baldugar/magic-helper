@@ -6,7 +6,16 @@ import { MTGACardWithHover } from '../../components/MTGACardWithHover'
 import { useMTGACards } from '../../context/MTGA/Cards/useMTGACards'
 import { useMTGADecks } from '../../context/MTGA/Decks/useMTGADecks'
 import { useMTGAFilter } from '../../context/MTGA/Filter/useMTGAFilter'
-import { DeckCardPosition, DeckType, MTGA_Card, MTGA_Deck, MTGA_DeckCard, MTGA_DeckCardType } from '../../graphql/types'
+import { MTGAFunctions } from '../../graphql/MTGA/functions'
+import {
+    DeckCardPosition,
+    DeckType,
+    MTGA_Card,
+    MTGA_Deck,
+    MTGA_DeckCard,
+    MTGA_DeckCardInput,
+    MTGA_DeckCardType,
+} from '../../graphql/types'
 import { FlowView } from '../FlowView/FlowView'
 import { DeckCard } from './Components/DeckCard'
 import { Filters } from './Components/Filters'
@@ -33,7 +42,6 @@ export const DeckCreator = () => {
         deck?.cards.filter((c) => c.cardPosition === DeckCardPosition.MAIN && c.type !== MTGA_DeckCardType.COMMANDER) ||
         []
     const sideboard = deck?.cards.filter((c) => c.cardPosition === DeckCardPosition.SIDEBOARD) || []
-    console.log(deck)
 
     const [filteredCards, setFilteredCards] = useState<MTGA_Card[]>([])
     const [page, setPage] = useState(0)
@@ -193,6 +201,10 @@ export const DeckCreator = () => {
         }
     }, [deckID, decks])
 
+    const {
+        mutations: { updateMTGADeck },
+    } = MTGAFunctions
+
     return (
         <Box display={'flex'} maxHeight={'100vh'}>
             <Box position={'relative'} flex={1} display={'flex'} flexDirection={'column'}>
@@ -299,7 +311,23 @@ export const DeckCreator = () => {
                             <Button
                                 variant={'contained'}
                                 onClick={() => {
-                                    console.log(deck)
+                                    updateMTGADeck({
+                                        cards: deck.cards.map(
+                                            (c) =>
+                                                ({
+                                                    count: c.count,
+                                                    type: c.type,
+                                                    cardPosition: c.cardPosition,
+                                                    card: c.card.ID,
+                                                    position: c.position,
+                                                } as MTGA_DeckCardInput),
+                                        ),
+                                        deckID: deck.ID,
+                                        name: deck.name,
+                                        type: deck.type,
+                                        zones: deck.zones,
+                                        cardFrontImage: deck.cardFrontImage,
+                                    })
                                 }}
                             >
                                 Save Deck

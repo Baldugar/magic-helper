@@ -135,11 +135,10 @@ func UpdateMTGADeck(ctx context.Context, input model.MtgaUpdateDeckInput) (*mode
 	// Remove all cards from the deck
 	aq = arango.NewQuery( /* aql */ `
 		FOR edge IN @@edge
-			FILTER edge._from == CONCAT(@collection, "/", @deckID)
+			FILTER edge._to == CONCAT(@collection, "/", @deckID)
 			REMOVE edge IN @@edge
 	`)
 
-	aq.AddBindVar("@collection", arango.MTGA_DECKS_COLLECTION)
 	aq.AddBindVar("collection", arango.MTGA_DECKS_COLLECTION)
 	aq.AddBindVar("@edge", arango.MTGA_CARD_DECK_EDGE)
 	aq.AddBindVar("deckID", input.DeckID)
@@ -188,7 +187,6 @@ func UpdateMTGADeck(ctx context.Context, input model.MtgaUpdateDeckInput) (*mode
 				FILTER edge._from == CONCAT(@collection, "/", @deckID)
 				REMOVE edge IN @@edge
 		`)
-		aq.AddBindVar("@collection", arango.MTGA_DECKS_COLLECTION)
 		aq.AddBindVar("collection", arango.MTGA_DECKS_COLLECTION)
 		aq.AddBindVar("@edge", arango.MTGA_DECK_FRONT_CARD_IMAGE_EDGE)
 		aq.AddBindVar("deckID", input.DeckID)
@@ -252,7 +250,7 @@ func AddCardToMTGADeck(ctx context.Context, input model.MtgaAddCardToDeckInput) 
 	// Check if the card is already in the deck
 	aq := arango.NewQuery( /* aql */ `
 		FOR edge IN @@edge
-			FILTER edge._from == @deckID
+			FILTER edge._to == @deckID
 			RETURN edge
 	`)
 

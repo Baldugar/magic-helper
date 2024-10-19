@@ -13,6 +13,7 @@ import {
 } from '../types'
 import createMTGADeck from './mutations/createMTGADeck'
 import deleteMTGADeck from './mutations/deleteMTGADeck'
+import updateMTGADeck from './mutations/updateMTGADeck'
 import getMTGACards from './queries/getMTGACards'
 import getMTGADecks from './queries/getMTGADecks'
 
@@ -66,9 +67,9 @@ const deleteMTGADeckMutation = async (ID: string): Promise<boolean> =>
 
 const updateMTGADeckMutation = async (input: MTGA_UpdateDeckInput): Promise<MTGA_Deck> =>
     new Promise((resolve, reject) => {
-        fetchData<Mutation, MutationupdateMTGADeckArgs>(createMTGADeck, { input }).then((response) => {
+        fetchData<Mutation, MutationupdateMTGADeckArgs>(updateMTGADeck, { input }).then((response) => {
             if (response && response.data && !response.errors) {
-                resolve(response.data.createMTGADeck)
+                resolve(response.data.updateMTGADeck)
             } else {
                 reject('Failed to fetch MTGA cards')
             }

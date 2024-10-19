@@ -19,7 +19,7 @@ func GetMTGADecks(ctx context.Context, deckID *string) ([]*model.MtgaDeck, error
 				RETURN image
 			)
 			LET cards = (
-				FOR card, edge IN 1..1 OUTBOUND doc @@edge2
+				FOR card, edge IN 1..1 INBOUND doc @@edge2
 				RETURN {
 					card: card,
 					count: edge.count,
@@ -36,8 +36,10 @@ func GetMTGADecks(ctx context.Context, deckID *string) ([]*model.MtgaDeck, error
 	aq.AddBindVar("@edge2", arango.MTGA_CARD_DECK_EDGE)
 
 	if deckID != nil {
-		aq.Uncomment("deckID").AddBindVar("deckID", *deckID)
+		aq = aq.Uncomment("deckID").AddBindVar("deckID", *deckID)
 	}
+
+	log.Info().Str("query", aq.Query).Msg("GetMTGADecks: Querying database")
 
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {
