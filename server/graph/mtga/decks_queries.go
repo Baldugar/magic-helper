@@ -20,13 +20,14 @@ func GetMTGADecks(ctx context.Context, deckID *string) ([]*model.MtgaDeck, error
 			)
 			LET cards = (
 				FOR card, edge IN 1..1 INBOUND doc @@edge2
-				RETURN {
+				RETURN MERGE(edge, {					
 					card: card,
 					count: edge.count,
 					position: edge.position,
-					cardPosition: edge.cardPosition,
-					type: edge.type
-				}
+					mainOrSide: edge.mainOrSide,
+					deckCardType: edge.deckCardType,
+					phantoms: edge.phantoms
+				})
 			)
 		RETURN MERGE(doc, {cardFrontImage, cards})
 	`)

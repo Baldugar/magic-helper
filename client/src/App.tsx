@@ -1,16 +1,11 @@
-import { Box } from '@mui/material'
-import { ReactFlowProvider } from '@xyflow/react'
 import { Suspense, useContext } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import './App.css'
-import { DndCustomProvider } from './context/DnD/DnDProvider'
 import { MTGACardsContext } from './context/MTGA/Cards/MTGACardsContext'
 import { MTGACardsProvider } from './context/MTGA/Cards/MTGACardsProvider'
 import { MTGADecksProvider } from './context/MTGA/Decks/MTGADecksProvider'
-import { MTGAFilterProvider } from './context/MTGA/Filter/MTGAFilterProvider'
-import { DeckCreator } from './views/DeckCreator/DeckCreator'
+import { DeckCreatorWrapper } from './views/DeckCreator/DeckCreator'
 import { DeckList } from './views/DeckList/DeckList'
-import { FlowView } from './views/FlowView/FlowView'
 
 // const initialNodes = [
 //     { id: '1', position: { x: 0, y: 0 }, data: { label: '1' } },
@@ -32,17 +27,7 @@ function WrappedApp() {
                 <FlowView />
             </ReactFlowProvider> */}
                     <Route path={'/deck'} element={<DeckList />} />
-                    <Route path={'/deck/:deckID'} element={<DeckCreator />} />
-                    <Route
-                        path={'/flow'}
-                        element={
-                            <ReactFlowProvider>
-                                <Box width={'100vw'} height={'100vh'}>
-                                    <FlowView />
-                                </Box>
-                            </ReactFlowProvider>
-                        }
-                    />
+                    <Route path={'/deck/:deckID'} element={<DeckCreatorWrapper />} />
                     <Route path={'/'} element={<Navigate to={'/deck'} />} />
                 </Routes>
             </Suspense>
@@ -52,17 +37,11 @@ function WrappedApp() {
 
 function App() {
     return (
-        <ReactFlowProvider>
-            <DndCustomProvider>
-                <MTGACardsProvider>
-                    <MTGADecksProvider>
-                        <MTGAFilterProvider>
-                            <WrappedApp />
-                        </MTGAFilterProvider>
-                    </MTGADecksProvider>
-                </MTGACardsProvider>
-            </DndCustomProvider>
-        </ReactFlowProvider>
+        <MTGACardsProvider>
+            <MTGADecksProvider>
+                <WrappedApp />
+            </MTGADecksProvider>
+        </MTGACardsProvider>
     )
 }
 

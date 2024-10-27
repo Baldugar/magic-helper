@@ -1,4 +1,4 @@
-import { cloneDeep, orderBy } from 'lodash'
+import { cloneDeep, intersection, orderBy } from 'lodash'
 import { CMCFilter, MTGAFilterType, SortDirection, SortEnum } from '../../context/MTGA/Filter/MTGAFilterContext'
 import { MTGA_Card, MTGA_Color, MTGA_Rarity } from '../../graphql/types'
 import { isNegativeTB, isNotUnsetTB, isPositiveTB, TernaryBoolean } from '../../types/ternaryBoolean'
@@ -20,7 +20,144 @@ export const filterCards = <T extends MTGA_Card>(
         )
     }
 
-    // Search TODO: Implement search
+    if (filter.searchString.length > 0) {
+        const strings = filter.searchString.split(';')
+        const getQueryForString = (s: string) => calculateQuery(s, remainingCards)
+        const searchQueries = strings.map(getQueryForString)
+        remainingCards = remainingCards.filter((card) => {
+            console.log('Starting query search for card', card.name)
+            for (const query of searchQueries) {
+                console.log('Query', query)
+                switch (query.t) {
+                    case 'CardType':
+                        {
+                            console.log('Checking', card.name, card.typeLine, 'For', query.q)
+                            const fails = !card.typeLine.toLowerCase().includes(query.q.toLowerCase())
+                            if ((query.not && !fails) || (!query.not && fails)) {
+                                return false
+                            }
+                        }
+                        break
+                    case 'Rarity':
+                        {
+                            console.log('Checking', card.name, card.rarity, 'For', query.q)
+                            const fails = card.rarity !== query.q
+                            if ((query.not && !fails) || (!query.not && fails)) {
+                                return false
+                            }
+                        }
+                        break
+                    case 'CMC=':
+                        {
+                            console.log('Checking', card.name, card.cmc, 'For CMC=', query.q)
+                            const fails = card.cmc !== query.q
+                            if ((query.not && !fails) || (!query.not && fails)) {
+                                return false
+                            }
+                        }
+                        break
+                    case 'CMC>':
+                        {
+                            console.log('Checking', card.name, card.cmc, 'For CMC>', query.q)
+                            const fails = card.cmc <= query.q
+                            if ((query.not && !fails) || (!query.not && fails)) {
+                                return false
+                            }
+                        }
+                        break
+                    case 'CMC<':
+                        {
+                            console.log('Checking', card.name, card.cmc, 'For CMC<', query.q)
+                            const fails = card.cmc >= query.q
+                            if ((query.not && !fails) || (!query.not && fails)) {
+                                return false
+                            }
+                        }
+                        break
+                    case 'CMC>=':
+                        {
+                            console.log('Checking', card.name, card.cmc, 'For CMC>=', query.q)
+                            const fails = card.cmc < query.q
+                            if ((query.not && !fails) || (!query.not && fails)) {
+                                return false
+                            }
+                        }
+                        break
+                    case 'CMC<=':
+                        {
+                            console.log('Checking', card.name, card.cmc, 'For CMC<=', query.q)
+                            const fails = card.cmc > query.q
+                            if ((query.not && !fails) || (!query.not && fails)) {
+                                return false
+                            }
+                        }
+                        break
+                    case 'Color':
+                        {
+                            console.log('Checking', card.name, card.colorIdentity, 'For Color', query.q)
+                            const fails = intersection(card.colorIdentity, query.q).length === 0
+                            if ((query.not && !fails) || (!query.not && fails)) {
+                                return false
+                            }
+                        }
+                        break
+                    case 'Set':
+                        {
+                            console.log('Checking', card.name, card.set, 'For Set', query.q)
+                            const fails =
+                                card.set.toLowerCase() !== query.q.toLowerCase() &&
+                                card.setName.toLowerCase() !== query.q.toLowerCase()
+                            if ((query.not && !fails) || (!query.not && fails)) {
+                                return false
+                            }
+                        }
+                        break
+                    case 'search': {
+                        console.log('Checking', card.name, 'For Search', query.q)
+                        const cardNameChecks = card.name.toLowerCase().includes(query.q.toLowerCase())
+                        const cardTypeLineChecks = card.typeLine.toLowerCase().includes(query.q.toLowerCase())
+                        const cardSetNameChecks = card.setName.toLowerCase().includes(query.q.toLowerCase())
+                        const cardSetChecks = card.set.toLowerCase().includes(query.q.toLowerCase())
+                        const cardOracleChecks =
+                            card.description?.toLowerCase().includes(query.q.toLowerCase()) || false
+                        const cardFlavorChecks = card.flavorText?.toLowerCase().includes(query.q.toLowerCase()) || false
+                        let checks =
+                            cardNameChecks ||
+                            cardTypeLineChecks ||
+                            cardSetNameChecks ||
+                            cardSetChecks ||
+                            cardOracleChecks ||
+                            cardFlavorChecks
+                        if (card.cardFaces) {
+                            for (const cardFace of card.cardFaces) {
+                                const cardFaceNameChecks = cardFace.name.toLowerCase().includes(query.q.toLowerCase())
+                                const cardFaceTypeLineChecks = cardFace.typeLine
+                                    .toLowerCase()
+                                    .includes(query.q.toLowerCase())
+                                const cardFaceOracleChecks = cardFace.description
+                                    .toLowerCase()
+                                    .includes(query.q.toLowerCase())
+                                const cardFaceFlavorChecks =
+                                    cardFace.flavorText?.toLowerCase().includes(query.q.toLowerCase()) || false
+                                checks =
+                                    checks ||
+                                    cardFaceNameChecks ||
+                                    cardFaceTypeLineChecks ||
+                                    cardFaceOracleChecks ||
+                                    cardFaceFlavorChecks
+                            }
+                        }
+
+                        if ((query.not && checks) || (!query.not && !checks)) {
+                            return false
+                        }
+                    }
+                }
+            }
+            return true
+        })
+    }
+    console.log('After search', remainingCards)
 
     // Color
     const colorEntries = Object.entries(filter.color).filter(([, value]) => isNotUnsetTB(value)) as [
@@ -418,4 +555,169 @@ export const filterCards = <T extends MTGA_Card>(
     }
 
     return remainingCards
+}
+
+const calculateQuery = (
+    s: string,
+    cards: MTGA_Card[],
+):
+    | {
+          q: string
+          t: 'CardType' | 'Rarity' | 'search' | 'Set'
+          not: boolean
+      }
+    | {
+          q: number
+          t: 'CMC=' | 'CMC>' | 'CMC<' | 'CMC>=' | 'CMC<='
+          not: boolean
+      }
+    | {
+          q: MTGA_Color[]
+          t: 'Color'
+          not: boolean
+      } => {
+    if (s.includes('set:')) {
+        const q = s.split('set:')[1].trim()
+        const sets = Array.from(new Set(cards.map((c) => [c.set.toLowerCase(), c.setName.toLowerCase()]).flat()))
+        if (sets.filter((s) => s === q.toLowerCase().substring(q.startsWith('!') ? 1 : 0)).length > 0) {
+            return {
+                q: q.startsWith('!') ? q.substring(1) : q,
+                t: 'Set',
+                not: q.startsWith('!'),
+            }
+        } else {
+            return {
+                q: q.startsWith('!') ? q.substring(1) : q,
+                t: 'Set',
+                not: q.startsWith('!'),
+            }
+        }
+    }
+
+    if (s.includes('t:')) {
+        const q = s.split('t:')[1].trim()
+        return {
+            q: q.startsWith('!') ? q.substring(1) : q,
+            t: 'CardType',
+            not: q.startsWith('!'),
+        }
+    }
+
+    if (s.includes('r:')) {
+        const q = s.split('r:')[1].trim()
+        return {
+            q: convertToRarity(q.startsWith('!') ? q.substring(1) : q),
+            t: 'Rarity',
+            not: q.startsWith('!'),
+        }
+    }
+
+    if (s.includes('c:')) {
+        const q = s.split('c:')[1].trim()
+        const colors: MTGA_Color[] = []
+        for (let i = 0; i < q.length; i++) {
+            const c = q.charAt(i)
+            const color = convertToColor(c)
+            colors.push(color)
+        }
+        return {
+            q: colors,
+            t: 'Color',
+            not: q.startsWith('!'),
+        }
+    }
+
+    if (s.includes('cmc')) {
+        if (s.includes('cmc:')) {
+            const q = s.split('cmc:')[1].trim()
+            return {
+                q: Number(q.startsWith('!') ? q.substring(1) : q),
+                t: 'CMC=',
+                not: q.startsWith('!'),
+            }
+        }
+        if (s.includes('cmc>=')) {
+            const q = s.split('cmc>=')[1].trim()
+            return {
+                q: Number(q.startsWith('!') ? q.substring(1) : q),
+                t: 'CMC>=',
+                not: q.startsWith('!'),
+            }
+        }
+        if (s.includes('cmc>')) {
+            const q = s.split('cmc>')[1].trim()
+            return {
+                q: Number(q.startsWith('!') ? q.substring(1) : q),
+                t: 'CMC>',
+                not: q.startsWith('!'),
+            }
+        }
+        if (s.includes('cmc<=')) {
+            const q = s.split('cmc<=')[1].trim()
+            return {
+                q: Number(q.startsWith('!') ? q.substring(1) : q),
+                t: 'CMC<=',
+                not: q.startsWith('!'),
+            }
+        }
+        if (s.includes('cmc<')) {
+            const q = s.split('cmc<')[1].trim()
+            return {
+                q: Number(q.startsWith('!') ? q.substring(1) : q),
+                t: 'CMC<',
+                not: q.startsWith('!'),
+            }
+        }
+    }
+
+    const q = s.trim()
+    return {
+        q: q.startsWith('!') ? q.substring(1) : q,
+        t: 'search',
+        not: q.startsWith('!'),
+    }
+}
+
+const convertToRarity = (r: string): MTGA_Rarity => {
+    switch (r) {
+        case 'common':
+        case 'c':
+            return MTGA_Rarity.COMMON
+        case 'uncommon':
+        case 'u':
+            return MTGA_Rarity.UNCOMMON
+        case 'rare':
+        case 'r':
+            return MTGA_Rarity.RARE
+        case 'mythic':
+        case 'm':
+            return MTGA_Rarity.MYTHIC
+        default:
+            return MTGA_Rarity.COMMON
+    }
+}
+
+const convertToColor = (c: string): MTGA_Color => {
+    switch (c.toUpperCase()) {
+        case 'W':
+        case 'WHITE':
+            return MTGA_Color.W
+        case 'U':
+        case 'BLUE':
+            return MTGA_Color.U
+        case 'B':
+        case 'BLACK':
+            return MTGA_Color.B
+        case 'R':
+        case 'RED':
+            return MTGA_Color.R
+        case 'G':
+        case 'GREEN':
+            return MTGA_Color.G
+        case 'C':
+        case 'COLORLESS':
+            return MTGA_Color.C
+        default:
+            return MTGA_Color.C
+    }
 }

@@ -152,7 +152,7 @@ func UpdateMTGADeck(ctx context.Context, input model.MtgaUpdateDeckInput) (*mode
 	// Add all cards to the deck
 	allCards := []*model.MTGACardDeckDB{}
 	for _, card := range input.Cards {
-		allCards = append(allCards, &model.MTGACardDeckDB{
+		newCard := &model.MTGACardDeckDB{
 			From:  arango.MTGA_CARDS_COLLECTION.String() + "/" + card.Card,
 			To:    arango.MTGA_DECKS_COLLECTION.String() + "/" + input.DeckID,
 			Count: card.Count,
@@ -161,9 +161,19 @@ func UpdateMTGADeck(ctx context.Context, input model.MtgaUpdateDeckInput) (*mode
 				Y:        card.Position.Y,
 				ParentID: card.Position.ParentID,
 			},
-			CardPosition: card.CardPosition,
-			Type:         card.Type,
-		})
+			MainOrSide:   card.MainOrSide,
+			DeckCardType: card.DeckCardType,
+		}
+
+		for _, phantom := range card.Phantoms {
+			newCard.Phantoms = append(newCard.Phantoms, model.Position{
+				X:        phantom.X,
+				Y:        phantom.Y,
+				ParentID: phantom.ParentID,
+			})
+		}
+
+		allCards = append(allCards, newCard)
 	}
 
 	aq = arango.NewQuery( /* aql */ `
@@ -226,192 +236,5 @@ func UpdateMTGADeck(ctx context.Context, input model.MtgaUpdateDeckInput) (*mode
 		return nil, err
 	}
 
-	return deck[0], nil
-}
-
-func AddCardToMTGADeck(ctx context.Context, input model.MtgaAddCardToDeckInput) (*model.MtgaDeck, error) {
-	log.Info().Msg("AddCardToMTGADeck: Started")
-
-	deckID := ""
-	if input.DeckID == nil {
-		deck, err := CreateMTGADeck(ctx, model.MtgaCreateDeckInput{
-			Name: "New Deck",
-			Type: model.DeckTypeStandard,
-		})
-		if err != nil {
-			log.Error().Err(err).Msgf("AddCardToMTGADeck: Error creating deck")
-			return nil, err
-		}
-		deckID = deck.ID
-	} else {
-		deckID = *input.DeckID
-	}
-
-	// Check if the card is already in the deck
-	aq := arango.NewQuery( /* aql */ `
-		FOR edge IN @@edge
-			FILTER edge._to == @deckID
-			RETURN edge
-	`)
-
-	aq.AddBindVar("@edge", arango.MTGA_CARD_DECK_EDGE)
-	aq.AddBindVar("deckID", arango.MTGA_DECKS_COLLECTION.String()+"/"+deckID)
-
-	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
-	if err != nil {
-		log.Error().Err(err).Msgf("AddCardToMTGADeck: Error checking if card is already in deck")
-		return nil, err
-	}
-
-	copiesOfCardInDeck := []model.MTGACardDeckDB{}
-	defer cursor.Close()
-	for cursor.HasMore() {
-		var cardInDeck model.MTGACardDeckDB
-		_, err := cursor.ReadDocument(ctx, &cardInDeck)
-		if err != nil {
-			log.Error().Err(err).Msgf("AddCardToMTGADeck: Error reading document")
-			return nil, err
-		}
-		copiesOfCardInDeck = append(copiesOfCardInDeck, cardInDeck)
-	}
-
-	switch input.Type {
-	case model.MtgaDeckCardTypeCommander:
-		// Check if the deck already has a commander
-		// If it does, return an error
-		for _, cardInDeck := range copiesOfCardInDeck {
-			if cardInDeck.Type == model.MtgaDeckCardTypeCommander {
-				log.Error().Msgf("AddCardToMTGADeck: Deck already has a commander")
-				return nil, nil
-			}
-		}
-	case model.MtgaDeckCardTypeCompanion:
-		// Check if the deck already has a companion
-		// If it does, return an error
-		for _, cardInDeck := range copiesOfCardInDeck {
-			if cardInDeck.Type == model.MtgaDeckCardTypeCompanion {
-				log.Error().Msgf("AddCardToMTGADeck: Deck already has a companion")
-				return nil, nil
-			}
-		}
-	case model.MtgaDeckCardTypeNormal:
-		found := false
-		switch input.CardPosition {
-		case model.DeckCardPositionMain:
-			// Check if the card is already in the main deck
-			// If it is, increment the count
-			for _, cardInDeck := range copiesOfCardInDeck {
-				if cardInDeck.CardPosition == model.DeckCardPositionMain {
-					found = true
-					aq = arango.NewQuery( /* aql */ `
-								UPDATE { _from: @cardID, _to: @deckID, cardPosition: @cardPosition } WITH {
-									count: @count
-								} IN @@edge
-								RETURN NEW
-							`)
-					aq.AddBindVar("@edge", arango.MTGA_CARD_DECK_EDGE)
-					aq.AddBindVar("cardID", arango.MTGA_CARDS_COLLECTION.String()+"/"+input.CardID)
-					aq.AddBindVar("deckID", arango.MTGA_DECKS_COLLECTION.String()+"/"+deckID)
-					aq.AddBindVar("count", cardInDeck.Count+input.Count)
-					aq.AddBindVar("cardPosition", model.DeckCardPositionMain)
-
-					cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
-					if err != nil {
-						log.Error().Err(err).Msgf("AddCardToMTGADeck: Error updating count of card in main deck")
-						return nil, err
-					}
-
-					var updatedCard model.MTGACardDeckDB
-					defer cursor.Close()
-					for cursor.HasMore() {
-						_, err := cursor.ReadDocument(ctx, &updatedCard)
-						if err != nil {
-							log.Error().Err(err).Msgf("AddCardToMTGADeck: Error reading document")
-							return nil, err
-						}
-					}
-
-					log.Info().Msg("AddCardToMTGADeck: Updated count of card in main deck")
-					break
-				}
-			}
-		case model.DeckCardPositionSideboard:
-			// Check if the card is already in the sideboard
-			// If it is, increment the count
-			for _, cardInDeck := range copiesOfCardInDeck {
-				if cardInDeck.CardPosition == model.DeckCardPositionSideboard {
-					found = true
-					aq = arango.NewQuery( /* aql */ `
-								UPDATE { _from: @cardID, _to: @deckID, cardPosition: @cardPosition } WITH {
-									count: @count
-								} IN @@edge
-								RETURN NEW
-							`)
-					aq.AddBindVar("@edge", arango.MTGA_CARD_DECK_EDGE)
-					aq.AddBindVar("cardID", arango.MTGA_CARDS_COLLECTION.String()+"/"+input.CardID)
-					aq.AddBindVar("deckID", arango.MTGA_DECKS_COLLECTION.String()+"/"+deckID)
-					aq.AddBindVar("count", cardInDeck.Count+input.Count)
-					aq.AddBindVar("cardPosition", model.DeckCardPositionSideboard)
-
-					cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
-					if err != nil {
-						log.Error().Err(err).Msgf("AddCardToMTGADeck: Error updating count of card in sideboard")
-						return nil, err
-					}
-
-					var updatedCard model.MTGACardDeckDB
-					defer cursor.Close()
-					for cursor.HasMore() {
-						_, err := cursor.ReadDocument(ctx, &updatedCard)
-						if err != nil {
-							log.Error().Err(err).Msgf("AddCardToMTGADeck: Error reading document")
-							return nil, err
-						}
-					}
-
-					log.Info().Msg("AddCardToMTGADeck: Updated count of card in sideboard")
-					break
-				}
-			}
-		}
-
-		if !found {
-			aq = arango.NewQuery( /* aql */ `
-					INSERT {
-						_from: @cardID,
-						_to: @deckID,
-						count: @count,
-						position: @position,
-						cardPosition: @cardPosition,
-						type: @type
-					} INTO @@edge
-				`)
-			aq.AddBindVar("@edge", arango.MTGA_CARD_DECK_EDGE)
-			aq.AddBindVar("cardID", arango.MTGA_CARDS_COLLECTION.String()+"/"+input.CardID)
-			aq.AddBindVar("deckID", arango.MTGA_DECKS_COLLECTION.String()+"/"+deckID)
-			aq.AddBindVar("count", input.Count)
-			aq.AddBindVar("position", model.Position{
-				X:        input.Position.X,
-				Y:        input.Position.Y,
-				ParentID: input.Position.ParentID,
-			})
-			aq.AddBindVar("cardPosition", input.CardPosition)
-			aq.AddBindVar("type", model.MtgaDeckCardTypeNormal)
-
-			_, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
-			if err != nil {
-				log.Error().Err(err).Msgf("AddCardToMTGADeck: Error inserting card into deck")
-				return nil, err
-			}
-		}
-	}
-
-	deck, err := GetMTGADecks(ctx, &deckID)
-	if err != nil {
-		log.Error().Err(err).Msgf("AddCardToMTGADeck: Error getting deck")
-		return nil, err
-	}
-
-	log.Info().Msg("AddCardToMTGADeck: Finished")
 	return deck[0], nil
 }

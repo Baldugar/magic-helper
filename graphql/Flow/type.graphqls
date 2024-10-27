@@ -1,6 +1,6 @@
 type Position {
-    x: Int!
-    y: Int!
+    x: Float!
+    y: Float!
     parentID: ID
 }
 
@@ -8,4 +8,6 @@ type FlowZone {
     ID: ID!
     name: String!
     position: Position!
+    width: Float!
+    height: Float!
 }

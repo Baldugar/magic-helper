@@ -1,11 +1,13 @@
 import { NodeProps } from '@xyflow/react'
-import { MTGA_Card } from '../../../graphql/types'
+import { MTGA_DeckCard } from '../../../graphql/types'
 import { getCorrectCardImage } from '../../../utils/functions/cardFunctions'
 
+export type CardNodeData = {
+    card: MTGA_DeckCard
+}
+
 export type CardNodeProps = NodeProps & {
-    data: {
-        card: MTGA_Card
-    }
+    data: CardNodeData
 }
 
 export const CardNode = (props: CardNodeProps) => {
@@ -14,7 +16,7 @@ export const CardNode = (props: CardNodeProps) => {
 
     return (
         <div>
-            <img src={getCorrectCardImage(card, 'small')} alt={card.name} width={100} />
+            <img src={getCorrectCardImage(card.card, 'small')} alt={card.card.name} width={100} />
         </div>
     )
 }

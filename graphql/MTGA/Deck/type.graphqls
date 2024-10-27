@@ -11,6 +11,7 @@ type MTGA_DeckCard {
     card: MTGA_Card!
     count: Int!
     position: Position!
-    cardPosition: DeckCardPosition!
-    type: MTGA_DeckCardType!
+    mainOrSide: MainOrSide!
+    deckCardType: MTGA_DeckCardType!
+    phantoms: [Position!]!
 }

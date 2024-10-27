@@ -3,5 +3,4 @@ type Mutation {
     createMTGADeck(input: MTGA_CreateDeckInput!): MTGA_Deck!
     deleteMTGADeck(input: MTGA_DeleteDeckInput!): Boolean!
     updateMTGADeck(input: MTGA_UpdateDeckInput!): MTGA_Deck!
-    addCardToMTGADeck(input: MTGA_AddCardToDeckInput!): MTGA_Deck!
 }

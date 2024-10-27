@@ -5,7 +5,9 @@ input FlowZoneInput {
 }
 
 input PositionInput {
-    x: Int!
-    y: Int!
+    x: Float!
+    y: Float!
     parentID: ID
+    width: Float!
+    height: Float!
 }

@@ -2,11 +2,13 @@ import { Box, Paper, Stack, Typography } from '@mui/material'
 import { NodeProps, NodeResizer, NodeToolbar, Position, useReactFlow } from '@xyflow/react'
 import { useEffect, useState } from 'react'
 
+export type GroupNodeData = {
+    label: string
+    childrenIDs: string[]
+}
+
 export type GroupNodeProps = NodeProps & {
-    data: {
-        label: string
-        childrenIDs: string[]
-    }
+    data: GroupNodeData
 }
 
 export const GroupNode = (props: GroupNodeProps) => {

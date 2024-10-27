@@ -6,7 +6,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"magic-helper/graph/gentypes"
 	"magic-helper/graph/model"
 	"magic-helper/graph/mtga"
@@ -25,11 +24,6 @@ func (r *mutationResolver) DeleteMTGADeck(ctx context.Context, input model.MtgaD
 // UpdateMTGADeck is the resolver for the updateMTGADeck field.
 func (r *mutationResolver) UpdateMTGADeck(ctx context.Context, input model.MtgaUpdateDeckInput) (*model.MtgaDeck, error) {
 	return mtga.UpdateMTGADeck(ctx, input)
-}
-
-// AddCardToMTGADeck is the resolver for the addCardToMTGADeck field.
-func (r *mutationResolver) AddCardToMTGADeck(ctx context.Context, input model.MtgaAddCardToDeckInput) (*model.MtgaDeck, error) {
-	panic(fmt.Errorf("not implemented: AddCardToMTGADeck - addCardToMTGADeck"))
 }
 
 // Mutation returns gentypes.MutationResolver implementation.

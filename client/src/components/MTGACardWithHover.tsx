@@ -1,5 +1,7 @@
 import { Box } from '@mui/material'
 import { FC, useState } from 'react'
+import { useDnD } from '../context/DnD/useDnD'
+import { useMTGADeckCreator } from '../context/MTGA/DeckCreator/useMTGADeckCreator'
 import { MTGA_Card } from '../graphql/types'
 import { CARD_SIZE_VALUES } from '../utils/constants'
 import { getCorrectCardImage } from '../utils/functions/cardFunctions'
@@ -13,6 +15,8 @@ export type MTGACardWithHoverProps = {
 
 export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
     const { card, hideHover } = props
+    const { viewMode } = useMTGADeckCreator()
+    const { onDragStart, onDragEnd } = useDnD()
 
     const [hover, setHover] = useState(false)
 
@@ -27,7 +31,19 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
 
     return (
         <>
-            <Box display={'flex'} flexDirection={'row'} position={'relative'} width={width} height={height}>
+            <Box
+                display={'flex'}
+                flexDirection={'row'}
+                position={'relative'}
+                width={width}
+                height={height}
+                onDragStart={(event) => onDragStart(event, 'cardNode', viewMode, card)}
+                onDragEnd={() => {
+                    setHover(false)
+                    if (onDragEnd) onDragEnd()
+                }}
+                draggable
+            >
                 <ImageWithSkeleton img={small} setHover={setHover} height={height} width={width} />
             </Box>
             {normal && hover && (

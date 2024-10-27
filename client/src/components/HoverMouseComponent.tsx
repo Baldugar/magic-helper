@@ -107,7 +107,7 @@ export const HoverMouseComponent: FC<HoverMouseComponentProps> = (props) => {
     // Calculate the necessary transformations (position and scale)
 
     // Render the zoomed image in a portal (so it renders outside normal DOM hierarchy)
-    if (x === 0 && y === 0) {
+    if ((x === 0 && y === 0) || !visible) {
         return null
     }
 

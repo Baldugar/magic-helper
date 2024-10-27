@@ -10,3 +10,5 @@ export const CARD_SIZE_VALUES: {
     small: { width: 146, height: 204 },
     png: { width: 745, height: 1040 },
 }
+
+export const PAGE_SIZE = 50

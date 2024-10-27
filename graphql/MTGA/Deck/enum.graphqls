@@ -4,7 +4,7 @@ enum DeckType {
     BRAWL_100
 }
 
-enum DeckCardPosition {
+enum MainOrSide {
     MAIN
     SIDEBOARD
 }

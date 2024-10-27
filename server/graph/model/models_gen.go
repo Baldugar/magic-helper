@@ -25,21 +25,14 @@ type FlowZone struct {
 	ID       string    `json:"ID"`
 	Name     string    `json:"name"`
 	Position *Position `json:"position"`
+	Width    float64   `json:"width"`
+	Height   float64   `json:"height"`
 }
 
 type FlowZoneInput struct {
 	ID       string         `json:"ID"`
 	Name     string         `json:"name"`
 	Position *PositionInput `json:"position"`
-}
-
-type MtgaAddCardToDeckInput struct {
-	DeckID       *string          `json:"deckID,omitempty"`
-	CardID       string           `json:"cardID"`
-	Count        int              `json:"count"`
-	Position     *PositionInput   `json:"position"`
-	CardPosition DeckCardPosition `json:"cardPosition"`
-	Type         MtgaDeckCardType `json:"type"`
 }
 
 type MtgaCard struct {
@@ -155,16 +148,19 @@ type MtgaDeckCard struct {
 	Card         *MtgaCard        `json:"card"`
 	Count        int              `json:"count"`
 	Position     *Position        `json:"position"`
-	CardPosition DeckCardPosition `json:"cardPosition"`
-	Type         MtgaDeckCardType `json:"type"`
+	MainOrSide   MainOrSide       `json:"mainOrSide"`
+	DeckCardType MtgaDeckCardType `json:"deckCardType"`
+	Phantoms     []*Position      `json:"phantoms"`
 }
 
 type MtgaDeckCardInput struct {
+	ID           string           `json:"ID"`
 	Card         string           `json:"card"`
 	Count        int              `json:"count"`
 	Position     *PositionInput   `json:"position"`
-	CardPosition DeckCardPosition `json:"cardPosition"`
-	Type         MtgaDeckCardType `json:"type"`
+	MainOrSide   MainOrSide       `json:"mainOrSide"`
+	DeckCardType MtgaDeckCardType `json:"deckCardType"`
+	Phantoms     []*PositionInput `json:"phantoms"`
 }
 
 type MtgaDeleteDeckInput struct {
@@ -214,15 +210,17 @@ type Mutation struct {
 }
 
 type Position struct {
-	X        int     `json:"x"`
-	Y        int     `json:"y"`
+	X        float64 `json:"x"`
+	Y        float64 `json:"y"`
 	ParentID *string `json:"parentID,omitempty"`
 }
 
 type PositionInput struct {
-	X        int     `json:"x"`
-	Y        int     `json:"y"`
+	X        float64 `json:"x"`
+	Y        float64 `json:"y"`
 	ParentID *string `json:"parentID,omitempty"`
+	Width    float64 `json:"width"`
+	Height   float64 `json:"height"`
 }
 
 type Query struct {
@@ -231,47 +229,6 @@ type Query struct {
 type Response struct {
 	Status  bool    `json:"status"`
 	Message *string `json:"message,omitempty"`
-}
-
-type DeckCardPosition string
-
-const (
-	DeckCardPositionMain      DeckCardPosition = "MAIN"
-	DeckCardPositionSideboard DeckCardPosition = "SIDEBOARD"
-)
-
-var AllDeckCardPosition = []DeckCardPosition{
-	DeckCardPositionMain,
-	DeckCardPositionSideboard,
-}
-
-func (e DeckCardPosition) IsValid() bool {
-	switch e {
-	case DeckCardPositionMain, DeckCardPositionSideboard:
-		return true
-	}
-	return false
-}
-
-func (e DeckCardPosition) String() string {
-	return string(e)
-}
-
-func (e *DeckCardPosition) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = DeckCardPosition(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid DeckCardPosition", str)
-	}
-	return nil
-}
-
-func (e DeckCardPosition) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type DeckType string
@@ -510,5 +467,46 @@ func (e *MtgaRarity) UnmarshalGQL(v interface{}) error {
 }
 
 func (e MtgaRarity) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type MainOrSide string
+
+const (
+	MainOrSideMain      MainOrSide = "MAIN"
+	MainOrSideSideboard MainOrSide = "SIDEBOARD"
+)
+
+var AllMainOrSide = []MainOrSide{
+	MainOrSideMain,
+	MainOrSideSideboard,
+}
+
+func (e MainOrSide) IsValid() bool {
+	switch e {
+	case MainOrSideMain, MainOrSideSideboard:
+		return true
+	}
+	return false
+}
+
+func (e MainOrSide) String() string {
+	return string(e)
+}
+
+func (e *MainOrSide) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MainOrSide(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MainOrSide", str)
+	}
+	return nil
+}
+
+func (e MainOrSide) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

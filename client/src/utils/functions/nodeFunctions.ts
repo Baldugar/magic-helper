@@ -79,7 +79,7 @@ export const onNodeDragStop = (
     // If it's not, we need to rebind the node to the intersecting group node
     // In this case, we may need to update the node's position to be relative to the new group node, adding the original group node's position to the node's position and subtracting the new group node's position from the node's position
     // We also need to update the group node's data to include the node's id in the childrenIDs array
-    // We also need to update the original group node's data to exclude the node's id from the childrenIDs array
+    // We also need to update the original group- node's data to exclude the node's id from the childrenIDs array
 
     if (node.type === 'groupNode') {
         return

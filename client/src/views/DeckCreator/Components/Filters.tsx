@@ -1,16 +1,95 @@
-import { Divider, Grid } from '@mui/material'
+import { Clear, FindReplace, Search } from '@mui/icons-material'
+import { Box, Button, Divider, Grid, IconButton, InputAdornment, Popover, TextField } from '@mui/material'
+import { MouseEvent, useState } from 'react'
 import { CMCSelector } from '../../../components/FilterSelectors/CMCSelector'
 import ManaSelector from '../../../components/FilterSelectors/ManaSelector'
 import RaritySelector from '../../../components/FilterSelectors/RaritySelector'
 import TypeSelector from '../../../components/FilterSelectors/TypeSelector'
+import { initialMTGAFilter } from '../../../context/MTGA/Filter/MTGAFilterContext'
 import { useMTGAFilter } from '../../../context/MTGA/Filter/useMTGAFilter'
 import { nextTB, prevTB } from '../../../types/ternaryBoolean'
 
 export const Filters = () => {
     const { filter, setFilter } = useMTGAFilter()
+    const [searchAnchorEl, setSearchAnchorEl] = useState<null | HTMLElement>(null)
+    const [search, setSearch] = useState<string>('')
+    const searchOpen = Boolean(searchAnchorEl)
+    const openSearchMenu = (event: MouseEvent<HTMLButtonElement>) => {
+        setSearchAnchorEl(event.currentTarget)
+    }
+    const closeSearchMenu = () => {
+        setSearchAnchorEl(null)
+    }
 
     return (
         <Grid container>
+            <Grid item xs={'auto'}>
+                <IconButton size={'small'} onClick={openSearchMenu}>
+                    {filter.searchString === initialMTGAFilter.searchString ? (
+                        <Search style={{ width: 40, height: 40 }} />
+                    ) : (
+                        <FindReplace style={{ width: 40, height: 40 }} />
+                    )}
+                </IconButton>
+                <Popover
+                    anchorEl={searchAnchorEl}
+                    open={searchOpen}
+                    onClose={closeSearchMenu}
+                    anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'left',
+                    }}
+                >
+                    <Box padding={2} maxWidth={500}>
+                        <TextField
+                            autoFocus
+                            variant={'outlined'}
+                            label={'Search'}
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            InputProps={{
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <IconButton onClick={() => setSearch('')}>
+                                            <Clear />
+                                        </IconButton>
+                                    </InputAdornment>
+                                ),
+                            }}
+                            helperText={
+                                'Search for cards by name or use specific queries. You can filter by card type with t:, rarity with r:, set with set:, color with c:, or mana cost (CMC) with cmc= or comparisons like cmc>, cmc<, cmc>=, cmc<=. Separate multiple queries with ; to combine them (AND logic applies). Use ! to negate a filter (e.g., !r:mythic for all non-mythic cards). Color filters accept multiple colors (e.g., c:rg for red and green). Searches include card names, types, sets, descriptions, and flavor text.'
+                            }
+                            onKeyUp={(e) => {
+                                if (e.key === 'Enter') {
+                                    setFilter({ ...filter, searchString: search })
+                                    closeSearchMenu()
+                                }
+                            }}
+                        />
+                        <Box display={'flex'} columnGap={1} marginTop={1}>
+                            <Button
+                                variant={'contained'}
+                                onClick={() => {
+                                    setFilter({ ...filter, searchString: search })
+                                    closeSearchMenu()
+                                }}
+                            >
+                                Search
+                            </Button>
+                            <Button
+                                variant={'contained'}
+                                onClick={() => {
+                                    setSearch('')
+                                    setFilter({ ...filter, searchString: '' })
+                                    closeSearchMenu()
+                                }}
+                            >
+                                Clear
+                            </Button>
+                        </Box>
+                    </Box>
+                </Popover>
+            </Grid>
             <ManaSelector
                 next={(c) => {
                     setFilter({ ...filter, color: { ...filter.color, [c]: nextTB(filter.color[c]) } })

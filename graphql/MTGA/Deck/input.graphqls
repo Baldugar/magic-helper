@@ -17,18 +17,11 @@ input MTGA_UpdateDeckInput {
 }
 
 input MTGA_DeckCardInput {
+    ID: ID!
     card: ID!
     count: Int!
     position: PositionInput!
-    cardPosition: DeckCardPosition!
-    type: MTGA_DeckCardType!
-}
-
-input MTGA_AddCardToDeckInput {
-    deckID: ID
-    cardID: ID!
-    count: Int!
-    position: PositionInput!
-    cardPosition: DeckCardPosition!
-    type: MTGA_DeckCardType!
+    mainOrSide: MainOrSide!
+    deckCardType: MTGA_DeckCardType!
+    phantoms: [PositionInput!]!
 }

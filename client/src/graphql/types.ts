@@ -15,11 +15,6 @@ export type Scalars = {
   Map: { input: Record<string, unknown>; output: Record<string, unknown>; }
 };
 
-export enum DeckCardPosition {
-  MAIN = 'MAIN',
-  SIDEBOARD = 'SIDEBOARD'
-}
-
 export enum DeckType {
   BRAWL_60 = 'BRAWL_60',
   BRAWL_100 = 'BRAWL_100',
@@ -29,23 +24,16 @@ export enum DeckType {
 export type FlowZone = {
   __typename?: 'FlowZone';
   ID: Scalars['ID']['output'];
+  height: Scalars['Float']['output'];
   name: Scalars['String']['output'];
   position: Position;
+  width: Scalars['Float']['output'];
 };
 
 export type FlowZoneInput = {
   ID: Scalars['ID']['input'];
   name: Scalars['String']['input'];
   position: PositionInput;
-};
-
-export type MTGA_AddCardToDeckInput = {
-  cardID: Scalars['ID']['input'];
-  cardPosition: DeckCardPosition;
-  count: Scalars['Int']['input'];
-  deckID?: InputMaybe<Scalars['ID']['input']>;
-  position: PositionInput;
-  type: MTGA_DeckCardType;
 };
 
 export type MTGA_Card = MTGA_CommonFields & {
@@ -126,18 +114,21 @@ export type MTGA_Deck = {
 export type MTGA_DeckCard = {
   __typename?: 'MTGA_DeckCard';
   card: MTGA_Card;
-  cardPosition: DeckCardPosition;
   count: Scalars['Int']['output'];
+  deckCardType: MTGA_DeckCardType;
+  mainOrSide: MainOrSide;
+  phantoms: Array<Position>;
   position: Position;
-  type: MTGA_DeckCardType;
 };
 
 export type MTGA_DeckCardInput = {
+  ID: Scalars['ID']['input'];
   card: Scalars['ID']['input'];
-  cardPosition: DeckCardPosition;
   count: Scalars['Int']['input'];
+  deckCardType: MTGA_DeckCardType;
+  mainOrSide: MainOrSide;
+  phantoms: Array<PositionInput>;
   position: PositionInput;
-  type: MTGA_DeckCardType;
 };
 
 export enum MTGA_DeckCardType {
@@ -215,17 +206,16 @@ export type MTGA_UpdateDeckInput = {
   zones: Array<FlowZoneInput>;
 };
 
+export enum MainOrSide {
+  MAIN = 'MAIN',
+  SIDEBOARD = 'SIDEBOARD'
+}
+
 export type Mutation = {
   __typename?: 'Mutation';
-  addCardToMTGADeck: MTGA_Deck;
   createMTGADeck: MTGA_Deck;
   deleteMTGADeck: Scalars['Boolean']['output'];
   updateMTGADeck: MTGA_Deck;
-};
-
-
-export type MutationaddCardToMTGADeckArgs = {
-  input: MTGA_AddCardToDeckInput;
 };
 
 
@@ -246,14 +236,16 @@ export type MutationupdateMTGADeckArgs = {
 export type Position = {
   __typename?: 'Position';
   parentID?: Maybe<Scalars['ID']['output']>;
-  x: Scalars['Int']['output'];
-  y: Scalars['Int']['output'];
+  x: Scalars['Float']['output'];
+  y: Scalars['Float']['output'];
 };
 
 export type PositionInput = {
+  height: Scalars['Float']['input'];
   parentID?: InputMaybe<Scalars['ID']['input']>;
-  x: Scalars['Int']['input'];
-  y: Scalars['Int']['input'];
+  width: Scalars['Float']['input'];
+  x: Scalars['Float']['input'];
+  y: Scalars['Float']['input'];
 };
 
 export type Query = {

@@ -56,9 +56,12 @@ export const MTGA_DeckFragments = gql`
                 ...MTGA_CardFragment
             }
             count
-            cardPosition
-            type
+            mainOrSide
+            deckCardType
             position {
+                ...PositionFragment
+            }
+            phantoms {
                 ...PositionFragment
             }
         }
