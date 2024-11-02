@@ -24,8 +24,6 @@ const TypeSelector = (props: TypeSelectorProps): JSX.Element => {
         'Sorcery',
     ]
 
-    console.log(selected)
-
     return (
         <Grid container item xs={'auto'}>
             {order.map((type) => (

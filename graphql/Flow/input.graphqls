@@ -2,12 +2,12 @@ input FlowZoneInput {
     ID: ID!
     name: String!
     position: PositionInput!
+    width: Float!
+    height: Float!
 }
 
 input PositionInput {
     x: Float!
     y: Float!
     parentID: ID
-    width: Float!
-    height: Float!
 }

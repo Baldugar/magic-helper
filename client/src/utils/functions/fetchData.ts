@@ -1,7 +1,6 @@
 import { DocumentNode } from 'graphql'
 import {
     Mutation,
-    MutationaddCardToMTGADeckArgs,
     MutationcreateMTGADeckArgs,
     MutationdeleteMTGADeckArgs,
     MutationupdateMTGADeckArgs,
@@ -22,12 +21,7 @@ export interface FetchError {
 type VariablesFor<Result> = Result extends { __typename?: 'Query' }
     ? QuerygetMTGADecksArgs | undefined
     : Result extends { __typename?: 'Mutation' }
-    ?
-          | MutationaddCardToMTGADeckArgs
-          | MutationcreateMTGADeckArgs
-          | MutationdeleteMTGADeckArgs
-          | MutationupdateMTGADeckArgs
-          | undefined
+    ? MutationcreateMTGADeckArgs | MutationdeleteMTGADeckArgs | MutationupdateMTGADeckArgs | undefined
     : never
 
 export const fetchData = async <Result = Query | Mutation, Variables = VariablesFor<Result>>(

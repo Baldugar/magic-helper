@@ -846,28 +846,28 @@ var sources = []*ast.Source{
     ID: ID!
     name: String!
     position: PositionInput!
+    width: Float!
+    height: Float!
 }
 
 input PositionInput {
     x: Float!
     y: Float!
     parentID: ID
-    width: Float!
-    height: Float!
 }
 `, BuiltIn: false},
-	{Name: "../../../graphql/Flow/type.graphqls", Input: `type Position {
-    x: Float!
-    y: Float!
-    parentID: ID
-}
-
-type FlowZone {
+	{Name: "../../../graphql/Flow/type.graphqls", Input: `type FlowZone {
     ID: ID!
     name: String!
     position: Position!
     width: Float!
     height: Float!
+}
+
+type Position {
+    x: Float!
+    y: Float!
+    parentID: ID
 }
 `, BuiltIn: false},
 	{Name: "../../../graphql/MTGA/Card/enum.graphqls", Input: `enum MTGA_Color {
@@ -6588,7 +6588,7 @@ func (ec *executionContext) unmarshalInputFlowZoneInput(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"ID", "name", "position"}
+	fieldsInOrder := [...]string{"ID", "name", "position", "width", "height"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6616,6 +6616,20 @@ func (ec *executionContext) unmarshalInputFlowZoneInput(ctx context.Context, obj
 				return it, err
 			}
 			it.Position = data
+		case "width":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("width"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Width = data
+		case "height":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("height"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Height = data
 		}
 	}
 
@@ -6821,7 +6835,7 @@ func (ec *executionContext) unmarshalInputPositionInput(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"x", "y", "parentID", "width", "height"}
+	fieldsInOrder := [...]string{"x", "y", "parentID"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6849,20 +6863,6 @@ func (ec *executionContext) unmarshalInputPositionInput(ctx context.Context, obj
 				return it, err
 			}
 			it.ParentID = data
-		case "width":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("width"))
-			data, err := ec.unmarshalNFloat2float64(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Width = data
-		case "height":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("height"))
-			data, err := ec.unmarshalNFloat2float64(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Height = data
 		}
 	}
 

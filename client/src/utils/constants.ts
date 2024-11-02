@@ -1,4 +1,4 @@
-import { MTGA_Image } from '../graphql/types'
+import { FlowZone, MTGA_Image } from '../graphql/types'
 
 export const CARD_SIZE_VALUES: {
     [key in keyof MTGA_Image]: { width: number; height: number }
@@ -12,3 +12,12 @@ export const CARD_SIZE_VALUES: {
 }
 
 export const PAGE_SIZE = 50
+export const DEFAULT_ZONE_DIMENSIONS = { width: 200, height: 200 }
+export const DEFAULT_ZONE_POSITION = { x: 0, y: 0 }
+export const DEFAULT_ZONE: FlowZone = {
+    height: DEFAULT_ZONE_DIMENSIONS.height,
+    width: DEFAULT_ZONE_DIMENSIONS.width,
+    position: DEFAULT_ZONE_POSITION,
+    ID: 'default',
+    name: 'Default',
+}

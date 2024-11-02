@@ -1,6 +1,5 @@
 import { Box, Collapse, Pagination } from '@mui/material'
-import { Node, ReactFlowProvider } from '@xyflow/react'
-import { useRef } from 'react'
+import { ReactFlowProvider } from '@xyflow/react'
 import { useParams } from 'react-router-dom'
 import { DndProvider } from '../../context/DnD/DnDProvider'
 import { MTGADeckCreatorProvider } from '../../context/MTGA/DeckCreator/MTGADeckCreatorProvider'
@@ -17,8 +16,6 @@ import { Filters } from './Components/Filters'
 export const DeckCreator = () => {
     const { deck, openDrawer, setOpenDrawer, setViewMode, viewMode } = useMTGADeckCreator()
     const { filteredCards, page, setPage } = useMTGADeckCreatorPagination()
-
-    const nodes = useRef<Node[]>([])
 
     if (!deck) return null
 
@@ -45,7 +42,7 @@ export const DeckCreator = () => {
                 )}
                 {viewMode === 'board' && (
                     <Box flex={1} height={'100%'}>
-                        <FlowView nodesRef={nodes} />
+                        <FlowView />
                     </Box>
                 )}
                 {viewMode === 'both' && (
@@ -66,7 +63,7 @@ export const DeckCreator = () => {
                             </Box>
                         </Box>
                         <Box flex={1} height={'100%'}>
-                            <FlowView nodesRef={nodes} />
+                            <FlowView />
                         </Box>
                     </Box>
                 )}
@@ -78,11 +75,9 @@ export const DeckCreator = () => {
                     <button onClick={() => setViewMode('both')}>Both View</button>
                 </Box>
             </Box>
-            {deck && (
-                <Collapse in={openDrawer} orientation={'horizontal'}>
-                    <Drawer nodes={nodes} />
-                </Collapse>
-            )}
+            <Collapse in={openDrawer} orientation={'horizontal'}>
+                <Drawer />
+            </Collapse>
         </Box>
     )
 }
@@ -92,15 +87,15 @@ export const DeckCreatorWrapper = () => {
 
     return (
         <ReactFlowProvider>
-            <DndProvider>
-                <MTGAFilterProvider>
-                    <MTGADeckCreatorProvider deckID={deckID}>
+            <MTGADeckCreatorProvider deckID={deckID}>
+                <DndProvider>
+                    <MTGAFilterProvider>
                         <MTGADeckCreatorPaginationProvider>
                             <DeckCreator />
                         </MTGADeckCreatorPaginationProvider>
-                    </MTGADeckCreatorProvider>
-                </MTGAFilterProvider>
-            </DndProvider>
+                    </MTGAFilterProvider>
+                </DndProvider>
+            </MTGADeckCreatorProvider>
         </ReactFlowProvider>
     )
 }

@@ -33,6 +33,8 @@ type FlowZoneInput struct {
 	ID       string         `json:"ID"`
 	Name     string         `json:"name"`
 	Position *PositionInput `json:"position"`
+	Width    float64        `json:"width"`
+	Height   float64        `json:"height"`
 }
 
 type MtgaCard struct {
@@ -219,8 +221,6 @@ type PositionInput struct {
 	X        float64 `json:"x"`
 	Y        float64 `json:"y"`
 	ParentID *string `json:"parentID,omitempty"`
-	Width    float64 `json:"width"`
-	Height   float64 `json:"height"`
 }
 
 type Query struct {

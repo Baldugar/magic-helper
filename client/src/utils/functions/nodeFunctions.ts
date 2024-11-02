@@ -1,5 +1,9 @@
 import { Node, Rect, XYPosition } from '@xyflow/react'
 import { SetStateAction } from 'react'
+import { FlowZone, MTGA_Deck, MTGA_DeckCardInput, Position } from '../../graphql/types'
+import { CardNodeData } from '../../views/FlowView/Nodes/CardNode'
+import { GroupNodeData } from '../../views/FlowView/Nodes/GroupNode'
+import { PhantomNodeData } from '../../views/FlowView/Nodes/PhantomNode'
 import { deepCopy } from './arrayFunctions'
 
 // Helper function to calculate depth of each node
@@ -202,4 +206,120 @@ export const onNodeDragStop = (
         setNodes(sortNodesByNesting(newNodes))
         return
     }
+}
+
+export const organizeNodes = (deck: MTGA_Deck | undefined): Node[] => {
+    const nodes: Node[] = []
+    if (!deck) return nodes
+    const allPhantoms = deck.cards.flatMap((c) =>
+        c.phantoms.map(
+            (p, i) =>
+                ({
+                    card: c.card,
+                    phantomOf: c.card.ID,
+                    index: i,
+                    position: p,
+                } as PhantomNodeData),
+        ),
+    )
+    for (const zone of deck.zones) {
+        nodes.push({
+            id: zone.ID,
+            position: zone.position,
+            data: {
+                label: zone.name,
+                childrenIDs: [
+                    ...deck.cards.filter((c) => c.position.parentID === zone.ID).map((c) => c.card.ID),
+                    ...allPhantoms
+                        .filter((p) => p.position.parentID === zone.ID)
+                        .map((p) => p.card.ID + '_phantom_' + p.index),
+                ],
+            },
+            type: 'groupNode',
+            // style: { width: zone.width, height: zone.height },
+            width: zone.width,
+            height: zone.height,
+        } as Node<GroupNodeData>)
+    }
+    for (const card of deck.cards) {
+        nodes.push({
+            id: card.card.ID,
+            position: card.position,
+            data: { label: card.card.name, card: card },
+            type: 'cardNode',
+            parentId: card.position.parentID,
+        } as Node<CardNodeData>)
+    }
+    for (const phantom of allPhantoms) {
+        nodes.push({
+            id: phantom.card.ID + '_phantom_' + phantom.index,
+            position: phantom.position,
+            data: phantom,
+            type: 'phantomNode',
+            parentId: phantom.position.parentID,
+        } as Node<PhantomNodeData>)
+    }
+    return nodes
+}
+
+export const calculateCardsFromNodes = (nodes: Node[]): MTGA_DeckCardInput[] => {
+    const cards: MTGA_DeckCardInput[] = []
+    const cardNodes: Node<CardNodeData>[] = []
+    const phantomNodes: Node<PhantomNodeData>[] = []
+    const groupNodes: Node<GroupNodeData>[] = []
+    for (const node of nodes) {
+        if (node.type === 'cardNode') {
+            cardNodes.push(node as Node<CardNodeData>)
+        }
+        if (node.type === 'phantomNode') {
+            phantomNodes.push(node as Node<PhantomNodeData>)
+        }
+        if (node.type === 'groupNode') {
+            groupNodes.push(node as Node<GroupNodeData>)
+        }
+    }
+    for (const node of cardNodes) {
+        const card = node.data.card
+        const position: Position = {
+            x: node.position.x,
+            y: node.position.y,
+            parentID: node.parentId,
+        }
+        const phantoms = phantomNodes
+            .filter((p) => p.data.phantomOf === card.card.ID)
+            .map((p) => {
+                return {
+                    x: p.position.x,
+                    y: p.position.y,
+                    parentID: p.parentId,
+                } as Position
+            })
+        cards.push({
+            card: card.card.ID,
+            count: 1,
+            position,
+            phantoms,
+            deckCardType: card.deckCardType,
+            ID: card.card.ID,
+            mainOrSide: card.mainOrSide,
+        })
+    }
+    return cards
+}
+
+export const calculateZonesFromNodes = (nodes: Node[]): FlowZone[] => {
+    const zones: FlowZone[] = []
+    for (const node of nodes) {
+        if (node.type === 'groupNode') {
+            const groupNode = node as Node<GroupNodeData>
+            zones.push({
+                ID: groupNode.id,
+                name: groupNode.data.label,
+                position: groupNode.position,
+                width: groupNode.width || 0,
+                height: groupNode.height || 0,
+            })
+        }
+    }
+    return zones
 }

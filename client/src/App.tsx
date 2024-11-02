@@ -1,23 +1,12 @@
-import { Suspense, useContext } from 'react'
+import { Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import './App.css'
-import { MTGACardsContext } from './context/MTGA/Cards/MTGACardsContext'
 import { MTGACardsProvider } from './context/MTGA/Cards/MTGACardsProvider'
 import { MTGADecksProvider } from './context/MTGA/Decks/MTGADecksProvider'
 import { DeckCreatorWrapper } from './views/DeckCreator/DeckCreator'
 import { DeckList } from './views/DeckList/DeckList'
 
-// const initialNodes = [
-//     { id: '1', position: { x: 0, y: 0 }, data: { label: '1' } },
-//     { id: '2', position: { x: 0, y: 100 }, data: { label: '2' } },
-// ]
-// const initialEdges = [{ id: 'e1-2', source: '1', target: '2' }]
-
 function WrappedApp() {
-    const { cards } = useContext(MTGACardsContext)
-
-    console.log('cards', cards)
-
     return (
         <BrowserRouter>
             <Suspense fallback={<div>🥷🥷🥷🥷</div>}>

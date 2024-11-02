@@ -71,6 +71,8 @@ export const MTGA_DeckFragments = gql`
             position {
                 ...PositionFragment
             }
+            width
+            height
         }
         type
     }

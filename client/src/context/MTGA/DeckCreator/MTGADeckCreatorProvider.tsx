@@ -1,7 +1,5 @@
-import { Node } from '@xyflow/react'
 import { ReactNode, useEffect, useState } from 'react'
 import { MainOrSide, MTGA_Card, MTGA_Deck, MTGA_DeckCard, MTGA_DeckCardType, Position } from '../../../graphql/types'
-import { GroupNodeData } from '../../../views/FlowView/Nodes/GroupNode'
 import { useMTGADecks } from '../Decks/useMTGADecks'
 import { MTGADeckCreatorContext } from './MTGADeckCreatorContext'
 
@@ -24,15 +22,14 @@ export const MTGADeckCreatorProvider = ({ children, deckID }: { children: ReactN
     }, [deckID, decks])
 
     // Add a card to the deck via dragging from the catalogue onto the board
-    const onAddCard = (card: MTGA_Card, position?: Position): MTGA_DeckCard | undefined => {
-        let cardToReturn: MTGA_DeckCard | undefined
-        if (deck) {
-            const newDeck = structuredClone(deck)
+    const onAddCard = (card: MTGA_Card, position?: Position): MTGA_Deck | undefined => {
+        const newDeck = structuredClone(deck)
+        if (newDeck) {
             if (selectingCommander) {
                 // Remove the previous commander
                 newDeck.cards = newDeck.cards.filter((c) => c.deckCardType !== MTGA_DeckCardType.COMMANDER)
                 // Add the new commander
-                cardToReturn = {
+                const cardToReturn = {
                     card,
                     count: 1,
                     deckCardType: MTGA_DeckCardType.COMMANDER,
@@ -50,10 +47,9 @@ export const MTGADeckCreatorProvider = ({ children, deckID }: { children: ReactN
                 if (index !== -1) {
                     if (position) {
                         newDeck.cards[index].phantoms.push(position)
-                        cardToReturn = structuredClone(newDeck.cards[index])
                     }
                 } else {
-                    cardToReturn = {
+                    const cardToReturn = {
                         card,
                         count: 1,
                         deckCardType: MTGA_DeckCardType.NORMAL,
@@ -66,46 +62,7 @@ export const MTGADeckCreatorProvider = ({ children, deckID }: { children: ReactN
             }
             setDeck(newDeck)
         }
-        return cardToReturn
-    }
-
-    // This function updates the position of a deck card or a phantom
-    const updateDeckCardPosition = (node: Node) => {
-        if (!deck) return
-        const isPhantom = node.id.includes('phantom')
-        const cardID = isPhantom ? node.id.split('_')[0] : node.id
-        const position = node.position
-        const newDeck = structuredClone(deck)
-        const index = newDeck.cards.findIndex((c) => c.card.ID === cardID)
-        if (index === -1) return
-        if (isPhantom) {
-            const phantomIndex = parseInt(node.id.split('_')[2])
-            if (phantomIndex === -1) return
-            newDeck.cards[index].phantoms[phantomIndex] = position
-        } else {
-            newDeck.cards[index].position = position
-        }
-        setDeck(newDeck)
-    }
-
-    const updateZonePosition = (node: Node<GroupNodeData>) => {
-        console.log('NODE', node)
-        if (!deck) return
-        const zoneID = node.id
-        const position = node.position
-        const newDeck = structuredClone(deck)
-        const index = newDeck.zones.findIndex((z) => z.ID === zoneID)
-        // If the zone is not in the deck, add it
-        if (index === -1) {
-            newDeck.zones.push({
-                ID: zoneID,
-                name: node.data.label,
-                position,
-            })
-        } else {
-            newDeck.zones[index].position = position
-        }
-        setDeck(newDeck)
+        return newDeck
     }
 
     const addOne = (deckCard: MTGA_DeckCard) => {
@@ -209,6 +166,7 @@ export const MTGADeckCreatorProvider = ({ children, deckID }: { children: ReactN
             value={{
                 addOne,
                 deck,
+                setDeck,
                 deckTab,
                 onAddCard,
                 openDrawer,
@@ -219,8 +177,6 @@ export const MTGADeckCreatorProvider = ({ children, deckID }: { children: ReactN
                 setOpenDrawer,
                 setSelectingCommander,
                 setViewMode,
-                updateDeckCardPosition,
-                updateZonePosition,
                 viewMode,
             }}
         >

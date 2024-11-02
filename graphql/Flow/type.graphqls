@@ -1,13 +1,13 @@
-type Position {
-    x: Float!
-    y: Float!
-    parentID: ID
-}
-
 type FlowZone {
     ID: ID!
     name: String!
     position: Position!
     width: Float!
     height: Float!
+}
+
+type Position {
+    x: Float!
+    y: Float!
+    parentID: ID
 }

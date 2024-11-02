@@ -32,8 +32,10 @@ export type FlowZone = {
 
 export type FlowZoneInput = {
   ID: Scalars['ID']['input'];
+  height: Scalars['Float']['input'];
   name: Scalars['String']['input'];
   position: PositionInput;
+  width: Scalars['Float']['input'];
 };
 
 export type MTGA_Card = MTGA_CommonFields & {
@@ -241,9 +243,7 @@ export type Position = {
 };
 
 export type PositionInput = {
-  height: Scalars['Float']['input'];
   parentID?: InputMaybe<Scalars['ID']['input']>;
-  width: Scalars['Float']['input'];
   x: Scalars['Float']['input'];
   y: Scalars['Float']['input'];
 };
