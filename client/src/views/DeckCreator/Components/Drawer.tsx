@@ -1,6 +1,8 @@
 import { Box, Button, Grid, Typography } from '@mui/material'
-import { useReactFlow } from '@xyflow/react'
+import { sortBy } from 'lodash'
+import { useMemo } from 'react'
 import { useMTGADeckCreator } from '../../../context/MTGA/DeckCreator/useMTGADeckCreator'
+import { useMTGADeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGADeckFlowCreator'
 import { MTGAFunctions } from '../../../graphql/MTGA/functions'
 import { DeckType, MainOrSide, MTGA_DeckCard, MTGA_DeckCardType } from '../../../graphql/types'
 import { calculateCardsFromNodes, calculateZonesFromNodes } from '../../../utils/functions/nodeFunctions'
@@ -9,7 +11,7 @@ import { DeckCard } from './DeckCard'
 export const Drawer = () => {
     const { deckTab, setDeckTab, deck, selectingCommander, setSelectingCommander, addOne, removeCard, removeOne } =
         useMTGADeckCreator()
-    const { getNodes, setNodes } = useReactFlow()
+    const { nodes, setNodes } = useMTGADeckFlowCreator()
 
     const {
         mutations: { updateMTGADeck },
@@ -17,7 +19,6 @@ export const Drawer = () => {
 
     const saveDeck = () => {
         if (!deck) return
-        const nodes = getNodes()
         const deckInput = {
             cards: calculateCardsFromNodes(nodes),
             deckID: deck.ID,
@@ -33,15 +34,21 @@ export const Drawer = () => {
         removeCard(deckCard)
         if (setNodes) setNodes((prev) => prev.filter((n) => !n.id.startsWith(deckCard.card.ID)))
     }
-
-    const commander = deck?.cards.find((c) => c.deckCardType === MTGA_DeckCardType.COMMANDER)
-    // const companion = deck?.cards.find((c) => c.type === MTGA_DeckCardType.COMPANION)
-    const mainDeck =
-        deck?.cards.filter((c) => c.mainOrSide === MainOrSide.MAIN && c.deckCardType !== MTGA_DeckCardType.COMMANDER) ||
-        []
-    const sideboard = deck?.cards.filter((c) => c.mainOrSide === MainOrSide.SIDEBOARD) || []
+    const mainDeck = useMemo(
+        () =>
+            deck?.cards.filter(
+                (c) => c.mainOrSide === MainOrSide.MAIN && c.deckCardType !== MTGA_DeckCardType.COMMANDER,
+            ) || [],
+        [deck],
+    )
+    const sideboard = useMemo(() => deck?.cards.filter((c) => c.mainOrSide === MainOrSide.SIDEBOARD) || [], [deck])
+    const sortedMainDeck = sortBy(mainDeck, (c) => c.card.name)
+    const sortedSideboard = sortBy(sideboard, (c) => c.card.name)
 
     if (!deck) return null
+
+    const commander = deck.cards.find((c) => c.deckCardType === MTGA_DeckCardType.COMMANDER)
+    // const companion = deck?.cards.find((c) => c.type === MTGA_DeckCardType.COMPANION)
 
     return (
         <Box width={500} display={'flex'} flexDirection={'column'} maxHeight={'100vh'} height={'100%'}>
@@ -64,31 +71,27 @@ export const Drawer = () => {
             <Box sx={{ overflowY: 'auto', flex: 1 }}>
                 <Grid container>
                     {deckTab === 'main' &&
-                        mainDeck
-                            .sort((a, b) => a.card.name.localeCompare(b.card.name))
-                            .map((c) => (
-                                <Grid xs={12} item key={c.card.ID}>
-                                    <DeckCard
-                                        deckCard={c}
-                                        addOne={deck.type === DeckType.STANDARD ? addOne : undefined}
-                                        removeOne={deck.type === DeckType.STANDARD ? removeOne : undefined}
-                                        removeCard={handleRemoveCard}
-                                    />
-                                </Grid>
-                            ))}
+                        sortedMainDeck.map((c) => (
+                            <Grid xs={12} item key={c.card.ID}>
+                                <DeckCard
+                                    deckCard={c}
+                                    addOne={deck.type === DeckType.STANDARD ? addOne : undefined}
+                                    removeOne={deck.type === DeckType.STANDARD ? removeOne : undefined}
+                                    removeCard={handleRemoveCard}
+                                />
+                            </Grid>
+                        ))}
                     {deckTab === 'side' &&
-                        sideboard
-                            .sort((a, b) => a.card.name.localeCompare(b.card.name))
-                            .map((c) => (
-                                <Grid xs={12} item key={c.card.ID}>
-                                    <DeckCard
-                                        deckCard={c}
-                                        addOne={deck.type === DeckType.STANDARD ? addOne : undefined}
-                                        removeOne={deck.type === DeckType.STANDARD ? removeOne : undefined}
-                                        removeCard={handleRemoveCard}
-                                    />
-                                </Grid>
-                            ))}
+                        sortedSideboard.map((c) => (
+                            <Grid xs={12} item key={c.card.ID}>
+                                <DeckCard
+                                    deckCard={c}
+                                    addOne={deck.type === DeckType.STANDARD ? addOne : undefined}
+                                    removeOne={deck.type === DeckType.STANDARD ? removeOne : undefined}
+                                    removeCard={handleRemoveCard}
+                                />
+                            </Grid>
+                        ))}
                 </Grid>
             </Box>
             <Box mt={'auto'}>

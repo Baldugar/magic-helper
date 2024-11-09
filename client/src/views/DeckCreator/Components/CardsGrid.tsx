@@ -1,8 +1,8 @@
 import { ButtonBase, Grid } from '@mui/material'
-import { useReactFlow } from '@xyflow/react'
 import { MTGACardWithHover } from '../../../components/MTGACardWithHover'
 import { useDnD } from '../../../context/DnD/useDnD'
 import { useMTGADeckCreator } from '../../../context/MTGA/DeckCreator/useMTGADeckCreator'
+import { useMTGADeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGADeckFlowCreator'
 import { useMTGADeckCreatorPagination } from '../../../context/MTGA/DeckCreatorPagination/useMTGADeckCreatorPagination'
 import { MTGA_Card } from '../../../graphql/types'
 import { PAGE_SIZE } from '../../../utils/constants'
@@ -10,14 +10,14 @@ import { organizeNodes } from '../../../utils/functions/nodeFunctions'
 
 export const CardsGrid = () => {
     const { onAddCard } = useMTGADeckCreator()
-    const { setNodes } = useReactFlow()
+    const { setNodes, handleDeleteZone, handleRenameZone } = useMTGADeckFlowCreator()
     const { filteredCards, page, setPage } = useMTGADeckCreatorPagination()
     const { card: draggedCard } = useDnD()
 
     const handleAddCard = (card: MTGA_Card) => {
         const newDeck = onAddCard(card)
         if (!newDeck) return
-        setNodes(organizeNodes(newDeck))
+        setNodes(organizeNodes(newDeck, handleDeleteZone, handleRenameZone))
     }
 
     return (

@@ -1,16 +1,25 @@
-import { Node, OnNodesChange } from '@xyflow/react'
-import { createContext, Dispatch, SetStateAction } from 'react'
+import { OnNodeDrag, OnNodesChange } from '@xyflow/react'
+import { createContext, Dispatch, DragEventHandler, SetStateAction } from 'react'
+import { NodeType } from '../../../utils/functions/nodeFunctions'
 
 type MTGADeckCreatorFlowContextType = {
-    // Nodes
-    nodes: Node[]
-    setNodes: Dispatch<SetStateAction<Node[]>>
-    onNodesChange: OnNodesChange<Node>
+    nodes: NodeType[]
+    onDrop: DragEventHandler<HTMLDivElement>
+    onDragOver: DragEventHandler<HTMLDivElement>
+    handleNodeDragStop: OnNodeDrag<NodeType>
+    onNodesChange: OnNodesChange<NodeType>
+    setNodes: Dispatch<SetStateAction<NodeType[]>>
+    handleDeleteZone: (nodeID: string, deleteNodes: boolean) => void
+    handleRenameZone: (nodeID: string, newName: string) => void
 }
 
 export const MTGADeckCreatorFlowContext = createContext<MTGADeckCreatorFlowContextType>({
-    // Nodes
+    handleDeleteZone: () => {},
+    handleRenameZone: () => {},
+    handleNodeDragStop: () => {},
     nodes: [],
-    setNodes: () => {},
+    onDragOver: () => {},
+    onDrop: () => {},
     onNodesChange: () => {},
+    setNodes: () => {},
 })

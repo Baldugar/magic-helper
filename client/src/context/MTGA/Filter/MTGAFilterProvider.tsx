@@ -1,8 +1,8 @@
+import { cloneDeep } from 'lodash'
 import { ReactNode, useEffect, useState } from 'react'
 import getMTGAFilters from '../../../graphql/MTGA/queries/getMTGAFilters'
 import { Query } from '../../../graphql/types'
 import { TernaryBoolean } from '../../../types/ternaryBoolean'
-import { deepCopy } from '../../../utils/functions/arrayFunctions'
 import { fetchData } from '../../../utils/functions/fetchData'
 import { initialMTGAFilter, MTGAFilterContext, MTGAFilterType, SortDirection, SortEnum } from './MTGAFilterContext'
 
@@ -22,7 +22,7 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
             if (!data) throw new Error('No data from getMTGAFilters')
             const result = data.data.getMTGAFilters
             setFilter((prev) => {
-                prev = deepCopy([initialMTGAFilter])[0]
+                prev = cloneDeep([initialMTGAFilter])[0]
                 for (const key of result.types) {
                     prev.cardTypes[key.cardType] = TernaryBoolean.UNSET
                     prev.subtypes[key.cardType] = {}

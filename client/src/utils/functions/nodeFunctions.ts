@@ -1,10 +1,12 @@
 import { Node, Rect, XYPosition } from '@xyflow/react'
+import { cloneDeep } from 'lodash'
 import { SetStateAction } from 'react'
 import { FlowZone, MTGA_Deck, MTGA_DeckCardInput, Position } from '../../graphql/types'
 import { CardNodeData } from '../../views/FlowView/Nodes/CardNode'
 import { GroupNodeData } from '../../views/FlowView/Nodes/GroupNode'
 import { PhantomNodeData } from '../../views/FlowView/Nodes/PhantomNode'
-import { deepCopy } from './arrayFunctions'
+
+export type NodeType = Node<CardNodeData | GroupNodeData | PhantomNodeData>
 
 // Helper function to calculate depth of each node
 export const getDepth = (node: Node, allNodes: Record<string, Node>) => {
@@ -20,9 +22,9 @@ export const getDepth = (node: Node, allNodes: Record<string, Node>) => {
 }
 
 // Function to sort nodes by nesting without mutating the original array
-export const sortNodesByNesting = (nodes: Node[]) => {
+export const sortNodesByNesting = (nodes: NodeType[]): NodeType[] => {
     // Create a deep copy of the nodes array to avoid mutation
-    const nodesCopy = deepCopy(nodes)
+    const nodesCopy = cloneDeep(nodes)
 
     // Create a map to easily access nodes by id
     const nodeMap: Record<string, Node> = Object.fromEntries(nodesCopy.map((node) => [node.id, node]))
@@ -43,19 +45,19 @@ export const sortNodesByNesting = (nodes: Node[]) => {
 }
 
 export const onNodeDragStop = (
-    node: Node,
+    node: NodeType,
     getIntersectingNodes: (
         node:
             | Node
             | Rect
             | {
-                  id: Node['id']
+                  id: NodeType['id']
               },
         partially?: boolean,
         nodes?: Node[] | undefined,
     ) => Node[],
-    nodes: Node[],
-    setNodes: (value: SetStateAction<Node[]>) => void,
+    nodes: NodeType[],
+    setNodes: (value: SetStateAction<NodeType[]>) => void,
 ) => {
     // Cases:
     // 1. Node is free and not intersecting any other node
@@ -208,8 +210,12 @@ export const onNodeDragStop = (
     }
 }
 
-export const organizeNodes = (deck: MTGA_Deck | undefined): Node[] => {
-    const nodes: Node[] = []
+export const organizeNodes = (
+    deck: MTGA_Deck | undefined,
+    onDeleteZone: (zoneID: string, deleteNodes: boolean) => void,
+    onNameChange: (zoneID: string, newName: string) => void,
+): NodeType[] => {
+    const nodes: NodeType[] = []
     if (!deck) return nodes
     const allPhantoms = deck.cards.flatMap((c) =>
         c.phantoms.map(
@@ -223,18 +229,21 @@ export const organizeNodes = (deck: MTGA_Deck | undefined): Node[] => {
         ),
     )
     for (const zone of deck.zones) {
+        const data: GroupNodeData = {
+            label: zone.name,
+            childrenIDs: [
+                ...deck.cards.filter((c) => c.position.parentID === zone.ID).map((c) => c.card.ID),
+                ...allPhantoms
+                    .filter((p) => p.position.parentID === zone.ID)
+                    .map((p) => p.card.ID + '_phantom_' + p.index),
+            ],
+            onDelete: onDeleteZone,
+            onNameChange,
+        }
         nodes.push({
             id: zone.ID,
             position: zone.position,
-            data: {
-                label: zone.name,
-                childrenIDs: [
-                    ...deck.cards.filter((c) => c.position.parentID === zone.ID).map((c) => c.card.ID),
-                    ...allPhantoms
-                        .filter((p) => p.position.parentID === zone.ID)
-                        .map((p) => p.card.ID + '_phantom_' + p.index),
-                ],
-            },
+            data,
             type: 'groupNode',
             // style: { width: zone.width, height: zone.height },
             width: zone.width,

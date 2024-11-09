@@ -16,7 +16,12 @@ export const CardNode = (props: CardNodeProps) => {
 
     return (
         <div>
-            <img src={getCorrectCardImage(card.card, 'small')} alt={card.card.name} width={100} />
+            <img
+                src={getCorrectCardImage(card.card, 'normal')}
+                alt={card.card.name}
+                width={100}
+                style={{ borderRadius: 5 }}
+            />
         </div>
     )
 }

@@ -1,10 +1,14 @@
-import { Box, Paper, Stack, Typography } from '@mui/material'
+import { Box, Button, Paper, Stack, TextField } from '@mui/material'
 import { NodeProps, NodeResizer, NodeToolbar, Position, useReactFlow } from '@xyflow/react'
 import { useEffect, useState } from 'react'
+
+export const MIN_SIZE = 180
 
 export type GroupNodeData = {
     label: string
     childrenIDs: string[]
+    onDelete: (nodeID: string, deleteNodes: boolean) => void
+    onNameChange: (nodeID: string, newName: string) => void
 }
 
 export type GroupNodeProps = NodeProps & {
@@ -12,8 +16,8 @@ export type GroupNodeProps = NodeProps & {
 }
 
 export const GroupNode = (props: GroupNodeProps) => {
-    const { data } = props
-    const { label, childrenIDs } = data
+    const { data, id } = props
+    const { label, childrenIDs, onDelete, onNameChange } = data
     const [resizable, setResizable] = useState(false)
     const [lockedChildren, setLockedChildren] = useState(true)
     const reactFlow = useReactFlow()
@@ -54,6 +58,20 @@ export const GroupNode = (props: GroupNodeProps) => {
                             />
                             locked children
                         </label>
+                        <Button
+                            onClick={() => {
+                                const respZone = confirm(`Are you sure you want to delete the zone "${label}"?`)
+                                if (respZone) {
+                                    let respNodes = false
+                                    if (childrenIDs.length > 0) {
+                                        respNodes = confirm('Do you want to delete the nodes inside the zone?')
+                                    }
+                                    onDelete(id, respNodes)
+                                }
+                            }}
+                        >
+                            Delete
+                        </Button>
                     </Stack>
                 </Paper>
             </NodeToolbar>
@@ -68,9 +86,14 @@ export const GroupNode = (props: GroupNodeProps) => {
                     boxSizing: 'border-box',
                 }}
             >
-                <NodeResizer isVisible={resizable} minWidth={180} minHeight={100} />
+                <NodeResizer isVisible={resizable} minWidth={MIN_SIZE} minHeight={MIN_SIZE} />
                 <Box>
-                    <Typography>{label}</Typography>
+                    <TextField
+                        value={label}
+                        onChange={(e) => onNameChange(id, e.target.value)}
+                        fullWidth
+                        variant={'standard'}
+                    />
                 </Box>
             </Box>
         </>
