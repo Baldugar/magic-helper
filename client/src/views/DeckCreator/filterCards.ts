@@ -342,10 +342,12 @@ export const filterCards = <T extends MTGA_Card>(
     console.log('After mana cost filter', remainingCards)
 
     // Expansion
-    const setEntries = Object.entries(filter.sets).filter(([, value]) => isNotUnsetTB(value)) as [
-        string,
-        TernaryBoolean,
-    ][]
+    const setEntries = Object.entries(filter.sets)
+        .filter(([, value]) => isNotUnsetTB(value.value))
+        .map(([key, value]) => {
+            return [key.toLowerCase(), value.value] as [string, TernaryBoolean]
+        })
+
     if (setEntries.length > 0) {
         if (setEntries.length === 1) {
             if (isPositiveTB(setEntries[0][1])) {

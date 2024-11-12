@@ -45,3 +45,49 @@ type ImageUris struct {
 	Small      string `json:"small"`
 	PNG        string `json:"png"`
 }
+
+type MTGA_ImportedSet struct {
+	ID            string  `json:"id"`
+	Code          string  `json:"code"`
+	MTGOCode      *string `json:"mtgo_code"`
+	ArenaCode     *string `json:"arena_code"`
+	TCGPlayerID   *int    `json:"tcgplayer_id"`
+	Name          string  `json:"name"`
+	SetType       string  `json:"set_type"`
+	ReleasedAt    *string `json:"released_at"`
+	BlockCode     *string `json:"block_code"`
+	Block         *string `json:"block"`
+	ParentSetCode *string `json:"parent_set_code"`
+	CardCount     int     `json:"card_count"`
+	PrintedSize   *int    `json:"printed_size"`
+	Digital       bool    `json:"digital"`
+	FoilOnly      bool    `json:"foil_only"`
+	NonFoilOnly   bool    `json:"nonfoil_only"`
+	ScryfallURI   string  `json:"scryfall_uri"`
+	URI           string  `json:"uri"`
+	IconSVGURI    string  `json:"icon_svg_uri"`
+	SearchURI     string  `json:"search_uri"`
+}
+
+type MTGA_Set struct {
+	ID            string  `json:"_key"`
+	Code          string  `json:"code"`
+	MTGOCode      *string `json:"MTGOCode"`
+	ArenaCode     *string `json:"ArenaCode"`
+	TCGPlayerID   *int    `json:"TCGPlayerID"`
+	Name          string  `json:"name"`
+	SetType       string  `json:"setType"`
+	ReleasedAt    *string `json:"releasedAt"`
+	BlockCode     *string `json:"blockCode"`
+	Block         *string `json:"block"`
+	ParentSetCode *string `json:"parentSetCode"`
+	CardCount     int     `json:"cardCount"`
+	PrintedSize   *int    `json:"printedSize"`
+	Digital       bool    `json:"digital"`
+	FoilOnly      bool    `json:"foilOnly"`
+	NonFoilOnly   bool    `json:"nonFoilOnly"`
+	ScryfallURI   string  `json:"scryfallURI"`
+	URI           string  `json:"URI"`
+	IconSVGURI    string  `json:"iconSVGURI"`
+	SearchURI     string  `json:"searchURI"`
+}

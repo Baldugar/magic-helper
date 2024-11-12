@@ -10,6 +10,8 @@ export default gql`
             expansions {
                 set
                 setName
+                releasedAt
+                imageURL
             }
             legality {
                 formats

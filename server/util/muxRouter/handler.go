@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"magic-helper/settings"
 	"net/http"
+	"path/filepath"
 	"strconv"
 
 	"github.com/rs/zerolog/log"
@@ -43,4 +44,20 @@ func Handler(next http.Handler) http.Handler {
 		// Do stuff here
 		next.ServeHTTP(w, r)
 	})
+}
+
+func setHandler(w http.ResponseWriter, r *http.Request) {
+	log.Info().Msg("Serving set image")
+	setName := r.URL.Path[len("/set/"):]
+	log.Info().Msgf("Set name: %v", setName)
+	if setName == "" {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	filePath := filepath.Join("public", "images", "sets", setName+".svg")
+
+	w.Header().Set("Content-Type", "image/svg+xml")
+
+	http.ServeFile(w, r, filePath)
 }

@@ -17,4 +17,6 @@ type MTGA_Filter_Legality {
 type MTGA_Filter_Expansion {
     set: String!
     setName: String!
+    releasedAt: Int!
+    imageURL: String!
 }

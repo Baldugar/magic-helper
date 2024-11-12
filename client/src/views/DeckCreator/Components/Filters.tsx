@@ -4,10 +4,11 @@ import { MouseEvent, useState } from 'react'
 import { CMCSelector } from '../../../components/FilterSelectors/CMCSelector'
 import ManaSelector from '../../../components/FilterSelectors/ManaSelector'
 import RaritySelector from '../../../components/FilterSelectors/RaritySelector'
+import SetSelector from '../../../components/FilterSelectors/SetSelector'
 import TypeSelector from '../../../components/FilterSelectors/TypeSelector'
 import { initialMTGAFilter } from '../../../context/MTGA/Filter/MTGAFilterContext'
 import { useMTGAFilter } from '../../../context/MTGA/Filter/useMTGAFilter'
-import { nextTB, prevTB } from '../../../types/ternaryBoolean'
+import { nextTB, prevTB, TernaryBoolean } from '../../../types/ternaryBoolean'
 
 export const Filters = () => {
     const { filter, setFilter } = useMTGAFilter()
@@ -158,6 +159,32 @@ export const Filters = () => {
                     })
                 }}
                 selected={filter.cardTypes}
+                iconSize={30}
+            />
+            <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
+            <SetSelector
+                onNext={(setName) => {
+                    setFilter({
+                        ...filter,
+                        sets: {
+                            ...filter.sets,
+                            [setName]: { ...filter.sets[setName], value: nextTB(filter.sets[setName].value) },
+                        },
+                    })
+                }}
+                onPrev={(setName) => {
+                    setFilter({
+                        ...filter,
+                        sets: {
+                            ...filter.sets,
+                            [setName]: { ...filter.sets[setName], value: prevTB(filter.sets[setName].value) },
+                        },
+                    })
+                }}
+                selected={Object.entries(filter.sets).reduce((acc, [key, value]) => {
+                    acc[key] = value.value
+                    return acc
+                }, {} as Record<string, TernaryBoolean>)}
                 iconSize={30}
             />
         </Grid>

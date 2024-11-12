@@ -8,10 +8,11 @@ export type TernaryToggleProps =
           type: 'icon'
           iconButtonProps: IconButtonProps
           imgProps: DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement>
-          imagesFolder: string
-          option: string
-          imagesFormat: 'png' | 'svg'
+          imagesFolder?: string
+          option?: string
+          imagesFormat?: 'png' | 'svg'
           isDarkIcon?: boolean
+          URL?: string
       }
     | {
           value: TernaryBoolean
@@ -30,10 +31,10 @@ export const TernaryToggle = (props: TernaryToggleProps): JSX.Element => {
 
     switch (type) {
         case 'icon': {
-            const { iconButtonProps, imgProps, value, imagesFolder, imagesFormat, option, isDarkIcon } = props
+            const { iconButtonProps, imgProps, value, imagesFolder, imagesFormat, option, isDarkIcon, URL } = props
             const IProps: DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement> = {
                 ...imgProps,
-                src: `/img/${imagesFolder}/${option}.${imagesFormat}`,
+                src: URL ?? `/img/${imagesFolder}/${option}.${imagesFormat}`,
                 style: {
                     opacity: value ? 1 : 0.3,
                     transition: 'opacity 250ms',

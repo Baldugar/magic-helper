@@ -121,8 +121,10 @@ type ComplexityRoot struct {
 	}
 
 	MTGA_Filter_Expansion struct {
-		Set     func(childComplexity int) int
-		SetName func(childComplexity int) int
+		ImageURL   func(childComplexity int) int
+		ReleasedAt func(childComplexity int) int
+		Set        func(childComplexity int) int
+		SetName    func(childComplexity int) int
 	}
 
 	MTGA_Filter_Legality struct {
@@ -563,6 +565,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MTGA_Filter_Entries.Types(childComplexity), true
+
+	case "MTGA_Filter_Expansion.imageURL":
+		if e.complexity.MTGA_Filter_Expansion.ImageURL == nil {
+			break
+		}
+
+		return e.complexity.MTGA_Filter_Expansion.ImageURL(childComplexity), true
+
+	case "MTGA_Filter_Expansion.releasedAt":
+		if e.complexity.MTGA_Filter_Expansion.ReleasedAt == nil {
+			break
+		}
+
+		return e.complexity.MTGA_Filter_Expansion.ReleasedAt(childComplexity), true
 
 	case "MTGA_Filter_Expansion.set":
 		if e.complexity.MTGA_Filter_Expansion.Set == nil {
@@ -1040,6 +1056,8 @@ type MTGA_Filter_Legality {
 type MTGA_Filter_Expansion {
     set: String!
     setName: String!
+    releasedAt: Int!
+    imageURL: String!
 }
 `, BuiltIn: false},
 	{Name: "../../../graphql/mutation.graphqls", Input: `type Mutation {
@@ -3568,6 +3586,10 @@ func (ec *executionContext) fieldContext_MTGA_Filter_Entries_expansions(ctx cont
 				return ec.fieldContext_MTGA_Filter_Expansion_set(ctx, field)
 			case "setName":
 				return ec.fieldContext_MTGA_Filter_Expansion_setName(ctx, field)
+			case "releasedAt":
+				return ec.fieldContext_MTGA_Filter_Expansion_releasedAt(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_MTGA_Filter_Expansion_imageURL(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTGA_Filter_Expansion", field.Name)
 		},
@@ -3701,6 +3723,94 @@ func (ec *executionContext) _MTGA_Filter_Expansion_setName(ctx context.Context, 
 }
 
 func (ec *executionContext) fieldContext_MTGA_Filter_Expansion_setName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_Filter_Expansion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_Filter_Expansion_releasedAt(ctx context.Context, field graphql.CollectedField, obj *model.MtgaFilterExpansion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_Filter_Expansion_releasedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReleasedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_Filter_Expansion_releasedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_Filter_Expansion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTGA_Filter_Expansion_imageURL(ctx context.Context, field graphql.CollectedField, obj *model.MtgaFilterExpansion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_Filter_Expansion_imageURL(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ImageURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_Filter_Expansion_imageURL(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MTGA_Filter_Expansion",
 		Field:      field,
@@ -7367,6 +7477,16 @@ func (ec *executionContext) _MTGA_Filter_Expansion(ctx context.Context, sel ast.
 			}
 		case "setName":
 			out.Values[i] = ec._MTGA_Filter_Expansion_setName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "releasedAt":
+			out.Values[i] = ec._MTGA_Filter_Expansion_releasedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "imageURL":
+			out.Values[i] = ec._MTGA_Filter_Expansion_imageURL(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

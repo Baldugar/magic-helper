@@ -147,13 +147,19 @@ func GetMTGAExpansions(ctx context.Context) ([]*model.MtgaFilterExpansion, error
 	// AQL query to fetch distinct sets and setNames
 	aq := arango.NewQuery( /* aql */ `
         FOR card IN @@collection
+			LET setRecord = DOCUMENT(@@setsCollection, card.set)
+			FILTER DATE_NOW() >= DATE_TIMESTAMP(setRecord.releasedAt)
             COLLECT set = card.set, setName = card.setName
+			LET setRecord = DOCUMENT(@@setsCollection, set)
             RETURN {
                 set: UPPER(set),
-                setName: setName
+                setName: setName,
+				releasedAt: DATE_TIMESTAMP(setRecord.releasedAt),
+				imageURL: setRecord.iconSVGURI
             }
     `)
 	aq.AddBindVar("@collection", arango.MTGA_CARDS_COLLECTION)
+	aq.AddBindVar("@setsCollection", arango.MTGA_SETS_COLLECTION)
 
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {

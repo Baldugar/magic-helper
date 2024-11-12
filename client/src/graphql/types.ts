@@ -158,6 +158,8 @@ export type MTGA_Filter_Entries = {
 
 export type MTGA_Filter_Expansion = {
   __typename?: 'MTGA_Filter_Expansion';
+  imageURL: Scalars['String']['output'];
+  releasedAt: Scalars['Int']['output'];
   set: Scalars['String']['output'];
   setName: Scalars['String']['output'];
 };

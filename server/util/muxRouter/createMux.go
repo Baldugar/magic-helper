@@ -25,6 +25,9 @@ func CreateMux(settings settings.Settings) *mux.Router {
 
 	router.HandleFunc("/config.js", configHandler)
 
+	// Serve the set images
+	router.HandleFunc("/set/{code}", setHandler)
+
 	// router.Handle("/graphql-admin", auth.AuthGraphQLAdminHandler(graphQLServer))
 	// router.Handle("/graphql-private", auth.AuthGraphQLPrivateHandler(graphQLServer))
 	router.Handle("/graphql", Handler(graphQLServer))

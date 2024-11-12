@@ -46,6 +46,7 @@ func main() {
 
 	// Initialize the daemons
 	go daemons.PeriodicFetchMTGACards()
+	go daemons.PeriodicFetchMTGASets()
 
 	// Start the server
 	log.Info().Msgf("########## Magic Helper Server Startup ##########")

@@ -6,7 +6,6 @@ import (
 	"io"
 	"magic-helper/arango"
 	"magic-helper/graph/model"
-	"magic-helper/util"
 	"net/http"
 	"strings"
 	"time"
@@ -14,7 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type CardResponse struct {
+type ScryfallResponse struct {
 	Data     []json.RawMessage `json:"data"`
 	HasMore  bool              `json:"has_more"`
 	NextPage string            `json:"next_page"`
@@ -37,40 +36,15 @@ func fetchCards() bool {
 
 	ctx := context.Background()
 
-	col, err := arango.EnsureDocumentCollection(ctx, arango.APPLICATION_CONFIG_COLLECTION)
+	// Check if we should fetch cards
+	shouldFetch, err := shouldDownloadStart("MTGA_cards")
 	if err != nil {
-		log.Fatal().Err(err).Msgf("Error ensuring application config collection")
+		log.Error().Err(err).Msgf("Error checking if we should fetch cards")
 		return false
 	}
 
-	// Get the last time we fetched cards
-	exists, err := col.DocumentExists(ctx, "MTGA")
-	if err != nil {
-		log.Fatal().Err(err).Msgf("Error checking if document exists")
+	if !shouldFetch {
 		return false
-	}
-
-	var appConfig model.MTGAApplicationConfig
-
-	if exists {
-		_, err := col.ReadDocument(ctx, "MTGA", &appConfig)
-		if err != nil {
-			log.Fatal().Err(err).Msgf("Error reading document")
-			return false
-		}
-
-		log.Info().Msgf("Last time fetched: %v", appConfig.LastTimeFetched)
-
-		// If we fetched cards in the last 24 hours, don't fetch again
-		if util.Now() < appConfig.LastTimeFetched+24*60*60*1000 {
-			log.Info().Msg("Already fetched cards in the last 24 hours")
-			return false
-		}
-	} else {
-		appConfig = model.MTGAApplicationConfig{
-			ID:              "MTGA",
-			LastTimeFetched: 0,
-		}
 	}
 
 	var allCards []json.RawMessage
@@ -97,7 +71,7 @@ func fetchCards() bool {
 		}
 
 		// Unmarshal the JSON
-		var response CardResponse
+		var response ScryfallResponse
 		err = json.Unmarshal(body, &response)
 		if err != nil {
 			log.Error().Err(err).Msgf("Error unmarshalling response body")
@@ -151,22 +125,9 @@ func fetchCards() bool {
 	}
 
 	// Update the last time we fetched cards
-	appConfig.LastTimeFetched = util.Now()
-
-	aq = arango.NewQuery( /* aql */ `
-		UPSERT { _key: @id }
-		INSERT @appConfig
-		UPDATE @appConfig
-		IN @@collection
-	`)
-
-	aq.AddBindVar("id", "MTGA")
-	aq.AddBindVar("appConfig", appConfig)
-	aq.AddBindVar("@collection", arango.APPLICATION_CONFIG_COLLECTION)
-
-	_, err = arango.DB.Query(ctx, aq.Query, aq.BindVars)
+	err = updateLastTimeFetched("MTGA_cards")
 	if err != nil {
-		log.Error().Err(err).Msgf("Error updating application config")
+		log.Error().Err(err).Msgf("Error updating last time fetched")
 		return false
 	}
 

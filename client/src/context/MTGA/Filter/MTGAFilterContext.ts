@@ -12,8 +12,7 @@ export interface MTGAFilterType {
     cardTypes: Record<string, TernaryBoolean>
     multiColor: TernaryBoolean
     subtypes: Record<string, Record<string, TernaryBoolean>>
-    sets: Record<string, TernaryBoolean>
-    setNames: Record<string, string>
+    sets: Record<string, { setName: string; value: TernaryBoolean; imageURL: string; releasedAt: number }>
     legalityFormats: string[]
     legalityValues: string[]
     legalityFormat: string | null
@@ -64,7 +63,6 @@ export const initialMTGAFilter: MTGAFilterType = {
         W: TernaryBoolean.UNSET,
     },
     sets: {},
-    setNames: {},
     manaCosts: {
         '0': TernaryBoolean.UNSET,
         '1': TernaryBoolean.UNSET,
