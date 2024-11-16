@@ -975,7 +975,7 @@ type MTGA_Image {
 }
 `, BuiltIn: false},
 	{Name: "../../../graphql/MTGA/Deck/enum.graphqls", Input: `enum DeckType {
-    STANDARD
+    # STANDARD
     BRAWL_60
     BRAWL_100
 }

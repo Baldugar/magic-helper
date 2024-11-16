@@ -1,5 +1,5 @@
 enum DeckType {
-    STANDARD
+    # STANDARD
     BRAWL_60
     BRAWL_100
 }

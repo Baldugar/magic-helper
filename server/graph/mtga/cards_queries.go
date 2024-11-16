@@ -148,7 +148,7 @@ func GetMTGAExpansions(ctx context.Context) ([]*model.MtgaFilterExpansion, error
 	aq := arango.NewQuery( /* aql */ `
         FOR card IN @@collection
 			LET setRecord = DOCUMENT(@@setsCollection, card.set)
-			FILTER DATE_NOW() >= DATE_TIMESTAMP(setRecord.releasedAt)
+			FILTER DATE_ADD(DATE_NOW(), 1, "week") >= DATE_TIMESTAMP(setRecord.releasedAt)
             COLLECT set = card.set, setName = card.setName
 			LET setRecord = DOCUMENT(@@setsCollection, set)
             RETURN {

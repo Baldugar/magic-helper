@@ -1,4 +1,5 @@
-import { Grid } from '@mui/material'
+import { Box, Button, ButtonBase, Grid, Paper, Popper, Typography } from '@mui/material'
+import { MouseEvent, useState } from 'react'
 import { TernaryBoolean } from '../../types/ternaryBoolean'
 import { TernaryToggle } from './TernaryToggle'
 
@@ -11,6 +12,13 @@ export interface TypeSelectorProps {
 
 const TypeSelector = (props: TypeSelectorProps): JSX.Element => {
     const { onNext, onPrev, selected, iconSize } = props
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+
+    const handleClick = (event: MouseEvent<HTMLElement>) => {
+        setAnchorEl(anchorEl ? null : event.currentTarget)
+    }
+
+    const open = Boolean(anchorEl)
 
     const order: string[] = [
         'Artifact',
@@ -26,30 +34,53 @@ const TypeSelector = (props: TypeSelectorProps): JSX.Element => {
 
     return (
         <Grid container item xs={'auto'}>
-            {order.map((type) => (
-                <Grid item key={type} xs={'auto'}>
-                    <TernaryToggle
-                        value={selected[type]}
-                        type={'icon'}
-                        imagesFolder={'type'}
-                        imagesFormat={'svg'}
-                        iconButtonProps={{
-                            size: 'small',
-                            onClick: () => onNext(type),
-                            onContextMenu: (e) => {
+            <Button onClick={handleClick}>Type</Button>
+            <Popper open={open} anchorEl={anchorEl}>
+                <Paper
+                    sx={{
+                        maxHeight: '80vh',
+                        overflow: 'auto',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }}
+                >
+                    {order.map((type) => (
+                        <ButtonBase
+                            key={type}
+                            onClick={() => onNext(type)}
+                            onContextMenu={(e) => {
                                 e.preventDefault()
                                 onPrev(type)
-                            },
-                        }}
-                        imgProps={{
-                            width: iconSize ?? 40,
-                            height: iconSize ?? 40,
-                            style: { opacity: selected[type] ? 1 : 0.3, transition: 'opacity 250ms' },
-                        }}
-                        option={type}
-                    />
-                </Grid>
-            ))}
+                            }}
+                            sx={{ paddingX: 2 }}
+                        >
+                            <Box display={'flex'} width={1} alignItems={'center'}>
+                                <TernaryToggle
+                                    value={selected[type]}
+                                    type={'icon'}
+                                    imagesFolder={'type'}
+                                    imagesFormat={'svg'}
+                                    iconButtonProps={{
+                                        size: 'small',
+                                        onClick: () => {},
+                                        onContextMenu: () => {},
+                                    }}
+                                    imgProps={{
+                                        width: iconSize ?? 40,
+                                        height: iconSize ?? 40,
+                                        style: {
+                                            opacity: selected[type] ? 1 : 0.3,
+                                            transition: 'opacity 250ms',
+                                        },
+                                    }}
+                                    option={type}
+                                />
+                                <Typography>{type}</Typography>
+                            </Box>
+                        </ButtonBase>
+                    ))}
+                </Paper>
+            </Popper>
         </Grid>
     )
 }
