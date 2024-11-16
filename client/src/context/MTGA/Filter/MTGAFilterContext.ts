@@ -25,6 +25,7 @@ export enum SortEnum {
     RARITY = 'rarity',
     COLOR = 'color',
     TYPE = 'type',
+    SET = 'set',
 }
 
 export enum SortDirection {
@@ -40,12 +41,16 @@ export interface MTGAFilterContextType {
     sort: {
         sortBy: SortEnum
         sortDirection: SortDirection
-    }
+        enabled: boolean
+    }[]
     setSort: Dispatch<
-        SetStateAction<{
-            sortBy: SortEnum
-            sortDirection: SortDirection
-        }>
+        SetStateAction<
+            {
+                sortBy: SortEnum
+                sortDirection: SortDirection
+                enabled: boolean
+            }[]
+        >
     >
     zoom: 'IN' | 'OUT'
     setZoom: Dispatch<SetStateAction<'IN' | 'OUT'>>
@@ -95,10 +100,11 @@ export const MTGAFilterContext = createContext<MTGAFilterContextType>({
     setFilter: () => {},
     originalFilter: initialMTGAFilter,
     setOriginalFilter: () => {},
-    sort: {
-        sortBy: SortEnum.NAME,
+    sort: Object.values(SortEnum).map((sortBy) => ({
+        enabled: true,
+        sortBy,
         sortDirection: SortDirection.ASC,
-    },
+    })),
     setSort: () => {},
     zoom: 'OUT',
     setZoom: () => {},

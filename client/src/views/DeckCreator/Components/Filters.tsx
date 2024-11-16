@@ -5,6 +5,7 @@ import { CMCSelector } from '../../../components/FilterSelectors/CMCSelector'
 import ManaSelector from '../../../components/FilterSelectors/ManaSelector'
 import RaritySelector from '../../../components/FilterSelectors/RaritySelector'
 import SetSelector from '../../../components/FilterSelectors/SetSelector'
+import { SortSelector } from '../../../components/FilterSelectors/SortSelector'
 import TypeSelector from '../../../components/FilterSelectors/TypeSelector'
 import { initialMTGAFilter } from '../../../context/MTGA/Filter/MTGAFilterContext'
 import { useMTGAFilter } from '../../../context/MTGA/Filter/useMTGAFilter'
@@ -187,6 +188,8 @@ export const Filters = () => {
                 }, {} as Record<string, TernaryBoolean>)}
                 iconSize={30}
             />
+            <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
+            <SortSelector />
         </Grid>
     )
 }

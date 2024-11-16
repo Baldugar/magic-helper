@@ -10,10 +10,13 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
     const [filter, setFilter] = useState<MTGAFilterType>(initialMTGAFilter)
     const [originalFilter, setOriginalFilter] = useState<MTGAFilterType>(initialMTGAFilter)
 
-    const [sort, setSort] = useState({
-        sortBy: SortEnum.NAME,
-        sortDirection: SortDirection.ASC,
-    })
+    const [sort, setSort] = useState(
+        Object.values(SortEnum).map((key) => ({
+            sortBy: key,
+            sortDirection: SortDirection.ASC,
+            enabled: true,
+        })),
+    )
     const [zoom, setZoom] = useState<'IN' | 'OUT'>('OUT')
 
     useEffect(() => {

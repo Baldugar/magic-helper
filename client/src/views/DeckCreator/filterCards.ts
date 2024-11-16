@@ -1,13 +1,12 @@
 import { cloneDeep, intersection, orderBy } from 'lodash'
 import { CMCFilter, MTGAFilterType, SortDirection, SortEnum } from '../../context/MTGA/Filter/MTGAFilterContext'
-import { MTGA_Card, MTGA_Color, MTGA_Rarity } from '../../graphql/types'
+import { MTGA_Card, MTGA_Color, MTGA_Filter_Expansion, MTGA_Rarity } from '../../graphql/types'
 import { isNegativeTB, isNotUnsetTB, isPositiveTB, TernaryBoolean } from '../../types/ternaryBoolean'
 
 export const filterCards = <T extends MTGA_Card>(
     cards: T[],
     filter: MTGAFilterType,
-    sortBy: SortEnum,
-    sortDirection: SortDirection,
+    sort: { sortBy: SortEnum; sortDirection: SortDirection; enabled: boolean }[],
     selectingCommander?: boolean,
 ): MTGA_Card[] => {
     let remainingCards = cloneDeep(cards)
@@ -454,7 +453,6 @@ export const filterCards = <T extends MTGA_Card>(
     console.log('After legality filter', remainingCards)
 
     // Sort
-    const isDescending = sortDirection === SortDirection.DESC
     const colorToValue = (c: MTGA_Color): string => {
         switch (c) {
             case MTGA_Color.C:
@@ -514,47 +512,47 @@ export const filterCards = <T extends MTGA_Card>(
         }
     }
 
-    switch (sortBy) {
-        case SortEnum.NAME:
-            remainingCards = orderBy(
-                remainingCards,
-                [(c) => (c.name.startsWith('A-') ? c.name.slice(2) + '2' : c.name)],
-                [isDescending ? 'desc' : 'asc'],
-            )
-            break
-        case SortEnum.CMC:
-            remainingCards = orderBy(remainingCards, [sortBy], [isDescending ? 'desc' : 'asc'])
-            break
-        case SortEnum.COLOR:
-            remainingCards = orderBy(
-                remainingCards,
-                ['colorIdentity.length', (c) => c.colorIdentity.map(colorToValue).join('')],
-                [isDescending ? 'desc' : 'asc'],
-            )
-            break
-        case SortEnum.RARITY:
-            remainingCards = orderBy(remainingCards, [(c) => rarityToValue(c.rarity)], [isDescending ? 'desc' : 'asc'])
-            break
-        case SortEnum.TYPE:
-            remainingCards = orderBy(
-                remainingCards,
-                [
-                    (c) => {
-                        const types: Record<string, boolean> = {}
-                        c.typeLine.split(' ').forEach((t) => (types[t] = true))
+    const expansions: MTGA_Filter_Expansion[] = Object.entries(filter.sets).map(([set, value]) => ({
+        imageURL: value.imageURL,
+        releasedAt: value.releasedAt,
+        set,
+        setName: value.setName,
+    }))
 
-                        return Object.entries(types).reduce((acc, [type, isInIncluded]) => {
-                            if (isInIncluded) {
-                                acc += typeToValue(type)
-                            }
-                            return acc
-                        }, 0)
-                    },
-                ],
-                [isDescending ? 'desc' : 'asc'],
-            )
-            break
-    }
+    console.log('Expansions', expansions)
+
+    remainingCards = orderBy(
+        remainingCards,
+        sort
+            .filter((s) => s.enabled)
+            .map((s) => {
+                switch (s.sortBy) {
+                    case SortEnum.NAME:
+                        return (c: MTGA_Card) => (c.name.startsWith('A-') ? c.name.slice(2) + '2' : c.name)
+                    case SortEnum.CMC:
+                        return (c: MTGA_Card) => c.cmc
+                    case SortEnum.COLOR:
+                        return ['colorIdentity.length', (c: MTGA_Card) => c.colorIdentity.map(colorToValue).join('')]
+                    case SortEnum.RARITY:
+                        return (c: MTGA_Card) => rarityToValue(c.rarity)
+                    case SortEnum.TYPE:
+                        return (c: MTGA_Card) => {
+                            const types: Record<string, boolean> = {}
+                            c.typeLine.split(' ').forEach((t) => (types[t] = true))
+                            return Object.entries(types).reduce((acc, [type, isInIncluded]) => {
+                                if (isInIncluded) {
+                                    acc += typeToValue(type)
+                                }
+                                return acc
+                            }, 0)
+                        }
+                    case SortEnum.SET:
+                        return (c: MTGA_Card) => expansions.find((e) => e.set.toLowerCase() === c.set)?.releasedAt
+                }
+            })
+            .flat(),
+        sort.filter((s) => s.enabled).map((s) => (s.sortDirection === SortDirection.DESC ? 'desc' : 'asc')),
+    )
 
     return remainingCards
 }

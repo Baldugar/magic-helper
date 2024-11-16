@@ -10,22 +10,21 @@ import { MTGADeckCreatorPaginationContext } from './MTGADeckCreatorPaginationCon
 export const MTGADeckCreatorPaginationProvider = ({ children }: { children: ReactNode }) => {
     const { cards } = useMTGACards()
     const { selectingCommander } = useMTGADeckCreator()
-    const {
-        filter,
-        originalFilter,
-        sort: { sortBy, sortDirection },
-        // setSort,
-    } = useMTGAFilter()
+    const { filter, originalFilter, sort } = useMTGAFilter()
     const [page, setPage] = useState(0)
     const [filteredCards, setFilteredCards] = useState<MTGA_Card[]>(cards)
 
     useEffect(() => {
         if (!isEqual(filter, originalFilter) || selectingCommander) {
-            setFilteredCards(filterCards(cards, filter, sortBy, sortDirection, selectingCommander))
+            setFilteredCards(filterCards(cards, filter, sort, selectingCommander))
         } else {
             setFilteredCards(cards)
         }
-    }, [filter, sortBy, sortDirection, cards, originalFilter, selectingCommander])
+    }, [filter, sort, cards, originalFilter, selectingCommander])
+
+    useEffect(() => {
+        setPage(0)
+    }, [filter])
 
     return (
         <MTGADeckCreatorPaginationContext.Provider
