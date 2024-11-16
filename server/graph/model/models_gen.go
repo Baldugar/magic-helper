@@ -236,20 +236,18 @@ type Response struct {
 type DeckType string
 
 const (
-	DeckTypeStandard DeckType = "STANDARD"
 	DeckTypeBrawl60  DeckType = "BRAWL_60"
 	DeckTypeBrawl100 DeckType = "BRAWL_100"
 )
 
 var AllDeckType = []DeckType{
-	DeckTypeStandard,
 	DeckTypeBrawl60,
 	DeckTypeBrawl100,
 }
 
 func (e DeckType) IsValid() bool {
 	switch e {
-	case DeckTypeStandard, DeckTypeBrawl60, DeckTypeBrawl100:
+	case DeckTypeBrawl60, DeckTypeBrawl100:
 		return true
 	}
 	return false

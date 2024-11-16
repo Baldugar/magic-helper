@@ -17,8 +17,7 @@ export type Scalars = {
 
 export enum DeckType {
   BRAWL_60 = 'BRAWL_60',
-  BRAWL_100 = 'BRAWL_100',
-  STANDARD = 'STANDARD'
+  BRAWL_100 = 'BRAWL_100'
 }
 
 export type FlowZone = {

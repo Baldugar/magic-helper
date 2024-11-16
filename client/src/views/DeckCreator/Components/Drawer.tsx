@@ -9,8 +9,7 @@ import { calculateCardsFromNodes, calculateZonesFromNodes } from '../../../utils
 import { DeckCard } from './DeckCard'
 
 export const Drawer = () => {
-    const { deckTab, setDeckTab, deck, selectingCommander, setSelectingCommander, addOne, removeCard, removeOne } =
-        useMTGADeckCreator()
+    const { deckTab, setDeckTab, deck, selectingCommander, setSelectingCommander, removeCard } = useMTGADeckCreator()
     const { nodes, setNodes } = useMTGADeckFlowCreator()
 
     const {
@@ -75,8 +74,8 @@ export const Drawer = () => {
                             <Grid xs={12} item key={c.card.ID}>
                                 <DeckCard
                                     deckCard={c}
-                                    addOne={deck.type === DeckType.STANDARD ? addOne : undefined}
-                                    removeOne={deck.type === DeckType.STANDARD ? removeOne : undefined}
+                                    // addOne={deck.type === DeckType.STANDARD ? addOne : undefined}
+                                    // removeOne={deck.type === DeckType.STANDARD ? removeOne : undefined}
                                     removeCard={handleRemoveCard}
                                 />
                             </Grid>
@@ -86,8 +85,8 @@ export const Drawer = () => {
                             <Grid xs={12} item key={c.card.ID}>
                                 <DeckCard
                                     deckCard={c}
-                                    addOne={deck.type === DeckType.STANDARD ? addOne : undefined}
-                                    removeOne={deck.type === DeckType.STANDARD ? removeOne : undefined}
+                                    // addOne={deck.type === DeckType.STANDARD ? addOne : undefined}
+                                    // removeOne={deck.type === DeckType.STANDARD ? removeOne : undefined}
                                     removeCard={handleRemoveCard}
                                 />
                             </Grid>

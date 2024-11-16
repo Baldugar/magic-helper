@@ -396,7 +396,7 @@ export const filterCards = <T extends MTGA_Card>(
             // TODOS POSITIVOS
             if (positiveCardTypes.length === cardTypeEntries.length) {
                 remainingCards = remainingCards.filter((card) =>
-                    positiveCardTypes.some(([cardType]) => card.typeLine.includes(cardType)),
+                    positiveCardTypes.every(([cardType]) => card.typeLine.includes(cardType)),
                 )
             }
             // TODOS NEGATIVOS
@@ -409,7 +409,7 @@ export const filterCards = <T extends MTGA_Card>(
             else {
                 remainingCards = remainingCards.filter(
                     (card) =>
-                        positiveCardTypes.some(([cardType]) => card.typeLine.includes(cardType)) &&
+                        positiveCardTypes.every(([cardType]) => card.typeLine.includes(cardType)) &&
                         negativeCardTypes.every(([cardType]) => !card.typeLine.includes(cardType)),
                 )
             }
