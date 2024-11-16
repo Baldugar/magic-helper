@@ -1,6 +1,6 @@
 import { cloneDeep, intersection, orderBy } from 'lodash'
 import { CMCFilter, MTGAFilterType, SortDirection, SortEnum } from '../../context/MTGA/Filter/MTGAFilterContext'
-import { MTGA_Card, MTGA_Color, MTGA_Filter_Expansion, MTGA_Rarity } from '../../graphql/types'
+import { MTGA_Card, MTGA_Color, MTGA_DeckCard, MTGA_Filter_Expansion, MTGA_Rarity } from '../../graphql/types'
 import { isNegativeTB, isNotUnsetTB, isPositiveTB, TernaryBoolean } from '../../types/ternaryBoolean'
 
 export const filterCards = <T extends MTGA_Card>(
@@ -8,6 +8,7 @@ export const filterCards = <T extends MTGA_Card>(
     filter: MTGAFilterType,
     sort: { sortBy: SortEnum; sortDirection: SortDirection; enabled: boolean }[],
     selectingCommander?: boolean,
+    commander?: MTGA_DeckCard,
 ): MTGA_Card[] => {
     let remainingCards = cloneDeep(cards)
 
@@ -243,6 +244,16 @@ export const filterCards = <T extends MTGA_Card>(
         }
     }
     console.log('After color filter', remainingCards)
+
+    // Commander color identity
+    if (commander && !selectingCommander) {
+        remainingCards = remainingCards.filter(
+            (card) =>
+                card.colorIdentity.every((c) => commander.card.colorIdentity.includes(c)) ||
+                card.colorIdentity.length === 0 ||
+                (card.colorIdentity.length === 1 && card.colorIdentity[0] === 'C'),
+        )
+    }
 
     // Rarity
     const rarityEntries = Object.entries(filter.rarity).filter(([, value]) => isNotUnsetTB(value)) as [
