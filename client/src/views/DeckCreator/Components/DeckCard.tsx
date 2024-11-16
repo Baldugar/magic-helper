@@ -4,23 +4,26 @@ import { useState } from 'react'
 import { HoverMouseComponent } from '../../../components/HoverMouseComponent'
 import { MTGA_DeckCard } from '../../../graphql/types'
 import { CARD_SIZE_VALUES } from '../../../utils/constants'
-import { getCorrectCardImage } from '../../../utils/functions/cardFunctions'
+import { getCorrectCardImage, matchesCommanderColorIdentity } from '../../../utils/functions/cardFunctions'
 
 export type DeckCardProps = {
     deckCard: MTGA_DeckCard
     addOne?: (deckCard: MTGA_DeckCard) => void
     removeOne?: (deckCard: MTGA_DeckCard) => void
     removeCard: (deckCard: MTGA_DeckCard) => void
+    commander?: MTGA_DeckCard
 }
 
 export const DeckCard = (props: DeckCardProps): JSX.Element => {
-    const { deckCard, addOne, removeCard, removeOne } = props
+    const { deckCard, addOne, removeCard, removeOne, commander } = props
     const { card } = deckCard
 
     const [hover, setHover] = useState(false)
 
     const normal = getCorrectCardImage(card, 'normal')
     const otherNormal = getCorrectCardImage(card, 'normal', true)
+
+    const outline = matchesCommanderColorIdentity(deckCard, commander) ? undefined : '4px solid red'
 
     return (
         <>
@@ -34,6 +37,7 @@ export const DeckCard = (props: DeckCardProps): JSX.Element => {
                     backgroundImage: `url(${getCorrectCardImage(deckCard.card, 'artCrop')})`,
                     backgroundSize: 'cover',
                     backgroundPositionY: '15%',
+                    border: outline,
                 }}
                 onMouseEnter={() => setHover(true)}
                 onMouseLeave={() => setHover(false)}

@@ -77,6 +77,7 @@ export const Drawer = () => {
                                     // addOne={deck.type === DeckType.STANDARD ? addOne : undefined}
                                     // removeOne={deck.type === DeckType.STANDARD ? removeOne : undefined}
                                     removeCard={handleRemoveCard}
+                                    commander={commander}
                                 />
                             </Grid>
                         ))}
@@ -88,6 +89,7 @@ export const Drawer = () => {
                                     // addOne={deck.type === DeckType.STANDARD ? addOne : undefined}
                                     // removeOne={deck.type === DeckType.STANDARD ? removeOne : undefined}
                                     removeCard={handleRemoveCard}
+                                    commander={commander}
                                 />
                             </Grid>
                         ))}
