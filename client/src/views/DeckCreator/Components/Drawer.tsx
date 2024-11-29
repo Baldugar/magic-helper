@@ -19,7 +19,7 @@ export const Drawer = () => {
     const saveDeck = () => {
         if (!deck) return
         const deckInput = {
-            cards: calculateCardsFromNodes(nodes),
+            cards: calculateCardsFromNodes(nodes, deck.cards),
             deckID: deck.ID,
             name: deck.name,
             type: deck.type,
@@ -54,7 +54,16 @@ export const Drawer = () => {
             <Button onClick={() => setDeckTab((prev) => (prev === 'main' ? 'side' : 'main'))}>
                 {deckTab === 'main' ? 'Go to Sideboard' : 'Go to Main Deck'}
             </Button>
-            <Typography>{deck.name}</Typography>
+            <Typography>
+                {deck.name} -{' '}
+                {deck.cards.reduce(
+                    (acc, c) =>
+                        acc +
+                        (c.mainOrSide === (deckTab === 'main' ? MainOrSide.MAIN : MainOrSide.SIDEBOARD) ? c.count : 0),
+                    0,
+                )}{' '}
+                cards
+            </Typography>
             {(deck.type === DeckType.BRAWL_60 || deck.type === DeckType.BRAWL_100) && (
                 <>
                     <Typography>Commander</Typography>

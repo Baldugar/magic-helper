@@ -25,13 +25,10 @@ export const filterCards = <T extends MTGA_Card>(
         const getQueryForString = (s: string) => calculateQuery(s, remainingCards)
         const searchQueries = strings.map(getQueryForString)
         remainingCards = remainingCards.filter((card) => {
-            console.log('Starting query search for card', card.name)
             for (const query of searchQueries) {
-                console.log('Query', query)
                 switch (query.t) {
                     case 'CardType':
                         {
-                            console.log('Checking', card.name, card.typeLine, 'For', query.q)
                             const fails = !card.typeLine.toLowerCase().includes(query.q.toLowerCase())
                             if ((query.not && !fails) || (!query.not && fails)) {
                                 return false
@@ -40,7 +37,6 @@ export const filterCards = <T extends MTGA_Card>(
                         break
                     case 'Rarity':
                         {
-                            console.log('Checking', card.name, card.rarity, 'For', query.q)
                             const fails = card.rarity !== query.q
                             if ((query.not && !fails) || (!query.not && fails)) {
                                 return false
@@ -49,7 +45,6 @@ export const filterCards = <T extends MTGA_Card>(
                         break
                     case 'CMC=':
                         {
-                            console.log('Checking', card.name, card.cmc, 'For CMC=', query.q)
                             const fails = card.cmc !== query.q
                             if ((query.not && !fails) || (!query.not && fails)) {
                                 return false
@@ -58,7 +53,6 @@ export const filterCards = <T extends MTGA_Card>(
                         break
                     case 'CMC>':
                         {
-                            console.log('Checking', card.name, card.cmc, 'For CMC>', query.q)
                             const fails = card.cmc <= query.q
                             if ((query.not && !fails) || (!query.not && fails)) {
                                 return false
@@ -67,7 +61,6 @@ export const filterCards = <T extends MTGA_Card>(
                         break
                     case 'CMC<':
                         {
-                            console.log('Checking', card.name, card.cmc, 'For CMC<', query.q)
                             const fails = card.cmc >= query.q
                             if ((query.not && !fails) || (!query.not && fails)) {
                                 return false
@@ -76,7 +69,6 @@ export const filterCards = <T extends MTGA_Card>(
                         break
                     case 'CMC>=':
                         {
-                            console.log('Checking', card.name, card.cmc, 'For CMC>=', query.q)
                             const fails = card.cmc < query.q
                             if ((query.not && !fails) || (!query.not && fails)) {
                                 return false
@@ -85,7 +77,6 @@ export const filterCards = <T extends MTGA_Card>(
                         break
                     case 'CMC<=':
                         {
-                            console.log('Checking', card.name, card.cmc, 'For CMC<=', query.q)
                             const fails = card.cmc > query.q
                             if ((query.not && !fails) || (!query.not && fails)) {
                                 return false
@@ -94,7 +85,6 @@ export const filterCards = <T extends MTGA_Card>(
                         break
                     case 'Color':
                         {
-                            console.log('Checking', card.name, card.colorIdentity, 'For Color', query.q)
                             const fails = intersection(card.colorIdentity, query.q).length === 0
                             if ((query.not && !fails) || (!query.not && fails)) {
                                 return false
@@ -103,7 +93,6 @@ export const filterCards = <T extends MTGA_Card>(
                         break
                     case 'Set':
                         {
-                            console.log('Checking', card.name, card.set, 'For Set', query.q)
                             const fails =
                                 card.set.toLowerCase() !== query.q.toLowerCase() &&
                                 card.setName.toLowerCase() !== query.q.toLowerCase()
@@ -113,7 +102,6 @@ export const filterCards = <T extends MTGA_Card>(
                         }
                         break
                     case 'search': {
-                        console.log('Checking', card.name, 'For Search', query.q)
                         const cardNameChecks = card.name.toLowerCase().includes(query.q.toLowerCase())
                         const cardTypeLineChecks = card.typeLine.toLowerCase().includes(query.q.toLowerCase())
                         const cardSetNameChecks = card.setName.toLowerCase().includes(query.q.toLowerCase())
@@ -157,7 +145,6 @@ export const filterCards = <T extends MTGA_Card>(
             return true
         })
     }
-    console.log('After search', remainingCards)
 
     // Color
     const colorEntries = Object.entries(filter.color).filter(([, value]) => isNotUnsetTB(value)) as [
@@ -243,7 +230,6 @@ export const filterCards = <T extends MTGA_Card>(
             remainingCards = remainingCards.filter((card) => card.colorIdentity.length === 1)
         }
     }
-    console.log('After color filter', remainingCards)
 
     // Commander color identity
     if (commander && !selectingCommander) {
@@ -292,7 +278,6 @@ export const filterCards = <T extends MTGA_Card>(
             }
         }
     }
-    console.log('After rarity filter', remainingCards)
 
     // Mana Costs
     const manaCostEntries = Object.entries(filter.manaCosts).filter(([, value]) => isNotUnsetTB(value)) as [
@@ -300,7 +285,6 @@ export const filterCards = <T extends MTGA_Card>(
         TernaryBoolean,
     ][]
     if (manaCostEntries.length > 0) {
-        console.log('Mana cost entries', manaCostEntries)
         if (manaCostEntries.length === 1) {
             const isInfinite = manaCostEntries[0][0] === 'infinite'
             if (isPositiveTB(manaCostEntries[0][1])) {
@@ -349,7 +333,6 @@ export const filterCards = <T extends MTGA_Card>(
             }
         }
     }
-    console.log('After mana cost filter', remainingCards)
 
     // Expansion
     const setEntries = Object.entries(filter.sets)
@@ -386,7 +369,6 @@ export const filterCards = <T extends MTGA_Card>(
             }
         }
     }
-    console.log('After set filter', remainingCards)
 
     // Card Types
     const cardTypeEntries = Object.entries(filter.cardTypes).filter(([, value]) => isNotUnsetTB(value)) as [
@@ -425,7 +407,6 @@ export const filterCards = <T extends MTGA_Card>(
             }
         }
     }
-    console.log('After card type filter', remainingCards)
 
     // Subtypes
     const subtypeEntries = Object.entries(filter.subtypes).filter(([, value]) =>
@@ -451,7 +432,6 @@ export const filterCards = <T extends MTGA_Card>(
             }
         }
     }
-    console.log('After subtype filter', remainingCards)
 
     // Legality
     if (filter.legalityFormat && filter.legalityValue) {
@@ -461,7 +441,6 @@ export const filterCards = <T extends MTGA_Card>(
                 card.legalities[filter.legalityFormat!] === filter.legalityValue,
         )
     }
-    console.log('After legality filter', remainingCards)
 
     // Sort
     const colorToValue = (c: MTGA_Color): string => {
@@ -529,8 +508,6 @@ export const filterCards = <T extends MTGA_Card>(
         set,
         setName: value.setName,
     }))
-
-    console.log('Expansions', expansions)
 
     remainingCards = orderBy(
         remainingCards,

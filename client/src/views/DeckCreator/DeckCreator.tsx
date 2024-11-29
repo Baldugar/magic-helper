@@ -1,6 +1,7 @@
-import { Box, Collapse, Pagination } from '@mui/material'
+import { Box, Button, Collapse, Pagination } from '@mui/material'
 import { ReactFlowProvider } from '@xyflow/react'
 import { useParams } from 'react-router-dom'
+import { ImportDialog } from '../../components/ImportDialog'
 import { DndProvider } from '../../context/DnD/DnDProvider'
 import { MTGADeckCreatorProvider } from '../../context/MTGA/DeckCreator/MTGADeckCreatorProvider'
 import { useMTGADeckCreator } from '../../context/MTGA/DeckCreator/useMTGADeckCreator'
@@ -15,7 +16,7 @@ import { Drawer } from './Components/Drawer'
 import { Filters } from './Components/Filters'
 
 export const DeckCreator = () => {
-    const { deck, openDrawer, setOpenDrawer, setViewMode, viewMode } = useMTGADeckCreator()
+    const { deck, openDrawer, setOpenDrawer, setViewMode, viewMode, setOpenImportDialog } = useMTGADeckCreator()
     const { filteredCards, page, setPage } = useMTGADeckCreatorPagination()
 
     if (!deck) return null
@@ -69,17 +70,34 @@ export const DeckCreator = () => {
                             </Box>
                         </Box>
                     )}
-                    <Box position={'absolute'} top={10} right={10}>
-                        <button onClick={() => setOpenDrawer(!openDrawer)}>Open Drawer</button>
-                        <button onClick={() => setViewMode((prev) => (prev === 'catalogue' ? 'board' : 'catalogue'))}>
+                    <Box position={'absolute'} top={10} right={10} display={'flex'} gap={1}>
+                        <Button
+                            variant={'contained'}
+                            color={'primary'}
+                            onClick={() => setOpenImportDialog(true)}
+                            sx={{ mr: 4 }}
+                        >
+                            Import from MTGA
+                        </Button>
+                        <Button variant={'contained'} color={'primary'} onClick={() => setOpenDrawer(!openDrawer)}>
+                            Open Drawer
+                        </Button>
+                        <Button
+                            variant={'contained'}
+                            color={'primary'}
+                            onClick={() => setViewMode((prev) => (prev === 'catalogue' ? 'board' : 'catalogue'))}
+                        >
                             Change View
-                        </button>
-                        <button onClick={() => setViewMode('both')}>Both View</button>
+                        </Button>
+                        <Button variant={'contained'} color={'primary'} onClick={() => setViewMode('both')}>
+                            Both View
+                        </Button>
                     </Box>
                 </Box>
                 <Collapse in={openDrawer} orientation={'horizontal'}>
                     <Drawer />
                 </Collapse>
+                <ImportDialog />
             </Box>
         </MTGADeckCreatorFlowProvider>
     )

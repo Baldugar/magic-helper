@@ -19,8 +19,6 @@ export const SortSelector = () => {
         setAnchorEl(anchorEl ? null : event.currentTarget)
     }
 
-    console.log(JSON.stringify(sort))
-
     const open = Boolean(anchorEl)
 
     const handleDragEnd: OnDragEndResponder = (result) => {
@@ -35,7 +33,6 @@ export const SortSelector = () => {
     }
 
     const handleChangeSortDirection = (index: number, direction: SortDirection) => {
-        console.log('handleChangeSortDirection', index, direction)
         setSort((prevSort) => {
             return prevSort.map((sortOption, i) => {
                 if (i === index) {
