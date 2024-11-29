@@ -100,14 +100,14 @@ export const MTGADeckCreatorFlowProvider = ({ children, deck }: { children: Reac
 
     // Propagate changes in the nodes to the deck once the user stops doing changes
     useEffect(() => {
-        if (init && cards) {
+        if (init && cards.length) {
             const debounced = debounce(
                 () =>
                     setDeck((prev) => {
                         if (!prev) return prev
                         return {
                             ...prev,
-                            cards: calculateCardsFromNodes(nodes)
+                            cards: calculateCardsFromNodes(nodes, prev.cards)
                                 .filter((c) => cards.find((card) => card.ID === c.card))
                                 .map((c) => {
                                     const card = cards.find((card) => card.ID === c.card)!
