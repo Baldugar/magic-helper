@@ -1,28 +1,3 @@
-/**
- * We need to export the decks in the format:
-Commander
-1 Valentin, Dean of the Vein (STX) 161
-
-Companion
-1 Umori, the Collector (MUL) 127
-
-Deck
-21 Forest (UST) 216
-1 Mosswood Dreadknight (WOE) 231
-19 Swamp (DMU) 279
-1 Bog Badger (DMU) 156
-1 Tear Asunder (DMU) 183
-1 A-Moss-Pit Skeleton (ZNR) 228
-1 Assassin's Trophy (MKM) 187
-1 Assemble the Team (Y23) 17
-9 Nazgûl (LTR) 100
-
-Sideboard
-1 Umori, the Collector (MUL) 127
-
-Without the collector number
- */
-
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material'
 import { useMTGADeckCreator } from '../context/MTGA/DeckCreator/useMTGADeckCreator'
 import { MTGA_DeckCardType } from '../graphql/types'
