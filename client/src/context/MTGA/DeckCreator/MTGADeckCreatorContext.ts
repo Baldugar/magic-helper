@@ -19,8 +19,14 @@ type MTGADeckCreatorContextType = {
     setSelectingCommander: Dispatch<SetStateAction<boolean>>
     viewMode: 'catalogue' | 'board' | 'both'
     setViewMode: Dispatch<SetStateAction<'catalogue' | 'board' | 'both'>>
+
+    // Import Dialog
     openImportDialog: boolean
     setOpenImportDialog: Dispatch<SetStateAction<boolean>>
+
+    // Export Dialog
+    openExportDialog: boolean
+    setOpenExportDialog: Dispatch<SetStateAction<boolean>>
 }
 
 export const MTGADeckCreatorContext = createContext<MTGADeckCreatorContextType>({
@@ -41,6 +47,12 @@ export const MTGADeckCreatorContext = createContext<MTGADeckCreatorContextType>(
     setSelectingCommander: () => {},
     viewMode: 'catalogue',
     setViewMode: () => {},
+
+    // Import Dialog
     openImportDialog: false,
     setOpenImportDialog: () => {},
+
+    // Export Dialog
+    openExportDialog: false,
+    setOpenExportDialog: () => {},
 })

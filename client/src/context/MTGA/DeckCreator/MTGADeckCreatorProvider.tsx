@@ -12,6 +12,7 @@ export const MTGADeckCreatorProvider = ({ children, deckID }: { children: ReactN
     const [viewMode, setViewMode] = useState<'catalogue' | 'board' | 'both'>('catalogue')
     const [deckTab, setDeckTab] = useState<'main' | 'side'>('main')
     const [openImportDialog, setOpenImportDialog] = useState(false)
+    const [openExportDialog, setOpenExportDialog] = useState(false)
 
     useEffect(() => {
         if (deckID) {
@@ -181,6 +182,8 @@ export const MTGADeckCreatorProvider = ({ children, deckID }: { children: ReactN
                 viewMode,
                 openImportDialog,
                 setOpenImportDialog,
+                openExportDialog,
+                setOpenExportDialog,
             }}
         >
             {children}
