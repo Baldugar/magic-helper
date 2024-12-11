@@ -54,7 +54,6 @@ export const ImportDialog = () => {
                 currentSection = 'commander'
                 return
             }
-
             // Parse card line
             const arenaMatch = line.match(mtgArenaRegex)
             const simpleMatch = line.match(simpleRegex)
@@ -80,8 +79,14 @@ export const ImportDialog = () => {
                             const card = allCards.find(
                                 (c) => c.name === name || (c.cardFaces && c.cardFaces.some((f) => f.name === name)),
                             )
-                            // TODO: Check for cards where you can have more than 4 in the deck (Nazgul, etc.)
-                            if (amount > 1 && card && !card.typeLine.toLowerCase().includes('basic')) {
+                            if (
+                                amount > 1 &&
+                                card &&
+                                !(
+                                    card.typeLine.toLowerCase().includes('basic') ||
+                                    (card.description && card.description.toLowerCase().includes('a deck can have'))
+                                )
+                            ) {
                                 isSideboard = true
                                 break
                             }

@@ -1,6 +1,7 @@
 import { Box, Button, Collapse, Pagination } from '@mui/material'
 import { ReactFlowProvider } from '@xyflow/react'
 import { useParams } from 'react-router-dom'
+import { ExportDialog } from '../../components/ExportDialog'
 import { ImportDialog } from '../../components/ImportDialog'
 import { DndProvider } from '../../context/DnD/DnDProvider'
 import { MTGADeckCreatorProvider } from '../../context/MTGA/DeckCreator/MTGADeckCreatorProvider'
@@ -16,7 +17,8 @@ import { Drawer } from './Components/Drawer'
 import { Filters } from './Components/Filters'
 
 export const DeckCreator = () => {
-    const { deck, openDrawer, setOpenDrawer, setViewMode, viewMode, setOpenImportDialog } = useMTGADeckCreator()
+    const { deck, openDrawer, setOpenDrawer, setViewMode, viewMode, setOpenImportDialog, setOpenExportDialog } =
+        useMTGADeckCreator()
     const { filteredCards, page, setPage } = useMTGADeckCreatorPagination()
 
     if (!deck) return null
@@ -79,6 +81,14 @@ export const DeckCreator = () => {
                         >
                             Import from MTGA
                         </Button>
+                        <Button
+                            variant={'contained'}
+                            color={'primary'}
+                            onClick={() => setOpenExportDialog(true)}
+                            sx={{ mr: 4 }}
+                        >
+                            Export to MTGA
+                        </Button>
                         <Button variant={'contained'} color={'primary'} onClick={() => setOpenDrawer(!openDrawer)}>
                             Open Drawer
                         </Button>
@@ -98,6 +108,7 @@ export const DeckCreator = () => {
                     <Drawer />
                 </Collapse>
                 <ImportDialog />
+                <ExportDialog />
             </Box>
         </MTGADeckCreatorFlowProvider>
     )

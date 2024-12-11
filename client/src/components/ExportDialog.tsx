@@ -1,0 +1,67 @@
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material'
+import { useMTGADeckCreator } from '../context/MTGA/DeckCreator/useMTGADeckCreator'
+import { MTGA_DeckCardType } from '../graphql/types'
+
+export const ExportDialog = () => {
+    const { openExportDialog, setOpenExportDialog, deck } = useMTGADeckCreator()
+
+    const nameForExport = (name: string) => {
+        return name.split('//')[0].trim()
+    }
+
+    const exportDeck = () => {
+        if (!deck) return ''
+        const { cards } = deck
+        const commander = cards.find((c) => c.deckCardType === MTGA_DeckCardType.COMMANDER)
+        const companion = cards.find((c) => c.deckCardType === MTGA_DeckCardType.COMPANION)
+        const rest = cards.filter((c) => c.deckCardType === MTGA_DeckCardType.NORMAL)
+
+        let exportString = ''
+        if (commander) {
+            exportString += `Commander\n1 ${nameForExport(commander.card.name)}\n\n`
+        }
+        if (companion) {
+            exportString += `Companion\n1 ${nameForExport(companion.card.name)}\n\n`
+        }
+        if (rest.length) {
+            exportString += 'Deck\n'
+            rest.forEach((c) => {
+                exportString += `${c.count} ${nameForExport(c.card.name)}\n`
+            })
+        }
+        if (companion) {
+            exportString += `\nSideboard\n1 ${nameForExport(companion.card.name)}\n`
+        }
+        return exportString
+    }
+
+    return (
+        <Dialog
+            open={openExportDialog}
+            onClose={() => setOpenExportDialog(false)}
+            fullWidth
+            maxWidth={'xl'}
+            PaperProps={{
+                style: {
+                    width: 'min(80vw, 600px)',
+                },
+            }}
+        >
+            <DialogTitle>Export Deck</DialogTitle>
+            <DialogContent>
+                {/* Area textfield */}
+                <TextField id={'pasteDeck'} multiline fullWidth rows={10} variant="outlined" value={exportDeck()} />
+            </DialogContent>
+            <DialogActions>
+                <Button
+                    onClick={() => {
+                        // Copy to clipboard
+                        navigator.clipboard.writeText(exportDeck())
+                    }}
+                >
+                    Copy to Clipboard
+                </Button>
+            </DialogActions>
+        </Dialog>
+    )
+}
