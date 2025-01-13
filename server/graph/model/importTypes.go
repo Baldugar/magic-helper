@@ -67,6 +67,7 @@ type MTGA_ImportedSet struct {
 	ScryfallURI   string  `json:"scryfall_uri"`
 	URI           string  `json:"uri"`
 	IconSVGURI    string  `json:"icon_svg_uri"`
+	ETag          string  `json:"eTag,omitempty"` // Etag allows us to check if the set has been updated
 	SearchURI     string  `json:"search_uri"`
 }
 
