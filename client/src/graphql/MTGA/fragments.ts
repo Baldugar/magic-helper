@@ -37,6 +37,7 @@ export const MTGA_CardFragments = gql`
         description
         layout
         legalities
+        releasedAt
     }
 `
 

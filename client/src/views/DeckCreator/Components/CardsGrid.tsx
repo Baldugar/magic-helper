@@ -9,7 +9,7 @@ import { PAGE_SIZE } from '../../../utils/constants'
 import { organizeNodes } from '../../../utils/functions/nodeFunctions'
 
 export const CardsGrid = () => {
-    const { onAddCard } = useMTGADeckCreator()
+    const { onAddCard, deck } = useMTGADeckCreator()
     const { setNodes, handleDeleteZone, handleRenameZone } = useMTGADeckFlowCreator()
     const { filteredCards, page, setPage } = useMTGADeckCreatorPagination()
     const { card: draggedCard } = useDnD()
@@ -19,6 +19,8 @@ export const CardsGrid = () => {
         if (!newDeck) return
         setNodes(organizeNodes(newDeck, handleDeleteZone, handleRenameZone))
     }
+
+    const deckCardIDs = deck?.cards.map((c) => c.card.ID) || []
 
     return (
         <Grid
@@ -40,8 +42,14 @@ export const CardsGrid = () => {
         >
             {filteredCards.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((card) => (
                 <Grid item key={card.ID} xs={'auto'}>
-                    <ButtonBase onClick={() => handleAddCard(card)}>
-                        <MTGACardWithHover card={card} hideHover={draggedCard !== null} />
+                    <ButtonBase
+                        onClick={() => handleAddCard(card)}
+                        sx={{
+                            filter: deckCardIDs.includes(card.ID) ? 'brightness(0.5)' : 'brightness(1)',
+                            transition: 'filter 0.3s',
+                        }}
+                    >
+                        <MTGACardWithHover card={card} hideHover={draggedCard !== null} debugValue={'releasedAt'} />
                     </ButtonBase>
                 </Grid>
             ))}

@@ -15,6 +15,7 @@ type MTGA_Card implements MTGA_CommonFields {
     power: String
     producedMana: [MTGA_Color!]
     rarity: MTGA_Rarity!
+    releasedAt: String!
     set: String!
     setName: String!
     toughness: String

@@ -26,6 +26,7 @@ export enum SortEnum {
     COLOR = 'color',
     TYPE = 'type',
     SET = 'set',
+    RELEASED_AT = 'releasedAt',
 }
 
 export enum SortDirection {

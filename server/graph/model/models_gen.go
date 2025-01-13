@@ -54,6 +54,7 @@ type MtgaCard struct {
 	Power         *string                `json:"power,omitempty"`
 	ProducedMana  []MtgaColor            `json:"producedMana,omitempty"`
 	Rarity        MtgaRarity             `json:"rarity"`
+	ReleasedAt    string                 `json:"releasedAt"`
 	Set           string                 `json:"set"`
 	SetName       string                 `json:"setName"`
 	Toughness     *string                `json:"toughness,omitempty"`
