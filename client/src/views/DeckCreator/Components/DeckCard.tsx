@@ -92,6 +92,7 @@ export const DeckCard = (props: DeckCardProps): JSX.Element => {
                     scale={0.75}
                     width={CARD_SIZE_VALUES['normal'].width}
                     otherImg={otherNormal}
+                    imgHorizontal={card.typeLine.startsWith('Battle')}
                 />
             )}
         </>

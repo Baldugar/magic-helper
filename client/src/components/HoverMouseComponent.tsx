@@ -8,10 +8,11 @@ export type HoverMouseComponentProps = {
     width: number
     height: number
     scale: number
+    imgHorizontal?: boolean
 }
 
 export const HoverMouseComponent: FC<HoverMouseComponentProps> = (props) => {
-    const { height, img, scale: zoomScale, visible, width, otherImg } = props
+    const { height, img, imgHorizontal, scale: zoomScale, visible, width, otherImg } = props
     const offset = 10
     const edgeOffset = 20
 
@@ -32,7 +33,7 @@ export const HoverMouseComponent: FC<HoverMouseComponentProps> = (props) => {
 
     const { xMod, yMod, transformOrigin, scale } = transformations
 
-    const totalWidth = width * (otherImg ? 2 : 1) * zoomScale
+    const totalWidth = ((imgHorizontal ? height : width) + (otherImg ? width : 0)) * zoomScale
     const totalHeight = height * zoomScale
 
     const handleMouseMove = useCallback(
@@ -123,13 +124,23 @@ export const HoverMouseComponent: FC<HoverMouseComponentProps> = (props) => {
                     transformOrigin: transformOrigin, // Set the origin for the scale transformation
                 }}
             >
-                <img src={img} loading={'lazy'} /> {/* Render the image lazily */}
+                <Box
+                    style={{
+                        // Rotate the main image from its center if it's horizontal
+                        transform: `rotate(${imgHorizontal ? 90 : 0}deg) translateY(${
+                            imgHorizontal ? -((height - width) / 2) : 0
+                        }px)`,
+                        transformOrigin: 'center center',
+                    }}
+                >
+                    <img src={img} loading={'lazy'} /> {/* Render the image lazily */}
+                </Box>
             </Box>
             {otherImg && (
                 <Box
                     position={'absolute'} // Position it absolutely on the screen
                     top={y + yMod} // Y position based on the mouse location
-                    left={x + totalWidth / 2 + xMod} // X position based on the mouse location
+                    left={x + (imgHorizontal ? height : width) * scale + xMod} // X position based on the mouse location
                     zIndex={10000} // Ensure it's rendered above other elements
                     style={{
                         transform: `scale(${scale})`, // Apply scaling for zoom effect

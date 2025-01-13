@@ -60,6 +60,7 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
                     scale={0.75}
                     width={CARD_SIZE_VALUES['normal'].width}
                     otherImg={otherNormal}
+                    imgHorizontal={card.typeLine.startsWith('Battle')}
                 />
             )}
         </>
