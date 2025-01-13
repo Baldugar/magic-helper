@@ -71,6 +71,7 @@ type ComplexityRoot struct {
 		Power         func(childComplexity int) int
 		ProducedMana  func(childComplexity int) int
 		Rarity        func(childComplexity int) int
+		ReleasedAt    func(childComplexity int) int
 		Set           func(childComplexity int) int
 		SetName       func(childComplexity int) int
 		Toughness     func(childComplexity int) int
@@ -341,6 +342,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MTGA_Card.Rarity(childComplexity), true
+
+	case "MTGA_Card.releasedAt":
+		if e.complexity.MTGA_Card.ReleasedAt == nil {
+			break
+		}
+
+		return e.complexity.MTGA_Card.ReleasedAt(childComplexity), true
 
 	case "MTGA_Card.set":
 		if e.complexity.MTGA_Card.Set == nil {
@@ -945,6 +953,7 @@ enum MTGA_Layout {
     power: String
     producedMana: [MTGA_Color!]
     rarity: MTGA_Rarity!
+    releasedAt: String!
     set: String!
     setName: String!
     toughness: String
@@ -2146,6 +2155,50 @@ func (ec *executionContext) fieldContext_MTGA_Card_rarity(ctx context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _MTGA_Card_releasedAt(ctx context.Context, field graphql.CollectedField, obj *model.MtgaCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_Card_releasedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReleasedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_Card_releasedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_Card",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MTGA_Card_set(ctx context.Context, field graphql.CollectedField, obj *model.MtgaCard) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MTGA_Card_set(ctx, field)
 	if err != nil {
@@ -3154,6 +3207,8 @@ func (ec *executionContext) fieldContext_MTGA_DeckCard_card(ctx context.Context,
 				return ec.fieldContext_MTGA_Card_producedMana(ctx, field)
 			case "rarity":
 				return ec.fieldContext_MTGA_Card_rarity(ctx, field)
+			case "releasedAt":
+				return ec.fieldContext_MTGA_Card_releasedAt(ctx, field)
 			case "set":
 				return ec.fieldContext_MTGA_Card_set(ctx, field)
 			case "setName":
@@ -4568,6 +4623,8 @@ func (ec *executionContext) fieldContext_Query_getMTGACards(ctx context.Context,
 				return ec.fieldContext_MTGA_Card_producedMana(ctx, field)
 			case "rarity":
 				return ec.fieldContext_MTGA_Card_rarity(ctx, field)
+			case "releasedAt":
+				return ec.fieldContext_MTGA_Card_releasedAt(ctx, field)
 			case "set":
 				return ec.fieldContext_MTGA_Card_set(ctx, field)
 			case "setName":
@@ -7130,6 +7187,11 @@ func (ec *executionContext) _MTGA_Card(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = ec._MTGA_Card_producedMana(ctx, field, obj)
 		case "rarity":
 			out.Values[i] = ec._MTGA_Card_rarity(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "releasedAt":
+			out.Values[i] = ec._MTGA_Card_releasedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

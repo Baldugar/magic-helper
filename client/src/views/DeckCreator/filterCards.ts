@@ -536,6 +536,8 @@ export const filterCards = <T extends MTGA_Card>(
                         }
                     case SortEnum.SET:
                         return (c: MTGA_Card) => expansions.find((e) => e.set.toLowerCase() === c.set)?.releasedAt
+                    case SortEnum.RELEASED_AT:
+                        return (c: MTGA_Card) => new Date(c.releasedAt).getTime()
                 }
             })
             .flat(),

@@ -11,10 +11,11 @@ import { ImageWithSkeleton } from './ImageWithSkeleton'
 export type MTGACardWithHoverProps = {
     card: MTGA_Card
     hideHover?: boolean
+    debugValue?: keyof MTGA_Card
 }
 
 export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
-    const { card, hideHover } = props
+    const { card, hideHover, debugValue } = props
     const { viewMode } = useMTGADeckCreator()
     const { onDragStart, onDragEnd } = useDnD()
 
@@ -45,6 +46,11 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
                 draggable
             >
                 <ImageWithSkeleton img={small} setHover={setHover} height={height} width={width} />
+                {debugValue && (
+                    <Box position={'absolute'} bottom={0} right={0} bgcolor={'white'}>{`${JSON.stringify(
+                        card[debugValue],
+                    )}`}</Box>
+                )}
             </Box>
             {normal && hover && (
                 <HoverMouseComponent

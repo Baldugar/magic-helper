@@ -17,6 +17,7 @@ type MTGA_ImportedCard struct {
 	Power         *string           `json:"power"`
 	ProducedMana  []*string         `json:"produced_mana"`
 	Rarity        string            `json:"rarity"`
+	ReleasedAt    string            `json:"released_at"`
 	Set           string            `json:"set"`
 	SetName       string            `json:"set_name"`
 	Toughness     *string           `json:"toughness"`
