@@ -3,6 +3,7 @@ package daemons
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"magic-helper/arango"
 	"magic-helper/graph/model"
@@ -131,6 +132,8 @@ func fetchSets() bool {
 	return true
 }
 
+// updateDatabaseSets fetches all sets from the DB (arango.MTGA_ORIGINAL_SETS_COLLECTION),
+// then conditionally downloads their icons using an ETag check.
 func updateDatabaseSets() {
 	log.Info().Msg("Updating database sets")
 
@@ -161,52 +164,16 @@ func updateDatabaseSets() {
 		}
 		importedSets = append(importedSets, set)
 	}
-
 	log.Info().Msgf("Read %v sets from database", len(importedSets))
 
-	// Download all the set icons IconSVGURI. Format is https://svgs.scryfall.io/sets/dft.svg?1730696400
-	for _, set := range importedSets {
-		iconURL := set.IconSVGURI
-		iconPath := "public/images/sets/" + set.Code + ".svg"
-
-		// Check that the folders exist
-		err := os.MkdirAll("public/images/sets", 0755)
+	// Download or skip icons based on ETag
+	for i := range importedSets {
+		set := &importedSets[i]
+		err := downloadSetIconIfNeeded(ctx, set)
 		if err != nil {
-			log.Error().Err(err).Msgf("Error creating set icon folder")
-			return
-		}
-
-		// If the file already exists, skip
-		if _, err := os.Stat(iconPath); err == nil {
-			log.Info().Msgf("Set icon already exists: %v", iconPath)
+			log.Error().Err(err).Msgf("Error downloading set icon for %s", set.Code)
 			continue
 		}
-
-		resp, err := http.Get(iconURL)
-		if err != nil {
-			log.Error().Err(err).Msgf("Error fetching set icon")
-			return
-		}
-
-		if resp.StatusCode != http.StatusOK {
-			log.Error().Msgf("Error fetching set icon: %v", resp.Status)
-			return
-		}
-
-		iconFile, err := io.ReadAll(resp.Body)
-		resp.Body.Close()
-		if err != nil {
-			log.Error().Err(err).Msgf("Error reading response body")
-			return
-		}
-
-		err = os.WriteFile(iconPath, iconFile, 0644)
-		if err != nil {
-			log.Error().Err(err).Msgf("Error writing set icon")
-			return
-		}
-
-		log.Info().Msgf("Downloaded set icon: %v", iconPath)
 	}
 
 	// Insert the data into the database
@@ -259,4 +226,119 @@ func updateDatabaseSets() {
 	}
 
 	log.Info().Msgf("Inserted sets into database")
+}
+
+// downloadSetIconIfNeeded uses a HEAD request with If-None-Match (ETag) to see
+// if the icon changed. If server returns 304 Not Modified, it skips. Otherwise,
+// it downloads the file, then updates the ETag in DB.
+func downloadSetIconIfNeeded(ctx context.Context, set *model.MTGA_ImportedSet) error {
+	if set.IconSVGURI == "" {
+		// If there's no icon URL, nothing to do
+		return nil
+	}
+
+	// 1) Ensure local images folder exists
+	err := os.MkdirAll("public/images/sets", 0755)
+	if err != nil {
+		return fmt.Errorf("error creating set icon folder: %w", err)
+	}
+
+	// 2) Make a HEAD request
+	headReq, err := http.NewRequest(http.MethodHead, set.IconSVGURI, nil)
+	if err != nil {
+		return fmt.Errorf("error creating HEAD request: %w", err)
+	}
+
+	// If we have an ETag stored, send If-None-Match
+	if set.ETag != "" {
+		headReq.Header.Set("If-None-Match", set.ETag)
+	}
+
+	headResp, err := http.DefaultClient.Do(headReq)
+	if err != nil {
+		return fmt.Errorf("HEAD request failed for %s: %w", set.Code, err)
+	}
+	defer headResp.Body.Close()
+
+	if headResp.StatusCode == http.StatusNotModified {
+		// ETag is the same; skip re-download
+		return nil
+	}
+
+	if headResp.StatusCode != http.StatusOK {
+		// If we get anything else (404, 500, etc.) treat as error
+		return fmt.Errorf("HEAD for set %s returned status %d", set.Code, headResp.StatusCode)
+	}
+
+	newETag := headResp.Header.Get("ETag")
+	log.Info().Msgf("HEAD for set %s returned ETag: %q (old ETag: %q)", set.Code, newETag, set.ETag)
+
+	// 3) If ETag is empty or changed, do the actual GET
+	if newETag == "" || newETag != set.ETag {
+		err := doDownloadAndSave(ctx, set, newETag)
+		if err != nil {
+			return err
+		}
+	} else {
+		// Sometimes servers return 200 but same ETag anyway
+		log.Info().Msgf("Icon for set %s is unchanged (same ETag), skipping.", set.Code)
+	}
+
+	return nil
+}
+
+// doDownloadAndSave does the actual GET request, saves the file, and updates the ETag in DB.
+func doDownloadAndSave(ctx context.Context, set *model.MTGA_ImportedSet, newETag string) error {
+	resp, err := http.Get(set.IconSVGURI)
+	if err != nil {
+		return fmt.Errorf("GET request failed for %s: %w", set.Code, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("GET for set %s returned status %d", set.Code, resp.StatusCode)
+	}
+
+	iconFile, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("reading response body for %s: %w", set.Code, err)
+	}
+
+	iconPath := "public/images/sets/" + set.Code + ".svg"
+	err = os.WriteFile(iconPath, iconFile, 0644)
+	if err != nil {
+		return fmt.Errorf("writing set icon for %s: %w", set.Code, err)
+	}
+
+	log.Info().Msgf("Downloaded set icon: %s (new ETag: %q)", iconPath, newETag)
+
+	// Update ETag in-memory
+	set.ETag = newETag
+
+	// Also update the ETag in Arango
+	if err := updateSetETagInDB(ctx, set.Code, newETag); err != nil {
+		return fmt.Errorf("updating ETag in DB for %s: %w", set.Code, err)
+	}
+
+	return nil
+}
+
+// updateSetETagInDB runs an AQL query to store the new ETag in your "MTGA_ORIGINAL_SETS_COLLECTION".
+func updateSetETagInDB(ctx context.Context, code, newETag string) error {
+	aq := arango.NewQuery( /* aql */ `
+		FOR s IN @@collection
+			FILTER s._key == @key
+			UPDATE s WITH { eTag: @etag } IN @@collection
+	`)
+
+	aq.AddBindVar("@collection", arango.MTGA_ORIGINAL_SETS_COLLECTION)
+	aq.AddBindVar("key", code)
+	aq.AddBindVar("etag", newETag)
+
+	_, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
+	if err != nil {
+		return fmt.Errorf("arango query error: %w", err)
+	}
+
+	return nil
 }
