@@ -214,19 +214,20 @@ export const organizeNodes = (
     deck: MTGA_Deck | undefined,
     onDeleteZone: (zoneID: string, deleteNodes: boolean) => void,
     onNameChange: (zoneID: string, newName: string) => void,
+    onDeletePhantom: (cardID: string, phantomIndex: number) => void,
 ): NodeType[] => {
     const nodes: NodeType[] = []
     if (!deck) return nodes
-    const allPhantoms = deck.cards.flatMap((c) =>
-        c.phantoms.map(
-            (p, i) =>
-                ({
-                    card: c.card,
-                    phantomOf: c.card.ID,
-                    index: i,
-                    position: p,
-                } as PhantomNodeData),
-        ),
+    const allPhantoms: PhantomNodeData[] = deck.cards.flatMap((c) =>
+        c.phantoms.map((p, i) => {
+            return {
+                card: c.card,
+                phantomOf: c.card.ID,
+                index: i,
+                position: p,
+                onDelete: onDeletePhantom,
+            }
+        }),
     )
     for (const zone of deck.zones) {
         const data: GroupNodeData = {
@@ -251,10 +252,11 @@ export const organizeNodes = (
         } as Node<GroupNodeData>)
     }
     for (const card of deck.cards) {
+        const cardData: CardNodeData = { card: card }
         nodes.push({
             id: card.card.ID,
             position: card.position,
-            data: { label: card.card.name, card: card },
+            data: cardData,
             type: 'cardNode',
             parentId: card.position.parentID,
         } as Node<CardNodeData>)
