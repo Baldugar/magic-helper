@@ -90,13 +90,26 @@ export const MTGADeckCreatorFlowProvider = ({ children, deck }: { children: Reac
         [setNodes],
     )
 
+    const handleDeletePhantom = useCallback(
+        (cardID: string, phantomIndex: number) => {
+            setNodes((nodes) => {
+                const node = nodes.find((n) => n.id === cardID)
+                if (!node) return nodes
+                const phantomNode = nodes.find((n) => n.id === cardID + '_phantom_' + phantomIndex)
+                if (!phantomNode) return nodes
+                return nodes.filter((n) => n.id !== phantomNode.id)
+            })
+        },
+        [setNodes],
+    )
+
     // Organize the nodes when the deck is loaded
     useEffect(() => {
         if (!init && deck) {
-            setNodes(organizeNodes(deck, handleDeleteZone, handleRenameZone))
+            setNodes(organizeNodes(deck, handleDeleteZone, handleRenameZone, handleDeletePhantom))
             setInit(true)
         }
-    }, [deck, nodes, setNodes, handleDeleteZone, handleRenameZone, init, setInit])
+    }, [deck, nodes, setNodes, handleDeleteZone, handleRenameZone, handleDeletePhantom, init, setInit])
 
     // Propagate changes in the nodes to the deck once the user stops doing changes
     useEffect(() => {
@@ -207,16 +220,17 @@ export const MTGADeckCreatorFlowProvider = ({ children, deck }: { children: Reac
             })
             let newNode: NodeType | null = null
             if (type === 'groupNode') {
+                const groupData: GroupNodeData = {
+                    label: `${type} node`,
+                    childrenIDs: [],
+                    onDelete: handleDeleteZone,
+                    onNameChange: handleRenameZone,
+                }
                 newNode = {
                     id: uuidv4(),
                     type: type,
                     position,
-                    data: {
-                        label: `${type} node`,
-                        childrenIDs: [],
-                        onDelete: handleDeleteZone,
-                        onNameChange: handleRenameZone,
-                    },
+                    data: groupData,
                     width: MIN_SIZE,
                     height: MIN_SIZE,
                 } as Node<GroupNodeData>
@@ -230,30 +244,43 @@ export const MTGADeckCreatorFlowProvider = ({ children, deck }: { children: Reac
             // If the card is already in the deck, add a phantom
             if (idx !== -1) {
                 const idx = nodes.filter((n) => n.id !== cardID && n.id.startsWith(cardID)).length
+                const phantomData: PhantomNodeData = {
+                    card,
+                    index: idx,
+                    phantomOf: cardID,
+                    position,
+                    onDelete: handleDeletePhantom,
+                }
                 newNode = {
-                    data: {
-                        card,
-                        index: idx,
-                        phantomOf: cardID,
-                        position,
-                    },
+                    data: phantomData,
                     id: cardID + '_phantom_' + idx,
                     position,
                     type: 'phantomNode',
                 } as Node<PhantomNodeData>
-            } else {
+            } else if (deckCard) {
+                const cardData: CardNodeData = { card: deckCard }
                 newNode = {
                     id: cardID,
                     type: 'cardNode',
                     position,
-                    data: { label: card.name, card: deckCard },
+                    data: cardData,
                 } as Node<CardNodeData>
             }
             if (!newNode) return
             const newNodes = sortNodesByNesting(nodes.concat(newNode))
             setNodes(newNodes)
         },
-        [screenToFlowPosition, type, setNodes, card, onAddCard, nodes, handleDeleteZone, handleRenameZone],
+        [
+            screenToFlowPosition,
+            type,
+            setNodes,
+            card,
+            onAddCard,
+            nodes,
+            handleDeleteZone,
+            handleRenameZone,
+            handleDeletePhantom,
+        ],
     )
 
     // This function is called when a node is dragged and dropped inside the flow view
