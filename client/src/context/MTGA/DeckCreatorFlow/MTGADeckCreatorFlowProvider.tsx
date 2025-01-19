@@ -10,6 +10,9 @@ import {
     MTGA_DeckCardType,
     Position,
 } from '../../../graphql/types'
+import { CardNodeData } from '../../../pages/FlowView/Nodes/CardNode'
+import { GroupNodeData, MIN_SIZE } from '../../../pages/FlowView/Nodes/GroupNode'
+import { PhantomNodeData } from '../../../pages/FlowView/Nodes/PhantomNode'
 import { uuidv4 } from '../../../utils/functions/IDFunctions'
 import {
     calculateCardsFromNodes,
@@ -19,9 +22,6 @@ import {
     organizeNodes,
     sortNodesByNesting,
 } from '../../../utils/functions/nodeFunctions'
-import { CardNodeData } from '../../../views/FlowView/Nodes/CardNode'
-import { GroupNodeData, MIN_SIZE } from '../../../views/FlowView/Nodes/GroupNode'
-import { PhantomNodeData } from '../../../views/FlowView/Nodes/PhantomNode'
 import { useDnD } from '../../DnD/useDnD'
 import { useMTGACards } from '../Cards/useMTGACards'
 import { useMTGADeckCreator } from '../DeckCreator/useMTGADeckCreator'

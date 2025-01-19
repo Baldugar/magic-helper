@@ -2,9 +2,9 @@ import { Node, Rect, XYPosition } from '@xyflow/react'
 import { cloneDeep } from 'lodash'
 import { SetStateAction } from 'react'
 import { FlowZone, MTGA_Deck, MTGA_DeckCard, MTGA_DeckCardInput, Position } from '../../graphql/types'
-import { CardNodeData } from '../../views/FlowView/Nodes/CardNode'
-import { GroupNodeData } from '../../views/FlowView/Nodes/GroupNode'
-import { PhantomNodeData } from '../../views/FlowView/Nodes/PhantomNode'
+import { CardNodeData } from '../../pages/FlowView/Nodes/CardNode'
+import { GroupNodeData } from '../../pages/FlowView/Nodes/GroupNode'
+import { PhantomNodeData } from '../../pages/FlowView/Nodes/PhantomNode'
 
 export type NodeType = Node<CardNodeData | GroupNodeData | PhantomNodeData>
 

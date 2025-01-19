@@ -3,8 +3,8 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import './App.css'
 import { MTGACardsProvider } from './context/MTGA/Cards/MTGACardsProvider'
 import { MTGADecksProvider } from './context/MTGA/Decks/MTGADecksProvider'
-import { DeckCreatorWrapper } from './views/DeckCreator/DeckCreator'
-import { DeckList } from './views/DeckList/DeckList'
+import { DeckCreatorWrapper } from './pages/DeckCreator/DeckCreator'
+import { DeckList } from './pages/DeckList/DeckList'
 
 function WrappedApp() {
     return (

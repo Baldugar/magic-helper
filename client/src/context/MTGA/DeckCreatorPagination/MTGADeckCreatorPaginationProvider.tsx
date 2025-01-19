@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from 'react'
 import { MTGA_Card, MTGA_DeckCardType } from '../../../graphql/types'
-import { filterCards } from '../../../views/DeckCreator/filterCards'
+import { filterCards } from '../../../pages/DeckCreator/filterCards'
 import { useMTGACards } from '../Cards/useMTGACards'
 import { useMTGADeckCreator } from '../DeckCreator/useMTGADeckCreator'
 import { useMTGAFilter } from '../Filter/useMTGAFilter'
