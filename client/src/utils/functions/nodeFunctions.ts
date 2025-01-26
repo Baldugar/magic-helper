@@ -48,14 +48,14 @@ export const onNodeDragStop = (
     node: NodeType,
     getIntersectingNodes: (
         node:
-            | Node
+            | NodeType
             | Rect
             | {
-                  id: NodeType['id']
+                  id: Node['id']
               },
         partially?: boolean,
-        nodes?: Node[] | undefined,
-    ) => Node[],
+        nodes?: NodeType[] | undefined,
+    ) => NodeType[],
     nodes: NodeType[],
     setNodes: (value: SetStateAction<NodeType[]>) => void,
 ) => {

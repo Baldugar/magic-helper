@@ -1,9 +1,10 @@
 import { Button } from '@mui/material'
-import { Background, BackgroundVariant, MiniMap, Node, NodeTypes, Panel, ReactFlow } from '@xyflow/react'
+import { Background, BackgroundVariant, MiniMap, Node, NodeTypes, Panel, ReactFlow, useReactFlow } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
+import { useMTGADeckCreator } from '../../context/MTGA/DeckCreator/useMTGADeckCreator'
 import { useMTGADeckFlowCreator } from '../../context/MTGA/DeckCreatorFlow/useMTGADeckFlowCreator'
 import { uuidv4 } from '../../utils/functions/IDFunctions'
-import { sortNodesByNesting } from '../../utils/functions/nodeFunctions'
+import { NodeType, organizeNodes, sortNodesByNesting } from '../../utils/functions/nodeFunctions'
 import { CardNode } from './Nodes/CardNode'
 import { GroupNode, GroupNodeData, MIN_SIZE } from './Nodes/GroupNode'
 import { PhantomNode } from './Nodes/PhantomNode'
@@ -15,24 +16,21 @@ const nodeTypes: NodeTypes = {
 }
 
 export const FlowView = () => {
-    const {
-        handleNodeDragStop,
-        nodes,
-        onDragOver,
-        onDrop,
-        onNodesChange,
-        setNodes,
-        handleDeleteZone,
-        handleRenameZone,
-    } = useMTGADeckFlowCreator()
+    const { handleNodeDragStop, onDragOver, onDrop, handleDeleteZone, handleRenameZone, handleDeletePhantom } =
+        useMTGADeckFlowCreator()
+    const { deck } = useMTGADeckCreator()
+    const { setNodes } = useReactFlow<NodeType>()
+
+    if (!deck) return null
+
+    const nodes = organizeNodes(deck, handleDeleteZone, handleRenameZone, handleDeletePhantom)
 
     return (
         <>
-            <ReactFlow
+            <ReactFlow<NodeType>
                 nodeTypes={nodeTypes}
-                nodes={nodes}
+                defaultNodes={nodes}
                 onNodeDragStop={handleNodeDragStop}
-                onNodesChange={onNodesChange}
                 onDragOver={onDragOver}
                 onDrop={onDrop}
                 fitView

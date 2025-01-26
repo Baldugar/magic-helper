@@ -1,16 +1,16 @@
 import { Box, Button, Grid, Typography } from '@mui/material'
+import { useReactFlow } from '@xyflow/react'
 import { sortBy } from 'lodash'
 import { useMemo } from 'react'
 import { useMTGADeckCreator } from '../../../context/MTGA/DeckCreator/useMTGADeckCreator'
-import { useMTGADeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGADeckFlowCreator'
 import { MTGAFunctions } from '../../../graphql/MTGA/functions'
 import { DeckType, MainOrSide, MTGA_DeckCard, MTGA_DeckCardType } from '../../../graphql/types'
-import { calculateCardsFromNodes, calculateZonesFromNodes } from '../../../utils/functions/nodeFunctions'
+import { calculateCardsFromNodes, calculateZonesFromNodes, NodeType } from '../../../utils/functions/nodeFunctions'
 import { DeckCard } from './DeckCard'
 
 export const Drawer = () => {
     const { deckTab, setDeckTab, deck, selectingCommander, setSelectingCommander, removeCard } = useMTGADeckCreator()
-    const { nodes, setNodes } = useMTGADeckFlowCreator()
+    const { getNodes, setNodes } = useReactFlow<NodeType>()
 
     const {
         mutations: { updateMTGADeck },
@@ -18,6 +18,7 @@ export const Drawer = () => {
 
     const saveDeck = () => {
         if (!deck) return
+        const nodes = getNodes()
         const deckInput = {
             cards: calculateCardsFromNodes(nodes, deck.cards),
             deckID: deck.ID,
