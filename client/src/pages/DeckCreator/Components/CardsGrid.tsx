@@ -10,14 +10,14 @@ import { organizeNodes } from '../../../utils/functions/nodeFunctions'
 
 export const CardsGrid = () => {
     const { onAddCard, deck } = useMTGADeckCreator()
-    const { setNodes, handleDeleteZone, handleRenameZone } = useMTGADeckFlowCreator()
+    const { setNodes, handleDeleteZone, handleRenameZone, handleDeletePhantom } = useMTGADeckFlowCreator()
     const { filteredCards, page, setPage } = useMTGADeckCreatorPagination()
     const { card: draggedCard } = useDnD()
 
     const handleAddCard = (card: MTGA_Card) => {
         const newDeck = onAddCard(card)
         if (!newDeck) return
-        setNodes(organizeNodes(newDeck, handleDeleteZone, handleRenameZone))
+        setNodes(organizeNodes(newDeck, handleDeleteZone, handleRenameZone, handleDeletePhantom))
     }
 
     const deckCardIDs = deck?.cards.map((c) => c.card.ID) || []

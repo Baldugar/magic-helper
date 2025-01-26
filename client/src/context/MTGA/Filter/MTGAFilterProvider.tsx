@@ -53,11 +53,16 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
         })
     }, [filter.cardTypes])
 
+    const clearFilter = () => {
+        setFilter(originalFilter)
+    }
+
     return (
         <MTGAFilterContext.Provider
             value={{
                 filter,
                 setFilter,
+                clearFilter,
                 originalFilter,
                 setOriginalFilter,
                 sort,

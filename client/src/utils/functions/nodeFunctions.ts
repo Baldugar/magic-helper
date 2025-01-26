@@ -335,3 +335,33 @@ export const calculateZonesFromNodes = (nodes: Node[]): FlowZone[] => {
     }
     return zones
 }
+
+export const findNextAvailablePosition = (cards: MTGA_DeckCard[]): Position => {
+    let x = 0
+    let y = 0
+
+    // This is an infinite loop, but not in practice as there are no infinite cards
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+        // Check if (x, y) is occupied
+        const occupied = cards.some(
+            (card) =>
+                (card.position.x === x && card.position.y === y) || card.phantoms.some((p) => p.x === x && p.y === y),
+        )
+
+        if (!occupied) {
+            // Found a free spot
+            return { x, y }
+        }
+
+        // Move to next position
+        x += 100
+        if (x > 500) {
+            x = 0
+            y += 50
+        }
+
+        // In practice, you can break here or handle an upper bound for y
+        // if you ever need to limit the layout to a certain number of rows.
+    }
+}

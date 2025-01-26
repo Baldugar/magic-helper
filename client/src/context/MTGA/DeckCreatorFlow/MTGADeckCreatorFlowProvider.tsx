@@ -17,6 +17,7 @@ import { uuidv4 } from '../../../utils/functions/IDFunctions'
 import {
     calculateCardsFromNodes,
     calculateZonesFromNodes,
+    findNextAvailablePosition,
     NodeType,
     onNodeDragStop,
     organizeNodes,
@@ -170,20 +171,19 @@ export const MTGADeckCreatorFlowProvider = ({ children, deck }: { children: Reac
                     const mainOrSide = deckTab === 'main' ? MainOrSide.MAIN : MainOrSide.SIDEBOARD
                     const ID = card.ID
                     const index = newDeck.cards.findIndex((c) => c.card.ID === ID && c.mainOrSide === mainOrSide)
+                    const nextAvailableSpot = findNextAvailablePosition(newDeck.cards)
                     // If the card is already in the deck, add a phantom
                     if (index !== -1) {
                         // TODO: Add +1 on count if the card is already in the deck
-                        if (position) {
-                            newDeck.cards[index].phantoms.push(position)
-                            cardToReturn = structuredClone(newDeck.cards[index])
-                        }
+                        newDeck.cards[index].phantoms.push(position || nextAvailableSpot)
+                        cardToReturn = structuredClone(newDeck.cards[index])
                     } else {
                         cardToReturn = {
                             card,
                             count: 1,
                             deckCardType: MTGA_DeckCardType.NORMAL,
                             mainOrSide,
-                            position: position || { x: 0, y: 0 },
+                            position: position || nextAvailableSpot,
                             phantoms: [],
                         }
                         newDeck.cards.push(cardToReturn)
@@ -299,6 +299,7 @@ export const MTGADeckCreatorFlowProvider = ({ children, deck }: { children: Reac
                 setNodes,
                 handleDeleteZone,
                 handleRenameZone,
+                handleDeletePhantom,
             }}
         >
             {children}

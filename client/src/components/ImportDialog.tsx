@@ -22,7 +22,7 @@ export const ImportDialog = () => {
     const { openImportDialog, setOpenImportDialog } = useMTGADeckCreator()
     const { cards } = useMTGACards()
     const { setDeck } = useMTGADeckCreator()
-    const { setNodes, handleDeleteZone, handleRenameZone } = useMTGADeckFlowCreator()
+    const { setNodes, handleDeleteZone, handleRenameZone, handleDeletePhantom } = useMTGADeckFlowCreator()
 
     const parseImportDeck = (copiedDeck: string, allCards: MTGA_Card[]): MTGA_ImportedDeck => {
         const lines = copiedDeck.split('\n').map((line) => line.trim())
@@ -402,7 +402,7 @@ export const ImportDialog = () => {
                 })
                 newDeck.zones = []
             }
-            setNodes(organizeNodes(newDeck, handleDeleteZone, handleRenameZone))
+            setNodes(organizeNodes(newDeck, handleDeleteZone, handleRenameZone, handleDeletePhantom))
             return newDeck
         })
         setOpenImportDialog(false)
