@@ -1,9 +1,10 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material'
+import { useReactFlow } from '@xyflow/react'
 import { useMTGACards } from '../context/MTGA/Cards/useMTGACards'
 import { useMTGADeckCreator } from '../context/MTGA/DeckCreator/useMTGADeckCreator'
 import { useMTGADeckFlowCreator } from '../context/MTGA/DeckCreatorFlow/useMTGADeckFlowCreator'
 import { DeckType, MainOrSide, MTGA_Card, MTGA_DeckCardType } from '../graphql/types'
-import { organizeNodes } from '../utils/functions/nodeFunctions'
+import { NodeType, organizeNodes } from '../utils/functions/nodeFunctions'
 
 type MTGA_ImportedCard = {
     card: MTGA_Card
@@ -22,7 +23,8 @@ export const ImportDialog = () => {
     const { openImportDialog, setOpenImportDialog } = useMTGADeckCreator()
     const { cards } = useMTGACards()
     const { setDeck } = useMTGADeckCreator()
-    const { setNodes, handleDeleteZone, handleRenameZone, handleDeletePhantom } = useMTGADeckFlowCreator()
+    const { handleDeleteZone, handleRenameZone, handleDeletePhantom } = useMTGADeckFlowCreator()
+    const { setNodes } = useReactFlow<NodeType>()
 
     const parseImportDeck = (copiedDeck: string, allCards: MTGA_Card[]): MTGA_ImportedDeck => {
         const lines = copiedDeck.split('\n').map((line) => line.trim())

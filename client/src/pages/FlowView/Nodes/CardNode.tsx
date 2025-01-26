@@ -1,8 +1,8 @@
-import { NodeProps } from '@xyflow/react'
+import { NodeProps, useReactFlow } from '@xyflow/react'
 import { useMTGADeckCreator } from '../../../context/MTGA/DeckCreator/useMTGADeckCreator'
-import { useMTGADeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGADeckFlowCreator'
 import { MTGA_DeckCard } from '../../../graphql/types'
 import { getCorrectCardImage } from '../../../utils/functions/cardFunctions'
+import { NodeType } from '../../../utils/functions/nodeFunctions'
 import { ContextMenu, ContextMenuOption } from '../../../utils/hooks/ContextMenu/ContextMenu'
 import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
 
@@ -19,7 +19,7 @@ export const CardNode = (props: CardNodeProps) => {
     const { card } = data
 
     const { removeCard } = useMTGADeckCreator()
-    const { setNodes } = useMTGADeckFlowCreator()
+    const { setNodes } = useReactFlow<NodeType>()
     const { anchorRef, handleClick, handleClose, handleContextMenu, open } = useContextMenu<HTMLDivElement>()
 
     const options: ContextMenuOption[] = [
