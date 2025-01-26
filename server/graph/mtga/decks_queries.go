@@ -20,6 +20,7 @@ func GetMTGADecks(ctx context.Context, deckID *string) ([]*model.MtgaDeck, error
 			)
 			LET cards = (
 				FOR card, edge IN 1..1 INBOUND doc @@edge2
+				SORT edge.position.x ASC, edge.position.y ASC
 				RETURN MERGE(edge, {					
 					card: card,
 					count: edge.count,

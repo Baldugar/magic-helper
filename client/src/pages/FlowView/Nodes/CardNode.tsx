@@ -1,6 +1,10 @@
 import { NodeProps } from '@xyflow/react'
+import { useMTGADeckCreator } from '../../../context/MTGA/DeckCreator/useMTGADeckCreator'
+import { useMTGADeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGADeckFlowCreator'
 import { MTGA_DeckCard } from '../../../graphql/types'
 import { getCorrectCardImage } from '../../../utils/functions/cardFunctions'
+import { ContextMenu, ContextMenuOption } from '../../../utils/hooks/ContextMenu/ContextMenu'
+import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
 
 export type CardNodeData = {
     card: MTGA_DeckCard
@@ -14,14 +18,37 @@ export const CardNode = (props: CardNodeProps) => {
     const { data } = props
     const { card } = data
 
+    const { removeCard } = useMTGADeckCreator()
+    const { setNodes } = useMTGADeckFlowCreator()
+    const { anchorRef, handleClick, handleClose, handleContextMenu, open } = useContextMenu<HTMLDivElement>()
+
+    const options: ContextMenuOption[] = [
+        {
+            label: 'Delete',
+            action: () => {
+                removeCard(card)
+                if (setNodes) setNodes((prev) => prev.filter((n) => !n.id.startsWith(card.card.ID)))
+            },
+        },
+    ]
+
     return (
-        <div>
-            <img
-                src={getCorrectCardImage(card.card, 'normal')}
-                alt={card.card.name}
-                width={100}
-                style={{ borderRadius: 5 }}
+        <>
+            <div ref={anchorRef} onContextMenu={handleContextMenu}>
+                <img
+                    src={getCorrectCardImage(card.card, 'normal')}
+                    alt={card.card.name}
+                    width={100}
+                    style={{ borderRadius: 5 }}
+                />
+            </div>
+            <ContextMenu
+                anchorRef={anchorRef}
+                options={options}
+                open={open}
+                handleClose={handleClose}
+                handleClick={handleClick}
             />
-        </div>
+        </>
     )
 }

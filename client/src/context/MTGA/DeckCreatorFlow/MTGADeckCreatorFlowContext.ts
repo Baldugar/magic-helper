@@ -11,6 +11,7 @@ type MTGADeckCreatorFlowContextType = {
     setNodes: Dispatch<SetStateAction<NodeType[]>>
     handleDeleteZone: (nodeID: string, deleteNodes: boolean) => void
     handleRenameZone: (nodeID: string, newName: string) => void
+    handleDeletePhantom: (cardID: string, phantomIndex: number) => void
 }
 
 export const MTGADeckCreatorFlowContext = createContext<MTGADeckCreatorFlowContextType>({
@@ -22,4 +23,5 @@ export const MTGADeckCreatorFlowContext = createContext<MTGADeckCreatorFlowConte
     onDrop: () => {},
     onNodesChange: () => {},
     setNodes: () => {},
+    handleDeletePhantom: () => {},
 })

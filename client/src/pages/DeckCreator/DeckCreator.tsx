@@ -10,7 +10,9 @@ import { MTGADeckCreatorFlowProvider } from '../../context/MTGA/DeckCreatorFlow/
 import { MTGADeckCreatorPaginationProvider } from '../../context/MTGA/DeckCreatorPagination/MTGADeckCreatorPaginationProvider'
 import { useMTGADeckCreatorPagination } from '../../context/MTGA/DeckCreatorPagination/useMTGADeckCreatorPagination'
 import { MTGAFilterProvider } from '../../context/MTGA/Filter/MTGAFilterProvider'
+import { useMTGAFilter } from '../../context/MTGA/Filter/useMTGAFilter'
 import { PAGE_SIZE } from '../../utils/constants'
+import { useLocalStoreFilter } from '../../utils/hooks/useLocalStoreFilter'
 import { FlowView } from '../FlowView/FlowView'
 import { CardsGrid } from './Components/CardsGrid'
 import { Drawer } from './Components/Drawer'
@@ -20,6 +22,8 @@ export const DeckCreator = () => {
     const { deck, openDrawer, setOpenDrawer, setViewMode, viewMode, setOpenImportDialog, setOpenExportDialog } =
         useMTGADeckCreator()
     const { filteredCards, page, setPage } = useMTGADeckCreatorPagination()
+    const { loadLocalStoreFilter, saveLocalStoreFilter } = useLocalStoreFilter()
+    const { clearFilter } = useMTGAFilter()
 
     if (!deck) return null
 
@@ -73,21 +77,25 @@ export const DeckCreator = () => {
                         </Box>
                     )}
                     <Box position={'absolute'} top={10} right={10} display={'flex'} gap={1}>
-                        <Button
-                            variant={'contained'}
-                            color={'primary'}
-                            onClick={() => setOpenImportDialog(true)}
-                            sx={{ mr: 4 }}
-                        >
-                            Import from MTGA
+                        <Button variant={'contained'} color={'primary'} onClick={clearFilter} sx={{ mr: 2 }}>
+                            Clear filter
+                        </Button>
+                        <Button variant={'contained'} color={'primary'} onClick={saveLocalStoreFilter}>
+                            Save filter
+                        </Button>
+                        <Button variant={'contained'} color={'primary'} onClick={loadLocalStoreFilter} sx={{ mr: 2 }}>
+                            Load filter
+                        </Button>
+                        <Button variant={'contained'} color={'primary'} onClick={() => setOpenImportDialog(true)}>
+                            Import
                         </Button>
                         <Button
                             variant={'contained'}
                             color={'primary'}
                             onClick={() => setOpenExportDialog(true)}
-                            sx={{ mr: 4 }}
+                            sx={{ mr: 2 }}
                         >
-                            Export to MTGA
+                            Export
                         </Button>
                         <Button variant={'contained'} color={'primary'} onClick={() => setOpenDrawer(!openDrawer)}>
                             Open Drawer

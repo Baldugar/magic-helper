@@ -13,7 +13,7 @@ export type HoverMouseComponentProps = {
 
 export const HoverMouseComponent: FC<HoverMouseComponentProps> = (props) => {
     const { height, img, imgHorizontal, scale: zoomScale, visible, width, otherImg } = props
-    const offset = 10
+    const offset = 20
     const edgeOffset = 20
 
     const [x, setX] = useState(0)

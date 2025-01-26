@@ -37,6 +37,7 @@ export enum SortDirection {
 export interface MTGAFilterContextType {
     filter: MTGAFilterType
     originalFilter: MTGAFilterType
+    clearFilter: () => void
     setFilter: Dispatch<SetStateAction<MTGAFilterType>>
     setOriginalFilter: Dispatch<SetStateAction<MTGAFilterType>>
     sort: {
@@ -99,6 +100,7 @@ export const initialMTGAFilter: MTGAFilterType = {
 export const MTGAFilterContext = createContext<MTGAFilterContextType>({
     filter: initialMTGAFilter,
     setFilter: () => {},
+    clearFilter: () => {},
     originalFilter: initialMTGAFilter,
     setOriginalFilter: () => {},
     sort: Object.values(SortEnum).map((sortBy) => ({

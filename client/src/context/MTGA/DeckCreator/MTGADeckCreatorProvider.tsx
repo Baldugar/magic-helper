@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useState } from 'react'
 import { MainOrSide, MTGA_Card, MTGA_Deck, MTGA_DeckCard, MTGA_DeckCardType, Position } from '../../../graphql/types'
+import { findNextAvailablePosition } from '../../../utils/functions/nodeFunctions'
 import { useMTGADecks } from '../Decks/useMTGADecks'
 import { MTGADeckCreatorContext } from './MTGADeckCreatorContext'
 
@@ -45,18 +46,17 @@ export const MTGADeckCreatorProvider = ({ children, deckID }: { children: ReactN
                 const mainOrSide = deckTab === 'main' ? MainOrSide.MAIN : MainOrSide.SIDEBOARD
                 const ID = card.ID
                 const index = newDeck.cards.findIndex((c) => c.card.ID === ID && c.mainOrSide === mainOrSide)
+                const nextAvailableSpot = findNextAvailablePosition(newDeck.cards)
                 // If the card is already in the deck, add a phantom
                 if (index !== -1) {
-                    if (position) {
-                        newDeck.cards[index].phantoms.push(position)
-                    }
+                    newDeck.cards[index].phantoms.push(position || nextAvailableSpot)
                 } else {
                     const cardToReturn = {
                         card,
                         count: 1,
                         deckCardType: MTGA_DeckCardType.NORMAL,
                         mainOrSide,
-                        position: position || { x: 0, y: 0 },
+                        position: position || nextAvailableSpot,
                         phantoms: [],
                     }
                     newDeck.cards.push(cardToReturn)
