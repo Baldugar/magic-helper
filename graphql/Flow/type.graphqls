@@ -4,10 +4,10 @@ type FlowZone {
     position: Position!
     width: Float!
     height: Float!
+    childrenIDs: [ID!]!
 }
 
 type Position {
     x: Float!
     y: Float!
-    parentID: ID
 }

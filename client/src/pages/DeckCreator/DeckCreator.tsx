@@ -1,9 +1,10 @@
 import { Box, Button, Collapse, Pagination } from '@mui/material'
-import { ReactFlowProvider } from '@xyflow/react'
+import { ReactFlowProvider, useReactFlow } from '@xyflow/react'
 import { useParams } from 'react-router-dom'
 import { ExportDialog } from '../../components/ExportDialog'
 import { ImportDialog } from '../../components/ImportDialog'
 import { DndProvider } from '../../context/DnD/DnDProvider'
+import { useMTGACards } from '../../context/MTGA/Cards/useMTGACards'
 import { MTGADeckCreatorProvider } from '../../context/MTGA/DeckCreator/MTGADeckCreatorProvider'
 import { useMTGADeckCreator } from '../../context/MTGA/DeckCreator/useMTGADeckCreator'
 import { MTGADeckCreatorFlowProvider } from '../../context/MTGA/DeckCreatorFlow/MTGADeckCreatorFlowProvider'
@@ -11,7 +12,9 @@ import { MTGADeckCreatorPaginationProvider } from '../../context/MTGA/DeckCreato
 import { useMTGADeckCreatorPagination } from '../../context/MTGA/DeckCreatorPagination/useMTGADeckCreatorPagination'
 import { MTGAFilterProvider } from '../../context/MTGA/Filter/MTGAFilterProvider'
 import { useMTGAFilter } from '../../context/MTGA/Filter/useMTGAFilter'
+import { MTGA_DeckCard } from '../../graphql/types'
 import { PAGE_SIZE } from '../../utils/constants'
+import { calculateCardsFromNodes, calculateZonesFromNodes } from '../../utils/functions/nodeFunctions'
 import { useLocalStoreFilter } from '../../utils/hooks/useLocalStoreFilter'
 import { FlowView } from '../FlowView/FlowView'
 import { CardsGrid } from './Components/CardsGrid'
@@ -19,11 +22,42 @@ import { Drawer } from './Components/Drawer'
 import { Filters } from './Components/Filters'
 
 export const DeckCreator = () => {
-    const { deck, openDrawer, setOpenDrawer, setViewMode, viewMode, setOpenImportDialog, setOpenExportDialog } =
-        useMTGADeckCreator()
+    const { cards } = useMTGACards()
+    const {
+        deck,
+        openDrawer,
+        setOpenDrawer,
+        setViewMode,
+        viewMode,
+        setOpenImportDialog,
+        setOpenExportDialog,
+        setDeck,
+    } = useMTGADeckCreator()
     const { filteredCards, page, setPage } = useMTGADeckCreatorPagination()
     const { loadLocalStoreFilter, saveLocalStoreFilter } = useLocalStoreFilter()
     const { clearFilter } = useMTGAFilter()
+    const { getNodes } = useReactFlow()
+
+    const calculateNewDeck = () => {
+        if (!deck) return
+        const nodes = getNodes()
+        const newCards = calculateCardsFromNodes(nodes, deck.cards).map((c) => {
+            const card: MTGA_DeckCard = {
+                ...c,
+                card: cards.find((card) => card.ID === c.card)!,
+            }
+            return card
+        })
+        const newZones = calculateZonesFromNodes(nodes)
+        setDeck({ ...deck, cards: [...newCards], zones: newZones })
+    }
+
+    const handleChangeView = (newViewMode: 'catalogue' | 'board' | 'both') => {
+        if (viewMode === 'board' || viewMode === 'both') {
+            calculateNewDeck()
+        }
+        setViewMode(newViewMode)
+    }
 
     if (!deck) return null
 
@@ -103,11 +137,11 @@ export const DeckCreator = () => {
                         <Button
                             variant={'contained'}
                             color={'primary'}
-                            onClick={() => setViewMode((prev) => (prev === 'catalogue' ? 'board' : 'catalogue'))}
+                            onClick={() => handleChangeView(viewMode === 'catalogue' ? 'board' : 'catalogue')}
                         >
                             Change View
                         </Button>
-                        <Button variant={'contained'} color={'primary'} onClick={() => setViewMode('both')}>
+                        <Button variant={'contained'} color={'primary'} onClick={() => handleChangeView('both')}>
                             Both View
                         </Button>
                     </Box>

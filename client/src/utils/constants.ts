@@ -20,4 +20,5 @@ export const DEFAULT_ZONE: FlowZone = {
     position: DEFAULT_ZONE_POSITION,
     ID: 'default',
     name: 'Default',
+    childrenIDs: [],
 }

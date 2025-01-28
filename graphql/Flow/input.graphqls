@@ -4,10 +4,10 @@ input FlowZoneInput {
     position: PositionInput!
     width: Float!
     height: Float!
+    childrenIDs: [ID!]!
 }
 
 input PositionInput {
     x: Float!
     y: Float!
-    parentID: ID
 }

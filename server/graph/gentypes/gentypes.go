@@ -47,11 +47,12 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	FlowZone struct {
-		Height   func(childComplexity int) int
-		ID       func(childComplexity int) int
-		Name     func(childComplexity int) int
-		Position func(childComplexity int) int
-		Width    func(childComplexity int) int
+		ChildrenIDs func(childComplexity int) int
+		Height      func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Name        func(childComplexity int) int
+		Position    func(childComplexity int) int
+		Width       func(childComplexity int) int
 	}
 
 	MTGA_Card struct {
@@ -149,9 +150,8 @@ type ComplexityRoot struct {
 	}
 
 	Position struct {
-		ParentID func(childComplexity int) int
-		X        func(childComplexity int) int
-		Y        func(childComplexity int) int
+		X func(childComplexity int) int
+		Y func(childComplexity int) int
 	}
 
 	Query struct {
@@ -195,6 +195,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "FlowZone.childrenIDs":
+		if e.complexity.FlowZone.ChildrenIDs == nil {
+			break
+		}
+
+		return e.complexity.FlowZone.ChildrenIDs(childComplexity), true
 
 	case "FlowZone.height":
 		if e.complexity.FlowZone.Height == nil {
@@ -694,13 +701,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpdateMTGADeck(childComplexity, args["input"].(model.MtgaUpdateDeckInput)), true
 
-	case "Position.parentID":
-		if e.complexity.Position.ParentID == nil {
-			break
-		}
-
-		return e.complexity.Position.ParentID(childComplexity), true
-
 	case "Position.x":
 		if e.complexity.Position.X == nil {
 			break
@@ -872,12 +872,12 @@ var sources = []*ast.Source{
     position: PositionInput!
     width: Float!
     height: Float!
+    childrenIDs: [ID!]!
 }
 
 input PositionInput {
     x: Float!
     y: Float!
-    parentID: ID
 }
 `, BuiltIn: false},
 	{Name: "../../../graphql/Flow/type.graphqls", Input: `type FlowZone {
@@ -886,12 +886,12 @@ input PositionInput {
     position: Position!
     width: Float!
     height: Float!
+    childrenIDs: [ID!]!
 }
 
 type Position {
     x: Float!
     y: Float!
-    parentID: ID
 }
 `, BuiltIn: false},
 	{Name: "../../../graphql/MTGA/Card/enum.graphqls", Input: `enum MTGA_Color {
@@ -1343,8 +1343,6 @@ func (ec *executionContext) fieldContext_FlowZone_position(ctx context.Context, 
 				return ec.fieldContext_Position_x(ctx, field)
 			case "y":
 				return ec.fieldContext_Position_y(ctx, field)
-			case "parentID":
-				return ec.fieldContext_Position_parentID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Position", field.Name)
 		},
@@ -1435,6 +1433,50 @@ func (ec *executionContext) fieldContext_FlowZone_height(ctx context.Context, fi
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FlowZone_childrenIDs(ctx context.Context, field graphql.CollectedField, obj *model.FlowZone) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FlowZone_childrenIDs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChildrenIDs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNID2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FlowZone_childrenIDs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FlowZone",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3085,6 +3127,8 @@ func (ec *executionContext) fieldContext_MTGA_Deck_zones(ctx context.Context, fi
 				return ec.fieldContext_FlowZone_width(ctx, field)
 			case "height":
 				return ec.fieldContext_FlowZone_height(ctx, field)
+			case "childrenIDs":
+				return ec.fieldContext_FlowZone_childrenIDs(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type FlowZone", field.Name)
 		},
@@ -3311,8 +3355,6 @@ func (ec *executionContext) fieldContext_MTGA_DeckCard_position(ctx context.Cont
 				return ec.fieldContext_Position_x(ctx, field)
 			case "y":
 				return ec.fieldContext_Position_y(ctx, field)
-			case "parentID":
-				return ec.fieldContext_Position_parentID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Position", field.Name)
 		},
@@ -3451,8 +3493,6 @@ func (ec *executionContext) fieldContext_MTGA_DeckCard_phantoms(ctx context.Cont
 				return ec.fieldContext_Position_x(ctx, field)
 			case "y":
 				return ec.fieldContext_Position_y(ctx, field)
-			case "parentID":
-				return ec.fieldContext_Position_parentID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Position", field.Name)
 		},
@@ -4506,47 +4546,6 @@ func (ec *executionContext) fieldContext_Position_y(ctx context.Context, field g
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Float does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Position_parentID(ctx context.Context, field graphql.CollectedField, obj *model.Position) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Position_parentID(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ParentID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Position_parentID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Position",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -6755,7 +6754,7 @@ func (ec *executionContext) unmarshalInputFlowZoneInput(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"ID", "name", "position", "width", "height"}
+	fieldsInOrder := [...]string{"ID", "name", "position", "width", "height", "childrenIDs"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6797,6 +6796,13 @@ func (ec *executionContext) unmarshalInputFlowZoneInput(ctx context.Context, obj
 				return it, err
 			}
 			it.Height = data
+		case "childrenIDs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("childrenIDs"))
+			data, err := ec.unmarshalNID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChildrenIDs = data
 		}
 	}
 
@@ -7002,7 +7008,7 @@ func (ec *executionContext) unmarshalInputPositionInput(ctx context.Context, obj
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"x", "y", "parentID"}
+	fieldsInOrder := [...]string{"x", "y"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7023,13 +7029,6 @@ func (ec *executionContext) unmarshalInputPositionInput(ctx context.Context, obj
 				return it, err
 			}
 			it.Y = data
-		case "parentID":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parentID"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ParentID = data
 		}
 	}
 
@@ -7100,6 +7099,11 @@ func (ec *executionContext) _FlowZone(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "height":
 			out.Values[i] = ec._FlowZone_height(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "childrenIDs":
+			out.Values[i] = ec._FlowZone_childrenIDs(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -7767,8 +7771,6 @@ func (ec *executionContext) _Position(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "parentID":
-			out.Values[i] = ec._Position_parentID(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8404,6 +8406,38 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNID2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNID2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNID2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNID2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {

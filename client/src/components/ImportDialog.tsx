@@ -202,7 +202,6 @@ export const ImportDialog = () => {
                         position: {
                             x: 0,
                             y: 0,
-                            parentID: null,
                         },
                     })
                 } else {
@@ -215,7 +214,6 @@ export const ImportDialog = () => {
                         position: {
                             x: 0,
                             y: 0,
-                            parentID: null,
                         },
                     })
                 }
@@ -236,7 +234,6 @@ export const ImportDialog = () => {
                         position: {
                             x: 0,
                             y: 0,
-                            parentID: null,
                         },
                     })
                 } else {
@@ -249,7 +246,6 @@ export const ImportDialog = () => {
                         position: {
                             x: 0,
                             y: 0,
-                            parentID: null,
                         },
                     })
                 }
@@ -295,14 +291,12 @@ export const ImportDialog = () => {
                             newDeck.cards[currentIdx].position = {
                                 x,
                                 y,
-                                parentID: keepZones ? newDeck.cards[currentIdx].position.parentID : null,
                             }
                         } else {
                             newDeck.cards[currentIdx].count += c.number
                             newDeck.cards[currentIdx].position = {
                                 x,
                                 y,
-                                parentID: keepZones ? newDeck.cards[currentIdx].position.parentID : null,
                             }
                         }
                     } else {
@@ -315,7 +309,6 @@ export const ImportDialog = () => {
                             position: {
                                 x,
                                 y,
-                                parentID: null,
                             },
                         })
                     }
@@ -370,7 +363,6 @@ export const ImportDialog = () => {
                             position: {
                                 x,
                                 y,
-                                parentID: null,
                             },
                         })
                         x += 100
@@ -388,7 +380,7 @@ export const ImportDialog = () => {
             }
             if (!keepZones) {
                 newDeck.cards = newDeck.cards.map((c) => {
-                    const zone = newDeck.zones.find((z) => z.ID === c.position.parentID)
+                    const zone = newDeck.zones.find((z) => z.childrenIDs.includes(c.card.ID))
                     let x = c.position.x
                     let y = c.position.y
                     if (zone) {
@@ -398,11 +390,17 @@ export const ImportDialog = () => {
                     c.position = {
                         x,
                         y,
-                        parentID: null,
                     }
                     return c
                 })
                 newDeck.zones = []
+            } else if (action === 'REPLACE') {
+                newDeck.zones = newDeck.zones.map((z) => {
+                    return {
+                        ...z,
+                        childrenIDs: [],
+                    }
+                })
             }
             setNodes(organizeNodes(newDeck, handleDeleteZone, handleRenameZone, handleDeletePhantom))
             return newDeck
