@@ -23,6 +23,7 @@ export enum DeckType {
 export type FlowZone = {
   __typename?: 'FlowZone';
   ID: Scalars['ID']['output'];
+  childrenIDs: Array<Scalars['ID']['output']>;
   height: Scalars['Float']['output'];
   name: Scalars['String']['output'];
   position: Position;
@@ -31,6 +32,7 @@ export type FlowZone = {
 
 export type FlowZoneInput = {
   ID: Scalars['ID']['input'];
+  childrenIDs: Array<Scalars['ID']['input']>;
   height: Scalars['Float']['input'];
   name: Scalars['String']['input'];
   position: PositionInput;
@@ -239,13 +241,11 @@ export type MutationupdateMTGADeckArgs = {
 
 export type Position = {
   __typename?: 'Position';
-  parentID?: Maybe<Scalars['ID']['output']>;
   x: Scalars['Float']['output'];
   y: Scalars['Float']['output'];
 };
 
 export type PositionInput = {
-  parentID?: InputMaybe<Scalars['ID']['input']>;
   x: Scalars['Float']['input'];
   y: Scalars['Float']['input'];
 };

@@ -57,7 +57,7 @@ export const MTGADeckCreatorFlowProvider = ({ children, deck }: { children: Reac
                     if (childrenIDs.includes(n.id)) {
                         return {
                             ...n,
-                            data: { ...n.data, parentID: undefined },
+                            data: { ...n.data },
                             parentId: undefined,
                             position: {
                                 x: n.position.x + node.position.x,

@@ -232,12 +232,7 @@ export const organizeNodes = (
     for (const zone of deck.zones) {
         const data: GroupNodeData = {
             label: zone.name,
-            childrenIDs: [
-                ...deck.cards.filter((c) => c.position.parentID === zone.ID).map((c) => c.card.ID),
-                ...allPhantoms
-                    .filter((p) => p.position.parentID === zone.ID)
-                    .map((p) => p.card.ID + '_phantom_' + p.index),
-            ],
+            childrenIDs: zone.childrenIDs,
             onDelete: onDeleteZone,
             onNameChange,
         }
@@ -258,16 +253,17 @@ export const organizeNodes = (
             position: card.position,
             data: cardData,
             type: 'cardNode',
-            parentId: card.position.parentID,
+            parentId: deck.zones.find((z) => z.childrenIDs.includes(card.card.ID))?.ID,
         } as Node<CardNodeData>)
     }
     for (const phantom of allPhantoms) {
+        const phantomID = phantom.card.ID + '_phantom_' + phantom.index
         nodes.push({
-            id: phantom.card.ID + '_phantom_' + phantom.index,
+            id: phantomID,
             position: phantom.position,
             data: phantom,
             type: 'phantomNode',
-            parentId: phantom.position.parentID,
+            parentId: deck.zones.find((z) => z.childrenIDs.includes(phantomID))?.ID,
         } as Node<PhantomNodeData>)
     }
     return nodes
@@ -294,7 +290,6 @@ export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTGA_DeckCa
         const position: Position = {
             x: node.position.x,
             y: node.position.y,
-            parentID: node.parentId,
         }
         const phantoms = phantomNodes
             .filter((p) => p.data.phantomOf === card.card.ID)
@@ -302,7 +297,6 @@ export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTGA_DeckCa
                 return {
                     x: p.position.x,
                     y: p.position.y,
-                    parentID: p.parentId,
                 } as Position
             })
         const existingCard = currentCards.find((c) => c.card.ID === card.card.ID)
@@ -330,6 +324,7 @@ export const calculateZonesFromNodes = (nodes: Node[]): FlowZone[] => {
                 position: groupNode.position,
                 width: groupNode.width || 0,
                 height: groupNode.height || 0,
+                childrenIDs: groupNode.data.childrenIDs,
             })
         }
     }

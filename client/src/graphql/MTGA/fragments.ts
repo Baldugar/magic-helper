@@ -45,7 +45,6 @@ export const MTGA_DeckFragments = gql`
     fragment PositionFragment on Position {
         x
         y
-        parentID
     }
 
     fragment MTGA_DeckFragment on MTGA_Deck {
@@ -74,6 +73,7 @@ export const MTGA_DeckFragments = gql`
             }
             width
             height
+            childrenIDs
         }
         type
     }

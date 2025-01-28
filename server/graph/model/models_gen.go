@@ -22,19 +22,21 @@ type MtgaCommonFields interface {
 }
 
 type FlowZone struct {
-	ID       string    `json:"ID"`
-	Name     string    `json:"name"`
-	Position *Position `json:"position"`
-	Width    float64   `json:"width"`
-	Height   float64   `json:"height"`
+	ID          string    `json:"ID"`
+	Name        string    `json:"name"`
+	Position    *Position `json:"position"`
+	Width       float64   `json:"width"`
+	Height      float64   `json:"height"`
+	ChildrenIDs []string  `json:"childrenIDs"`
 }
 
 type FlowZoneInput struct {
-	ID       string         `json:"ID"`
-	Name     string         `json:"name"`
-	Position *PositionInput `json:"position"`
-	Width    float64        `json:"width"`
-	Height   float64        `json:"height"`
+	ID          string         `json:"ID"`
+	Name        string         `json:"name"`
+	Position    *PositionInput `json:"position"`
+	Width       float64        `json:"width"`
+	Height      float64        `json:"height"`
+	ChildrenIDs []string       `json:"childrenIDs"`
 }
 
 type MtgaCard struct {
@@ -215,15 +217,13 @@ type Mutation struct {
 }
 
 type Position struct {
-	X        float64 `json:"x"`
-	Y        float64 `json:"y"`
-	ParentID *string `json:"parentID,omitempty"`
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
 }
 
 type PositionInput struct {
-	X        float64 `json:"x"`
-	Y        float64 `json:"y"`
-	ParentID *string `json:"parentID,omitempty"`
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
 }
 
 type Query struct {

@@ -157,9 +157,8 @@ func UpdateMTGADeck(ctx context.Context, input model.MtgaUpdateDeckInput) (*mode
 			To:    arango.MTGA_DECKS_COLLECTION.String() + "/" + input.DeckID,
 			Count: card.Count,
 			Position: model.Position{
-				X:        card.Position.X,
-				Y:        card.Position.Y,
-				ParentID: card.Position.ParentID,
+				X: card.Position.X,
+				Y: card.Position.Y,
 			},
 			MainOrSide:   card.MainOrSide,
 			DeckCardType: card.DeckCardType,
@@ -167,9 +166,8 @@ func UpdateMTGADeck(ctx context.Context, input model.MtgaUpdateDeckInput) (*mode
 
 		for _, phantom := range card.Phantoms {
 			newCard.Phantoms = append(newCard.Phantoms, model.Position{
-				X:        phantom.X,
-				Y:        phantom.Y,
-				ParentID: phantom.ParentID,
+				X: phantom.X,
+				Y: phantom.Y,
 			})
 		}
 
