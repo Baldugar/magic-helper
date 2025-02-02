@@ -73,6 +73,7 @@ type ComplexityRoot struct {
 		ProducedMana  func(childComplexity int) int
 		Rarity        func(childComplexity int) int
 		ReleasedAt    func(childComplexity int) int
+		ScryfallURL   func(childComplexity int) int
 		Set           func(childComplexity int) int
 		SetName       func(childComplexity int) int
 		Toughness     func(childComplexity int) int
@@ -356,6 +357,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MTGA_Card.ReleasedAt(childComplexity), true
+
+	case "MTGA_Card.scryfallURL":
+		if e.complexity.MTGA_Card.ScryfallURL == nil {
+			break
+		}
+
+		return e.complexity.MTGA_Card.ScryfallURL(childComplexity), true
 
 	case "MTGA_Card.set":
 		if e.complexity.MTGA_Card.Set == nil {
@@ -958,6 +966,7 @@ enum MTGA_Layout {
     setName: String!
     toughness: String
     typeLine: String!
+    scryfallURL: String!
 }
 
 type MTGA_CardFace implements MTGA_CommonFields {
@@ -2414,6 +2423,50 @@ func (ec *executionContext) fieldContext_MTGA_Card_typeLine(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _MTGA_Card_scryfallURL(ctx context.Context, field graphql.CollectedField, obj *model.MtgaCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_Card_scryfallURL(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ScryfallURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_Card_scryfallURL(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_Card",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MTGA_CardFace_colors(ctx context.Context, field graphql.CollectedField, obj *model.MtgaCardFace) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MTGA_CardFace_colors(ctx, field)
 	if err != nil {
@@ -3261,6 +3314,8 @@ func (ec *executionContext) fieldContext_MTGA_DeckCard_card(ctx context.Context,
 				return ec.fieldContext_MTGA_Card_toughness(ctx, field)
 			case "typeLine":
 				return ec.fieldContext_MTGA_Card_typeLine(ctx, field)
+			case "scryfallURL":
+				return ec.fieldContext_MTGA_Card_scryfallURL(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTGA_Card", field.Name)
 		},
@@ -4632,6 +4687,8 @@ func (ec *executionContext) fieldContext_Query_getMTGACards(ctx context.Context,
 				return ec.fieldContext_MTGA_Card_toughness(ctx, field)
 			case "typeLine":
 				return ec.fieldContext_MTGA_Card_typeLine(ctx, field)
+			case "scryfallURL":
+				return ec.fieldContext_MTGA_Card_scryfallURL(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTGA_Card", field.Name)
 		},
@@ -7213,6 +7270,11 @@ func (ec *executionContext) _MTGA_Card(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = ec._MTGA_Card_toughness(ctx, field, obj)
 		case "typeLine":
 			out.Values[i] = ec._MTGA_Card_typeLine(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "scryfallURL":
+			out.Values[i] = ec._MTGA_Card_scryfallURL(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

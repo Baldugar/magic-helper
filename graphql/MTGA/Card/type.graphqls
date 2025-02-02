@@ -20,6 +20,7 @@ type MTGA_Card implements MTGA_CommonFields {
     setName: String!
     toughness: String
     typeLine: String!
+    scryfallURL: String!
 }
 
 type MTGA_CardFace implements MTGA_CommonFields {
