@@ -45,6 +45,7 @@ export const PhantomNode = (props: PhantomNodeProps) => {
                 open={open}
                 handleClose={handleClose}
                 handleClick={handleClick}
+                disablePortal
             />
         </>
     )

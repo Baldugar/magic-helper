@@ -48,6 +48,7 @@ export const CardNode = (props: CardNodeProps) => {
                 open={open}
                 handleClose={handleClose}
                 handleClick={handleClick}
+                disablePortal
             />
         </>
     )
