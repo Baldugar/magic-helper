@@ -5,7 +5,7 @@ export const useContextMenu = <T extends HTMLElement>() => {
     const [open, setOpen] = useState(false)
 
     const handleContextMenu = (e: React.MouseEvent) => {
-        e.preventDefault()
+        if (!open) e.preventDefault()
         setOpen(true)
     }
 

@@ -8,6 +8,7 @@ export type ContextMenuProps = {
     options: ContextMenuOption[]
     handleClick: (callback: () => void) => void
     anchorRef: MutableRefObject<HTMLElement | null>
+    disablePortal?: boolean
 }
 
 export type ContextMenuOption = {
@@ -16,10 +17,17 @@ export type ContextMenuOption = {
 }
 
 export const ContextMenu = (props: ContextMenuProps) => {
-    const { id, open, handleClose, options, handleClick, anchorRef } = props
+    const { id, open, handleClose, options, handleClick, anchorRef, disablePortal } = props
 
     return (
-        <Popper id={id} open={open} anchorEl={anchorRef.current} placement={'bottom-start'} transition disablePortal>
+        <Popper
+            id={id}
+            open={open}
+            anchorEl={anchorRef.current}
+            placement={'bottom-start'}
+            transition
+            disablePortal={disablePortal}
+        >
             {({ TransitionProps, placement }) => (
                 <Grow
                     {...TransitionProps}
