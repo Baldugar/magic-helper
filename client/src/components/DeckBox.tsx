@@ -1,7 +1,7 @@
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import { Box, Card, CardMedia, IconButton, Menu, MenuItem, Typography } from '@mui/material'
 import { styled } from '@mui/system'
-import React from 'react'
+import React, { MouseEventHandler } from 'react'
 import { Maybe } from '../graphql/types'
 
 // Define the props that the DeckBox component will receive
@@ -65,12 +65,15 @@ const DeckBox: React.FC<DeckBoxProps> = ({ name, image, onClick, onDelete }) => 
     }
 
     // Handle closing the context menu
-    const handleMenuClose = () => {
+    const handleMenuClose = (event?: unknown) => {
+        const ev = event as Event
+        ev?.stopPropagation()
         setAnchorEl(null)
     }
 
     // Handle deleting the deck and close the menu afterwards
-    const handleDelete = () => {
+    const handleDelete: MouseEventHandler<HTMLLIElement> = (e) => {
+        e.stopPropagation()
         onDelete()
         handleMenuClose()
     }
