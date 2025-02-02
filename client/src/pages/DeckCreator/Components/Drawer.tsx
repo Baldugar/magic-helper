@@ -13,7 +13,7 @@ export const Drawer = () => {
     const { getNodes, setNodes } = useReactFlow<NodeType>()
 
     const {
-        mutations: { updateMTGADeck },
+        mutations: { updateMTGADeck, saveMTGADeckAsCopy },
     } = MTGAFunctions
 
     const saveDeck = () => {
@@ -28,6 +28,20 @@ export const Drawer = () => {
             cardFrontImage: deck.cardFrontImage,
         }
         updateMTGADeck(deckInput)
+    }
+
+    const saveDeckAsCopy = () => {
+        if (!deck) return
+        const nodes = getNodes()
+        const deckInput = {
+            cards: calculateCardsFromNodes(nodes, deck.cards),
+            deckID: deck.ID,
+            name: deck.name,
+            type: deck.type,
+            zones: calculateZonesFromNodes(nodes),
+            cardFrontImage: deck.cardFrontImage,
+        }
+        saveMTGADeckAsCopy(deckInput)
     }
 
     const handleRemoveCard = (deckCard: MTGA_DeckCard) => {
@@ -111,9 +125,12 @@ export const Drawer = () => {
                         ))}
                 </Grid>
             </Box>
-            <Box mt={'auto'}>
+            <Box mt={'auto'} display={'flex'} justifyContent={'space-between'}>
                 <Button variant={'contained'} onClick={saveDeck}>
                     Save Deck
+                </Button>
+                <Button variant={'contained'} onClick={saveDeckAsCopy}>
+                    Save Deck As Copy
                 </Button>
             </Box>
         </Box>

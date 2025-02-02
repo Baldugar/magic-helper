@@ -236,3 +236,37 @@ func UpdateMTGADeck(ctx context.Context, input model.MtgaUpdateDeckInput) (*mode
 
 	return deck[0], nil
 }
+
+func SaveMTGADeckAsCopy(ctx context.Context, input model.MtgaUpdateDeckInput) (*model.MtgaDeck, error) {
+	log.Info().Msg("SaveDeckAsCopy: Started")
+
+	newName := input.Name + " (Copy)"
+
+	createdDeck, err := CreateMTGADeck(ctx, model.MtgaCreateDeckInput{
+		Name: newName,
+		Type: input.Type,
+	})
+	if err != nil {
+		log.Error().Err(err).Msgf("SaveDeckAsCopy: Error creating deck")
+		return nil, err
+	}
+
+	// Add all cards to the deck
+	newInput := model.MtgaUpdateDeckInput{
+		DeckID:         createdDeck.ID,
+		Name:           newName,
+		Type:           input.Type,
+		Zones:          input.Zones,
+		CardFrontImage: input.CardFrontImage,
+		Cards:          input.Cards,
+	}
+
+	newDeck, err := UpdateMTGADeck(ctx, newInput)
+	if err != nil {
+		log.Error().Err(err).Msgf("SaveDeckAsCopy: Error updating deck")
+		return nil, err
+	}
+
+	log.Info().Msg("SaveDeckAsCopy: Finished")
+	return newDeck, nil
+}
