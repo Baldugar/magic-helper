@@ -37,7 +37,7 @@ export const PhantomNode = (props: PhantomNodeProps) => {
     return (
         <>
             <div ref={anchorRef} onContextMenu={handleContextMenu}>
-                <img src={getCorrectCardImage(card, 'small')} alt={card.name} width={100} style={{ opacity: 0.5 }} />
+                <img src={getCorrectCardImage(card, 'normal')} alt={card.name} width={100} style={{ opacity: 0.5 }} />
             </div>
             <ContextMenu
                 anchorRef={anchorRef}
