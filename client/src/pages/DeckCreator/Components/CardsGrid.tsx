@@ -1,28 +1,12 @@
-import { ButtonBase, Grid } from '@mui/material'
-import { useReactFlow } from '@xyflow/react'
-import { MTGACardWithHover } from '../../../components/MTGACardWithHover'
-import { useDnD } from '../../../context/DnD/useDnD'
-import { useMTGADeckCreator } from '../../../context/MTGA/DeckCreator/useMTGADeckCreator'
-import { useMTGADeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGADeckFlowCreator'
+import { Grid } from '@mui/material'
 import { useMTGADeckCreatorPagination } from '../../../context/MTGA/DeckCreatorPagination/useMTGADeckCreatorPagination'
-import { MTGA_Card } from '../../../graphql/types'
 import { PAGE_SIZE } from '../../../utils/constants'
-import { NodeType, organizeNodes } from '../../../utils/functions/nodeFunctions'
+import { CardsGridButton } from './CardsGridButton'
 
 export const CardsGrid = () => {
-    const { onAddCard, deck } = useMTGADeckCreator()
-    const { handleDeleteZone, handleRenameZone, handleDeletePhantom } = useMTGADeckFlowCreator()
-    const { setNodes } = useReactFlow<NodeType>()
     const { filteredCards, page, setPage } = useMTGADeckCreatorPagination()
-    const { card: draggedCard } = useDnD()
 
-    const handleAddCard = (card: MTGA_Card) => {
-        const newDeck = onAddCard(card)
-        if (!newDeck) return
-        setNodes(organizeNodes(newDeck, handleDeleteZone, handleRenameZone, handleDeletePhantom))
-    }
-
-    const deckCardIDs = deck?.cards.map((c) => c.card.ID) || []
+    const cardsToShow = filteredCards.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
     return (
         <Grid
@@ -42,17 +26,9 @@ export const CardsGrid = () => {
                 flex: 1,
             }}
         >
-            {filteredCards.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((card) => (
+            {cardsToShow.map((card) => (
                 <Grid item key={card.ID} xs={'auto'}>
-                    <ButtonBase
-                        onClick={() => handleAddCard(card)}
-                        sx={{
-                            filter: deckCardIDs.includes(card.ID) ? 'brightness(0.5)' : 'brightness(1)',
-                            transition: 'filter 0.3s',
-                        }}
-                    >
-                        <MTGACardWithHover card={card} hideHover={draggedCard !== null} debugValue={'releasedAt'} />
-                    </ButtonBase>
+                    <CardsGridButton card={card} />
                 </Grid>
             ))}
         </Grid>

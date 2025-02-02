@@ -26,7 +26,7 @@ export const CardNode = (props: CardNodeProps) => {
         {
             label: 'Delete',
             action: () => {
-                removeCard(card)
+                removeCard(card.card)
                 if (setNodes) setNodes((prev) => prev.filter((n) => !n.id.startsWith(card.card.ID)))
             },
         },

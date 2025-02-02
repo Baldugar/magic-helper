@@ -40,7 +40,7 @@ export const MTGADeckCreatorFlowProvider = ({ children, deck }: { children: Reac
                 )
                 for (const n of nodesToDelete) {
                     if (n.type === 'cardNode') {
-                        removeCard((n as Node<CardNodeData>).data.card)
+                        removeCard((n as Node<CardNodeData>).data.card.card)
                     }
                     if (n.type === 'phantomNode') {
                         const phantomData = (n as Node<PhantomNodeData>).data
@@ -120,9 +120,8 @@ export const MTGADeckCreatorFlowProvider = ({ children, deck }: { children: Reac
                 newDeck.cards.push(cardToReturn)
                 setSelectingCommander(false)
             } else {
-                const mainOrSide = deckTab === 'main' ? MainOrSide.MAIN : MainOrSide.SIDEBOARD
                 const ID = card.ID
-                const index = newDeck.cards.findIndex((c) => c.card.ID === ID && c.mainOrSide === mainOrSide)
+                const index = newDeck.cards.findIndex((c) => c.card.ID === ID && c.mainOrSide === deckTab)
                 const nextAvailableSpot = findNextAvailablePosition(newDeck.cards)
                 // If the card is already in the deck, add a phantom
                 if (index !== -1) {
@@ -134,7 +133,7 @@ export const MTGADeckCreatorFlowProvider = ({ children, deck }: { children: Reac
                         card,
                         count: 1,
                         deckCardType: MTGA_DeckCardType.NORMAL,
-                        mainOrSide,
+                        mainOrSide: deckTab,
                         position: position || nextAvailableSpot,
                         phantoms: [],
                     }
