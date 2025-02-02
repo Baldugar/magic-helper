@@ -11,7 +11,7 @@ export const MTGADeckCreatorProvider = ({ children, deckID }: { children: ReactN
     const [openDrawer, setOpenDrawer] = useState(false)
     const [selectingCommander, setSelectingCommander] = useState(false)
     const [viewMode, setViewMode] = useState<'catalogue' | 'board' | 'both'>('catalogue')
-    const [deckTab, setDeckTab] = useState<'main' | 'side'>('main')
+    const [deckTab, setDeckTab] = useState<MainOrSide>(MainOrSide.MAIN)
     const [openImportDialog, setOpenImportDialog] = useState(false)
     const [openExportDialog, setOpenExportDialog] = useState(false)
 
@@ -43,19 +43,18 @@ export const MTGADeckCreatorProvider = ({ children, deckID }: { children: ReactN
                 newDeck.cards.push(cardToReturn)
                 setSelectingCommander(false)
             } else {
-                const mainOrSide = deckTab === 'main' ? MainOrSide.MAIN : MainOrSide.SIDEBOARD
                 const ID = card.ID
-                const index = newDeck.cards.findIndex((c) => c.card.ID === ID && c.mainOrSide === mainOrSide)
+                const index = newDeck.cards.findIndex((c) => c.card.ID === ID && c.mainOrSide === deckTab)
                 const nextAvailableSpot = findNextAvailablePosition(newDeck.cards)
                 // If the card is already in the deck, add a phantom
                 if (index !== -1) {
                     newDeck.cards[index].phantoms.push(position || nextAvailableSpot)
                 } else {
-                    const cardToReturn = {
+                    const cardToReturn: MTGA_DeckCard = {
                         card,
                         count: 1,
                         deckCardType: MTGA_DeckCardType.NORMAL,
-                        mainOrSide,
+                        mainOrSide: deckTab,
                         position: position || nextAvailableSpot,
                         phantoms: [],
                     }
@@ -135,29 +134,31 @@ export const MTGADeckCreatorProvider = ({ children, deckID }: { children: ReactN
         setDeck(newDeck)
     }
 
-    const removeCard = (deckCard: MTGA_DeckCard) => {
+    const removeCard = (card: MTGA_Card) => {
         if (!deck) return
         const newDeck = structuredClone(deck)
-        switch (deckCard.mainOrSide) {
+        const isCommander = deck.cards.find(
+            (c) => c.card.ID === card.ID && c.deckCardType === MTGA_DeckCardType.COMMANDER,
+        )
+        const isCompanion = deck.cards.find(
+            (c) => c.card.ID === card.ID && c.deckCardType === MTGA_DeckCardType.COMPANION,
+        )
+        switch (deckTab) {
             case MainOrSide.MAIN:
-                if (deckCard.deckCardType === MTGA_DeckCardType.NORMAL) {
-                    newDeck.cards = newDeck.cards.filter(
-                        (c) => !(c.card.ID === deckCard.card.ID && c.mainOrSide === MainOrSide.MAIN),
-                    )
-                }
-                if (deckCard.deckCardType === MTGA_DeckCardType.COMMANDER) {
+                if (isCommander) {
                     newDeck.cards = newDeck.cards.filter((c) => c.deckCardType !== MTGA_DeckCardType.COMMANDER)
                 }
-                if (deckCard.deckCardType === MTGA_DeckCardType.COMPANION) {
+                if (isCompanion) {
                     newDeck.cards = newDeck.cards.filter((c) => c.deckCardType !== MTGA_DeckCardType.COMPANION)
                 }
+                newDeck.cards = newDeck.cards.filter(
+                    (c) => !(c.card.ID === card.ID && c.mainOrSide === MainOrSide.MAIN),
+                )
                 break
             case MainOrSide.SIDEBOARD:
-                if (deckCard.deckCardType === MTGA_DeckCardType.NORMAL) {
-                    newDeck.cards = newDeck.cards.filter(
-                        (c) => !(c.card.ID === deckCard.card.ID && c.mainOrSide === MainOrSide.SIDEBOARD),
-                    )
-                }
+                newDeck.cards = newDeck.cards.filter(
+                    (c) => !(c.card.ID === card.ID && c.mainOrSide === MainOrSide.SIDEBOARD),
+                )
                 break
         }
         setDeck(newDeck)

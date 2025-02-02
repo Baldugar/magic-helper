@@ -1,4 +1,4 @@
-import { MTGA_Card, MTGA_DeckCard, MTGA_Image } from '../../graphql/types'
+import { MTGA_Card, MTGA_Deck, MTGA_DeckCard, MTGA_Image } from '../../graphql/types'
 
 export const getCorrectCardImage = (card: MTGA_Card, size: keyof MTGA_Image, other?: boolean) => {
     switch (card.layout) {
@@ -26,4 +26,9 @@ export const matchesCommanderColorIdentity = (card: MTGA_DeckCard, commander?: M
     )
         return true
     return card.card.colorIdentity.every((color) => commander.card.colorIdentity.includes(color))
+}
+
+export const isCardInDeck = (card: MTGA_Card, deck: MTGA_Deck | undefined) => {
+    if (!deck) return false
+    return deck.cards.some((deckCard) => deckCard.card.ID === card.ID)
 }

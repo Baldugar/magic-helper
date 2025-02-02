@@ -1,5 +1,5 @@
 import { createContext, Dispatch, SetStateAction } from 'react'
-import { MTGA_Card, MTGA_Deck, MTGA_DeckCard, Position } from '../../../graphql/types'
+import { MainOrSide, MTGA_Card, MTGA_Deck, MTGA_DeckCard, Position } from '../../../graphql/types'
 
 type MTGADeckCreatorContextType = {
     // Deck & Cards
@@ -8,11 +8,11 @@ type MTGADeckCreatorContextType = {
     onAddCard: (card: MTGA_Card, position?: Position) => MTGA_Deck | undefined
     addOne: (deckCard: MTGA_DeckCard) => void
     removeOne: (deckCard: MTGA_DeckCard) => void
-    removeCard: (deckCard: MTGA_DeckCard) => void
+    removeCard: (card: MTGA_Card) => void
 
     // Views & Drawer
-    deckTab: 'main' | 'side'
-    setDeckTab: Dispatch<SetStateAction<'main' | 'side'>>
+    deckTab: MainOrSide
+    setDeckTab: Dispatch<SetStateAction<MainOrSide>>
     openDrawer: boolean
     setOpenDrawer: Dispatch<SetStateAction<boolean>>
     selectingCommander: boolean
@@ -39,7 +39,7 @@ export const MTGADeckCreatorContext = createContext<MTGADeckCreatorContextType>(
     removeCard: () => {},
 
     // Views & Drawer
-    deckTab: 'main',
+    deckTab: MainOrSide.MAIN,
     setDeckTab: () => {},
     openDrawer: false,
     setOpenDrawer: () => {},

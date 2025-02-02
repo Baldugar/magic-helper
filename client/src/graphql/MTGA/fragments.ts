@@ -38,6 +38,7 @@ export const MTGA_CardFragments = gql`
         layout
         legalities
         releasedAt
+        scryfallURL
     }
 `
 

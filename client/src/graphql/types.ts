@@ -58,6 +58,7 @@ export type MTGA_Card = MTGA_CommonFields & {
   producedMana?: Maybe<Array<MTGA_Color>>;
   rarity: MTGA_Rarity;
   releasedAt: Scalars['String']['output'];
+  scryfallURL: Scalars['String']['output'];
   set: Scalars['String']['output'];
   setName: Scalars['String']['output'];
   toughness?: Maybe<Scalars['String']['output']>;
