@@ -13,6 +13,7 @@ import {
 } from '../types'
 import createMTGADeck from './mutations/createMTGADeck'
 import deleteMTGADeck from './mutations/deleteMTGADeck'
+import saveMTGADeckAsCopy from './mutations/saveMTGADeckAsCopy'
 import updateMTGADeck from './mutations/updateMTGADeck'
 import getMTGACards from './queries/getMTGACards'
 import getMTGADecks from './queries/getMTGADecks'
@@ -76,6 +77,17 @@ const updateMTGADeckMutation = async (input: MTGA_UpdateDeckInput): Promise<MTGA
         })
     })
 
+const saveMTGADeckAsCopyMutation = async (input: MTGA_UpdateDeckInput): Promise<MTGA_Deck> =>
+    new Promise((resolve, reject) => {
+        fetchData<Mutation, MutationupdateMTGADeckArgs>(saveMTGADeckAsCopy, { input }).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.saveMTGADeckAsCopy)
+            } else {
+                reject('Failed to fetch MTGA cards')
+            }
+        })
+    })
+
 export const MTGAFunctions = {
     queries: {
         getMTGACards: getMTGACardsQuery,
@@ -85,5 +97,6 @@ export const MTGAFunctions = {
         createMTGADeck: createMTGADeckMutation,
         deleteMTGADeck: deleteMTGADeckMutation,
         updateMTGADeck: updateMTGADeckMutation,
+        saveMTGADeckAsCopy: saveMTGADeckAsCopyMutation,
     },
 }

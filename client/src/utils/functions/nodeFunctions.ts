@@ -270,10 +270,14 @@ export const organizeNodes = (
 }
 
 export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTGA_DeckCard[]): MTGA_DeckCardInput[] => {
-    const cards: MTGA_DeckCardInput[] = []
+    // Usamos un Map para unir los cards (clave: ID del card)
+    const cardMap = new Map<string, MTGA_DeckCardInput>()
+
+    // Separamos los nodes según su tipo
     const cardNodes: Node<CardNodeData>[] = []
     const phantomNodes: Node<PhantomNodeData>[] = []
     const groupNodes: Node<GroupNodeData>[] = []
+
     for (const node of nodes) {
         if (node.type === 'cardNode') {
             cardNodes.push(node as Node<CardNodeData>)
@@ -285,32 +289,50 @@ export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTGA_DeckCa
             groupNodes.push(node as Node<GroupNodeData>)
         }
     }
+
+    // Procesamos los cardNodes para crear objetos con la info de cada card
     for (const node of cardNodes) {
         const card = node.data.card
-        const position: Position = {
-            x: node.position.x,
-            y: node.position.y,
-        }
+        const cardId = card.card.ID
+        const position = { x: node.position.x, y: node.position.y }
+
+        // Obtenemos los phantoms asociados a este card
         const phantoms = phantomNodes
-            .filter((p) => p.data.phantomOf === card.card.ID)
-            .map((p) => {
-                return {
-                    x: p.position.x,
-                    y: p.position.y,
-                } as Position
-            })
-        const existingCard = currentCards.find((c) => c.card.ID === card.card.ID)
-        cards.push({
-            card: card.card.ID,
-            count: existingCard?.count || 1,
+            .filter((p) => p.data.phantomOf === cardId)
+            .map((p) => ({ x: p.position.x, y: p.position.y }))
+
+        // Buscamos en currentCards para obtener el count (si existe)
+        const currentCard = currentCards.find((c) => c.card.ID === cardId)
+
+        cardMap.set(cardId, {
+            card: cardId,
+            count: currentCard?.count || 1,
             position,
             phantoms,
             deckCardType: card.deckCardType,
-            ID: card.card.ID,
+            ID: cardId,
             mainOrSide: card.mainOrSide,
         })
     }
-    return cards
+
+    // Añadimos los cards que están en currentCards pero que no aparecieron en los nodes.
+    // Si currentCard tiene position y phantoms, los usamos; si no, asignamos valores por defecto.
+    for (const currentCard of currentCards) {
+        const cardId = currentCard.card.ID
+        if (!cardMap.has(cardId)) {
+            cardMap.set(cardId, {
+                card: cardId,
+                count: currentCard.count,
+                position: currentCard.position ?? { x: 0, y: 0 },
+                phantoms: currentCard.phantoms ?? [],
+                deckCardType: currentCard.deckCardType,
+                ID: cardId,
+                mainOrSide: currentCard.mainOrSide,
+            })
+        }
+    }
+
+    return Array.from(cardMap.values())
 }
 
 export const calculateZonesFromNodes = (nodes: Node[]): FlowZone[] => {

@@ -26,6 +26,11 @@ func (r *mutationResolver) UpdateMTGADeck(ctx context.Context, input model.MtgaU
 	return mtga.UpdateMTGADeck(ctx, input)
 }
 
+// SaveMTGADeckAsCopy is the resolver for the saveMTGADeckAsCopy field.
+func (r *mutationResolver) SaveMTGADeckAsCopy(ctx context.Context, input model.MtgaUpdateDeckInput) (*model.MtgaDeck, error) {
+	return mtga.SaveMTGADeckAsCopy(ctx, input)
+}
+
 // Mutation returns gentypes.MutationResolver implementation.
 func (r *Resolver) Mutation() gentypes.MutationResolver { return &mutationResolver{r} }
 

@@ -145,9 +145,10 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateMTGADeck func(childComplexity int, input model.MtgaCreateDeckInput) int
-		DeleteMTGADeck func(childComplexity int, input model.MtgaDeleteDeckInput) int
-		UpdateMTGADeck func(childComplexity int, input model.MtgaUpdateDeckInput) int
+		CreateMTGADeck     func(childComplexity int, input model.MtgaCreateDeckInput) int
+		DeleteMTGADeck     func(childComplexity int, input model.MtgaDeleteDeckInput) int
+		SaveMTGADeckAsCopy func(childComplexity int, input model.MtgaUpdateDeckInput) int
+		UpdateMTGADeck     func(childComplexity int, input model.MtgaUpdateDeckInput) int
 	}
 
 	Position struct {
@@ -171,6 +172,7 @@ type MutationResolver interface {
 	CreateMTGADeck(ctx context.Context, input model.MtgaCreateDeckInput) (*model.MtgaDeck, error)
 	DeleteMTGADeck(ctx context.Context, input model.MtgaDeleteDeckInput) (bool, error)
 	UpdateMTGADeck(ctx context.Context, input model.MtgaUpdateDeckInput) (*model.MtgaDeck, error)
+	SaveMTGADeckAsCopy(ctx context.Context, input model.MtgaUpdateDeckInput) (*model.MtgaDeck, error)
 }
 type QueryResolver interface {
 	GetMTGACards(ctx context.Context) ([]*model.MtgaCard, error)
@@ -697,6 +699,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteMTGADeck(childComplexity, args["input"].(model.MtgaDeleteDeckInput)), true
 
+	case "Mutation.saveMTGADeckAsCopy":
+		if e.complexity.Mutation.SaveMTGADeckAsCopy == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_saveMTGADeckAsCopy_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SaveMTGADeckAsCopy(childComplexity, args["input"].(model.MtgaUpdateDeckInput)), true
+
 	case "Mutation.updateMTGADeck":
 		if e.complexity.Mutation.UpdateMTGADeck == nil {
 			break
@@ -1083,6 +1097,7 @@ type MTGA_Filter_Expansion {
     createMTGADeck(input: MTGA_CreateDeckInput!): MTGA_Deck!
     deleteMTGADeck(input: MTGA_DeleteDeckInput!): Boolean!
     updateMTGADeck(input: MTGA_UpdateDeckInput!): MTGA_Deck!
+    saveMTGADeckAsCopy(input: MTGA_UpdateDeckInput!): MTGA_Deck!
 }
 `, BuiltIn: false},
 	{Name: "../../../graphql/query.graphqls", Input: `type Query {
@@ -1130,6 +1145,21 @@ func (ec *executionContext) field_Mutation_deleteMTGADeck_args(ctx context.Conte
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalNMTGA_DeleteDeckInput2magicᚑhelperᚋgraphᚋmodelᚐMtgaDeleteDeckInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_saveMTGADeckAsCopy_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.MtgaUpdateDeckInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNMTGA_UpdateDeckInput2magicᚑhelperᚋgraphᚋmodelᚐMtgaUpdateDeckInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -4518,6 +4548,75 @@ func (ec *executionContext) fieldContext_Mutation_updateMTGADeck(ctx context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_saveMTGADeckAsCopy(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_saveMTGADeckAsCopy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SaveMTGADeckAsCopy(rctx, fc.Args["input"].(model.MtgaUpdateDeckInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.MtgaDeck)
+	fc.Result = res
+	return ec.marshalNMTGA_Deck2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgaDeck(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_saveMTGADeckAsCopy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ID":
+				return ec.fieldContext_MTGA_Deck_ID(ctx, field)
+			case "name":
+				return ec.fieldContext_MTGA_Deck_name(ctx, field)
+			case "cardFrontImage":
+				return ec.fieldContext_MTGA_Deck_cardFrontImage(ctx, field)
+			case "cards":
+				return ec.fieldContext_MTGA_Deck_cards(ctx, field)
+			case "zones":
+				return ec.fieldContext_MTGA_Deck_zones(ctx, field)
+			case "type":
+				return ec.fieldContext_MTGA_Deck_type(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTGA_Deck", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_saveMTGADeckAsCopy_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Position_x(ctx context.Context, field graphql.CollectedField, obj *model.Position) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Position_x(ctx, field)
 	if err != nil {
@@ -7785,6 +7884,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "updateMTGADeck":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateMTGADeck(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "saveMTGADeckAsCopy":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_saveMTGADeckAsCopy(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

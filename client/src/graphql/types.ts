@@ -222,6 +222,7 @@ export type Mutation = {
   __typename?: 'Mutation';
   createMTGADeck: MTGA_Deck;
   deleteMTGADeck: Scalars['Boolean']['output'];
+  saveMTGADeckAsCopy: MTGA_Deck;
   updateMTGADeck: MTGA_Deck;
 };
 
@@ -233,6 +234,11 @@ export type MutationcreateMTGADeckArgs = {
 
 export type MutationdeleteMTGADeckArgs = {
   input: MTGA_DeleteDeckInput;
+};
+
+
+export type MutationsaveMTGADeckAsCopyArgs = {
+  input: MTGA_UpdateDeckInput;
 };
 
 
