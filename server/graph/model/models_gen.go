@@ -61,6 +61,7 @@ type MtgaCard struct {
 	SetName       string                 `json:"setName"`
 	Toughness     *string                `json:"toughness,omitempty"`
 	TypeLine      string                 `json:"typeLine"`
+	ScryfallURL   string                 `json:"scryfallURL"`
 }
 
 func (MtgaCard) IsMtgaCommonFields() {}

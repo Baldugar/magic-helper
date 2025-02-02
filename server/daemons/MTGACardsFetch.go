@@ -190,6 +190,7 @@ func updateDatabaseCards() {
 			FlavorText:  card.FlavorText,
 			Rarity:      model.MtgaRarity(strings.ToUpper(card.Rarity)),
 			ReleasedAt:  card.ReleasedAt,
+			ScryfallURL: card.ScryfallURL,
 		}
 
 		if card.ImageUris != nil {
