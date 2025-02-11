@@ -25,8 +25,8 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
 
     if (!small) return null
 
-    const normal = getCorrectCardImage(card, 'normal')
-    const otherNormal = getCorrectCardImage(card, 'normal', true)
+    const large = getCorrectCardImage(card, 'large')
+    const otherLarge = getCorrectCardImage(card, 'large', true)
 
     const { height, width } = CARD_SIZE_VALUES['small']
 
@@ -52,14 +52,14 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
                     )}`}</Box>
                 )}
             </Box>
-            {normal && hover && (
+            {large && hover && (
                 <HoverMouseComponent
                     visible={hover && (hideHover === false || hideHover === undefined)}
-                    img={normal}
-                    height={CARD_SIZE_VALUES['normal'].height}
+                    img={large}
+                    height={CARD_SIZE_VALUES['large'].height}
                     scale={0.75}
-                    width={CARD_SIZE_VALUES['normal'].width}
-                    otherImg={otherNormal}
+                    width={CARD_SIZE_VALUES['large'].width}
+                    otherImg={otherLarge}
                     imgHorizontal={card.typeLine.startsWith('Battle')}
                 />
             )}

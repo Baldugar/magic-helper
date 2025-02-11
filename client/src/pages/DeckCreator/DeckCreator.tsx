@@ -12,9 +12,8 @@ import { MTGADeckCreatorPaginationProvider } from '../../context/MTGA/DeckCreato
 import { useMTGADeckCreatorPagination } from '../../context/MTGA/DeckCreatorPagination/useMTGADeckCreatorPagination'
 import { MTGAFilterProvider } from '../../context/MTGA/Filter/MTGAFilterProvider'
 import { useMTGAFilter } from '../../context/MTGA/Filter/useMTGAFilter'
-import { MTGA_DeckCard } from '../../graphql/types'
 import { PAGE_SIZE } from '../../utils/constants'
-import { calculateCardsFromNodes, calculateZonesFromNodes } from '../../utils/functions/nodeFunctions'
+import { calculateNewDeck } from '../../utils/functions/deckFunctions'
 import { useLocalStoreFilter } from '../../utils/hooks/useLocalStoreFilter'
 import { FlowView } from '../FlowView/FlowView'
 import { CardsGrid } from './Components/CardsGrid'
@@ -38,23 +37,9 @@ export const DeckCreator = () => {
     const { clearFilter } = useMTGAFilter()
     const { getNodes } = useReactFlow()
 
-    const calculateNewDeck = () => {
-        if (!deck) return
-        const nodes = getNodes()
-        const newCards = calculateCardsFromNodes(nodes, deck.cards).map((c) => {
-            const card: MTGA_DeckCard = {
-                ...c,
-                card: cards.find((card) => card.ID === c.card)!,
-            }
-            return card
-        })
-        const newZones = calculateZonesFromNodes(nodes)
-        setDeck({ ...deck, cards: [...newCards], zones: newZones })
-    }
-
     const handleChangeView = (newViewMode: 'catalogue' | 'board' | 'both') => {
         if (viewMode === 'board' || viewMode === 'both') {
-            calculateNewDeck()
+            calculateNewDeck(cards, deck, getNodes, setDeck)
         }
         setViewMode(newViewMode)
     }
