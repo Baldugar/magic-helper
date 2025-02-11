@@ -4,7 +4,12 @@ import '@xyflow/react/dist/style.css'
 import { useMTGADeckCreator } from '../../context/MTGA/DeckCreator/useMTGADeckCreator'
 import { useMTGADeckFlowCreator } from '../../context/MTGA/DeckCreatorFlow/useMTGADeckFlowCreator'
 import { uuidv4 } from '../../utils/functions/IDFunctions'
-import { NodeType, organizeNodes, sortNodesByNesting } from '../../utils/functions/nodeFunctions'
+import {
+    calculateZonesFromNodes,
+    NodeType,
+    organizeNodes,
+    sortNodesByNesting,
+} from '../../utils/functions/nodeFunctions'
 import { CardNode } from './Nodes/CardNode'
 import { GroupNode, GroupNodeData, MIN_SIZE } from './Nodes/GroupNode'
 import { PhantomNode } from './Nodes/PhantomNode'
@@ -18,7 +23,7 @@ const nodeTypes: NodeTypes = {
 export const FlowView = () => {
     const { handleNodeDragStop, onDragOver, onDrop, handleDeleteZone, handleRenameZone, handleDeletePhantom } =
         useMTGADeckFlowCreator()
-    const { deck } = useMTGADeckCreator()
+    const { deck, setDeck } = useMTGADeckCreator()
     const { setNodes } = useReactFlow<NodeType>()
 
     if (!deck) return null
@@ -56,7 +61,14 @@ export const FlowView = () => {
                                     width: MIN_SIZE,
                                     height: MIN_SIZE,
                                 } as Node<GroupNodeData>
-                                setNodes((nds) => sortNodesByNesting(nds.concat(newNode)))
+                                const newNodes = sortNodesByNesting(nodes.concat(newNode))
+                                setNodes(newNodes)
+                                setDeck((d) => {
+                                    if (d) {
+                                        return { ...d, zones: calculateZonesFromNodes(newNodes) }
+                                    }
+                                    return d
+                                })
                             }
                         }}
                     >

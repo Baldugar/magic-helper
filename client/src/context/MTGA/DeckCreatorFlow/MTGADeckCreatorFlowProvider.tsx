@@ -4,6 +4,7 @@ import { MainOrSide, MTGA_Card, MTGA_Deck, MTGA_DeckCard, MTGA_DeckCardType, Pos
 import { CardNodeData } from '../../../pages/FlowView/Nodes/CardNode'
 import { GroupNodeData, MIN_SIZE } from '../../../pages/FlowView/Nodes/GroupNode'
 import { PhantomNodeData } from '../../../pages/FlowView/Nodes/PhantomNode'
+import { calculateNewDeck } from '../../../utils/functions/deckFunctions'
 import { uuidv4 } from '../../../utils/functions/IDFunctions'
 import {
     findNextAvailablePosition,
@@ -12,10 +13,12 @@ import {
     sortNodesByNesting,
 } from '../../../utils/functions/nodeFunctions'
 import { useDnD } from '../../DnD/useDnD'
+import { useMTGACards } from '../Cards/useMTGACards'
 import { useMTGADeckCreator } from '../DeckCreator/useMTGADeckCreator'
 import { MTGADeckCreatorFlowContext } from './MTGADeckCreatorFlowContext'
 
 export const MTGADeckCreatorFlowProvider = ({ children, deck }: { children: ReactNode; deck: MTGA_Deck }) => {
+    const { cards } = useMTGACards()
     const { card, type } = useDnD()
     const { selectingCommander, setSelectingCommander, deckTab, setDeck, removeCard } = useMTGADeckCreator()
     const { screenToFlowPosition, getIntersectingNodes, setNodes, getNodes } = useReactFlow<NodeType>()
@@ -224,6 +227,7 @@ export const MTGADeckCreatorFlowProvider = ({ children, deck }: { children: Reac
     const handleNodeDragStop: OnNodeDrag<NodeType> = (_, node) => {
         const nodes = getNodes()
         onNodeDragStop(node, getIntersectingNodes, nodes, setNodes)
+        calculateNewDeck(cards, deck, getNodes, setDeck)
     }
 
     return (
