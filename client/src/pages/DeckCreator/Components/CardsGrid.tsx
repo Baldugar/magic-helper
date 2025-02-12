@@ -27,9 +27,7 @@ export const CardsGrid = () => {
             }}
         >
             {cardsToShow.map((card) => (
-                <Grid item key={card.ID} xs={'auto'}>
-                    <CardsGridButton card={card} />
-                </Grid>
+                <CardsGridButton card={card} key={card.ID} />
             ))}
         </Grid>
     )

@@ -148,6 +148,7 @@ type MtgaDeck struct {
 	Cards          []*MtgaDeckCard `json:"cards"`
 	Zones          []*FlowZone     `json:"zones"`
 	Type           DeckType        `json:"type"`
+	IgnoredCards   []string        `json:"ignoredCards"`
 }
 
 type MtgaDeckCard struct {
@@ -212,6 +213,7 @@ type MtgaUpdateDeckInput struct {
 	CardFrontImage *string              `json:"cardFrontImage,omitempty"`
 	Cards          []*MtgaDeckCardInput `json:"cards"`
 	Zones          []*FlowZoneInput     `json:"zones"`
+	IgnoredCards   []string             `json:"ignoredCards"`
 }
 
 type Mutation struct {

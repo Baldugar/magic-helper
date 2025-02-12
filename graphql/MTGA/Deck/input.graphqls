@@ -14,6 +14,7 @@ input MTGA_UpdateDeckInput {
     cardFrontImage: String
     cards: [MTGA_DeckCardInput!]!
     zones: [FlowZoneInput!]!
+    ignoredCards: [String!]!
 }
 
 input MTGA_DeckCardInput {

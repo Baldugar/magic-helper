@@ -104,7 +104,8 @@ func UpdateMTGADeck(ctx context.Context, input model.MtgaUpdateDeckInput) (*mode
 			name: @name,
 			type: @type,
 			zones: @zones,
-			type: @type
+			type: @type,
+			ignoredCards: @ignoredCards
 		} IN @@collection
 		RETURN NEW
 	`)
@@ -114,6 +115,7 @@ func UpdateMTGADeck(ctx context.Context, input model.MtgaUpdateDeckInput) (*mode
 	aq.AddBindVar("name", input.Name)
 	aq.AddBindVar("type", input.Type)
 	aq.AddBindVar("zones", input.Zones)
+	aq.AddBindVar("ignoredCards", input.IgnoredCards)
 
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {
@@ -259,6 +261,7 @@ func SaveMTGADeckAsCopy(ctx context.Context, input model.MtgaUpdateDeckInput) (*
 		Zones:          input.Zones,
 		CardFrontImage: input.CardFrontImage,
 		Cards:          input.Cards,
+		IgnoredCards:   input.IgnoredCards,
 	}
 
 	newDeck, err := UpdateMTGADeck(ctx, newInput)

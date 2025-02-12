@@ -4,7 +4,7 @@ import { sortBy } from 'lodash'
 import { useMemo } from 'react'
 import { useMTGADeckCreator } from '../../../context/MTGA/DeckCreator/useMTGADeckCreator'
 import { MTGAFunctions } from '../../../graphql/MTGA/functions'
-import { DeckType, MainOrSide, MTGA_DeckCard, MTGA_DeckCardType } from '../../../graphql/types'
+import { DeckType, MainOrSide, MTGA_DeckCard, MTGA_DeckCardType, MTGA_UpdateDeckInput } from '../../../graphql/types'
 import { calculateCardsFromNodes, calculateZonesFromNodes, NodeType } from '../../../utils/functions/nodeFunctions'
 import { DeckCard } from './DeckCard'
 
@@ -19,13 +19,14 @@ export const Drawer = () => {
     const saveDeck = () => {
         if (!deck) return
         const nodes = getNodes()
-        const deckInput = {
+        const deckInput: MTGA_UpdateDeckInput = {
             cards: calculateCardsFromNodes(nodes, deck.cards),
             deckID: deck.ID,
             name: deck.name,
             type: deck.type,
             zones: calculateZonesFromNodes(nodes),
             cardFrontImage: deck.cardFrontImage,
+            ignoredCards: deck.ignoredCards,
         }
         updateMTGADeck(deckInput)
     }
@@ -33,13 +34,14 @@ export const Drawer = () => {
     const saveDeckAsCopy = () => {
         if (!deck) return
         const nodes = getNodes()
-        const deckInput = {
+        const deckInput: MTGA_UpdateDeckInput = {
             cards: calculateCardsFromNodes(nodes, deck.cards),
             deckID: deck.ID,
             name: deck.name,
             type: deck.type,
             zones: calculateZonesFromNodes(nodes),
             cardFrontImage: deck.cardFrontImage,
+            ignoredCards: deck.ignoredCards,
         }
         saveMTGADeckAsCopy(deckInput)
     }
