@@ -12,8 +12,11 @@ import { MTGADeckCreatorPaginationProvider } from '../../context/MTGA/DeckCreato
 import { useMTGADeckCreatorPagination } from '../../context/MTGA/DeckCreatorPagination/useMTGADeckCreatorPagination'
 import { MTGAFilterProvider } from '../../context/MTGA/Filter/MTGAFilterProvider'
 import { useMTGAFilter } from '../../context/MTGA/Filter/useMTGAFilter'
+import { MTGAFunctions } from '../../graphql/MTGA/functions'
+import { MTGA_UpdateDeckInput } from '../../graphql/types'
 import { PAGE_SIZE } from '../../utils/constants'
 import { calculateNewDeck } from '../../utils/functions/deckFunctions'
+import { calculateCardsFromNodes, calculateZonesFromNodes } from '../../utils/functions/nodeFunctions'
 import { useLocalStoreFilter } from '../../utils/hooks/useLocalStoreFilter'
 import { FlowView } from '../FlowView/FlowView'
 import { CardsGrid } from './Components/CardsGrid'
@@ -36,12 +39,30 @@ export const DeckCreator = () => {
     const { loadLocalStoreFilter, saveLocalStoreFilter } = useLocalStoreFilter()
     const { clearFilter } = useMTGAFilter()
     const { getNodes } = useReactFlow()
+    const {
+        mutations: { updateMTGADeck },
+    } = MTGAFunctions
 
     const handleChangeView = (newViewMode: 'catalogue' | 'board' | 'both') => {
         if (viewMode === 'board' || viewMode === 'both') {
             calculateNewDeck(cards, deck, getNodes, setDeck)
         }
         setViewMode(newViewMode)
+    }
+
+    const saveDeck = () => {
+        if (!deck) return
+        const nodes = getNodes()
+        const deckInput: MTGA_UpdateDeckInput = {
+            cards: calculateCardsFromNodes(nodes, deck.cards),
+            deckID: deck.ID,
+            name: deck.name,
+            type: deck.type,
+            zones: calculateZonesFromNodes(nodes),
+            cardFrontImage: deck.cardFrontImage,
+            ignoredCards: deck.ignoredCards,
+        }
+        updateMTGADeck(deckInput)
     }
 
     if (!deck) return null
@@ -96,6 +117,9 @@ export const DeckCreator = () => {
                         </Box>
                     )}
                     <Box position={'absolute'} top={10} right={10} display={'flex'} gap={1}>
+                        <Button variant={'contained'} color={'primary'} onClick={saveDeck} sx={{ mr: 2 }}>
+                            Save Deck
+                        </Button>
                         <Button variant={'contained'} color={'primary'} onClick={clearFilter} sx={{ mr: 2 }}>
                             Clear filter
                         </Button>

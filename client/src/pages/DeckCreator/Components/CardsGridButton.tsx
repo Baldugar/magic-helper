@@ -5,7 +5,6 @@ import { MTGACardWithHover } from '../../../components/MTGACardWithHover'
 import { useDnD } from '../../../context/DnD/useDnD'
 import { useMTGADeckCreator } from '../../../context/MTGA/DeckCreator/useMTGADeckCreator'
 import { useMTGADeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGADeckFlowCreator'
-import { useMTGAFilter } from '../../../context/MTGA/Filter/useMTGAFilter'
 import { MTGA_Card } from '../../../graphql/types'
 import { isCardInDeck } from '../../../utils/functions/cardFunctions'
 import { NodeType, organizeNodes } from '../../../utils/functions/nodeFunctions'
@@ -20,9 +19,6 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
     const { card } = props
     const { onAddCard, deck, removeCard, setDeck } = useMTGADeckCreator()
     const { handleDeleteZone, handleRenameZone, handleDeletePhantom } = useMTGADeckFlowCreator()
-    const {
-        filter: { hideIgnored },
-    } = useMTGAFilter()
     const { setNodes } = useReactFlow<NodeType>()
     const { card: draggedCard } = useDnD()
     const { anchorRef, handleClick, handleClose, handleContextMenu, open } = useContextMenu<HTMLDivElement>()
@@ -99,7 +95,7 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
         })
     }
 
-    if (!deck || (deck.ignoredCards.includes(card.ID) && hideIgnored)) return null
+    if (!deck) return null
 
     return (
         <Grid item xs={'auto'}>
