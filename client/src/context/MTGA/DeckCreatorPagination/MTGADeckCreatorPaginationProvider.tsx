@@ -15,11 +15,7 @@ export const MTGADeckCreatorPaginationProvider = ({ children }: { children: Reac
     const commander = deck?.cards.find((c) => c.deckCardType === MTGA_DeckCardType.COMMANDER)
 
     useEffect(() => {
-        // if (!isEqual(filter, originalFilter) || selectingCommander) {
         setFilteredCards(filterCards(cards, filter, sort, selectingCommander, commander))
-        // } else {
-        //     setFilteredCards(cards)
-        // }
     }, [filter, sort, cards, originalFilter, selectingCommander, commander])
 
     useEffect(() => {
@@ -29,7 +25,9 @@ export const MTGADeckCreatorPaginationProvider = ({ children }: { children: Reac
     return (
         <MTGADeckCreatorPaginationContext.Provider
             value={{
-                filteredCards,
+                filteredCards: filteredCards.filter((c) =>
+                    deck && filter.hideIgnored ? !deck.ignoredCards.includes(c.ID) : true,
+                ),
                 page,
                 setPage,
             }}
