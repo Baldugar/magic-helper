@@ -62,6 +62,12 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
         {
             label: 'Ignore card',
             action: () => {
+                if (!deck) return
+                let confirmation = true
+                if (deck && deck.cards.find((c) => c.card.ID === card.ID)) {
+                    confirmation = confirm('This card is in the deck, are you sure you want to ignore it?')
+                }
+                if (!confirmation) return
                 setDeck((prev) => {
                     if (!prev) return prev
                     // If the card is in the cards inside the deck, remove it
