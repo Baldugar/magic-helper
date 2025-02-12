@@ -98,6 +98,7 @@ type ComplexityRoot struct {
 		CardFrontImage func(childComplexity int) int
 		Cards          func(childComplexity int) int
 		ID             func(childComplexity int) int
+		IgnoredCards   func(childComplexity int) int
 		Name           func(childComplexity int) int
 		Type           func(childComplexity int) int
 		Zones          func(childComplexity int) int
@@ -492,6 +493,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MTGA_Deck.ID(childComplexity), true
+
+	case "MTGA_Deck.ignoredCards":
+		if e.complexity.MTGA_Deck.IgnoredCards == nil {
+			break
+		}
+
+		return e.complexity.MTGA_Deck.IgnoredCards(childComplexity), true
 
 	case "MTGA_Deck.name":
 		if e.complexity.MTGA_Deck.Name == nil {
@@ -1039,6 +1047,7 @@ input MTGA_UpdateDeckInput {
     cardFrontImage: String
     cards: [MTGA_DeckCardInput!]!
     zones: [FlowZoneInput!]!
+    ignoredCards: [String!]!
 }
 
 input MTGA_DeckCardInput {
@@ -1058,6 +1067,7 @@ input MTGA_DeckCardInput {
     cards: [MTGA_DeckCard!]!
     zones: [FlowZone!]!
     type: DeckType!
+    ignoredCards: [String!]!
 }
 
 type MTGA_DeckCard {
@@ -3263,6 +3273,50 @@ func (ec *executionContext) fieldContext_MTGA_Deck_type(ctx context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _MTGA_Deck_ignoredCards(ctx context.Context, field graphql.CollectedField, obj *model.MtgaDeck) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTGA_Deck_ignoredCards(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IgnoredCards, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTGA_Deck_ignoredCards(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTGA_Deck",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MTGA_DeckCard_card(ctx context.Context, field graphql.CollectedField, obj *model.MtgaDeckCard) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MTGA_DeckCard_card(ctx, field)
 	if err != nil {
@@ -4406,6 +4460,8 @@ func (ec *executionContext) fieldContext_Mutation_createMTGADeck(ctx context.Con
 				return ec.fieldContext_MTGA_Deck_zones(ctx, field)
 			case "type":
 				return ec.fieldContext_MTGA_Deck_type(ctx, field)
+			case "ignoredCards":
+				return ec.fieldContext_MTGA_Deck_ignoredCards(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTGA_Deck", field.Name)
 		},
@@ -4530,6 +4586,8 @@ func (ec *executionContext) fieldContext_Mutation_updateMTGADeck(ctx context.Con
 				return ec.fieldContext_MTGA_Deck_zones(ctx, field)
 			case "type":
 				return ec.fieldContext_MTGA_Deck_type(ctx, field)
+			case "ignoredCards":
+				return ec.fieldContext_MTGA_Deck_ignoredCards(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTGA_Deck", field.Name)
 		},
@@ -4599,6 +4657,8 @@ func (ec *executionContext) fieldContext_Mutation_saveMTGADeckAsCopy(ctx context
 				return ec.fieldContext_MTGA_Deck_zones(ctx, field)
 			case "type":
 				return ec.fieldContext_MTGA_Deck_type(ctx, field)
+			case "ignoredCards":
+				return ec.fieldContext_MTGA_Deck_ignoredCards(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTGA_Deck", field.Name)
 		},
@@ -4898,6 +4958,8 @@ func (ec *executionContext) fieldContext_Query_getMTGADecks(ctx context.Context,
 				return ec.fieldContext_MTGA_Deck_zones(ctx, field)
 			case "type":
 				return ec.fieldContext_MTGA_Deck_type(ctx, field)
+			case "ignoredCards":
+				return ec.fieldContext_MTGA_Deck_ignoredCards(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTGA_Deck", field.Name)
 		},
@@ -7102,7 +7164,7 @@ func (ec *executionContext) unmarshalInputMTGA_UpdateDeckInput(ctx context.Conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"deckID", "name", "type", "cardFrontImage", "cards", "zones"}
+	fieldsInOrder := [...]string{"deckID", "name", "type", "cardFrontImage", "cards", "zones", "ignoredCards"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7151,6 +7213,13 @@ func (ec *executionContext) unmarshalInputMTGA_UpdateDeckInput(ctx context.Conte
 				return it, err
 			}
 			it.Zones = data
+		case "ignoredCards":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ignoredCards"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IgnoredCards = data
 		}
 	}
 
@@ -7503,6 +7572,11 @@ func (ec *executionContext) _MTGA_Deck(ctx context.Context, sel ast.SelectionSet
 			}
 		case "type":
 			out.Values[i] = ec._MTGA_Deck_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "ignoredCards":
+			out.Values[i] = ec._MTGA_Deck_ignoredCards(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

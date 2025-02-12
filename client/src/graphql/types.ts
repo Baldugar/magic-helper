@@ -111,6 +111,7 @@ export type MTGA_Deck = {
   ID: Scalars['ID']['output'];
   cardFrontImage?: Maybe<Scalars['String']['output']>;
   cards: Array<MTGA_DeckCard>;
+  ignoredCards: Array<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   type: DeckType;
   zones: Array<FlowZone>;
@@ -208,6 +209,7 @@ export type MTGA_UpdateDeckInput = {
   cardFrontImage?: InputMaybe<Scalars['String']['input']>;
   cards: Array<MTGA_DeckCardInput>;
   deckID: Scalars['ID']['input'];
+  ignoredCards: Array<Scalars['String']['input']>;
   name: Scalars['String']['input'];
   type: DeckType;
   zones: Array<FlowZoneInput>;

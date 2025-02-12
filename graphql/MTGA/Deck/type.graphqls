@@ -5,6 +5,7 @@ type MTGA_Deck {
     cards: [MTGA_DeckCard!]!
     zones: [FlowZone!]!
     type: DeckType!
+    ignoredCards: [String!]!
 }
 
 type MTGA_DeckCard {

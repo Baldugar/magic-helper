@@ -77,6 +77,7 @@ export const MTGA_DeckFragments = gql`
             childrenIDs
         }
         type
+        ignoredCards
     }
     ${MTGA_CardFragments}
 `

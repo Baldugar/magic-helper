@@ -17,6 +17,7 @@ export interface MTGAFilterType {
     legalityValues: string[]
     legalityFormat: string | null
     legalityValue: string | null
+    hideIgnored: boolean
 }
 
 export enum SortEnum {
@@ -95,6 +96,7 @@ export const initialMTGAFilter: MTGAFilterType = {
     legalityFormats: [],
     legalityValue: null,
     legalityValues: [],
+    hideIgnored: false,
 }
 
 export const MTGAFilterContext = createContext<MTGAFilterContextType>({

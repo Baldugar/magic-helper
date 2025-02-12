@@ -1,5 +1,16 @@
 import { Clear, FindReplace, Search } from '@mui/icons-material'
-import { Box, Button, Divider, Grid, IconButton, InputAdornment, Popover, TextField } from '@mui/material'
+import {
+    Box,
+    Button,
+    Divider,
+    FormControlLabel,
+    Grid,
+    IconButton,
+    InputAdornment,
+    Popover,
+    Switch,
+    TextField,
+} from '@mui/material'
 import { MouseEvent, useState } from 'react'
 import { CMCSelector } from '../../../components/FilterSelectors/CMCSelector'
 import ManaSelector from '../../../components/FilterSelectors/ManaSelector'
@@ -190,6 +201,18 @@ export const Filters = () => {
             />
             <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
             <SortSelector />
+            <FormControlLabel
+                value={filter.hideIgnored}
+                control={<Switch color="primary" />}
+                label="Hide Ignored"
+                labelPlacement="bottom"
+                onChange={(_, c) =>
+                    setFilter({
+                        ...filter,
+                        hideIgnored: c,
+                    })
+                }
+            />
         </Grid>
     )
 }
