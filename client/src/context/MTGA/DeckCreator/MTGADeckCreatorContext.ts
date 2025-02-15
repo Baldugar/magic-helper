@@ -5,7 +5,7 @@ type MTGADeckCreatorContextType = {
     // Deck & Cards
     deck: MTGA_Deck | undefined
     setDeck: Dispatch<SetStateAction<MTGA_Deck | undefined>>
-    onAddCard: (card: MTGA_Card, position?: Position) => MTGA_Deck | undefined
+    onAddCard: (card: MTGA_Card, position?: Position, whatDeck?: MTGA_Deck) => MTGA_Deck | undefined
     addOne: (deckCard: MTGA_DeckCard) => void
     removeOne: (deckCard: MTGA_DeckCard) => void
     removeCard: (card: MTGA_Card) => void

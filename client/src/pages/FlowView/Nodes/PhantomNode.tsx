@@ -1,7 +1,8 @@
 import { NodeProps } from '@xyflow/react'
 import { MTGA_Card, Position as NodePosition } from '../../../graphql/types'
 import { getCorrectCardImage } from '../../../utils/functions/cardFunctions'
-import { ContextMenu, ContextMenuOption } from '../../../utils/hooks/ContextMenu/ContextMenu'
+import { ContextMenu } from '../../../utils/hooks/ContextMenu/ContextMenu'
+import { ContextMenuOption } from '../../../utils/hooks/ContextMenu/types'
 import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
 
 export type PhantomNodeData = {
@@ -45,7 +46,6 @@ export const PhantomNode = (props: PhantomNodeProps) => {
                 open={open}
                 handleClose={handleClose}
                 handleClick={handleClick}
-                disablePortal
             />
         </>
     )

@@ -25,8 +25,8 @@ export const MTGADeckCreatorProvider = ({ children, deckID }: { children: ReactN
     }, [deckID, decks])
 
     // Add a card to the deck via dragging from the catalogue onto the board
-    const onAddCard = (card: MTGA_Card, position?: Position): MTGA_Deck | undefined => {
-        const newDeck = structuredClone(deck)
+    const onAddCard = (card: MTGA_Card, position?: Position, whatDeck?: MTGA_Deck): MTGA_Deck | undefined => {
+        const newDeck = structuredClone(whatDeck ?? deck)
         if (newDeck) {
             if (selectingCommander) {
                 // Remove the previous commander
@@ -61,7 +61,7 @@ export const MTGADeckCreatorProvider = ({ children, deckID }: { children: ReactN
                     newDeck.cards.push(cardToReturn)
                 }
             }
-            setDeck(newDeck)
+            if (!whatDeck) setDeck(newDeck)
         }
         return newDeck
     }

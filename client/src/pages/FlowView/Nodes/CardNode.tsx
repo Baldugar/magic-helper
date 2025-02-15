@@ -3,7 +3,8 @@ import { useMTGADeckCreator } from '../../../context/MTGA/DeckCreator/useMTGADec
 import { MTGA_DeckCard } from '../../../graphql/types'
 import { getCorrectCardImage } from '../../../utils/functions/cardFunctions'
 import { NodeType } from '../../../utils/functions/nodeFunctions'
-import { ContextMenu, ContextMenuOption } from '../../../utils/hooks/ContextMenu/ContextMenu'
+import { ContextMenu } from '../../../utils/hooks/ContextMenu/ContextMenu'
+import { ContextMenuOption } from '../../../utils/hooks/ContextMenu/types'
 import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
 
 export type CardNodeData = {
@@ -48,7 +49,6 @@ export const CardNode = (props: CardNodeProps) => {
                 open={open}
                 handleClose={handleClose}
                 handleClick={handleClick}
-                disablePortal
             />
         </>
     )

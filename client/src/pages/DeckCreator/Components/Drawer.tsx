@@ -3,6 +3,7 @@ import { useReactFlow } from '@xyflow/react'
 import { sortBy } from 'lodash'
 import { useMemo } from 'react'
 import { useMTGADeckCreator } from '../../../context/MTGA/DeckCreator/useMTGADeckCreator'
+import { useMTGADecks } from '../../../context/MTGA/Decks/useMTGADecks'
 import { MTGAFunctions } from '../../../graphql/MTGA/functions'
 import { DeckType, MainOrSide, MTGA_DeckCard, MTGA_DeckCardType, MTGA_UpdateDeckInput } from '../../../graphql/types'
 import { calculateCardsFromNodes, calculateZonesFromNodes, NodeType } from '../../../utils/functions/nodeFunctions'
@@ -11,6 +12,7 @@ import { DeckCard } from './DeckCard'
 export const Drawer = () => {
     const { deckTab, setDeckTab, deck, selectingCommander, setSelectingCommander, removeCard } = useMTGADeckCreator()
     const { getNodes, setNodes } = useReactFlow<NodeType>()
+    const { updateDeck } = useMTGADecks()
 
     const {
         mutations: { updateMTGADeck, saveMTGADeckAsCopy },
@@ -28,7 +30,9 @@ export const Drawer = () => {
             cardFrontImage: deck.cardFrontImage,
             ignoredCards: deck.ignoredCards,
         }
-        updateMTGADeck(deckInput)
+        updateMTGADeck(deckInput).then((deck) => {
+            updateDeck(deck)
+        })
     }
 
     const saveDeckAsCopy = () => {
