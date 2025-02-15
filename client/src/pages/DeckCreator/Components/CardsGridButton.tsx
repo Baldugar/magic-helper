@@ -5,10 +5,13 @@ import { MTGACardWithHover } from '../../../components/MTGACardWithHover'
 import { useDnD } from '../../../context/DnD/useDnD'
 import { useMTGADeckCreator } from '../../../context/MTGA/DeckCreator/useMTGADeckCreator'
 import { useMTGADeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGADeckFlowCreator'
-import { MTGA_Card } from '../../../graphql/types'
+import { useMTGADecks } from '../../../context/MTGA/Decks/useMTGADecks'
+import { MTGAFunctions } from '../../../graphql/MTGA/functions'
+import { DeckType, MTGA_Card } from '../../../graphql/types'
 import { isCardInDeck } from '../../../utils/functions/cardFunctions'
 import { NodeType, organizeNodes } from '../../../utils/functions/nodeFunctions'
-import { ContextMenu, ContextMenuOption } from '../../../utils/hooks/ContextMenu/ContextMenu'
+import { ContextMenu } from '../../../utils/hooks/ContextMenu/ContextMenu'
+import { ContextMenuOption } from '../../../utils/hooks/ContextMenu/types'
 import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
 
 export type CardsGridButtonProps = {
@@ -17,6 +20,7 @@ export type CardsGridButtonProps = {
 
 export const CardsGridButton = (props: CardsGridButtonProps) => {
     const { card } = props
+    const { decks, updateDeck } = useMTGADecks()
     const { onAddCard, deck, removeCard, setDeck } = useMTGADeckCreator()
     const { handleDeleteZone, handleRenameZone, handleDeletePhantom } = useMTGADeckFlowCreator()
     const { setNodes } = useReactFlow<NodeType>()
@@ -37,6 +41,9 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
     const deckCardIDs = deck?.cards.map((c) => c.card.ID) || []
 
     const cardIsInDeck = isCardInDeck(card, deck)
+    const {
+        mutations: { updateMTGADeck },
+    } = MTGAFunctions
 
     const options: ContextMenuOption[] = [
         {
@@ -83,6 +90,109 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                     return newDeck
                 })
             },
+        },
+        {
+            id: 'addToOtherDeck',
+            label: 'Add to other deck',
+            subMenu: [
+                {
+                    label: 'Create new deck',
+                    action: () => {
+                        const name = prompt('Enter the name of the new deck')
+                        if (!name) return
+                        const {
+                            mutations: { createMTGADeck },
+                        } = MTGAFunctions
+                        // TODO: The type should be dynamic
+                        createMTGADeck({ name, type: DeckType.BRAWL_100 }).then((deck) => {
+                            const d = onAddCard(card, undefined, deck)
+                            if (!d) return
+                            updateDeck(d)
+                            updateMTGADeck({
+                                cards: d.cards.map((c) => ({
+                                    ...c,
+                                    card: c.card.ID,
+                                    ID: c.card.ID,
+                                })),
+                                deckID: d.ID,
+                                ignoredCards: d.ignoredCards,
+                                name: d.name,
+                                type: d.type,
+                                zones: d.zones.map((z) => ({
+                                    ...z,
+                                    ID: z.ID,
+                                    name: z.name,
+                                    position: z.position,
+                                })),
+                                cardFrontImage: d.cardFrontImage,
+                            })
+                            updateDeck(d)
+                        })
+                    },
+                    shouldKeepOpen: true,
+                },
+                ...decks
+                    .filter((d) => d.ID !== deck?.ID)
+                    .map((d) => {
+                        const alreadyInDeck = d.cards.find((c) => c.card.ID === card.ID)
+                        return {
+                            label: d.name,
+                            selected: alreadyInDeck ? true : false,
+                            action: !alreadyInDeck
+                                ? () => {
+                                      const deck = onAddCard(card, undefined, d)
+                                      if (!deck) return
+                                      updateDeck(deck)
+                                      updateMTGADeck({
+                                          cards: deck.cards.map((c) => ({
+                                              ...c,
+                                              card: c.card.ID,
+                                              ID: c.card.ID,
+                                          })),
+                                          deckID: deck.ID,
+                                          ignoredCards: deck.ignoredCards,
+                                          name: deck.name,
+                                          type: deck.type,
+                                          zones: deck.zones.map((z) => ({
+                                              ...z,
+                                              ID: z.ID,
+                                              name: z.name,
+                                              position: z.position,
+                                          })),
+                                          cardFrontImage: deck.cardFrontImage,
+                                      })
+                                  }
+                                : () => {
+                                      const deck = structuredClone(d)
+                                      if (!deck) return
+                                      const cardIndex = deck.cards.findIndex((c) => c.card.ID === card.ID)
+                                      if (cardIndex !== -1) {
+                                          deck.cards.splice(cardIndex, 1)
+                                      }
+                                      updateDeck(deck)
+                                      updateMTGADeck({
+                                          cards: deck.cards.map((c) => ({
+                                              ...c,
+                                              card: c.card.ID,
+                                              ID: c.card.ID,
+                                          })),
+                                          deckID: deck.ID,
+                                          ignoredCards: deck.ignoredCards,
+                                          name: deck.name,
+                                          type: deck.type,
+                                          zones: deck.zones.map((z) => ({
+                                              ...z,
+                                              ID: z.ID,
+                                              name: z.name,
+                                              position: z.position,
+                                          })),
+                                          cardFrontImage: deck.cardFrontImage,
+                                      })
+                                  },
+                            shouldKeepOpen: true,
+                        } as ContextMenuOption
+                    }),
+            ],
         },
     ]
 

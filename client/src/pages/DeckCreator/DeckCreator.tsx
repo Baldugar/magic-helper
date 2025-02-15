@@ -10,6 +10,7 @@ import { useMTGADeckCreator } from '../../context/MTGA/DeckCreator/useMTGADeckCr
 import { MTGADeckCreatorFlowProvider } from '../../context/MTGA/DeckCreatorFlow/MTGADeckCreatorFlowProvider'
 import { MTGADeckCreatorPaginationProvider } from '../../context/MTGA/DeckCreatorPagination/MTGADeckCreatorPaginationProvider'
 import { useMTGADeckCreatorPagination } from '../../context/MTGA/DeckCreatorPagination/useMTGADeckCreatorPagination'
+import { useMTGADecks } from '../../context/MTGA/Decks/useMTGADecks'
 import { MTGAFilterProvider } from '../../context/MTGA/Filter/MTGAFilterProvider'
 import { useMTGAFilter } from '../../context/MTGA/Filter/useMTGAFilter'
 import { MTGAFunctions } from '../../graphql/MTGA/functions'
@@ -35,6 +36,7 @@ export const DeckCreator = () => {
         setOpenExportDialog,
         setDeck,
     } = useMTGADeckCreator()
+    const { updateDeck } = useMTGADecks()
     const { filteredCards, page, setPage } = useMTGADeckCreatorPagination()
     const { loadLocalStoreFilter, saveLocalStoreFilter } = useLocalStoreFilter()
     const { clearFilter } = useMTGAFilter()
@@ -62,7 +64,9 @@ export const DeckCreator = () => {
             cardFrontImage: deck.cardFrontImage,
             ignoredCards: deck.ignoredCards,
         }
-        updateMTGADeck(deckInput)
+        updateMTGADeck(deckInput).then((deck) => {
+            updateDeck(deck)
+        })
     }
 
     if (!deck) return null
