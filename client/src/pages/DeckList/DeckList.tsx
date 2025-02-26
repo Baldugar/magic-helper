@@ -14,7 +14,7 @@ import {
 } from '@mui/material'
 import { useContext, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import DeckBox from '../../components/DeckBox'
+import RotatingHDeckBox from '../../components/HDeckBox'
 import { MTGADecksContext } from '../../context/MTGA/Decks/MTGADecksContext'
 import { MTGAFunctions } from '../../graphql/MTGA/functions'
 import { DeckType } from '../../graphql/types'
@@ -110,17 +110,19 @@ export const DeckList = () => {
                     </Paper>
                 </Popover>
             </Stack>
-            <Grid container gap={4}>
+            <Grid container columnSpacing={4}>
                 {decks.map((deck) => (
-                    <Grid item key={deck.ID}>
-                        <DeckBox
-                            image={deck.cardFrontImage}
-                            name={deck.name}
-                            onClick={() => navigate(`/deck/${deck.ID}`)}
-                            onDelete={() =>
-                                deleteMTGADeck(deck.ID).then(() => setDecks(decks.filter((d) => d.ID !== deck.ID)))
-                            }
-                        />
+                    <Grid item xs={12} md={6} lg={4} xl={3} key={deck.ID} container justifyContent={'center'}>
+                        {/* <RotatingDeckBox /> */}
+                        <RotatingHDeckBox deck={deck} onClick={(d) => navigate(`/deck/${d.ID}`)} />
+                        {/* 
+                            // image={deck.cardFrontImage}
+                            // name={deck.name}
+                            // onClick={() => navigate(`/deck/${deck.ID}`)}
+                            // onDelete={() =>
+                            //     deleteMTGADeck(deck.ID).then(() => setDecks(decks.filter((d) => d.ID !== deck.ID)))
+                            // }
+                        /> */}
                     </Grid>
                 ))}
             </Grid>

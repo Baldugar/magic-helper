@@ -194,6 +194,16 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                     }),
             ],
         },
+        {
+            label: 'Add as deck image',
+            action: () => {
+                if (!deck) return
+                setDeck((prev) => {
+                    if (!prev) return prev
+                    return { ...prev, cardFrontImage: card.ID }
+                })
+            },
+        },
     ]
 
     if (cardIsInDeck) {

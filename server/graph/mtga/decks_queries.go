@@ -15,8 +15,8 @@ func GetMTGADecks(ctx context.Context, deckID *string) ([]*model.MtgaDeck, error
 		FOR doc IN @@collection
 			// deckID: FILTER doc._key == @deckID
 			LET cardFrontImage = FIRST(
-				FOR image IN 1..1 OUTBOUND doc @@edge
-				RETURN image
+				FOR image, edge IN 1..1 OUTBOUND doc @@edge
+				RETURN image.layout == "modal_dfc" OR image.layout == "transform" ? image.cardFaces[0].image.artCrop : image.image.artCrop
 			)
 			LET cards = (
 				FOR card, edge IN 1..1 INBOUND doc @@edge2
