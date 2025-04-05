@@ -1,32 +1,32 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material'
 import { useReactFlow } from '@xyflow/react'
-import { useMTGACards } from '../context/MTGA/Cards/useMTGACards'
-import { useMTGADeckCreator } from '../context/MTGA/DeckCreator/useMTGADeckCreator'
-import { useMTGADeckFlowCreator } from '../context/MTGA/DeckCreatorFlow/useMTGADeckFlowCreator'
-import { DeckType, MainOrSide, MTGA_Card, MTGA_DeckCardType } from '../graphql/types'
+import { useMTGCards } from '../context/MTGA/Cards/useMTGCards'
+import { useMTGDeckCreator } from '../context/MTGA/DeckCreator/useMTGDeckCreator'
+import { useMTGDeckFlowCreator } from '../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
+import { DeckType, MainOrSide, MTG_Card, MTG_DeckCardType } from '../graphql/types'
 import { NodeType, organizeNodes } from '../utils/functions/nodeFunctions'
 
 type MTGA_ImportedCard = {
-    card: MTGA_Card
+    card: MTG_Card
     number: number
 }
 
 type MTGA_ImportedDeck = {
-    commander: MTGA_Card | null
-    companion: MTGA_Card | null
+    commander: MTG_Card | null
+    companion: MTG_Card | null
     deck: MTGA_ImportedCard[]
     sideboard: MTGA_ImportedCard[]
     totalCards: number
 }
 
 export const ImportDialog = () => {
-    const { openImportDialog, setOpenImportDialog } = useMTGADeckCreator()
-    const { cards } = useMTGACards()
-    const { setDeck } = useMTGADeckCreator()
-    const { handleDeleteZone, handleRenameZone, handleDeletePhantom } = useMTGADeckFlowCreator()
+    const { openImportDialog, setOpenImportDialog } = useMTGDeckCreator()
+    const { cards } = useMTGCards()
+    const { setDeck } = useMTGDeckCreator()
+    const { handleDeleteZone, handleRenameZone, handleDeletePhantom } = useMTGDeckFlowCreator()
     const { setNodes } = useReactFlow<NodeType>()
 
-    const parseImportDeck = (copiedDeck: string, allCards: MTGA_Card[]): MTGA_ImportedDeck => {
+    const parseImportDeck = (copiedDeck: string, allCards: MTG_Card[]): MTGA_ImportedDeck => {
         const lines = copiedDeck.split('\n').map((line) => line.trim())
         const deck: MTGA_ImportedDeck = {
             commander: null,
@@ -190,12 +190,12 @@ export const ImportDialog = () => {
                     newDeck.type = DeckType.BRAWL_60
                 }
                 const currentCommanderIdx = newDeck.cards.findIndex(
-                    (c) => c.deckCardType === MTGA_DeckCardType.COMMANDER,
+                    (c) => c.deckCardType === MTG_DeckCardType.COMMANDER,
                 )
                 if (currentCommanderIdx >= 0) {
                     newDeck.cards.splice(currentCommanderIdx, 1, {
                         card: importedDeck.commander,
-                        deckCardType: MTGA_DeckCardType.COMMANDER,
+                        deckCardType: MTG_DeckCardType.COMMANDER,
                         mainOrSide: MainOrSide.MAIN,
                         count: 1,
                         phantoms: [],
@@ -207,7 +207,7 @@ export const ImportDialog = () => {
                 } else {
                     newDeck.cards.push({
                         card: importedDeck.commander,
-                        deckCardType: MTGA_DeckCardType.COMMANDER,
+                        deckCardType: MTG_DeckCardType.COMMANDER,
                         mainOrSide: MainOrSide.MAIN,
                         count: 1,
                         phantoms: [],
@@ -222,12 +222,12 @@ export const ImportDialog = () => {
             }
             if (importedDeck.companion) {
                 const currentCompanionIdx = newDeck.cards.findIndex(
-                    (c) => c.deckCardType === MTGA_DeckCardType.COMPANION,
+                    (c) => c.deckCardType === MTG_DeckCardType.COMPANION,
                 )
                 if (currentCompanionIdx >= 0) {
                     newDeck.cards.splice(currentCompanionIdx, 1, {
                         card: importedDeck.companion,
-                        deckCardType: MTGA_DeckCardType.COMPANION,
+                        deckCardType: MTG_DeckCardType.COMPANION,
                         mainOrSide: MainOrSide.MAIN,
                         count: 1,
                         phantoms: [],
@@ -239,7 +239,7 @@ export const ImportDialog = () => {
                 } else {
                     newDeck.cards.push({
                         card: importedDeck.companion,
-                        deckCardType: MTGA_DeckCardType.COMPANION,
+                        deckCardType: MTG_DeckCardType.COMPANION,
                         mainOrSide: MainOrSide.MAIN,
                         count: 1,
                         phantoms: [],
@@ -253,7 +253,7 @@ export const ImportDialog = () => {
             let x = 0
             let y = 0
             const cardsToRemoveLater = newDeck.cards.filter(
-                (c) => c.deckCardType === MTGA_DeckCardType.NORMAL && c.mainOrSide === MainOrSide.MAIN,
+                (c) => c.deckCardType === MTG_DeckCardType.NORMAL && c.mainOrSide === MainOrSide.MAIN,
             )
             const sideboardToRemoveLater = newDeck.cards.filter((c) => c.mainOrSide === MainOrSide.SIDEBOARD)
             const order: string[] = [
@@ -302,7 +302,7 @@ export const ImportDialog = () => {
                     } else {
                         newDeck.cards.push({
                             card: c.card,
-                            deckCardType: MTGA_DeckCardType.NORMAL,
+                            deckCardType: MTG_DeckCardType.NORMAL,
                             mainOrSide: MainOrSide.MAIN,
                             count: c.number,
                             phantoms: [],
@@ -356,7 +356,7 @@ export const ImportDialog = () => {
                     } else {
                         newDeck.cards.push({
                             card: c.card,
-                            deckCardType: MTGA_DeckCardType.NORMAL,
+                            deckCardType: MTG_DeckCardType.NORMAL,
                             mainOrSide: MainOrSide.SIDEBOARD,
                             count: c.number,
                             phantoms: [],

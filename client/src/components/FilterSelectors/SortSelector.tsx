@@ -3,8 +3,8 @@ import { ArrowDownward, ArrowUpward } from '@mui/icons-material'
 import { Box, Button, Checkbox, Grid, IconButton, Paper, Popper, Typography } from '@mui/material'
 import { MouseEvent, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { SortDirection } from '../../context/MTGA/Filter/MTGAFilterContext'
-import { useMTGAFilter } from '../../context/MTGA/Filter/useMTGAFilter'
+import { SortDirection } from '../../context/MTGA/Filter/MTGFilterContext'
+import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
 
 function DraggablePortalWrapper({ children, isDragging }: { children: React.ReactNode; isDragging: boolean }) {
     return isDragging
@@ -13,7 +13,7 @@ function DraggablePortalWrapper({ children, isDragging }: { children: React.Reac
 }
 
 export const SortSelector = () => {
-    const { sort, setSort } = useMTGAFilter()
+    const { sort, setSort } = useMTGFilter()
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
     const handleClick = (event: MouseEvent<HTMLElement>) => {
         setAnchorEl(anchorEl ? null : event.currentTarget)

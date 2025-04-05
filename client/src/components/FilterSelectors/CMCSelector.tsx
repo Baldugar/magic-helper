@@ -1,5 +1,5 @@
 import { Grid } from '@mui/material'
-import { CMCFilter } from '../../context/MTGA/Filter/MTGAFilterContext'
+import { CMCFilter } from '../../context/MTGA/Filter/MTGFilterContext'
 import { TernaryBoolean } from '../../types/ternaryBoolean'
 import { TernaryToggle } from './TernaryToggle'
 

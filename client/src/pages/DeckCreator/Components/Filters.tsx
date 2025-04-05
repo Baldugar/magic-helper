@@ -18,12 +18,12 @@ import RaritySelector from '../../../components/FilterSelectors/RaritySelector'
 import SetSelector from '../../../components/FilterSelectors/SetSelector'
 import { SortSelector } from '../../../components/FilterSelectors/SortSelector'
 import TypeSelector from '../../../components/FilterSelectors/TypeSelector'
-import { initialMTGAFilter } from '../../../context/MTGA/Filter/MTGAFilterContext'
-import { useMTGAFilter } from '../../../context/MTGA/Filter/useMTGAFilter'
+import { initialMTGFilter } from '../../../context/MTGA/Filter/MTGFilterContext'
+import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
 import { nextTB, prevTB, TernaryBoolean } from '../../../types/ternaryBoolean'
 
 export const Filters = () => {
-    const { filter, setFilter } = useMTGAFilter()
+    const { filter, setFilter } = useMTGFilter()
     const [searchAnchorEl, setSearchAnchorEl] = useState<null | HTMLElement>(null)
     const [search, setSearch] = useState<string>('')
     const searchOpen = Boolean(searchAnchorEl)
@@ -38,7 +38,7 @@ export const Filters = () => {
         <Grid container>
             <Grid item xs={'auto'}>
                 <IconButton size={'small'} onClick={openSearchMenu}>
-                    {filter.searchString === initialMTGAFilter.searchString ? (
+                    {filter.searchString === initialMTGFilter.searchString ? (
                         <Search style={{ width: 40, height: 40 }} />
                     ) : (
                         <FindReplace style={{ width: 40, height: 40 }} />

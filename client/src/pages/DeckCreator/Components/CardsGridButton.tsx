@@ -1,13 +1,14 @@
 import { Close } from '@mui/icons-material'
 import { ButtonBase, Grid } from '@mui/material'
 import { useReactFlow } from '@xyflow/react'
-import { MTGACardWithHover } from '../../../components/MTGACardWithHover'
+import { MTGACardWithHover } from '../../../components/MTGCardWithHover'
 import { useDnD } from '../../../context/DnD/useDnD'
-import { useMTGADeckCreator } from '../../../context/MTGA/DeckCreator/useMTGADeckCreator'
-import { useMTGADeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGADeckFlowCreator'
-import { useMTGADecks } from '../../../context/MTGA/Decks/useMTGADecks'
-import { MTGAFunctions } from '../../../graphql/MTGA/functions'
-import { DeckType, MTGA_Card } from '../../../graphql/types'
+import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
+import { useMTGDeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
+import { useMTGDecks } from '../../../context/MTGA/Decks/useMTGDecks'
+import { useSystem } from '../../../context/MTGA/System/useSystem'
+import { MTGFunctions } from '../../../graphql/MTGA/functions'
+import { DeckType, MTG_Card } from '../../../graphql/types'
 import { isCardInDeck } from '../../../utils/functions/cardFunctions'
 import { NodeType, organizeNodes } from '../../../utils/functions/nodeFunctions'
 import { ContextMenu } from '../../../utils/hooks/ContextMenu/ContextMenu'
@@ -15,25 +16,26 @@ import { ContextMenuOption } from '../../../utils/hooks/ContextMenu/types'
 import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
 
 export type CardsGridButtonProps = {
-    card: MTGA_Card
+    card: MTG_Card
 }
 
 export const CardsGridButton = (props: CardsGridButtonProps) => {
     const { card } = props
-    const { decks, updateDeck } = useMTGADecks()
-    const { onAddCard, deck, removeCard, setDeck } = useMTGADeckCreator()
-    const { handleDeleteZone, handleRenameZone, handleDeletePhantom } = useMTGADeckFlowCreator()
+    const { decks, updateDeck } = useMTGDecks()
+    const { onAddCard, deck, removeCard, setDeck } = useMTGDeckCreator()
+    const { handleDeleteZone, handleRenameZone, handleDeletePhantom } = useMTGDeckFlowCreator()
     const { setNodes } = useReactFlow<NodeType>()
     const { card: draggedCard } = useDnD()
     const { anchorRef, handleClick, handleClose, handleContextMenu, open } = useContextMenu<HTMLDivElement>()
+    const { list } = useSystem()
 
-    const handleAddCard = (card: MTGA_Card) => {
+    const handleAddCard = (card: MTG_Card) => {
         const newDeck = onAddCard(card)
         if (!newDeck) return
         setNodes(organizeNodes(newDeck, handleDeleteZone, handleRenameZone, handleDeletePhantom))
     }
 
-    const handleRemoveCard = (card: MTGA_Card) => {
+    const handleRemoveCard = (card: MTG_Card) => {
         removeCard(card)
         if (setNodes) setNodes((prev) => prev.filter((n) => !n.id.startsWith(card.ID)))
     }
@@ -42,8 +44,8 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
 
     const cardIsInDeck = isCardInDeck(card, deck)
     const {
-        mutations: { updateMTGADeck },
-    } = MTGAFunctions
+        mutations: { updateMTGDeck: updateMTGADeck },
+    } = MTGFunctions
 
     const options: ContextMenuOption[] = [
         {
@@ -101,10 +103,10 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                         const name = prompt('Enter the name of the new deck')
                         if (!name) return
                         const {
-                            mutations: { createMTGADeck },
-                        } = MTGAFunctions
+                            mutations: { createMTGDeck: createMTGADeck },
+                        } = MTGFunctions
                         // TODO: The type should be dynamic
-                        createMTGADeck({ name, type: DeckType.BRAWL_100 }).then((deck) => {
+                        createMTGADeck({ name, type: DeckType.BRAWL_100, list }).then((deck) => {
                             const d = onAddCard(card, undefined, deck)
                             if (!d) return
                             updateDeck(d)
@@ -125,6 +127,7 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                                     position: z.position,
                                 })),
                                 cardFrontImage: d.cardFrontImage,
+                                list,
                             })
                             updateDeck(d)
                         })
@@ -160,6 +163,7 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                                               position: z.position,
                                           })),
                                           cardFrontImage: deck.cardFrontImage,
+                                          list,
                                       })
                                   }
                                 : () => {
@@ -187,6 +191,7 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                                               position: z.position,
                                           })),
                                           cardFrontImage: deck.cardFrontImage,
+                                          list,
                                       })
                                   },
                             shouldKeepOpen: true,
@@ -229,7 +234,7 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                         opacity: deck.ignoredCards.includes(card.ID) ? 0.5 : 1,
                     }}
                 >
-                    <MTGACardWithHover card={card} hideHover={draggedCard !== null} debugValue={'releasedAt'} />
+                    <MTGACardWithHover card={card} hideHover={draggedCard !== null} debugValue={'set'} />
                     {deck.ignoredCards.includes(card.ID) && (
                         <Close
                             sx={{

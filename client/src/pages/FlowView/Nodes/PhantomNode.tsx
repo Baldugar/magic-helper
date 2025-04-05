@@ -1,5 +1,5 @@
 import { NodeProps } from '@xyflow/react'
-import { MTGA_Card, Position as NodePosition } from '../../../graphql/types'
+import { MTG_Card, Position as NodePosition } from '../../../graphql/types'
 import { getCorrectCardImage } from '../../../utils/functions/cardFunctions'
 import { ContextMenu } from '../../../utils/hooks/ContextMenu/ContextMenu'
 import { ContextMenuOption } from '../../../utils/hooks/ContextMenu/types'
@@ -7,10 +7,9 @@ import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
 
 export type PhantomNodeData = {
     phantomOf: string
-    index: number
     position: NodePosition
-    card: MTGA_Card
-    onDelete: (cardID: string, phantomIndex: number) => void
+    card: MTG_Card
+    onDelete: (id: string) => void
 }
 
 export type PhantomNodeProps = NodeProps & {
@@ -18,8 +17,8 @@ export type PhantomNodeProps = NodeProps & {
 }
 
 export const PhantomNode = (props: PhantomNodeProps) => {
-    const { data } = props
-    const { card, onDelete, phantomOf, index } = data
+    const { data, id } = props
+    const { card, onDelete } = data
 
     const { anchorRef, handleClick, handleClose, handleContextMenu, open } = useContextMenu<HTMLDivElement>()
 
@@ -29,7 +28,7 @@ export const PhantomNode = (props: PhantomNodeProps) => {
             action: () => {
                 const respZone = confirm(`Are you sure you want to delete this phantom?`)
                 if (respZone) {
-                    onDelete(phantomOf, index)
+                    onDelete(id)
                 }
             },
         },

@@ -1,7 +1,7 @@
 import gql from 'graphql-tag'
 
-export const MTGA_CardFragments = gql`
-    fragment MTGA_CommonFieldsFragment on MTGA_CommonFields {
+export const MTG_CardFragments = gql`
+    fragment MTG_CommonFieldsFragment on MTG_CommonFields {
         colors
         flavorText
         image {
@@ -20,12 +20,12 @@ export const MTGA_CardFragments = gql`
         typeLine
     }
 
-    fragment MTGA_CardFragment on MTGA_Card {
-        ...MTGA_CommonFieldsFragment
+    fragment MTG_CardFragment on MTG_Card {
+        ...MTG_CommonFieldsFragment
         colorIdentity
         cmc
         cardFaces {
-            ...MTGA_CommonFieldsFragment
+            ...MTG_CommonFieldsFragment
             manaCost
             description
         }
@@ -42,19 +42,19 @@ export const MTGA_CardFragments = gql`
     }
 `
 
-export const MTGA_DeckFragments = gql`
+export const MTG_DeckFragments = gql`
     fragment PositionFragment on Position {
         x
         y
     }
 
-    fragment MTGA_DeckFragment on MTGA_Deck {
+    fragment MTG_DeckFragment on MTG_Deck {
         ID
         name
         cardFrontImage
         cards {
             card {
-                ...MTGA_CardFragment
+                ...MTG_CardFragment
             }
             count
             mainOrSide
@@ -63,7 +63,10 @@ export const MTGA_DeckFragments = gql`
                 ...PositionFragment
             }
             phantoms {
-                ...PositionFragment
+                ID
+                position {
+                    ...PositionFragment
+                }
             }
         }
         zones {
@@ -79,5 +82,5 @@ export const MTGA_DeckFragments = gql`
         type
         ignoredCards
     }
-    ${MTGA_CardFragments}
+    ${MTG_CardFragments}
 `

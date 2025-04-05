@@ -1,10 +1,10 @@
-import { useMTGADeckCreatorPagination } from '../../context/MTGA/DeckCreatorPagination/useMTGADeckCreatorPagination'
-import { initialMTGAFilter, MTGAFilterType, SortDirection, SortEnum } from '../../context/MTGA/Filter/MTGAFilterContext'
-import { useMTGAFilter } from '../../context/MTGA/Filter/useMTGAFilter'
+import { useMTGDeckCreatorPagination } from '../../context/MTGA/DeckCreatorPagination/useMTGDeckCreatorPagination'
+import { initialMTGFilter, MTGFilterType, SortDirection, SortEnum } from '../../context/MTGA/Filter/MTGFilterContext'
+import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
 import { TernaryBoolean } from '../../types/ternaryBoolean'
 
 export type LocalStoreFilter = {
-    filter: MTGAFilterType
+    filter: MTGFilterType
     page: number
     hash: number
     sort: {
@@ -15,8 +15,8 @@ export type LocalStoreFilter = {
 }
 
 // This function calculates the hash of the filter and the page
-export const calculateHash = (filter: MTGAFilterType) => {
-    const newFilter = initialMTGAFilter
+export const calculateHash = (filter: MTGFilterType) => {
+    const newFilter = initialMTGFilter
     newFilter.cardTypes = Object.keys(filter.cardTypes).reduce((acc, key) => {
         acc[key] = TernaryBoolean.UNSET
         return acc
@@ -51,8 +51,8 @@ export const calculateHash = (filter: MTGAFilterType) => {
 }
 
 export const useLocalStoreFilter = () => {
-    const { page, setPage } = useMTGADeckCreatorPagination()
-    const { filter, setFilter, sort, setSort } = useMTGAFilter()
+    const { page, setPage } = useMTGDeckCreatorPagination()
+    const { filter, setFilter, sort, setSort } = useMTGFilter()
 
     const saveLocalStoreFilter = () => {
         const hash = calculateHash(filter)

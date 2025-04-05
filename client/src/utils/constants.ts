@@ -1,7 +1,7 @@
-import { FlowZone, MTGA_Image } from '../graphql/types'
+import { FlowZone, MTG_Image } from '../graphql/types'
 
 export const CARD_SIZE_VALUES: {
-    [key in keyof MTGA_Image]: { width: number; height: number }
+    [key in keyof MTG_Image]: { width: number; height: number }
 } = {
     artCrop: { width: 100, height: 71 },
     borderCrop: { width: 100, height: 71 },

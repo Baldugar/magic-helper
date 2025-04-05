@@ -39,24 +39,24 @@ export type FlowZoneInput = {
   width: Scalars['Float']['input'];
 };
 
-export type MTGA_Card = MTGA_CommonFields & {
-  __typename?: 'MTGA_Card';
+export type MTG_Card = MTG_CommonFields & {
+  __typename?: 'MTG_Card';
   ID: Scalars['ID']['output'];
-  cardFaces?: Maybe<Array<MTGA_CardFace>>;
+  cardFaces?: Maybe<Array<MTG_CardFace>>;
   cmc: Scalars['Int']['output'];
-  colorIdentity: Array<MTGA_Color>;
-  colors?: Maybe<Array<MTGA_Color>>;
+  colorIdentity: Array<MTG_Color>;
+  colors?: Maybe<Array<MTG_Color>>;
   description?: Maybe<Scalars['String']['output']>;
   flavorText?: Maybe<Scalars['String']['output']>;
-  image?: Maybe<MTGA_Image>;
+  image?: Maybe<MTG_Image>;
   layout: Scalars['String']['output'];
   legalities: Scalars['Map']['output'];
   loyalty?: Maybe<Scalars['String']['output']>;
   manaCost?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   power?: Maybe<Scalars['String']['output']>;
-  producedMana?: Maybe<Array<MTGA_Color>>;
-  rarity: MTGA_Rarity;
+  producedMana?: Maybe<Array<MTG_Color>>;
+  rarity: MTG_Rarity;
   releasedAt: Scalars['String']['output'];
   scryfallURL: Scalars['String']['output'];
   set: Scalars['String']['output'];
@@ -65,22 +65,27 @@ export type MTGA_Card = MTGA_CommonFields & {
   typeLine: Scalars['String']['output'];
 };
 
-export type MTGA_CardFace = MTGA_CommonFields & {
-  __typename?: 'MTGA_CardFace';
-  colors?: Maybe<Array<MTGA_Color>>;
+export type MTG_CardFace = MTG_CommonFields & {
+  __typename?: 'MTG_CardFace';
+  colors?: Maybe<Array<MTG_Color>>;
   description: Scalars['String']['output'];
   flavorText?: Maybe<Scalars['String']['output']>;
-  image?: Maybe<MTGA_Image>;
+  image?: Maybe<MTG_Image>;
   loyalty?: Maybe<Scalars['String']['output']>;
   manaCost: Scalars['String']['output'];
   name: Scalars['String']['output'];
   power?: Maybe<Scalars['String']['output']>;
-  producedMana?: Maybe<Array<MTGA_Color>>;
+  producedMana?: Maybe<Array<MTG_Color>>;
   toughness?: Maybe<Scalars['String']['output']>;
   typeLine: Scalars['String']['output'];
 };
 
-export enum MTGA_Color {
+export enum MTG_CardListType {
+  MTG = 'MTG',
+  MTGA = 'MTGA'
+}
+
+export enum MTG_Color {
   B = 'B',
   C = 'C',
   G = 'G',
@@ -89,93 +94,96 @@ export enum MTGA_Color {
   W = 'W'
 }
 
-export type MTGA_CommonFields = {
-  colors?: Maybe<Array<MTGA_Color>>;
+export type MTG_CommonFields = {
+  colors?: Maybe<Array<MTG_Color>>;
   flavorText?: Maybe<Scalars['String']['output']>;
-  image?: Maybe<MTGA_Image>;
+  image?: Maybe<MTG_Image>;
   loyalty?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   power?: Maybe<Scalars['String']['output']>;
-  producedMana?: Maybe<Array<MTGA_Color>>;
+  producedMana?: Maybe<Array<MTG_Color>>;
   toughness?: Maybe<Scalars['String']['output']>;
   typeLine: Scalars['String']['output'];
 };
 
-export type MTGA_CreateDeckInput = {
+export type MTG_CreateDeckInput = {
+  list: MTG_CardListType;
   name: Scalars['String']['input'];
   type: DeckType;
 };
 
-export type MTGA_Deck = {
-  __typename?: 'MTGA_Deck';
+export type MTG_Deck = {
+  __typename?: 'MTG_Deck';
   ID: Scalars['ID']['output'];
   cardFrontImage?: Maybe<Scalars['String']['output']>;
-  cards: Array<MTGA_DeckCard>;
+  cards: Array<MTG_DeckCard>;
   ignoredCards: Array<Scalars['String']['output']>;
+  list: MTG_CardListType;
   name: Scalars['String']['output'];
   type: DeckType;
   zones: Array<FlowZone>;
 };
 
-export type MTGA_DeckCard = {
-  __typename?: 'MTGA_DeckCard';
-  card: MTGA_Card;
+export type MTG_DeckCard = {
+  __typename?: 'MTG_DeckCard';
+  card: MTG_Card;
   count: Scalars['Int']['output'];
-  deckCardType: MTGA_DeckCardType;
+  deckCardType: MTG_DeckCardType;
   mainOrSide: MainOrSide;
-  phantoms: Array<Position>;
+  phantoms: Array<Phantom>;
   position: Position;
 };
 
-export type MTGA_DeckCardInput = {
+export type MTG_DeckCardInput = {
   ID: Scalars['ID']['input'];
   card: Scalars['ID']['input'];
   count: Scalars['Int']['input'];
-  deckCardType: MTGA_DeckCardType;
+  deckCardType: MTG_DeckCardType;
   mainOrSide: MainOrSide;
-  phantoms: Array<PositionInput>;
+  phantoms: Array<PhantomInput>;
   position: PositionInput;
 };
 
-export enum MTGA_DeckCardType {
+export enum MTG_DeckCardType {
   COMMANDER = 'COMMANDER',
   COMPANION = 'COMPANION',
   NORMAL = 'NORMAL'
 }
 
-export type MTGA_DeleteDeckInput = {
+export type MTG_DeleteDeckInput = {
   deckID: Scalars['ID']['input'];
+  list: MTG_CardListType;
 };
 
-export type MTGA_Filter_CardTypes = {
-  __typename?: 'MTGA_Filter_CardTypes';
+export type MTG_Filter_CardTypes = {
+  __typename?: 'MTG_Filter_CardTypes';
   cardType: Scalars['String']['output'];
   subtypes: Array<Scalars['String']['output']>;
 };
 
-export type MTGA_Filter_Entries = {
-  __typename?: 'MTGA_Filter_Entries';
-  expansions: Array<MTGA_Filter_Expansion>;
-  legality: MTGA_Filter_Legality;
-  types: Array<MTGA_Filter_CardTypes>;
+export type MTG_Filter_Entries = {
+  __typename?: 'MTG_Filter_Entries';
+  expansions: Array<MTG_Filter_Expansion>;
+  legality: MTG_Filter_Legality;
+  types: Array<MTG_Filter_CardTypes>;
 };
 
-export type MTGA_Filter_Expansion = {
-  __typename?: 'MTGA_Filter_Expansion';
+export type MTG_Filter_Expansion = {
+  __typename?: 'MTG_Filter_Expansion';
   imageURL: Scalars['String']['output'];
   releasedAt: Scalars['Int']['output'];
   set: Scalars['String']['output'];
   setName: Scalars['String']['output'];
 };
 
-export type MTGA_Filter_Legality = {
-  __typename?: 'MTGA_Filter_Legality';
+export type MTG_Filter_Legality = {
+  __typename?: 'MTG_Filter_Legality';
   formats: Array<Scalars['String']['output']>;
   legalityValues: Array<Scalars['String']['output']>;
 };
 
-export type MTGA_Image = {
-  __typename?: 'MTGA_Image';
+export type MTG_Image = {
+  __typename?: 'MTG_Image';
   artCrop: Scalars['String']['output'];
   borderCrop: Scalars['String']['output'];
   large: Scalars['String']['output'];
@@ -184,7 +192,7 @@ export type MTGA_Image = {
   small: Scalars['String']['output'];
 };
 
-export enum MTGA_Layout {
+export enum MTG_Layout {
   ADVENTURE = 'ADVENTURE',
   CASE = 'CASE',
   CLASS = 'CLASS',
@@ -198,18 +206,19 @@ export enum MTGA_Layout {
   TRANSFORM = 'TRANSFORM'
 }
 
-export enum MTGA_Rarity {
+export enum MTG_Rarity {
   COMMON = 'COMMON',
   MYTHIC = 'MYTHIC',
   RARE = 'RARE',
   UNCOMMON = 'UNCOMMON'
 }
 
-export type MTGA_UpdateDeckInput = {
+export type MTG_UpdateDeckInput = {
   cardFrontImage?: InputMaybe<Scalars['String']['input']>;
-  cards: Array<MTGA_DeckCardInput>;
+  cards: Array<MTG_DeckCardInput>;
   deckID: Scalars['ID']['input'];
   ignoredCards: Array<Scalars['String']['input']>;
+  list: MTG_CardListType;
   name: Scalars['String']['input'];
   type: DeckType;
   zones: Array<FlowZoneInput>;
@@ -222,30 +231,41 @@ export enum MainOrSide {
 
 export type Mutation = {
   __typename?: 'Mutation';
-  createMTGADeck: MTGA_Deck;
-  deleteMTGADeck: Scalars['Boolean']['output'];
-  saveMTGADeckAsCopy: MTGA_Deck;
-  updateMTGADeck: MTGA_Deck;
+  createMTGDeck: MTG_Deck;
+  deleteMTGDeck: Scalars['Boolean']['output'];
+  saveMTGDeckAsCopy: MTG_Deck;
+  updateMTGDeck: MTG_Deck;
 };
 
 
-export type MutationcreateMTGADeckArgs = {
-  input: MTGA_CreateDeckInput;
+export type MutationcreateMTGDeckArgs = {
+  input: MTG_CreateDeckInput;
 };
 
 
-export type MutationdeleteMTGADeckArgs = {
-  input: MTGA_DeleteDeckInput;
+export type MutationdeleteMTGDeckArgs = {
+  input: MTG_DeleteDeckInput;
 };
 
 
-export type MutationsaveMTGADeckAsCopyArgs = {
-  input: MTGA_UpdateDeckInput;
+export type MutationsaveMTGDeckAsCopyArgs = {
+  input: MTG_UpdateDeckInput;
 };
 
 
-export type MutationupdateMTGADeckArgs = {
-  input: MTGA_UpdateDeckInput;
+export type MutationupdateMTGDeckArgs = {
+  input: MTG_UpdateDeckInput;
+};
+
+export type Phantom = {
+  __typename?: 'Phantom';
+  ID: Scalars['ID']['output'];
+  position: Position;
+};
+
+export type PhantomInput = {
+  ID: Scalars['ID']['input'];
+  position: PositionInput;
 };
 
 export type Position = {
@@ -261,14 +281,25 @@ export type PositionInput = {
 
 export type Query = {
   __typename?: 'Query';
-  getMTGACards: Array<MTGA_Card>;
-  getMTGADecks: Array<MTGA_Deck>;
-  getMTGAFilters: MTGA_Filter_Entries;
+  getMTGCards: Array<MTG_Card>;
+  getMTGDecks: Array<MTG_Deck>;
+  getMTGFilters: MTG_Filter_Entries;
 };
 
 
-export type QuerygetMTGADecksArgs = {
+export type QuerygetMTGCardsArgs = {
+  list: MTG_CardListType;
+};
+
+
+export type QuerygetMTGDecksArgs = {
   deckID?: InputMaybe<Scalars['ID']['input']>;
+  list: MTG_CardListType;
+};
+
+
+export type QuerygetMTGFiltersArgs = {
+  list: MTG_CardListType;
 };
 
 export type Response = {

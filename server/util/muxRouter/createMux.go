@@ -8,6 +8,8 @@ import (
 	"os"
 
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gorilla/mux"
 )
@@ -17,10 +19,16 @@ func CreateMux(settings settings.Settings) *mux.Router {
 	router := mux.NewRouter()
 
 	// Create a new GraphQL server
-	graphQLServer := handler.NewDefaultServer(gentypes.NewExecutableSchema(gentypes.Config{Resolvers: &graph.Resolver{}}))
+	graphQLServer := handler.New(gentypes.NewExecutableSchema(gentypes.Config{Resolvers: &graph.Resolver{}}))
+
+	graphQLServer.AddTransport(transport.Options{})
+	graphQLServer.AddTransport(transport.GET{})
+	graphQLServer.AddTransport(transport.POST{})
 
 	if settings.GraphQLPlayground {
 		router.Handle("/playground", playground.Handler("GraphQL playground", "/graphql"))
+		// Add the introspection extension
+		graphQLServer.Use(extension.Introspection{})
 	}
 
 	router.HandleFunc("/config.js", configHandler)

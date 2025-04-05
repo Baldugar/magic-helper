@@ -2,26 +2,28 @@ import { Box, Button, Grid, Typography } from '@mui/material'
 import { useReactFlow } from '@xyflow/react'
 import { sortBy } from 'lodash'
 import { useMemo } from 'react'
-import { useMTGADeckCreator } from '../../../context/MTGA/DeckCreator/useMTGADeckCreator'
-import { useMTGADecks } from '../../../context/MTGA/Decks/useMTGADecks'
-import { MTGAFunctions } from '../../../graphql/MTGA/functions'
-import { DeckType, MainOrSide, MTGA_DeckCard, MTGA_DeckCardType, MTGA_UpdateDeckInput } from '../../../graphql/types'
+import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
+import { useMTGDecks } from '../../../context/MTGA/Decks/useMTGDecks'
+import { useSystem } from '../../../context/MTGA/System/useSystem'
+import { MTGFunctions } from '../../../graphql/MTGA/functions'
+import { DeckType, MainOrSide, MTG_DeckCard, MTG_DeckCardType, MTG_UpdateDeckInput } from '../../../graphql/types'
 import { calculateCardsFromNodes, calculateZonesFromNodes, NodeType } from '../../../utils/functions/nodeFunctions'
 import { DeckCard } from './DeckCard'
 
 export const Drawer = () => {
-    const { deckTab, setDeckTab, deck, selectingCommander, setSelectingCommander, removeCard } = useMTGADeckCreator()
+    const { deckTab, setDeckTab, deck, selectingCommander, setSelectingCommander, removeCard } = useMTGDeckCreator()
     const { getNodes, setNodes } = useReactFlow<NodeType>()
-    const { updateDeck } = useMTGADecks()
+    const { updateDeck } = useMTGDecks()
+    const { list } = useSystem()
 
     const {
-        mutations: { updateMTGADeck, saveMTGADeckAsCopy },
-    } = MTGAFunctions
+        mutations: { updateMTGDeck, saveMTGDeckAsCopy },
+    } = MTGFunctions
 
     const saveDeck = () => {
         if (!deck) return
         const nodes = getNodes()
-        const deckInput: MTGA_UpdateDeckInput = {
+        const deckInput: MTG_UpdateDeckInput = {
             cards: calculateCardsFromNodes(nodes, deck.cards),
             deckID: deck.ID,
             name: deck.name,
@@ -29,8 +31,9 @@ export const Drawer = () => {
             zones: calculateZonesFromNodes(nodes),
             cardFrontImage: deck.cardFrontImage,
             ignoredCards: deck.ignoredCards,
+            list,
         }
-        updateMTGADeck(deckInput).then((deck) => {
+        updateMTGDeck(deckInput).then((deck) => {
             updateDeck(deck)
         })
     }
@@ -38,7 +41,7 @@ export const Drawer = () => {
     const saveDeckAsCopy = () => {
         if (!deck) return
         const nodes = getNodes()
-        const deckInput: MTGA_UpdateDeckInput = {
+        const deckInput: MTG_UpdateDeckInput = {
             cards: calculateCardsFromNodes(nodes, deck.cards),
             deckID: deck.ID,
             name: deck.name,
@@ -46,18 +49,19 @@ export const Drawer = () => {
             zones: calculateZonesFromNodes(nodes),
             cardFrontImage: deck.cardFrontImage,
             ignoredCards: deck.ignoredCards,
+            list,
         }
-        saveMTGADeckAsCopy(deckInput)
+        saveMTGDeckAsCopy(deckInput)
     }
 
-    const handleRemoveCard = (deckCard: MTGA_DeckCard) => {
+    const handleRemoveCard = (deckCard: MTG_DeckCard) => {
         removeCard(deckCard.card)
         if (setNodes) setNodes((prev) => prev.filter((n) => !n.id.startsWith(deckCard.card.ID)))
     }
     const mainDeck = useMemo(
         () =>
             deck?.cards.filter(
-                (c) => c.mainOrSide === MainOrSide.MAIN && c.deckCardType !== MTGA_DeckCardType.COMMANDER,
+                (c) => c.mainOrSide === MainOrSide.MAIN && c.deckCardType !== MTG_DeckCardType.COMMANDER,
             ) || [],
         [deck],
     )
@@ -67,7 +71,7 @@ export const Drawer = () => {
 
     if (!deck) return null
 
-    const commander = deck.cards.find((c) => c.deckCardType === MTGA_DeckCardType.COMMANDER)
+    const commander = deck.cards.find((c) => c.deckCardType === MTG_DeckCardType.COMMANDER)
     // const companion = deck?.cards.find((c) => c.type === MTGA_DeckCardType.COMPANION)
 
     return (

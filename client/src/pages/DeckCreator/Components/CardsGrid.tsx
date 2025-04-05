@@ -1,10 +1,10 @@
 import { Grid } from '@mui/material'
-import { useMTGADeckCreatorPagination } from '../../../context/MTGA/DeckCreatorPagination/useMTGADeckCreatorPagination'
+import { useMTGDeckCreatorPagination } from '../../../context/MTGA/DeckCreatorPagination/useMTGDeckCreatorPagination'
 import { PAGE_SIZE } from '../../../utils/constants'
 import { CardsGridButton } from './CardsGridButton'
 
 export const CardsGrid = () => {
-    const { filteredCards, page, setPage } = useMTGADeckCreatorPagination()
+    const { filteredCards, page, setPage } = useMTGDeckCreatorPagination()
 
     const cardsToShow = filteredCards.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 

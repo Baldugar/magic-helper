@@ -1,29 +1,29 @@
 package model
 
-type MTGAApplicationConfig struct {
+type MTGApplicationConfig struct {
 	ID              string `json:"_key"`
 	LastTimeFetched int    `json:"last_time_fetched"`
 }
 
-type MTGADeckDB struct {
+type MTGDeckDB struct {
 	ID    string     `json:"_key"`
 	Name  string     `json:"name"`
 	Zones []FlowZone `json:"zones"`
 	Type  DeckType   `json:"type"`
 }
 
-type MTGADeckFrontCardImageDB struct {
+type MTGDeckFrontCardImageDB struct {
 	ID   string `json:"_id"`
 	From string `json:"_from"`
 	To   string `json:"_to"`
 }
 
-type MTGACardDeckDB struct {
-	From         string           `json:"_from"`
-	To           string           `json:"_to"`
-	Count        int              `json:"count"`
-	Position     Position         `json:"position"`
-	MainOrSide   MainOrSide       `json:"mainOrSide"`
-	DeckCardType MtgaDeckCardType `json:"deckCardType"`
-	Phantoms     []Position       `json:"phantoms"`
+type MTGCardDeckDB struct {
+	From         string          `json:"_from"`
+	To           string          `json:"_to"`
+	Count        int             `json:"count"`
+	Position     Position        `json:"position"`
+	MainOrSide   MainOrSide      `json:"mainOrSide"`
+	DeckCardType MtgDeckCardType `json:"deckCardType"`
+	Phantoms     []Phantom       `json:"phantoms"`
 }

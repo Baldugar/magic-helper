@@ -1,102 +1,106 @@
 import { fetchData } from '../../utils/functions/fetchData'
 import {
-    MTGA_Card,
-    MTGA_CreateDeckInput,
-    MTGA_Deck,
-    MTGA_UpdateDeckInput,
+    MTG_Card,
+    MTG_CardListType,
+    MTG_CreateDeckInput,
+    MTG_Deck,
+    MTG_UpdateDeckInput,
     Mutation,
-    MutationcreateMTGADeckArgs,
-    MutationdeleteMTGADeckArgs,
-    MutationupdateMTGADeckArgs,
+    MutationcreateMTGDeckArgs,
+    MutationdeleteMTGDeckArgs,
+    MutationupdateMTGDeckArgs,
     Query,
-    QuerygetMTGADecksArgs,
+    QuerygetMTGCardsArgs,
+    QuerygetMTGDecksArgs,
 } from '../types'
-import createMTGADeck from './mutations/createMTGADeck'
-import deleteMTGADeck from './mutations/deleteMTGADeck'
-import saveMTGADeckAsCopy from './mutations/saveMTGADeckAsCopy'
-import updateMTGADeck from './mutations/updateMTGADeck'
-import getMTGACards from './queries/getMTGACards'
-import getMTGADecks from './queries/getMTGADecks'
+import createMTGDeck from './mutations/createMTGDeck'
+import deleteMTGADeck from './mutations/deleteMTGDeck'
+import saveMTGDeckAsCopy from './mutations/saveMTGDeckAsCopy'
+import updateMTGDeck from './mutations/updateMTGDeck'
+import getMTGCards from './queries/getMTGCards'
+import getMTGDecks from './queries/getMTGDecks'
 
 // ----- QUERIES -----
 
-const getMTGACardsQuery = async (): Promise<MTGA_Card[]> =>
+const getMTGCardsQuery = async (list: MTG_CardListType): Promise<MTG_Card[]> =>
     new Promise((resolve, reject) => {
-        fetchData<Query>(getMTGACards, undefined).then((response) => {
+        fetchData<Query, QuerygetMTGCardsArgs>(getMTGCards, { list }).then((response) => {
             if (response && response.data && !response.errors) {
-                resolve(response.data.getMTGACards)
+                resolve(response.data.getMTGCards)
             } else {
-                reject('Failed to fetch MTGA cards')
+                reject('Failed to fetch MTG cards')
             }
         })
     })
 
-const getMTGADecksQuery = async (ID?: string): Promise<MTGA_Deck[]> =>
+const getMTGDecksQuery = async (list: MTG_CardListType, ID?: string): Promise<MTG_Deck[]> =>
     new Promise((resolve, reject) => {
-        fetchData<Query, QuerygetMTGADecksArgs>(getMTGADecks, { deckID: ID }).then((response) => {
+        fetchData<Query, QuerygetMTGDecksArgs>(getMTGDecks, { deckID: ID, list }).then((response) => {
             if (response && response.data && !response.errors) {
-                resolve(response.data.getMTGADecks)
+                resolve(response.data.getMTGDecks)
             } else {
-                reject('Failed to fetch MTGA decks')
+                reject('Failed to fetch MTG decks')
             }
         })
     })
 
 // ----- MUTATIONS -----
 
-const createMTGADeckMutation = async (input: MTGA_CreateDeckInput): Promise<MTGA_Deck> =>
+const createMTGDeckMutation = async (input: MTG_CreateDeckInput): Promise<MTG_Deck> =>
     new Promise((resolve, reject) => {
-        fetchData<Mutation, MutationcreateMTGADeckArgs>(createMTGADeck, { input }).then((response) => {
+        fetchData<Mutation, MutationcreateMTGDeckArgs>(createMTGDeck, { input }).then((response) => {
             if (response && response.data && !response.errors) {
-                resolve(response.data.createMTGADeck)
+                resolve(response.data.createMTGDeck)
             } else {
-                reject('Failed to fetch MTGA cards')
+                reject('Failed to fetch MTG cards')
             }
         })
     })
 
-const deleteMTGADeckMutation = async (ID: string): Promise<boolean> =>
+const deleteMTGDeckMutation = async (ID: string, list: MTG_CardListType): Promise<boolean> =>
     new Promise((resolve, reject) => {
-        fetchData<Mutation, MutationdeleteMTGADeckArgs>(deleteMTGADeck, { input: { deckID: ID } }).then((response) => {
+        fetchData<Mutation, MutationdeleteMTGDeckArgs>(deleteMTGADeck, { input: { deckID: ID, list } }).then(
+            (response) => {
+                if (response && response.data && !response.errors) {
+                    resolve(response.data.deleteMTGDeck)
+                } else {
+                    reject('Failed to fetch MTG cards')
+                }
+            },
+        )
+    })
+
+const updateMTGDeckMutation = async (input: MTG_UpdateDeckInput): Promise<MTG_Deck> =>
+    new Promise((resolve, reject) => {
+        fetchData<Mutation, MutationupdateMTGDeckArgs>(updateMTGDeck, { input }).then((response) => {
             if (response && response.data && !response.errors) {
-                resolve(response.data.deleteMTGADeck)
+                resolve(response.data.updateMTGDeck)
             } else {
-                reject('Failed to fetch MTGA cards')
+                reject('Failed to fetch MTG cards')
             }
         })
     })
 
-const updateMTGADeckMutation = async (input: MTGA_UpdateDeckInput): Promise<MTGA_Deck> =>
+const saveMTGDeckAsCopyMutation = async (input: MTG_UpdateDeckInput): Promise<MTG_Deck> =>
     new Promise((resolve, reject) => {
-        fetchData<Mutation, MutationupdateMTGADeckArgs>(updateMTGADeck, { input }).then((response) => {
+        fetchData<Mutation, MutationupdateMTGDeckArgs>(saveMTGDeckAsCopy, { input }).then((response) => {
             if (response && response.data && !response.errors) {
-                resolve(response.data.updateMTGADeck)
+                resolve(response.data.saveMTGDeckAsCopy)
             } else {
-                reject('Failed to fetch MTGA cards')
+                reject('Failed to fetch MTG cards')
             }
         })
     })
 
-const saveMTGADeckAsCopyMutation = async (input: MTGA_UpdateDeckInput): Promise<MTGA_Deck> =>
-    new Promise((resolve, reject) => {
-        fetchData<Mutation, MutationupdateMTGADeckArgs>(saveMTGADeckAsCopy, { input }).then((response) => {
-            if (response && response.data && !response.errors) {
-                resolve(response.data.saveMTGADeckAsCopy)
-            } else {
-                reject('Failed to fetch MTGA cards')
-            }
-        })
-    })
-
-export const MTGAFunctions = {
+export const MTGFunctions = {
     queries: {
-        getMTGACards: getMTGACardsQuery,
-        getMTGADecks: getMTGADecksQuery,
+        getMTGCards: getMTGCardsQuery,
+        getMTGDecks: getMTGDecksQuery,
     },
     mutations: {
-        createMTGADeck: createMTGADeckMutation,
-        deleteMTGADeck: deleteMTGADeckMutation,
-        updateMTGADeck: updateMTGADeckMutation,
-        saveMTGADeckAsCopy: saveMTGADeckAsCopyMutation,
+        createMTGDeck: createMTGDeckMutation,
+        deleteMTGDeck: deleteMTGDeckMutation,
+        updateMTGDeck: updateMTGDeckMutation,
+        saveMTGDeckAsCopy: saveMTGDeckAsCopyMutation,
     },
 }

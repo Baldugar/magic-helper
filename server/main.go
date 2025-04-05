@@ -45,8 +45,8 @@ func main() {
 	arango.Init(settings.Current.ArangoDB)
 
 	// Initialize the daemons
-	go daemons.PeriodicFetchMTGACards()
-	go daemons.PeriodicFetchMTGASets()
+	go daemons.PeriodicFetchMTGSets()
+	go daemons.PeriodicFetchMTGCards()
 
 	// Start the server
 	log.Info().Msgf("########## Magic Helper Server Startup ##########")

@@ -15,12 +15,14 @@ import {
 import { useContext, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import RotatingHDeckBox from '../../components/HDeckBox'
-import { MTGADecksContext } from '../../context/MTGA/Decks/MTGADecksContext'
-import { MTGAFunctions } from '../../graphql/MTGA/functions'
-import { DeckType } from '../../graphql/types'
+import { MTGDecksContext } from '../../context/MTGA/Decks/MTGDecksContext'
+import { useSystem } from '../../context/MTGA/System/useSystem'
+import { MTGFunctions } from '../../graphql/MTGA/functions'
+import { DeckType, MTG_CardListType } from '../../graphql/types'
 
 export const DeckList = () => {
-    const { decks, setDecks } = useContext(MTGADecksContext)
+    const { decks, setDecks } = useContext(MTGDecksContext)
+    const { list, setList } = useSystem()
 
     const navigate = useNavigate()
 
@@ -40,8 +42,8 @@ export const DeckList = () => {
 
     const open = Boolean(anchorEl)
     const {
-        mutations: { createMTGADeck, deleteMTGADeck },
-    } = MTGAFunctions
+        mutations: { createMTGDeck: createMTGADeck },
+    } = MTGFunctions
 
     return (
         <Stack padding={4} gap={2}>
@@ -50,6 +52,16 @@ export const DeckList = () => {
                 <Button variant={'contained'} color={'secondary'} onClick={handleClick}>
                     Create Deck
                 </Button>
+                <FormControl variant="filled">
+                    <InputLabel>List</InputLabel>
+                    <Select<MTG_CardListType>
+                        value={list}
+                        onChange={(e) => setList(e.target.value as MTG_CardListType)}
+                    >
+                        <MenuItem value={MTG_CardListType.MTG}>MTG</MenuItem>
+                        <MenuItem value={MTG_CardListType.MTGA}>MTGA</MenuItem>
+                    </Select>
+                </FormControl>
                 <Popover
                     open={open}
                     anchorEl={anchorEl}
@@ -98,6 +110,7 @@ export const DeckList = () => {
                                     createMTGADeck({
                                         name,
                                         type: type!,
+                                        list,
                                     }).then((deck) => {
                                         setDecks([...decks, deck])
                                         handleClose()

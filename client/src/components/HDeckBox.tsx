@@ -2,7 +2,7 @@ import Box from '@mui/material/Box'
 import Slider from '@mui/material/Slider'
 import Typography from '@mui/material/Typography'
 import { CSSProperties, useState } from 'react'
-import { MTGA_Deck } from '../graphql/types'
+import { MTG_Deck } from '../graphql/types'
 import { getCorrectCardImage } from '../utils/functions/cardFunctions'
 import { getUniqueRandomIntegers } from '../utils/functions/deckFunctions'
 
@@ -15,7 +15,7 @@ interface HDeckBoxProps {
         hoverLidRotation?: number
         hovered?: boolean
     }
-    deck: MTGA_Deck
+    deck: MTG_Deck
 }
 
 const HDeckBox = ({
@@ -382,8 +382,8 @@ const RotatingHDeckBox = ({
     onClick,
 }: {
     debug?: boolean
-    deck: MTGA_Deck
-    onClick: (deck: MTGA_Deck) => void
+    deck: MTG_Deck
+    onClick: (deck: MTG_Deck) => void
 }) => {
     const width = 313
     const height = 228.5

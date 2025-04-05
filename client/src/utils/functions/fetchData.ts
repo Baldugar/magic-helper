@@ -1,11 +1,14 @@
 import { DocumentNode } from 'graphql'
 import {
     Mutation,
-    MutationcreateMTGADeckArgs,
-    MutationdeleteMTGADeckArgs,
-    MutationupdateMTGADeckArgs,
+    MutationcreateMTGDeckArgs,
+    MutationdeleteMTGDeckArgs,
+    MutationsaveMTGDeckAsCopyArgs,
+    MutationupdateMTGDeckArgs,
     Query,
-    QuerygetMTGADecksArgs,
+    QuerygetMTGCardsArgs,
+    QuerygetMTGDecksArgs,
+    QuerygetMTGFiltersArgs,
 } from '../../graphql/types'
 import { getGraphQLServerURI } from './getEnvConfig'
 
@@ -19,9 +22,14 @@ export interface FetchError {
     path: string[]
 }
 type VariablesFor<Result> = Result extends { __typename?: 'Query' }
-    ? QuerygetMTGADecksArgs | undefined
+    ? QuerygetMTGDecksArgs | QuerygetMTGCardsArgs | QuerygetMTGFiltersArgs | undefined
     : Result extends { __typename?: 'Mutation' }
-    ? MutationcreateMTGADeckArgs | MutationdeleteMTGADeckArgs | MutationupdateMTGADeckArgs | undefined
+    ?
+          | MutationcreateMTGDeckArgs
+          | MutationdeleteMTGDeckArgs
+          | MutationupdateMTGDeckArgs
+          | MutationsaveMTGDeckAsCopyArgs
+          | undefined
     : never
 
 export const fetchData = async <Result = Query | Mutation, Variables = VariablesFor<Result>>(

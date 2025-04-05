@@ -1,0 +1,16 @@
+enum DeckType {
+    # STANDARD
+    BRAWL_60
+    BRAWL_100
+}
+
+enum MainOrSide {
+    MAIN
+    SIDEBOARD
+}
+
+enum MTG_DeckCardType {
+    NORMAL
+    COMPANION
+    COMMANDER
+}

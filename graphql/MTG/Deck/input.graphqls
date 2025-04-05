@@ -1,0 +1,36 @@
+input MTG_CreateDeckInput {
+    list: MTG_CardListType!
+    name: String!
+    type: DeckType!
+}
+
+input MTG_DeleteDeckInput {
+    deckID: ID!
+    list: MTG_CardListType!
+}
+
+input MTG_UpdateDeckInput {
+    deckID: ID!
+    list: MTG_CardListType!
+    name: String!
+    type: DeckType!
+    cardFrontImage: String
+    cards: [MTG_DeckCardInput!]!
+    zones: [FlowZoneInput!]!
+    ignoredCards: [String!]!
+}
+
+input MTG_DeckCardInput {
+    ID: ID!
+    card: ID!
+    count: Int!
+    position: PositionInput!
+    mainOrSide: MainOrSide!
+    deckCardType: MTG_DeckCardType!
+    phantoms: [PhantomInput!]!
+}
+
+input PhantomInput {
+    ID: ID!
+    position: PositionInput!
+}

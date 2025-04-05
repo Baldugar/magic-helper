@@ -1,0 +1,47 @@
+type MTG_Card implements MTG_CommonFields {
+    ID: ID! @goTag(key: "json", value: "_key")
+    cardFaces: [MTG_CardFace!]
+    cmc: Int!
+    colorIdentity: [MTG_Color!]!
+    colors: [MTG_Color!]
+    description: String
+    flavorText: String
+    image: MTG_Image
+    layout: String!
+    legalities: Map!
+    loyalty: String
+    manaCost: String
+    name: String!
+    power: String
+    producedMana: [MTG_Color!]
+    rarity: MTG_Rarity!
+    releasedAt: String!
+    set: String!
+    setName: String!
+    toughness: String
+    typeLine: String!
+    scryfallURL: String!
+}
+
+type MTG_CardFace implements MTG_CommonFields {
+    colors: [MTG_Color!]
+    description: String!
+    flavorText: String
+    image: MTG_Image
+    loyalty: String
+    manaCost: String!
+    name: String!
+    power: String
+    producedMana: [MTG_Color!]
+    toughness: String
+    typeLine: String!
+}
+
+type MTG_Image {
+    artCrop: String!
+    borderCrop: String!
+    large: String!
+    normal: String!
+    png: String!
+    small: String!
+}

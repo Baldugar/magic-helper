@@ -1,0 +1,4 @@
+enum MTG_CardListType {
+    MTG
+    MTGA
+}

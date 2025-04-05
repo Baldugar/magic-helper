@@ -2,16 +2,16 @@ import { Add, Delete, Remove } from '@mui/icons-material'
 import { Box, IconButton, Typography } from '@mui/material'
 import { useState } from 'react'
 import { HoverMouseComponent } from '../../../components/HoverMouseComponent'
-import { MTGA_DeckCard } from '../../../graphql/types'
+import { MTG_DeckCard } from '../../../graphql/types'
 import { CARD_SIZE_VALUES } from '../../../utils/constants'
 import { getCorrectCardImage, matchesCommanderColorIdentity } from '../../../utils/functions/cardFunctions'
 
 export type DeckCardProps = {
-    deckCard: MTGA_DeckCard
-    addOne?: (deckCard: MTGA_DeckCard) => void
-    removeOne?: (deckCard: MTGA_DeckCard) => void
-    removeCard: (deckCard: MTGA_DeckCard) => void
-    commander?: MTGA_DeckCard
+    deckCard: MTG_DeckCard
+    addOne?: (deckCard: MTG_DeckCard) => void
+    removeOne?: (deckCard: MTG_DeckCard) => void
+    removeCard: (deckCard: MTG_DeckCard) => void
+    commander?: MTG_DeckCard
 }
 
 export const DeckCard = (props: DeckCardProps): JSX.Element => {

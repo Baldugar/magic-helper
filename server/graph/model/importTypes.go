@@ -1,6 +1,6 @@
 package model
 
-type MTGA_ImportedCard struct {
+type MTG_ImportedCard struct {
 	CardFaces     []*CardFace       `json:"card_faces"`
 	CMC           float64           `json:"cmc"`
 	ColorIdentity []string          `json:"color_identity"`
@@ -48,7 +48,7 @@ type ImageUris struct {
 	PNG        string `json:"png"`
 }
 
-type MTGA_ImportedSet struct {
+type MTG_ImportedSet struct {
 	ID            string  `json:"id"`
 	Code          string  `json:"code"`
 	MTGOCode      *string `json:"mtgo_code"`
@@ -72,7 +72,7 @@ type MTGA_ImportedSet struct {
 	SearchURI     string  `json:"search_uri"`
 }
 
-type MTGA_Set struct {
+type MTG_Set struct {
 	ID            string  `json:"_key"`
 	Code          string  `json:"code"`
 	MTGOCode      *string `json:"MTGOCode"`

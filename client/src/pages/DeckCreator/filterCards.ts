@@ -1,15 +1,15 @@
 import { cloneDeep, intersection, orderBy } from 'lodash'
-import { CMCFilter, MTGAFilterType, SortDirection, SortEnum } from '../../context/MTGA/Filter/MTGAFilterContext'
-import { MTGA_Card, MTGA_Color, MTGA_DeckCard, MTGA_Filter_Expansion, MTGA_Rarity } from '../../graphql/types'
+import { CMCFilter, MTGFilterType, SortDirection, SortEnum } from '../../context/MTGA/Filter/MTGFilterContext'
+import { MTG_Card, MTG_Color, MTG_DeckCard, MTG_Filter_Expansion, MTG_Rarity } from '../../graphql/types'
 import { isNegativeTB, isNotUnsetTB, isPositiveTB, TernaryBoolean } from '../../types/ternaryBoolean'
 
-export const filterCards = <T extends MTGA_Card>(
+export const filterCards = <T extends MTG_Card>(
     cards: T[],
-    filter: MTGAFilterType,
+    filter: MTGFilterType,
     sort: { sortBy: SortEnum; sortDirection: SortDirection; enabled: boolean }[],
     selectingCommander?: boolean,
-    commander?: MTGA_DeckCard,
-): MTGA_Card[] => {
+    commander?: MTG_DeckCard,
+): MTG_Card[] => {
     let remainingCards = cloneDeep(cards)
 
     if (selectingCommander) {
@@ -148,7 +148,7 @@ export const filterCards = <T extends MTGA_Card>(
 
     // Color
     const colorEntries = Object.entries(filter.color).filter(([, value]) => isNotUnsetTB(value)) as [
-        MTGA_Color,
+        MTG_Color,
         TernaryBoolean,
     ][]
     const multi = filter.multiColor
@@ -243,7 +243,7 @@ export const filterCards = <T extends MTGA_Card>(
 
     // Rarity
     const rarityEntries = Object.entries(filter.rarity).filter(([, value]) => isNotUnsetTB(value)) as [
-        MTGA_Rarity,
+        MTG_Rarity,
         TernaryBoolean,
     ][]
     if (rarityEntries.length > 0) {
@@ -443,31 +443,31 @@ export const filterCards = <T extends MTGA_Card>(
     }
 
     // Sort
-    const colorToValue = (c: MTGA_Color): string => {
+    const colorToValue = (c: MTG_Color): string => {
         switch (c) {
-            case MTGA_Color.C:
+            case MTG_Color.C:
                 return 'A'
-            case MTGA_Color.W:
+            case MTG_Color.W:
                 return 'B'
-            case MTGA_Color.U:
+            case MTG_Color.U:
                 return 'C'
-            case MTGA_Color.R:
+            case MTG_Color.R:
                 return 'D'
-            case MTGA_Color.B:
+            case MTG_Color.B:
                 return 'E'
-            case MTGA_Color.G:
+            case MTG_Color.G:
                 return 'F'
         }
     }
-    const rarityToValue = (r: MTGA_Rarity): number => {
+    const rarityToValue = (r: MTG_Rarity): number => {
         switch (r) {
-            case MTGA_Rarity.COMMON:
+            case MTG_Rarity.COMMON:
                 return 0
-            case MTGA_Rarity.UNCOMMON:
+            case MTG_Rarity.UNCOMMON:
                 return 1
-            case MTGA_Rarity.RARE:
+            case MTG_Rarity.RARE:
                 return 2
-            case MTGA_Rarity.MYTHIC:
+            case MTG_Rarity.MYTHIC:
                 return 3
         }
     }
@@ -502,7 +502,7 @@ export const filterCards = <T extends MTGA_Card>(
         }
     }
 
-    const expansions: MTGA_Filter_Expansion[] = Object.entries(filter.sets).map(([set, value]) => ({
+    const expansions: MTG_Filter_Expansion[] = Object.entries(filter.sets).map(([set, value]) => ({
         imageURL: value.imageURL,
         releasedAt: value.releasedAt,
         set,
@@ -516,15 +516,15 @@ export const filterCards = <T extends MTGA_Card>(
             .map((s) => {
                 switch (s.sortBy) {
                     case SortEnum.NAME:
-                        return (c: MTGA_Card) => (c.name.startsWith('A-') ? c.name.slice(2) + '2' : c.name)
+                        return (c: MTG_Card) => (c.name.startsWith('A-') ? c.name.slice(2) + '2' : c.name)
                     case SortEnum.CMC:
-                        return (c: MTGA_Card) => c.cmc
+                        return (c: MTG_Card) => c.cmc
                     case SortEnum.COLOR:
-                        return ['colorIdentity.length', (c: MTGA_Card) => c.colorIdentity.map(colorToValue).join('')]
+                        return ['colorIdentity.length', (c: MTG_Card) => c.colorIdentity.map(colorToValue).join('')]
                     case SortEnum.RARITY:
-                        return (c: MTGA_Card) => rarityToValue(c.rarity)
+                        return (c: MTG_Card) => rarityToValue(c.rarity)
                     case SortEnum.TYPE:
-                        return (c: MTGA_Card) => {
+                        return (c: MTG_Card) => {
                             const types: Record<string, boolean> = {}
                             c.typeLine.split(' ').forEach((t) => (types[t] = true))
                             return Object.entries(types).reduce((acc, [type, isInIncluded]) => {
@@ -535,9 +535,9 @@ export const filterCards = <T extends MTGA_Card>(
                             }, 0)
                         }
                     case SortEnum.SET:
-                        return (c: MTGA_Card) => expansions.find((e) => e.set.toLowerCase() === c.set)?.releasedAt
+                        return (c: MTG_Card) => expansions.find((e) => e.set.toLowerCase() === c.set)?.releasedAt
                     case SortEnum.RELEASED_AT:
-                        return (c: MTGA_Card) => new Date(c.releasedAt).getTime()
+                        return (c: MTG_Card) => new Date(c.releasedAt).getTime()
                 }
             })
             .flat(),
@@ -549,7 +549,7 @@ export const filterCards = <T extends MTGA_Card>(
 
 const calculateQuery = (
     s: string,
-    cards: MTGA_Card[],
+    cards: MTG_Card[],
 ):
     | {
           q: string
@@ -562,7 +562,7 @@ const calculateQuery = (
           not: boolean
       }
     | {
-          q: MTGA_Color[]
+          q: MTG_Color[]
           t: 'Color'
           not: boolean
       } => {
@@ -604,7 +604,7 @@ const calculateQuery = (
 
     if (s.includes('c:')) {
         const q = s.split('c:')[1].trim()
-        const colors: MTGA_Color[] = []
+        const colors: MTG_Color[] = []
         for (let i = 0; i < q.length; i++) {
             const c = q.charAt(i)
             const color = convertToColor(c)
@@ -668,46 +668,46 @@ const calculateQuery = (
     }
 }
 
-const convertToRarity = (r: string): MTGA_Rarity => {
+const convertToRarity = (r: string): MTG_Rarity => {
     switch (r) {
         case 'common':
         case 'c':
-            return MTGA_Rarity.COMMON
+            return MTG_Rarity.COMMON
         case 'uncommon':
         case 'u':
-            return MTGA_Rarity.UNCOMMON
+            return MTG_Rarity.UNCOMMON
         case 'rare':
         case 'r':
-            return MTGA_Rarity.RARE
+            return MTG_Rarity.RARE
         case 'mythic':
         case 'm':
-            return MTGA_Rarity.MYTHIC
+            return MTG_Rarity.MYTHIC
         default:
-            return MTGA_Rarity.COMMON
+            return MTG_Rarity.COMMON
     }
 }
 
-const convertToColor = (c: string): MTGA_Color => {
+const convertToColor = (c: string): MTG_Color => {
     switch (c.toUpperCase()) {
         case 'W':
         case 'WHITE':
-            return MTGA_Color.W
+            return MTG_Color.W
         case 'U':
         case 'BLUE':
-            return MTGA_Color.U
+            return MTG_Color.U
         case 'B':
         case 'BLACK':
-            return MTGA_Color.B
+            return MTG_Color.B
         case 'R':
         case 'RED':
-            return MTGA_Color.R
+            return MTG_Color.R
         case 'G':
         case 'GREEN':
-            return MTGA_Color.G
+            return MTG_Color.G
         case 'C':
         case 'COLORLESS':
-            return MTGA_Color.C
+            return MTG_Color.C
         default:
-            return MTGA_Color.C
+            return MTG_Color.C
     }
 }

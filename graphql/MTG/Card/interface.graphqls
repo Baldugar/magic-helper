@@ -1,0 +1,11 @@
+interface MTG_CommonFields {
+    colors: [MTG_Color!]
+    flavorText: String
+    image: MTG_Image
+    loyalty: String
+    name: String!
+    power: String
+    producedMana: [MTG_Color!]
+    toughness: String
+    typeLine: String!
+}

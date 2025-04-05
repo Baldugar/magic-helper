@@ -1,8 +1,8 @@
 import { Button } from '@mui/material'
 import { Background, BackgroundVariant, MiniMap, Node, NodeTypes, Panel, ReactFlow, useReactFlow } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { useMTGADeckCreator } from '../../context/MTGA/DeckCreator/useMTGADeckCreator'
-import { useMTGADeckFlowCreator } from '../../context/MTGA/DeckCreatorFlow/useMTGADeckFlowCreator'
+import { useMTGDeckCreator } from '../../context/MTGA/DeckCreator/useMTGDeckCreator'
+import { useMTGDeckFlowCreator } from '../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
 import { uuidv4 } from '../../utils/functions/IDFunctions'
 import {
     calculateZonesFromNodes,
@@ -22,8 +22,8 @@ const nodeTypes: NodeTypes = {
 
 export const FlowView = () => {
     const { handleNodeDragStop, onDragOver, onDrop, handleDeleteZone, handleRenameZone, handleDeletePhantom } =
-        useMTGADeckFlowCreator()
-    const { deck, setDeck } = useMTGADeckCreator()
+        useMTGDeckFlowCreator()
+    const { deck, setDeck } = useMTGDeckCreator()
     const { setNodes } = useReactFlow<NodeType>()
 
     if (!deck) return null

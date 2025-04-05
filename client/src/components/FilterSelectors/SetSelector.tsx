@@ -1,6 +1,6 @@
 import { Box, Button, Grid, Paper, Popper, Tooltip } from '@mui/material'
 import { MouseEvent, useState } from 'react'
-import { useMTGAFilter } from '../../context/MTGA/Filter/useMTGAFilter'
+import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
 import { TernaryBoolean } from '../../types/ternaryBoolean'
 import getEnvConfig from '../../utils/functions/getEnvConfig'
 import { TernaryToggle } from './TernaryToggle'
@@ -23,7 +23,7 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
 
     const open = Boolean(anchorEl)
 
-    const { filter } = useMTGAFilter()
+    const { filter } = useMTGFilter()
     const { sets } = filter
     const sortedSets = Object.entries(sets)
         .sort((a, b) => b[1].releasedAt - a[1].releasedAt)
@@ -80,6 +80,7 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
                                                             opacity: selected[set.code] ? 1 : 0.3,
                                                             transition: 'opacity 250ms',
                                                         },
+                                                        loading: 'lazy',
                                                     }}
                                                     URL={`http://${envConfig.domain}:${envConfig.port}/set/${set.code}`}
                                                 />

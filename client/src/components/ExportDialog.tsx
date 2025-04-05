@@ -1,9 +1,9 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material'
-import { useMTGADeckCreator } from '../context/MTGA/DeckCreator/useMTGADeckCreator'
-import { MTGA_DeckCardType } from '../graphql/types'
+import { useMTGDeckCreator } from '../context/MTGA/DeckCreator/useMTGDeckCreator'
+import { MTG_DeckCardType } from '../graphql/types'
 
 export const ExportDialog = () => {
-    const { openExportDialog, setOpenExportDialog, deck } = useMTGADeckCreator()
+    const { openExportDialog, setOpenExportDialog, deck } = useMTGDeckCreator()
 
     const nameForExport = (name: string) => {
         return name.split('//')[0].trim()
@@ -12,9 +12,9 @@ export const ExportDialog = () => {
     const exportDeck = () => {
         if (!deck) return ''
         const { cards } = deck
-        const commander = cards.find((c) => c.deckCardType === MTGA_DeckCardType.COMMANDER)
-        const companion = cards.find((c) => c.deckCardType === MTGA_DeckCardType.COMPANION)
-        const rest = cards.filter((c) => c.deckCardType === MTGA_DeckCardType.NORMAL)
+        const commander = cards.find((c) => c.deckCardType === MTG_DeckCardType.COMMANDER)
+        const companion = cards.find((c) => c.deckCardType === MTG_DeckCardType.COMPANION)
+        const rest = cards.filter((c) => c.deckCardType === MTG_DeckCardType.NORMAL)
 
         let exportString = ''
         if (commander) {

@@ -1,7 +1,7 @@
 type Mutation {
     # Decks
-    createMTGADeck(input: MTGA_CreateDeckInput!): MTGA_Deck!
-    deleteMTGADeck(input: MTGA_DeleteDeckInput!): Boolean!
-    updateMTGADeck(input: MTGA_UpdateDeckInput!): MTGA_Deck!
-    saveMTGADeckAsCopy(input: MTGA_UpdateDeckInput!): MTGA_Deck!
+    createMTGDeck(input: MTG_CreateDeckInput!): MTG_Deck!
+    deleteMTGDeck(input: MTG_DeleteDeckInput!): Boolean!
+    updateMTGDeck(input: MTG_UpdateDeckInput!): MTG_Deck!
+    saveMTGDeckAsCopy(input: MTG_UpdateDeckInput!): MTG_Deck!
 }
