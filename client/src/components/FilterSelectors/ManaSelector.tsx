@@ -1,13 +1,13 @@
 import { Grid } from '@mui/material'
-import { MTGA_Color } from '../../graphql/types'
+import { MTG_Color } from '../../graphql/types'
 import { TernaryBoolean } from '../../types/ternaryBoolean'
 import { TernaryToggle } from './TernaryToggle'
 
 export type ManaSelectorProps = {
     iconSize?: number | string
-    selected: Record<MTGA_Color, TernaryBoolean>
-    next: (color: MTGA_Color) => void
-    prev: (color: MTGA_Color) => void
+    selected: Record<MTG_Color, TernaryBoolean>
+    next: (color: MTG_Color) => void
+    prev: (color: MTG_Color) => void
     multi?: {
         value: TernaryBoolean
         next: () => void
@@ -18,7 +18,7 @@ export type ManaSelectorProps = {
 const ManaSelector = (props: ManaSelectorProps): JSX.Element => {
     const { next, prev, selected, iconSize, multi } = props
 
-    const order = [MTGA_Color.W, MTGA_Color.U, MTGA_Color.B, MTGA_Color.R, MTGA_Color.G, MTGA_Color.C]
+    const order = [MTG_Color.W, MTG_Color.U, MTG_Color.B, MTG_Color.R, MTG_Color.G, MTG_Color.C]
 
     return (
         <Grid container item xs={'auto'}>

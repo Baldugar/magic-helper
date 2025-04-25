@@ -1,32 +1,17 @@
-import {
-    Box,
-    Button,
-    FormControl,
-    Grid,
-    InputLabel,
-    MenuItem,
-    Paper,
-    Popover,
-    Select,
-    Stack,
-    TextField,
-    Typography,
-} from '@mui/material'
+import { Box, Button, Grid, Paper, Popover, Stack, TextField, Typography } from '@mui/material'
 import { useContext, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import RotatingHDeckBox from '../../components/HDeckBox'
-import { MTGADecksContext } from '../../context/MTGA/Decks/MTGADecksContext'
-import { MTGAFunctions } from '../../graphql/MTGA/functions'
-import { DeckType } from '../../graphql/types'
+import { MTGDecksContext } from '../../context/MTGA/Decks/MTGDecksContext'
+import { MTGFunctions } from '../../graphql/MTGA/functions'
 
 export const DeckList = () => {
-    const { decks, setDecks } = useContext(MTGADecksContext)
+    const { decks, setDecks } = useContext(MTGDecksContext)
 
     const navigate = useNavigate()
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
     const [name, setName] = useState('')
-    const [type, setType] = useState<DeckType>()
 
     const handleClick = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget)
@@ -35,13 +20,12 @@ export const DeckList = () => {
     const handleClose = () => {
         setAnchorEl(null)
         setName('')
-        setType(undefined)
     }
 
     const open = Boolean(anchorEl)
     const {
-        mutations: { createMTGADeck, deleteMTGADeck },
-    } = MTGAFunctions
+        mutations: { createMTGDeck: createMTGADeck },
+    } = MTGFunctions
 
     return (
         <Stack padding={4} gap={2}>
@@ -71,33 +55,14 @@ export const DeckList = () => {
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                         />
-                        <FormControl variant="filled" fullWidth sx={{ marginTop: 2 }}>
-                            <InputLabel>Type</InputLabel>
-                            <Select<DeckType | undefined>
-                                value={type}
-                                onChange={(e) => {
-                                    setType(e.target.value as DeckType | undefined)
-                                }}
-                            >
-                                <MenuItem>
-                                    <em>None</em>
-                                </MenuItem>
-                                {Object.values(DeckType).map((type) => (
-                                    <MenuItem key={type} value={type}>
-                                        {type}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
                         <Box display={'flex'} justifyContent={'flex-end'} marginTop={2}>
                             <Button
                                 variant={'contained'}
                                 color={'primary'}
-                                disabled={name.length === 0 || !type}
+                                disabled={name.length === 0}
                                 onClick={() =>
                                     createMTGADeck({
                                         name,
-                                        type: type!,
                                     }).then((deck) => {
                                         setDecks([...decks, deck])
                                         handleClose()

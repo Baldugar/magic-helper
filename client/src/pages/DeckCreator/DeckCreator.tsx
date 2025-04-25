@@ -4,17 +4,17 @@ import { useParams } from 'react-router-dom'
 import { ExportDialog } from '../../components/ExportDialog'
 import { ImportDialog } from '../../components/ImportDialog'
 import { DndProvider } from '../../context/DnD/DnDProvider'
-import { useMTGACards } from '../../context/MTGA/Cards/useMTGACards'
-import { MTGADeckCreatorProvider } from '../../context/MTGA/DeckCreator/MTGADeckCreatorProvider'
-import { useMTGADeckCreator } from '../../context/MTGA/DeckCreator/useMTGADeckCreator'
-import { MTGADeckCreatorFlowProvider } from '../../context/MTGA/DeckCreatorFlow/MTGADeckCreatorFlowProvider'
-import { MTGADeckCreatorPaginationProvider } from '../../context/MTGA/DeckCreatorPagination/MTGADeckCreatorPaginationProvider'
-import { useMTGADeckCreatorPagination } from '../../context/MTGA/DeckCreatorPagination/useMTGADeckCreatorPagination'
-import { useMTGADecks } from '../../context/MTGA/Decks/useMTGADecks'
-import { MTGAFilterProvider } from '../../context/MTGA/Filter/MTGAFilterProvider'
-import { useMTGAFilter } from '../../context/MTGA/Filter/useMTGAFilter'
-import { MTGAFunctions } from '../../graphql/MTGA/functions'
-import { MTGA_UpdateDeckInput } from '../../graphql/types'
+import { useMTGCards } from '../../context/MTGA/Cards/useMTGCards'
+import { MTGDeckCreatorProvider } from '../../context/MTGA/DeckCreator/MTGDeckCreatorProvider'
+import { useMTGDeckCreator } from '../../context/MTGA/DeckCreator/useMTGDeckCreator'
+import { MTGDeckCreatorFlowProvider } from '../../context/MTGA/DeckCreatorFlow/MTGDeckCreatorFlowProvider'
+import { MTGDeckCreatorPaginationProvider } from '../../context/MTGA/DeckCreatorPagination/MTGDeckCreatorPaginationProvider'
+import { useMTGDeckCreatorPagination } from '../../context/MTGA/DeckCreatorPagination/useMTGDeckCreatorPagination'
+import { useMTGDecks } from '../../context/MTGA/Decks/useMTGDecks'
+import { MTGAFilterProvider } from '../../context/MTGA/Filter/MTGFilterProvider'
+import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
+import { MTGFunctions } from '../../graphql/MTGA/functions'
+import { MTG_UpdateDeckInput } from '../../graphql/types'
 import { PAGE_SIZE } from '../../utils/constants'
 import { calculateNewDeck } from '../../utils/functions/deckFunctions'
 import { calculateCardsFromNodes, calculateZonesFromNodes } from '../../utils/functions/nodeFunctions'
@@ -25,7 +25,7 @@ import { Drawer } from './Components/Drawer'
 import { Filters } from './Components/Filters'
 
 export const DeckCreator = () => {
-    const { cards } = useMTGACards()
+    const { cards } = useMTGCards()
     const {
         deck,
         openDrawer,
@@ -35,15 +35,15 @@ export const DeckCreator = () => {
         setOpenImportDialog,
         setOpenExportDialog,
         setDeck,
-    } = useMTGADeckCreator()
-    const { updateDeck } = useMTGADecks()
-    const { filteredCards, page, setPage } = useMTGADeckCreatorPagination()
+    } = useMTGDeckCreator()
+    const { updateDeck } = useMTGDecks()
+    const { filteredCards, page, setPage } = useMTGDeckCreatorPagination()
     const { loadLocalStoreFilter, saveLocalStoreFilter } = useLocalStoreFilter()
-    const { clearFilter } = useMTGAFilter()
+    const { clearFilter } = useMTGFilter()
     const { getNodes } = useReactFlow()
     const {
-        mutations: { updateMTGADeck },
-    } = MTGAFunctions
+        mutations: { updateMTGDeck: updateMTGADeck },
+    } = MTGFunctions
 
     const handleChangeView = (newViewMode: 'catalogue' | 'board' | 'both') => {
         if (viewMode === 'board' || viewMode === 'both') {
@@ -55,11 +55,10 @@ export const DeckCreator = () => {
     const saveDeck = () => {
         if (!deck) return
         const nodes = getNodes()
-        const deckInput: MTGA_UpdateDeckInput = {
+        const deckInput: MTG_UpdateDeckInput = {
             cards: calculateCardsFromNodes(nodes, deck.cards),
             deckID: deck.ID,
             name: deck.name,
-            type: deck.type,
             zones: calculateZonesFromNodes(nodes),
             cardFrontImage: deck.cardFrontImage,
             ignoredCards: deck.ignoredCards,
@@ -72,7 +71,7 @@ export const DeckCreator = () => {
     if (!deck) return null
 
     return (
-        <MTGADeckCreatorFlowProvider deck={deck}>
+        <MTGDeckCreatorFlowProvider deck={deck}>
             <Box display={'flex'} maxHeight={'100vh'}>
                 <Box position={'relative'} flex={1} display={'flex'} flexDirection={'column'} height={'100vh'}>
                     <h1>Deck Creator - {viewMode}</h1>
@@ -165,7 +164,7 @@ export const DeckCreator = () => {
                 <ImportDialog />
                 <ExportDialog />
             </Box>
-        </MTGADeckCreatorFlowProvider>
+        </MTGDeckCreatorFlowProvider>
     )
 }
 
@@ -174,15 +173,15 @@ export const DeckCreatorWrapper = () => {
 
     return (
         <ReactFlowProvider>
-            <MTGADeckCreatorProvider deckID={deckID}>
-                <DndProvider>
-                    <MTGAFilterProvider>
-                        <MTGADeckCreatorPaginationProvider>
+            <MTGAFilterProvider>
+                <MTGDeckCreatorProvider deckID={deckID}>
+                    <DndProvider>
+                        <MTGDeckCreatorPaginationProvider>
                             <DeckCreator />
-                        </MTGADeckCreatorPaginationProvider>
-                    </MTGAFilterProvider>
-                </DndProvider>
-            </MTGADeckCreatorProvider>
+                        </MTGDeckCreatorPaginationProvider>
+                    </DndProvider>
+                </MTGDeckCreatorProvider>
+            </MTGAFilterProvider>
         </ReactFlowProvider>
     )
 }

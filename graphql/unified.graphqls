@@ -1,0 +1,276 @@
+# --- mutation.graphqls ---
+type Mutation {
+    # Decks
+    createMTGDeck(input: MTG_CreateDeckInput!): MTG_Deck!
+    deleteMTGDeck(input: MTG_DeleteDeckInput!): Boolean!
+    updateMTGDeck(input: MTG_UpdateDeckInput!): MTG_Deck!
+    saveMTGDeckAsCopy(input: MTG_UpdateDeckInput!): MTG_Deck!
+}
+
+# --- query.graphqls ---
+type Query {
+    # Cards
+    getMTGCards: [MTG_Card!]!
+    getMTGFilters: MTG_Filter_Entries!
+    # Decks
+    getMTGDecks(deckID: ID): [MTG_Deck!]!
+}
+
+# --- type.base.graphqls ---
+directive @goTag(key: String!, value: String) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
+scalar Map
+
+type Response {
+    status: Boolean!
+    message: String
+}
+
+# --- Flow\input.graphqls ---
+input FlowZoneInput {
+    ID: ID!
+    name: String!
+    position: PositionInput!
+    width: Float!
+    height: Float!
+    childrenIDs: [ID!]!
+}
+
+input PositionInput {
+    x: Float!
+    y: Float!
+}
+
+# --- Flow\type.graphqls ---
+type FlowZone {
+    ID: ID!
+    name: String!
+    position: Position!
+    width: Float!
+    height: Float!
+    childrenIDs: [ID!]!
+}
+
+type Position {
+    x: Float!
+    y: Float!
+}
+
+# --- MTG\Card\enum.graphqls ---
+enum MTG_Color {
+    C
+    W
+    U
+    B
+    R
+    G
+}
+
+enum MTG_Rarity {
+    common
+    uncommon
+    rare
+    mythic
+}
+
+enum MTG_Layout {
+    normal
+    split
+    flip
+    transform
+    modal_dfc
+    meld
+    leveler
+    class
+    case
+    saga
+    adventure
+    mutate
+    prototype
+    battle
+    planar
+    scheme
+    vanguard
+    token
+    double_faced_token
+    emblem
+    augment
+    host
+    art_series
+    reversible_card
+}
+
+enum MTG_Game {
+    paper
+    mtgo
+    arena
+}
+
+# --- MTG\Card\type.graphqls ---
+type MTG_Card {
+    ID: ID! @goTag(key: "json", value: "_key")
+    layout: MTG_Layout!
+    CMC: Float!
+    colorIdentity: [MTG_Color!]!
+    colorIndicator: [String!]
+    colors: [MTG_Color!]
+    EDHRecRank: Int
+    keywords: [String!]!
+    loyalty: String
+    manaCost: String
+    name: String!
+    oracleText: String
+    power: String
+    producedMana: [MTG_Color!]
+    toughness: String
+    typeLine: String!
+    versions: [MTG_CardVersion!]!
+}
+
+type MTG_CardVersion {
+    ID: ID!
+    isDefault: Boolean!
+    isAlchemy: Boolean!
+    artist: String
+    lang: String!
+    flavorName: String
+    flavorText: String
+    cardFaces: [MTG_CardFace!]
+    legalities: Map!
+    games: [MTG_Game!]!
+    imageUris: MTG_Image
+    rarity: MTG_Rarity!
+    releasedAt: String!
+    reprint: Boolean!
+    setName: String!
+    setType: String!
+    set: String!
+    setID: String!
+    variation: Boolean!
+    variationOf: String
+}
+
+type MTG_CardFace {
+    artist: String
+    CMC: Float
+    colorIndicator: [String!]
+    colors: [MTG_Color!]
+    flavorText: String
+    imageUris: MTG_Image
+    layout: MTG_Layout
+    loyalty: String
+    manaCost: String!
+    name: String!
+    oracleText: String
+    power: String
+    toughness: String
+    typeLine: String
+}
+
+type MTG_Image {
+    artCrop: String!
+    borderCrop: String!
+    large: String!
+    normal: String!
+    PNG: String!
+    small: String!
+}
+
+# --- MTG\Deck\enum.graphqls ---
+enum DeckType {
+    # STANDARD
+    BRAWL_60
+    BRAWL_100
+}
+
+enum MainOrSide {
+    MAIN
+    SIDEBOARD
+}
+
+enum MTG_DeckCardType {
+    NORMAL
+    COMMANDER
+}
+
+# --- MTG\Deck\input.graphqls ---
+input MTG_CreateDeckInput {
+    name: String!
+}
+
+input MTG_DeleteDeckInput {
+    deckID: ID!
+}
+
+input MTG_UpdateDeckInput {
+    deckID: ID!
+    name: String!
+    cardFrontImage: String
+    cards: [MTG_DeckCardInput!]!
+    zones: [FlowZoneInput!]!
+    ignoredCards: [String!]!
+}
+
+input MTG_DeckCardInput {
+    ID: ID!
+    card: ID!
+    selectedSet: String
+    count: Int!
+    position: PositionInput!
+    mainOrSide: MainOrSide!
+    deckCardType: MTG_DeckCardType!
+    phantoms: [PhantomInput!]!
+}
+
+input PhantomInput {
+    ID: ID!
+    position: PositionInput!
+}
+
+# --- MTG\Deck\type.graphqls ---
+type MTG_Deck {
+    ID: ID! @goTag(key: "json", value: "_key")
+    name: String!
+    cardFrontImage: String
+    cards: [MTG_DeckCard!]!
+    zones: [FlowZone!]!
+    ignoredCards: [String!]!
+}
+
+type MTG_DeckCard {
+    card: MTG_Card!
+    selectedSet: String
+    count: Int!
+    position: Position!
+    mainOrSide: MainOrSide!
+    deckCardType: MTG_DeckCardType!
+    phantoms: [Phantom!]!
+}
+
+type Phantom {
+    position: Position!
+    ID: ID!
+}
+
+# --- MTG\Filter\type.graphqls ---
+type MTG_Filter_Entries {
+    types: [MTG_Filter_CardTypes!]!
+    expansions: [MTG_Filter_Expansion!]!
+    legality: MTG_Filter_Legality!
+}
+
+type MTG_Filter_CardTypes {
+    cardType: String!
+    subtypes: [String!]!
+}
+
+type MTG_Filter_Legality {
+    formats: [String!]!
+    legalityValues: [String!]!
+}
+
+type MTG_Filter_Expansion {
+    set: String!
+    setName: String!
+    releasedAt: Int!
+    imageURL: String!
+}

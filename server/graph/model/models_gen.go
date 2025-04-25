@@ -8,19 +8,6 @@ import (
 	"strconv"
 )
 
-type MtgaCommonFields interface {
-	IsMtgaCommonFields()
-	GetColors() []MtgaColor
-	GetFlavorText() *string
-	GetImage() *MtgaImage
-	GetLoyalty() *string
-	GetName() string
-	GetPower() *string
-	GetProducedMana() []MtgaColor
-	GetToughness() *string
-	GetTypeLine() string
-}
-
 type FlowZone struct {
 	ID          string    `json:"ID"`
 	Name        string    `json:"name"`
@@ -39,184 +26,156 @@ type FlowZoneInput struct {
 	ChildrenIDs []string       `json:"childrenIDs"`
 }
 
-type MtgaCard struct {
-	ID            string                 `json:"_key"`
-	CardFaces     []*MtgaCardFace        `json:"cardFaces,omitempty"`
-	Cmc           int                    `json:"cmc"`
-	ColorIdentity []MtgaColor            `json:"colorIdentity"`
-	Colors        []MtgaColor            `json:"colors,omitempty"`
-	Description   *string                `json:"description,omitempty"`
-	FlavorText    *string                `json:"flavorText,omitempty"`
-	Image         *MtgaImage             `json:"image,omitempty"`
-	Layout        string                 `json:"layout"`
-	Legalities    map[string]interface{} `json:"legalities"`
-	Loyalty       *string                `json:"loyalty,omitempty"`
-	ManaCost      *string                `json:"manaCost,omitempty"`
-	Name          string                 `json:"name"`
-	Power         *string                `json:"power,omitempty"`
-	ProducedMana  []MtgaColor            `json:"producedMana,omitempty"`
-	Rarity        MtgaRarity             `json:"rarity"`
-	ReleasedAt    string                 `json:"releasedAt"`
-	Set           string                 `json:"set"`
-	SetName       string                 `json:"setName"`
-	Toughness     *string                `json:"toughness,omitempty"`
-	TypeLine      string                 `json:"typeLine"`
-	ScryfallURL   string                 `json:"scryfallURL"`
+type MtgCard struct {
+	ID             string            `json:"_key"`
+	Layout         MtgLayout         `json:"layout"`
+	Cmc            float64           `json:"CMC"`
+	ColorIdentity  []MtgColor        `json:"colorIdentity"`
+	ColorIndicator []string          `json:"colorIndicator,omitempty"`
+	Colors         []MtgColor        `json:"colors,omitempty"`
+	EDHRecRank     *int              `json:"EDHRecRank,omitempty"`
+	Keywords       []string          `json:"keywords"`
+	Loyalty        *string           `json:"loyalty,omitempty"`
+	ManaCost       *string           `json:"manaCost,omitempty"`
+	Name           string            `json:"name"`
+	OracleText     *string           `json:"oracleText,omitempty"`
+	Power          *string           `json:"power,omitempty"`
+	ProducedMana   []MtgColor        `json:"producedMana,omitempty"`
+	Toughness      *string           `json:"toughness,omitempty"`
+	TypeLine       string            `json:"typeLine"`
+	Versions       []*MtgCardVersion `json:"versions"`
 }
 
-func (MtgaCard) IsMtgaCommonFields() {}
-func (this MtgaCard) GetColors() []MtgaColor {
-	if this.Colors == nil {
-		return nil
-	}
-	interfaceSlice := make([]MtgaColor, 0, len(this.Colors))
-	for _, concrete := range this.Colors {
-		interfaceSlice = append(interfaceSlice, concrete)
-	}
-	return interfaceSlice
-}
-func (this MtgaCard) GetFlavorText() *string { return this.FlavorText }
-func (this MtgaCard) GetImage() *MtgaImage   { return this.Image }
-func (this MtgaCard) GetLoyalty() *string    { return this.Loyalty }
-func (this MtgaCard) GetName() string        { return this.Name }
-func (this MtgaCard) GetPower() *string      { return this.Power }
-func (this MtgaCard) GetProducedMana() []MtgaColor {
-	if this.ProducedMana == nil {
-		return nil
-	}
-	interfaceSlice := make([]MtgaColor, 0, len(this.ProducedMana))
-	for _, concrete := range this.ProducedMana {
-		interfaceSlice = append(interfaceSlice, concrete)
-	}
-	return interfaceSlice
-}
-func (this MtgaCard) GetToughness() *string { return this.Toughness }
-func (this MtgaCard) GetTypeLine() string   { return this.TypeLine }
-
-type MtgaCardFace struct {
-	Colors       []MtgaColor `json:"colors,omitempty"`
-	Description  string      `json:"description"`
-	FlavorText   *string     `json:"flavorText,omitempty"`
-	Image        *MtgaImage  `json:"image,omitempty"`
-	Loyalty      *string     `json:"loyalty,omitempty"`
-	ManaCost     string      `json:"manaCost"`
-	Name         string      `json:"name"`
-	Power        *string     `json:"power,omitempty"`
-	ProducedMana []MtgaColor `json:"producedMana,omitempty"`
-	Toughness    *string     `json:"toughness,omitempty"`
-	TypeLine     string      `json:"typeLine"`
+type MtgCardFace struct {
+	Artist         *string    `json:"artist,omitempty"`
+	Cmc            *float64   `json:"CMC,omitempty"`
+	ColorIndicator []string   `json:"colorIndicator,omitempty"`
+	Colors         []MtgColor `json:"colors,omitempty"`
+	FlavorText     *string    `json:"flavorText,omitempty"`
+	ImageUris      *MtgImage  `json:"imageUris,omitempty"`
+	Layout         *MtgLayout `json:"layout,omitempty"`
+	Loyalty        *string    `json:"loyalty,omitempty"`
+	ManaCost       string     `json:"manaCost"`
+	Name           string     `json:"name"`
+	OracleText     *string    `json:"oracleText,omitempty"`
+	Power          *string    `json:"power,omitempty"`
+	Toughness      *string    `json:"toughness,omitempty"`
+	TypeLine       *string    `json:"typeLine,omitempty"`
 }
 
-func (MtgaCardFace) IsMtgaCommonFields() {}
-func (this MtgaCardFace) GetColors() []MtgaColor {
-	if this.Colors == nil {
-		return nil
-	}
-	interfaceSlice := make([]MtgaColor, 0, len(this.Colors))
-	for _, concrete := range this.Colors {
-		interfaceSlice = append(interfaceSlice, concrete)
-	}
-	return interfaceSlice
-}
-func (this MtgaCardFace) GetFlavorText() *string { return this.FlavorText }
-func (this MtgaCardFace) GetImage() *MtgaImage   { return this.Image }
-func (this MtgaCardFace) GetLoyalty() *string    { return this.Loyalty }
-func (this MtgaCardFace) GetName() string        { return this.Name }
-func (this MtgaCardFace) GetPower() *string      { return this.Power }
-func (this MtgaCardFace) GetProducedMana() []MtgaColor {
-	if this.ProducedMana == nil {
-		return nil
-	}
-	interfaceSlice := make([]MtgaColor, 0, len(this.ProducedMana))
-	for _, concrete := range this.ProducedMana {
-		interfaceSlice = append(interfaceSlice, concrete)
-	}
-	return interfaceSlice
-}
-func (this MtgaCardFace) GetToughness() *string { return this.Toughness }
-func (this MtgaCardFace) GetTypeLine() string   { return this.TypeLine }
-
-type MtgaCreateDeckInput struct {
-	Name string   `json:"name"`
-	Type DeckType `json:"type"`
+type MtgCardVersion struct {
+	ID          string         `json:"ID"`
+	IsDefault   bool           `json:"isDefault"`
+	IsAlchemy   bool           `json:"isAlchemy"`
+	Artist      *string        `json:"artist,omitempty"`
+	Lang        string         `json:"lang"`
+	FlavorName  *string        `json:"flavorName,omitempty"`
+	FlavorText  *string        `json:"flavorText,omitempty"`
+	CardFaces   []*MtgCardFace `json:"cardFaces,omitempty"`
+	Legalities  map[string]any `json:"legalities"`
+	Games       []MtgGame      `json:"games"`
+	ImageUris   *MtgImage      `json:"imageUris,omitempty"`
+	Rarity      MtgRarity      `json:"rarity"`
+	ReleasedAt  string         `json:"releasedAt"`
+	Reprint     bool           `json:"reprint"`
+	SetName     string         `json:"setName"`
+	SetType     string         `json:"setType"`
+	Set         string         `json:"set"`
+	SetID       string         `json:"setID"`
+	Variation   bool           `json:"variation"`
+	VariationOf *string        `json:"variationOf,omitempty"`
 }
 
-type MtgaDeck struct {
-	ID             string          `json:"_key"`
-	Name           string          `json:"name"`
-	CardFrontImage *string         `json:"cardFrontImage,omitempty"`
-	Cards          []*MtgaDeckCard `json:"cards"`
-	Zones          []*FlowZone     `json:"zones"`
-	Type           DeckType        `json:"type"`
-	IgnoredCards   []string        `json:"ignoredCards"`
+type MtgCreateDeckInput struct {
+	Name string `json:"name"`
 }
 
-type MtgaDeckCard struct {
-	Card         *MtgaCard        `json:"card"`
-	Count        int              `json:"count"`
-	Position     *Position        `json:"position"`
-	MainOrSide   MainOrSide       `json:"mainOrSide"`
-	DeckCardType MtgaDeckCardType `json:"deckCardType"`
-	Phantoms     []*Position      `json:"phantoms"`
+type MtgDeck struct {
+	ID             string         `json:"_key"`
+	Name           string         `json:"name"`
+	CardFrontImage *string        `json:"cardFrontImage,omitempty"`
+	Cards          []*MtgDeckCard `json:"cards"`
+	Zones          []*FlowZone    `json:"zones"`
+	IgnoredCards   []string       `json:"ignoredCards"`
 }
 
-type MtgaDeckCardInput struct {
-	ID           string           `json:"ID"`
-	Card         string           `json:"card"`
-	Count        int              `json:"count"`
-	Position     *PositionInput   `json:"position"`
-	MainOrSide   MainOrSide       `json:"mainOrSide"`
-	DeckCardType MtgaDeckCardType `json:"deckCardType"`
-	Phantoms     []*PositionInput `json:"phantoms"`
+type MtgDeckCard struct {
+	Card         *MtgCard        `json:"card"`
+	SelectedSet  *string         `json:"selectedSet,omitempty"`
+	Count        int             `json:"count"`
+	Position     *Position       `json:"position"`
+	MainOrSide   MainOrSide      `json:"mainOrSide"`
+	DeckCardType MtgDeckCardType `json:"deckCardType"`
+	Phantoms     []*Phantom      `json:"phantoms"`
 }
 
-type MtgaDeleteDeckInput struct {
+type MtgDeckCardInput struct {
+	ID           string          `json:"ID"`
+	Card         string          `json:"card"`
+	SelectedSet  *string         `json:"selectedSet,omitempty"`
+	Count        int             `json:"count"`
+	Position     *PositionInput  `json:"position"`
+	MainOrSide   MainOrSide      `json:"mainOrSide"`
+	DeckCardType MtgDeckCardType `json:"deckCardType"`
+	Phantoms     []*PhantomInput `json:"phantoms"`
+}
+
+type MtgDeleteDeckInput struct {
 	DeckID string `json:"deckID"`
 }
 
-type MtgaFilterCardTypes struct {
+type MtgFilterCardTypes struct {
 	CardType string   `json:"cardType"`
 	Subtypes []string `json:"subtypes"`
 }
 
-type MtgaFilterEntries struct {
-	Types      []*MtgaFilterCardTypes `json:"types"`
-	Expansions []*MtgaFilterExpansion `json:"expansions"`
-	Legality   *MtgaFilterLegality    `json:"legality"`
+type MtgFilterEntries struct {
+	Types      []*MtgFilterCardTypes `json:"types"`
+	Expansions []*MtgFilterExpansion `json:"expansions"`
+	Legality   *MtgFilterLegality    `json:"legality"`
 }
 
-type MtgaFilterExpansion struct {
+type MtgFilterExpansion struct {
 	Set        string `json:"set"`
 	SetName    string `json:"setName"`
 	ReleasedAt int    `json:"releasedAt"`
 	ImageURL   string `json:"imageURL"`
 }
 
-type MtgaFilterLegality struct {
+type MtgFilterLegality struct {
 	Formats        []string `json:"formats"`
 	LegalityValues []string `json:"legalityValues"`
 }
 
-type MtgaImage struct {
+type MtgImage struct {
 	ArtCrop    string `json:"artCrop"`
 	BorderCrop string `json:"borderCrop"`
 	Large      string `json:"large"`
 	Normal     string `json:"normal"`
-	Png        string `json:"png"`
+	Png        string `json:"PNG"`
 	Small      string `json:"small"`
 }
 
-type MtgaUpdateDeckInput struct {
-	DeckID         string               `json:"deckID"`
-	Name           string               `json:"name"`
-	Type           DeckType             `json:"type"`
-	CardFrontImage *string              `json:"cardFrontImage,omitempty"`
-	Cards          []*MtgaDeckCardInput `json:"cards"`
-	Zones          []*FlowZoneInput     `json:"zones"`
-	IgnoredCards   []string             `json:"ignoredCards"`
+type MtgUpdateDeckInput struct {
+	DeckID         string              `json:"deckID"`
+	Name           string              `json:"name"`
+	CardFrontImage *string             `json:"cardFrontImage,omitempty"`
+	Cards          []*MtgDeckCardInput `json:"cards"`
+	Zones          []*FlowZoneInput    `json:"zones"`
+	IgnoredCards   []string            `json:"ignoredCards"`
 }
 
 type Mutation struct {
+}
+
+type Phantom struct {
+	Position *Position `json:"position"`
+	ID       string    `json:"ID"`
+}
+
+type PhantomInput struct {
+	ID       string         `json:"ID"`
+	Position *PositionInput `json:"position"`
 }
 
 type Position struct {
@@ -261,7 +220,7 @@ func (e DeckType) String() string {
 	return string(e)
 }
 
-func (e *DeckType) UnmarshalGQL(v interface{}) error {
+func (e *DeckType) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -278,199 +237,266 @@ func (e DeckType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type MtgaColor string
+type MtgColor string
 
 const (
-	MtgaColorC MtgaColor = "C"
-	MtgaColorW MtgaColor = "W"
-	MtgaColorU MtgaColor = "U"
-	MtgaColorB MtgaColor = "B"
-	MtgaColorR MtgaColor = "R"
-	MtgaColorG MtgaColor = "G"
+	MtgColorC MtgColor = "C"
+	MtgColorW MtgColor = "W"
+	MtgColorU MtgColor = "U"
+	MtgColorB MtgColor = "B"
+	MtgColorR MtgColor = "R"
+	MtgColorG MtgColor = "G"
 )
 
-var AllMtgaColor = []MtgaColor{
-	MtgaColorC,
-	MtgaColorW,
-	MtgaColorU,
-	MtgaColorB,
-	MtgaColorR,
-	MtgaColorG,
+var AllMtgColor = []MtgColor{
+	MtgColorC,
+	MtgColorW,
+	MtgColorU,
+	MtgColorB,
+	MtgColorR,
+	MtgColorG,
 }
 
-func (e MtgaColor) IsValid() bool {
+func (e MtgColor) IsValid() bool {
 	switch e {
-	case MtgaColorC, MtgaColorW, MtgaColorU, MtgaColorB, MtgaColorR, MtgaColorG:
+	case MtgColorC, MtgColorW, MtgColorU, MtgColorB, MtgColorR, MtgColorG:
 		return true
 	}
 	return false
 }
 
-func (e MtgaColor) String() string {
+func (e MtgColor) String() string {
 	return string(e)
 }
 
-func (e *MtgaColor) UnmarshalGQL(v interface{}) error {
+func (e *MtgColor) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = MtgaColor(str)
+	*e = MtgColor(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid MTGA_Color", str)
+		return fmt.Errorf("%s is not a valid MTG_Color", str)
 	}
 	return nil
 }
 
-func (e MtgaColor) MarshalGQL(w io.Writer) {
+func (e MtgColor) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type MtgaDeckCardType string
+type MtgDeckCardType string
 
 const (
-	MtgaDeckCardTypeNormal    MtgaDeckCardType = "NORMAL"
-	MtgaDeckCardTypeCompanion MtgaDeckCardType = "COMPANION"
-	MtgaDeckCardTypeCommander MtgaDeckCardType = "COMMANDER"
+	MtgDeckCardTypeNormal    MtgDeckCardType = "NORMAL"
+	MtgDeckCardTypeCommander MtgDeckCardType = "COMMANDER"
 )
 
-var AllMtgaDeckCardType = []MtgaDeckCardType{
-	MtgaDeckCardTypeNormal,
-	MtgaDeckCardTypeCompanion,
-	MtgaDeckCardTypeCommander,
+var AllMtgDeckCardType = []MtgDeckCardType{
+	MtgDeckCardTypeNormal,
+	MtgDeckCardTypeCommander,
 }
 
-func (e MtgaDeckCardType) IsValid() bool {
+func (e MtgDeckCardType) IsValid() bool {
 	switch e {
-	case MtgaDeckCardTypeNormal, MtgaDeckCardTypeCompanion, MtgaDeckCardTypeCommander:
+	case MtgDeckCardTypeNormal, MtgDeckCardTypeCommander:
 		return true
 	}
 	return false
 }
 
-func (e MtgaDeckCardType) String() string {
+func (e MtgDeckCardType) String() string {
 	return string(e)
 }
 
-func (e *MtgaDeckCardType) UnmarshalGQL(v interface{}) error {
+func (e *MtgDeckCardType) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = MtgaDeckCardType(str)
+	*e = MtgDeckCardType(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid MTGA_DeckCardType", str)
+		return fmt.Errorf("%s is not a valid MTG_DeckCardType", str)
 	}
 	return nil
 }
 
-func (e MtgaDeckCardType) MarshalGQL(w io.Writer) {
+func (e MtgDeckCardType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type MtgaLayout string
+type MtgGame string
 
 const (
-	MtgaLayoutNormal    MtgaLayout = "NORMAL"
-	MtgaLayoutModalDfc  MtgaLayout = "MODAL_DFC"
-	MtgaLayoutTransform MtgaLayout = "TRANSFORM"
-	MtgaLayoutAdventure MtgaLayout = "ADVENTURE"
-	MtgaLayoutClass     MtgaLayout = "CLASS"
-	MtgaLayoutSaga      MtgaLayout = "SAGA"
-	MtgaLayoutSplit     MtgaLayout = "SPLIT"
-	MtgaLayoutPrototype MtgaLayout = "PROTOTYPE"
-	MtgaLayoutMutate    MtgaLayout = "MUTATE"
-	MtgaLayoutMeld      MtgaLayout = "MELD"
-	MtgaLayoutCase      MtgaLayout = "CASE"
+	MtgGamePaper MtgGame = "paper"
+	MtgGameMtgo  MtgGame = "mtgo"
+	MtgGameArena MtgGame = "arena"
 )
 
-var AllMtgaLayout = []MtgaLayout{
-	MtgaLayoutNormal,
-	MtgaLayoutModalDfc,
-	MtgaLayoutTransform,
-	MtgaLayoutAdventure,
-	MtgaLayoutClass,
-	MtgaLayoutSaga,
-	MtgaLayoutSplit,
-	MtgaLayoutPrototype,
-	MtgaLayoutMutate,
-	MtgaLayoutMeld,
-	MtgaLayoutCase,
+var AllMtgGame = []MtgGame{
+	MtgGamePaper,
+	MtgGameMtgo,
+	MtgGameArena,
 }
 
-func (e MtgaLayout) IsValid() bool {
+func (e MtgGame) IsValid() bool {
 	switch e {
-	case MtgaLayoutNormal, MtgaLayoutModalDfc, MtgaLayoutTransform, MtgaLayoutAdventure, MtgaLayoutClass, MtgaLayoutSaga, MtgaLayoutSplit, MtgaLayoutPrototype, MtgaLayoutMutate, MtgaLayoutMeld, MtgaLayoutCase:
+	case MtgGamePaper, MtgGameMtgo, MtgGameArena:
 		return true
 	}
 	return false
 }
 
-func (e MtgaLayout) String() string {
+func (e MtgGame) String() string {
 	return string(e)
 }
 
-func (e *MtgaLayout) UnmarshalGQL(v interface{}) error {
+func (e *MtgGame) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = MtgaLayout(str)
+	*e = MtgGame(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid MTGA_Layout", str)
+		return fmt.Errorf("%s is not a valid MTG_Game", str)
 	}
 	return nil
 }
 
-func (e MtgaLayout) MarshalGQL(w io.Writer) {
+func (e MtgGame) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type MtgaRarity string
+type MtgLayout string
 
 const (
-	MtgaRarityCommon   MtgaRarity = "COMMON"
-	MtgaRarityUncommon MtgaRarity = "UNCOMMON"
-	MtgaRarityRare     MtgaRarity = "RARE"
-	MtgaRarityMythic   MtgaRarity = "MYTHIC"
+	MtgLayoutNormal           MtgLayout = "normal"
+	MtgLayoutSplit            MtgLayout = "split"
+	MtgLayoutFlip             MtgLayout = "flip"
+	MtgLayoutTransform        MtgLayout = "transform"
+	MtgLayoutModalDfc         MtgLayout = "modal_dfc"
+	MtgLayoutMeld             MtgLayout = "meld"
+	MtgLayoutLeveler          MtgLayout = "leveler"
+	MtgLayoutClass            MtgLayout = "class"
+	MtgLayoutCase             MtgLayout = "case"
+	MtgLayoutSaga             MtgLayout = "saga"
+	MtgLayoutAdventure        MtgLayout = "adventure"
+	MtgLayoutMutate           MtgLayout = "mutate"
+	MtgLayoutPrototype        MtgLayout = "prototype"
+	MtgLayoutBattle           MtgLayout = "battle"
+	MtgLayoutPlanar           MtgLayout = "planar"
+	MtgLayoutScheme           MtgLayout = "scheme"
+	MtgLayoutVanguard         MtgLayout = "vanguard"
+	MtgLayoutToken            MtgLayout = "token"
+	MtgLayoutDoubleFacedToken MtgLayout = "double_faced_token"
+	MtgLayoutEmblem           MtgLayout = "emblem"
+	MtgLayoutAugment          MtgLayout = "augment"
+	MtgLayoutHost             MtgLayout = "host"
+	MtgLayoutArtSeries        MtgLayout = "art_series"
+	MtgLayoutReversibleCard   MtgLayout = "reversible_card"
 )
 
-var AllMtgaRarity = []MtgaRarity{
-	MtgaRarityCommon,
-	MtgaRarityUncommon,
-	MtgaRarityRare,
-	MtgaRarityMythic,
+var AllMtgLayout = []MtgLayout{
+	MtgLayoutNormal,
+	MtgLayoutSplit,
+	MtgLayoutFlip,
+	MtgLayoutTransform,
+	MtgLayoutModalDfc,
+	MtgLayoutMeld,
+	MtgLayoutLeveler,
+	MtgLayoutClass,
+	MtgLayoutCase,
+	MtgLayoutSaga,
+	MtgLayoutAdventure,
+	MtgLayoutMutate,
+	MtgLayoutPrototype,
+	MtgLayoutBattle,
+	MtgLayoutPlanar,
+	MtgLayoutScheme,
+	MtgLayoutVanguard,
+	MtgLayoutToken,
+	MtgLayoutDoubleFacedToken,
+	MtgLayoutEmblem,
+	MtgLayoutAugment,
+	MtgLayoutHost,
+	MtgLayoutArtSeries,
+	MtgLayoutReversibleCard,
 }
 
-func (e MtgaRarity) IsValid() bool {
+func (e MtgLayout) IsValid() bool {
 	switch e {
-	case MtgaRarityCommon, MtgaRarityUncommon, MtgaRarityRare, MtgaRarityMythic:
+	case MtgLayoutNormal, MtgLayoutSplit, MtgLayoutFlip, MtgLayoutTransform, MtgLayoutModalDfc, MtgLayoutMeld, MtgLayoutLeveler, MtgLayoutClass, MtgLayoutCase, MtgLayoutSaga, MtgLayoutAdventure, MtgLayoutMutate, MtgLayoutPrototype, MtgLayoutBattle, MtgLayoutPlanar, MtgLayoutScheme, MtgLayoutVanguard, MtgLayoutToken, MtgLayoutDoubleFacedToken, MtgLayoutEmblem, MtgLayoutAugment, MtgLayoutHost, MtgLayoutArtSeries, MtgLayoutReversibleCard:
 		return true
 	}
 	return false
 }
 
-func (e MtgaRarity) String() string {
+func (e MtgLayout) String() string {
 	return string(e)
 }
 
-func (e *MtgaRarity) UnmarshalGQL(v interface{}) error {
+func (e *MtgLayout) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = MtgaRarity(str)
+	*e = MtgLayout(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid MTGA_Rarity", str)
+		return fmt.Errorf("%s is not a valid MTG_Layout", str)
 	}
 	return nil
 }
 
-func (e MtgaRarity) MarshalGQL(w io.Writer) {
+func (e MtgLayout) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type MtgRarity string
+
+const (
+	MtgRarityCommon   MtgRarity = "common"
+	MtgRarityUncommon MtgRarity = "uncommon"
+	MtgRarityRare     MtgRarity = "rare"
+	MtgRarityMythic   MtgRarity = "mythic"
+)
+
+var AllMtgRarity = []MtgRarity{
+	MtgRarityCommon,
+	MtgRarityUncommon,
+	MtgRarityRare,
+	MtgRarityMythic,
+}
+
+func (e MtgRarity) IsValid() bool {
+	switch e {
+	case MtgRarityCommon, MtgRarityUncommon, MtgRarityRare, MtgRarityMythic:
+		return true
+	}
+	return false
+}
+
+func (e MtgRarity) String() string {
+	return string(e)
+}
+
+func (e *MtgRarity) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MtgRarity(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MTG_Rarity", str)
+	}
+	return nil
+}
+
+func (e MtgRarity) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -498,7 +524,7 @@ func (e MainOrSide) String() string {
 	return string(e)
 }
 
-func (e *MainOrSide) UnmarshalGQL(v interface{}) error {
+func (e *MainOrSide) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")

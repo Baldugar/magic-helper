@@ -13,17 +13,18 @@ import {
 } from '@mui/material'
 import { MouseEvent, useState } from 'react'
 import { CMCSelector } from '../../../components/FilterSelectors/CMCSelector'
+import LegalitySelector from '../../../components/FilterSelectors/LegalitySelector'
 import ManaSelector from '../../../components/FilterSelectors/ManaSelector'
 import RaritySelector from '../../../components/FilterSelectors/RaritySelector'
 import SetSelector from '../../../components/FilterSelectors/SetSelector'
 import { SortSelector } from '../../../components/FilterSelectors/SortSelector'
 import TypeSelector from '../../../components/FilterSelectors/TypeSelector'
-import { initialMTGAFilter } from '../../../context/MTGA/Filter/MTGAFilterContext'
-import { useMTGAFilter } from '../../../context/MTGA/Filter/useMTGAFilter'
+import { initialMTGFilter } from '../../../context/MTGA/Filter/MTGFilterContext'
+import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
 import { nextTB, prevTB, TernaryBoolean } from '../../../types/ternaryBoolean'
 
 export const Filters = () => {
-    const { filter, setFilter } = useMTGAFilter()
+    const { filter, setFilter } = useMTGFilter()
     const [searchAnchorEl, setSearchAnchorEl] = useState<null | HTMLElement>(null)
     const [search, setSearch] = useState<string>('')
     const searchOpen = Boolean(searchAnchorEl)
@@ -38,7 +39,7 @@ export const Filters = () => {
         <Grid container>
             <Grid item xs={'auto'}>
                 <IconButton size={'small'} onClick={openSearchMenu}>
-                    {filter.searchString === initialMTGAFilter.searchString ? (
+                    {filter.searchString === initialMTGFilter.searchString ? (
                         <Search style={{ width: 40, height: 40 }} />
                     ) : (
                         <FindReplace style={{ width: 40, height: 40 }} />
@@ -198,6 +199,22 @@ export const Filters = () => {
                     return acc
                 }, {} as Record<string, TernaryBoolean>)}
                 iconSize={30}
+            />
+            <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
+            <LegalitySelector
+                selected={filter.legalities}
+                onSelect={(format, legalityValue, value) => {
+                    setFilter({
+                        ...filter,
+                        legalities: {
+                            ...filter.legalities,
+                            [format]: {
+                                ...filter.legalities[format],
+                                [legalityValue]: value,
+                            },
+                        },
+                    })
+                }}
             />
             <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
             <SortSelector />

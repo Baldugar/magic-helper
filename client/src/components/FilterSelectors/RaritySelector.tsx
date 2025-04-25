@@ -1,19 +1,19 @@
 import { Grid } from '@mui/material'
-import { MTGA_Rarity } from '../../graphql/types'
+import { MTG_Rarity } from '../../graphql/types'
 import { TernaryBoolean } from '../../types/ternaryBoolean'
 import { TernaryToggle } from './TernaryToggle'
 
 export interface RaritySelectorProps {
-    selected: { [key in MTGA_Rarity]: TernaryBoolean }
-    onNext: (filterOption: MTGA_Rarity) => void
-    onPrev: (filterOption: MTGA_Rarity) => void
+    selected: { [key in MTG_Rarity]: TernaryBoolean }
+    onNext: (filterOption: MTG_Rarity) => void
+    onPrev: (filterOption: MTG_Rarity) => void
     iconSize?: number | string
 }
 
 const RaritySelector = (props: RaritySelectorProps): JSX.Element => {
     const { onNext, onPrev, selected, iconSize } = props
 
-    const order = [MTGA_Rarity.COMMON, MTGA_Rarity.UNCOMMON, MTGA_Rarity.RARE, MTGA_Rarity.MYTHIC]
+    const order = [MTG_Rarity.common, MTG_Rarity.uncommon, MTG_Rarity.rare, MTG_Rarity.mythic]
 
     return (
         <Grid container item xs={'auto'}>

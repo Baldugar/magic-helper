@@ -1,7 +1,7 @@
 type Query {
     # Cards
-    getMTGACards: [MTGA_Card!]!
-    getMTGAFilters: MTGA_Filter_Entries!
+    getMTGCards: [MTG_Card!]!
+    getMTGFilters: MTG_Filter_Entries!
     # Decks
-    getMTGADecks(deckID: ID): [MTGA_Deck!]!
+    getMTGDecks(deckID: ID): [MTG_Deck!]!
 }

@@ -1,9 +1,9 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material'
-import { useMTGADeckCreator } from '../context/MTGA/DeckCreator/useMTGADeckCreator'
-import { MTGA_DeckCardType } from '../graphql/types'
+import { useMTGDeckCreator } from '../context/MTGA/DeckCreator/useMTGDeckCreator'
+import { MTG_DeckCardType } from '../graphql/types'
 
 export const ExportDialog = () => {
-    const { openExportDialog, setOpenExportDialog, deck } = useMTGADeckCreator()
+    const { openExportDialog, setOpenExportDialog, deck } = useMTGDeckCreator()
 
     const nameForExport = (name: string) => {
         return name.split('//')[0].trim()
@@ -12,25 +12,18 @@ export const ExportDialog = () => {
     const exportDeck = () => {
         if (!deck) return ''
         const { cards } = deck
-        const commander = cards.find((c) => c.deckCardType === MTGA_DeckCardType.COMMANDER)
-        const companion = cards.find((c) => c.deckCardType === MTGA_DeckCardType.COMPANION)
-        const rest = cards.filter((c) => c.deckCardType === MTGA_DeckCardType.NORMAL)
+        const commander = cards.find((c) => c.deckCardType === MTG_DeckCardType.COMMANDER)
+        const rest = cards.filter((c) => c.deckCardType === MTG_DeckCardType.NORMAL)
 
         let exportString = ''
         if (commander) {
             exportString += `Commander\n1 ${nameForExport(commander.card.name)}\n\n`
-        }
-        if (companion) {
-            exportString += `Companion\n1 ${nameForExport(companion.card.name)}\n\n`
         }
         if (rest.length) {
             exportString += 'Deck\n'
             rest.forEach((c) => {
                 exportString += `${c.count} ${nameForExport(c.card.name)}\n`
             })
-        }
-        if (companion) {
-            exportString += `\nSideboard\n1 ${nameForExport(companion.card.name)}\n`
         }
         return exportString
     }

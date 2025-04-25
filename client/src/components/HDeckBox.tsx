@@ -2,7 +2,7 @@ import Box from '@mui/material/Box'
 import Slider from '@mui/material/Slider'
 import Typography from '@mui/material/Typography'
 import { CSSProperties, useState } from 'react'
-import { MTGA_Deck } from '../graphql/types'
+import { MTG_Deck } from '../graphql/types'
 import { getCorrectCardImage } from '../utils/functions/cardFunctions'
 import { getUniqueRandomIntegers } from '../utils/functions/deckFunctions'
 
@@ -15,7 +15,7 @@ interface HDeckBoxProps {
         hoverLidRotation?: number
         hovered?: boolean
     }
-    deck: MTGA_Deck
+    deck: MTG_Deck
 }
 
 const HDeckBox = ({
@@ -49,6 +49,19 @@ const HDeckBox = ({
     }
 
     const [cardIndexes, setCardIndexes] = useState(() => getUniqueRandomIntegers(deck.cards.length - 1, 3))
+
+    const defaultFirstCard = deck.cards[cardIndexes[0]]
+    const defaultFirstCardVersion = defaultFirstCard?.card.versions.find((v) =>
+        defaultFirstCard?.selectedSet ? defaultFirstCard?.selectedSet === v.set : v.isDefault,
+    )
+    const defaultSecondCard = deck.cards[cardIndexes[1]]
+    const defaultSecondCardVersion = defaultSecondCard?.card.versions.find((v) =>
+        defaultSecondCard?.selectedSet ? defaultSecondCard?.selectedSet === v.set : v.isDefault,
+    )
+    const defaultThirdCard = deck.cards[cardIndexes[2]]
+    const defaultThirdCardVersion = defaultThirdCard?.card.versions.find((v) =>
+        defaultThirdCard?.selectedSet ? defaultThirdCard?.selectedSet === v.set : v.isDefault,
+    )
 
     const currentRightLidRotation = hovered ? hoverLidRotation : lidRotation
     const rightLidTransition = hovered ? 'transform 0.3s ease' : 'transform 0.3s ease'
@@ -300,7 +313,7 @@ const HDeckBox = ({
             </Box>
 
             {/* Card 1 */}
-            {cardIndexes.length > 0 && (
+            {cardIndexes.length > 0 && defaultFirstCardVersion && (
                 <Box
                     sx={{
                         ...commonFaceStyle,
@@ -314,8 +327,8 @@ const HDeckBox = ({
                     }}
                 >
                     <img
-                        src={getCorrectCardImage(deck.cards[cardIndexes[0]].card, 'artCrop')}
-                        alt={deck.cards[cardIndexes[0]].card.name}
+                        src={getCorrectCardImage(defaultFirstCardVersion, defaultFirstCard?.card.layout, 'artCrop')}
+                        alt={defaultFirstCard?.card.name}
                         width={'100%'}
                         height={'100%'}
                         style={{ borderRadius: 5 }}
@@ -324,7 +337,7 @@ const HDeckBox = ({
             )}
 
             {/* Card 2 */}
-            {cardIndexes.length > 1 && (
+            {cardIndexes.length > 1 && defaultSecondCardVersion && (
                 <Box
                     sx={{
                         ...commonFaceStyle,
@@ -338,8 +351,8 @@ const HDeckBox = ({
                     }}
                 >
                     <img
-                        src={getCorrectCardImage(deck.cards[cardIndexes[1]].card, 'artCrop')}
-                        alt={deck.cards[cardIndexes[1]].card.name}
+                        src={getCorrectCardImage(defaultSecondCardVersion, defaultSecondCard?.card.layout, 'artCrop')}
+                        alt={defaultSecondCard?.card.name}
                         width={'100%'}
                         height={'100%'}
                         style={{ borderRadius: 5 }}
@@ -348,7 +361,7 @@ const HDeckBox = ({
             )}
 
             {/* Card 3 */}
-            {cardIndexes.length > 2 && (
+            {cardIndexes.length > 2 && defaultThirdCardVersion && (
                 <Box
                     sx={{
                         ...commonFaceStyle,
@@ -362,8 +375,8 @@ const HDeckBox = ({
                     }}
                 >
                     <img
-                        src={getCorrectCardImage(deck.cards[cardIndexes[2]].card, 'artCrop')}
-                        alt={deck.cards[cardIndexes[2]].card.name}
+                        src={getCorrectCardImage(defaultThirdCardVersion, defaultThirdCard?.card.layout, 'artCrop')}
+                        alt={defaultThirdCard?.card.name}
                         width={'100%'}
                         height={'100%'}
                         style={{ borderRadius: 5 }}
@@ -382,8 +395,8 @@ const RotatingHDeckBox = ({
     onClick,
 }: {
     debug?: boolean
-    deck: MTGA_Deck
-    onClick: (deck: MTGA_Deck) => void
+    deck: MTG_Deck
+    onClick: (deck: MTG_Deck) => void
 }) => {
     const width = 313
     const height = 228.5

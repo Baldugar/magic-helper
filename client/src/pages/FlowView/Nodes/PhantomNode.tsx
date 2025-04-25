@@ -1,5 +1,5 @@
 import { NodeProps } from '@xyflow/react'
-import { MTGA_Card, Position as NodePosition } from '../../../graphql/types'
+import { MTG_DeckCard, Position as NodePosition } from '../../../graphql/types'
 import { getCorrectCardImage } from '../../../utils/functions/cardFunctions'
 import { ContextMenu } from '../../../utils/hooks/ContextMenu/ContextMenu'
 import { ContextMenuOption } from '../../../utils/hooks/ContextMenu/types'
@@ -7,10 +7,9 @@ import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
 
 export type PhantomNodeData = {
     phantomOf: string
-    index: number
     position: NodePosition
-    card: MTGA_Card
-    onDelete: (cardID: string, phantomIndex: number) => void
+    card: MTG_DeckCard
+    onDelete: (id: string) => void
 }
 
 export type PhantomNodeProps = NodeProps & {
@@ -18,10 +17,14 @@ export type PhantomNodeProps = NodeProps & {
 }
 
 export const PhantomNode = (props: PhantomNodeProps) => {
-    const { data } = props
-    const { card, onDelete, phantomOf, index } = data
+    const { data, id } = props
+    const { card, onDelete } = data
 
     const { anchorRef, handleClick, handleClose, handleContextMenu, open } = useContextMenu<HTMLDivElement>()
+
+    const selectedVersion =
+        card.card.versions.find((v) => v.set === card.selectedSet) || card.card.versions.find((v) => v.isDefault)
+    if (!selectedVersion) return null
 
     const options: ContextMenuOption[] = [
         {
@@ -29,7 +32,7 @@ export const PhantomNode = (props: PhantomNodeProps) => {
             action: () => {
                 const respZone = confirm(`Are you sure you want to delete this phantom?`)
                 if (respZone) {
-                    onDelete(phantomOf, index)
+                    onDelete(id)
                 }
             },
         },
@@ -38,7 +41,12 @@ export const PhantomNode = (props: PhantomNodeProps) => {
     return (
         <>
             <div ref={anchorRef} onContextMenu={handleContextMenu}>
-                <img src={getCorrectCardImage(card, 'normal')} alt={card.name} width={100} style={{ opacity: 0.5 }} />
+                <img
+                    src={getCorrectCardImage(selectedVersion, card.card.layout, 'normal')}
+                    alt={card.card.name}
+                    width={100}
+                    style={{ opacity: 0.5 }}
+                />
             </div>
             <ContextMenu
                 anchorRef={anchorRef}

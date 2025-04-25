@@ -1,7 +1,7 @@
 import { Node, Rect, XYPosition } from '@xyflow/react'
 import { cloneDeep } from 'lodash'
 import { SetStateAction } from 'react'
-import { FlowZone, MTGA_Deck, MTGA_DeckCard, MTGA_DeckCardInput, Position } from '../../graphql/types'
+import { FlowZone, MTG_Deck, MTG_DeckCard, MTG_DeckCardInput, Position } from '../../graphql/types'
 import { CardNodeData } from '../../pages/FlowView/Nodes/CardNode'
 import { GroupNodeData } from '../../pages/FlowView/Nodes/GroupNode'
 import { PhantomNodeData } from '../../pages/FlowView/Nodes/PhantomNode'
@@ -211,24 +211,13 @@ export const onNodeDragStop = (
 }
 
 export const organizeNodes = (
-    deck: MTGA_Deck | undefined,
+    deck: MTG_Deck | undefined,
     onDeleteZone: (zoneID: string, deleteNodes: boolean) => void,
     onNameChange: (zoneID: string, newName: string) => void,
-    onDeletePhantom: (cardID: string, phantomIndex: number) => void,
+    onDeletePhantom: (id: string) => void,
 ): NodeType[] => {
     const nodes: NodeType[] = []
     if (!deck) return nodes
-    const allPhantoms: PhantomNodeData[] = deck.cards.flatMap((c) =>
-        c.phantoms.map((p, i) => {
-            return {
-                card: c.card,
-                phantomOf: c.card.ID,
-                index: i,
-                position: p,
-                onDelete: onDeletePhantom,
-            }
-        }),
-    )
     for (const zone of deck.zones) {
         const data: GroupNodeData = {
             label: zone.name,
@@ -255,23 +244,28 @@ export const organizeNodes = (
             type: 'cardNode',
             parentId: deck.zones.find((z) => z.childrenIDs.includes(card.card.ID))?.ID,
         } as Node<CardNodeData>)
-    }
-    for (const phantom of allPhantoms) {
-        const phantomID = phantom.card.ID + '_phantom_' + phantom.index
-        nodes.push({
-            id: phantomID,
-            position: phantom.position,
-            data: phantom,
-            type: 'phantomNode',
-            parentId: deck.zones.find((z) => z.childrenIDs.includes(phantomID))?.ID,
-        } as Node<PhantomNodeData>)
+        for (const p of card.phantoms) {
+            const phantomNodeData: PhantomNodeData = {
+                card: card,
+                phantomOf: card.card.ID,
+                position: p.position,
+                onDelete: onDeletePhantom,
+            }
+            nodes.push({
+                id: p.ID,
+                position: p.position,
+                data: phantomNodeData,
+                type: 'phantomNode',
+                parentId: deck.zones.find((z) => z.childrenIDs.includes(p.ID))?.ID,
+            } as Node<PhantomNodeData>)
+        }
     }
     return nodes
 }
 
-export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTGA_DeckCard[]): MTGA_DeckCardInput[] => {
+export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTG_DeckCard[]): MTG_DeckCardInput[] => {
     // Usamos un Map para unir los cards (clave: ID del card)
-    const cardMap = new Map<string, MTGA_DeckCardInput>()
+    const cardMap = new Map<string, MTG_DeckCardInput>()
 
     // Separamos los nodes según su tipo
     const cardNodes: Node<CardNodeData>[] = []
@@ -299,13 +293,14 @@ export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTGA_DeckCa
         // Obtenemos los phantoms asociados a este card
         const phantoms = phantomNodes
             .filter((p) => p.data.phantomOf === cardId)
-            .map((p) => ({ x: p.position.x, y: p.position.y }))
+            .map((p) => ({ ID: p.id, position: p.position }))
 
         // Buscamos en currentCards para obtener el count (si existe)
         const currentCard = currentCards.find((c) => c.card.ID === cardId)
 
         cardMap.set(cardId, {
             card: cardId,
+            selectedSet: card.selectedSet,
             count: currentCard?.count || 1,
             position,
             phantoms,
@@ -322,6 +317,7 @@ export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTGA_DeckCa
         if (!cardMap.has(cardId)) {
             cardMap.set(cardId, {
                 card: cardId,
+                selectedSet: currentCard.selectedSet,
                 count: currentCard.count,
                 position: currentCard.position ?? { x: 0, y: 0 },
                 phantoms: currentCard.phantoms ?? [],
@@ -353,7 +349,7 @@ export const calculateZonesFromNodes = (nodes: Node[]): FlowZone[] => {
     return zones
 }
 
-export const findNextAvailablePosition = (cards: MTGA_DeckCard[]): Position => {
+export const findNextAvailablePosition = (cards: MTG_DeckCard[]): Position => {
     let x = 0
     let y = 0
 
@@ -363,7 +359,8 @@ export const findNextAvailablePosition = (cards: MTGA_DeckCard[]): Position => {
         // Check if (x, y) is occupied
         const occupied = cards.some(
             (card) =>
-                (card.position.x === x && card.position.y === y) || card.phantoms.some((p) => p.x === x && p.y === y),
+                (card.position.x === x && card.position.y === y) ||
+                card.phantoms.some((p) => p.position.x === x && p.position.y === y),
         )
 
         if (!occupied) {

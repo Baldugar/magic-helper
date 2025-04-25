@@ -1,4 +1,14 @@
-import { ButtonProps, CheckboxProps, FormControlLabelProps, IconButton, IconButtonProps } from '@mui/material'
+import { Check, Close, Remove } from '@mui/icons-material'
+import {
+    CheckboxProps,
+    FormControlLabelProps,
+    IconButton,
+    IconButtonProps,
+    styled,
+    ToggleButton,
+    ToggleButtonGroup,
+    ToggleButtonGroupProps,
+} from '@mui/material'
 import { DetailedHTMLProps, ImgHTMLAttributes } from 'react'
 import { isNotUnsetTB, isPositiveTB, TernaryBoolean } from '../../types/ternaryBoolean'
 
@@ -22,8 +32,8 @@ export type TernaryToggleProps =
       }
     | {
           value: TernaryBoolean
-          type: 'button'
-          buttonProps?: ButtonProps
+          type: 'toggleButton'
+          toggleButtonGroupProps: ToggleButtonGroupProps
       }
 
 export const TernaryToggle = (props: TernaryToggleProps): JSX.Element => {
@@ -85,8 +95,53 @@ export const TernaryToggle = (props: TernaryToggleProps): JSX.Element => {
         }
         case 'checkbox':
             break
-        case 'button':
-            break
+        case 'toggleButton': {
+            const { value, toggleButtonGroupProps } = props
+            const PositiveToggleButton = styled(ToggleButton)(({ theme }) => ({
+                '&.Mui-selected': {
+                    backgroundColor: theme.palette.success.light,
+                    color: theme.palette.success.contrastText,
+                    '&:hover': {
+                        backgroundColor: theme.palette.success.main,
+                    },
+                },
+            }))
+
+            const NeutralToggleButton = styled(ToggleButton)(({ theme }) => ({
+                '&.Mui-selected': {
+                    backgroundColor: theme.palette.grey[300],
+                    color: theme.palette.text.primary,
+                    '&:hover': {
+                        backgroundColor: theme.palette.grey[400],
+                    },
+                },
+            }))
+
+            const NegativeToggleButton = styled(ToggleButton)(({ theme }) => ({
+                '&.Mui-selected': {
+                    backgroundColor: theme.palette.error.light,
+                    color: theme.palette.error.contrastText,
+                    '&:hover': {
+                        backgroundColor: theme.palette.error.main,
+                    },
+                },
+            }))
+            return (
+                <ToggleButtonGroup {...toggleButtonGroupProps} value={value} exclusive>
+                    <PositiveToggleButton value={TernaryBoolean.TRUE}>
+                        <Check fontSize="small" />
+                    </PositiveToggleButton>
+
+                    <NeutralToggleButton value={TernaryBoolean.UNSET}>
+                        <Remove fontSize="small" />
+                    </NeutralToggleButton>
+
+                    <NegativeToggleButton value={TernaryBoolean.FALSE}>
+                        <Close fontSize="small" />
+                    </NegativeToggleButton>
+                </ToggleButtonGroup>
+            )
+        }
     }
     return <></>
 }

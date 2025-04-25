@@ -4,12 +4,15 @@ package arango
 type ArangoDocument string
 
 const (
-	APPLICATION_CONFIG_COLLECTION  ArangoDocument = "ApplicationConfig"
-	MTGA_CARDS_COLLECTION          ArangoDocument = "MTGA_Cards"
-	MTGA_ORIGINAL_CARDS_COLLECTION ArangoDocument = "MTGA_Original_Cards"
-	MTGA_DECKS_COLLECTION          ArangoDocument = "MTGA_Decks"
-	MTGA_ORIGINAL_SETS_COLLECTION  ArangoDocument = "MTGA_Original_Sets"
-	MTGA_SETS_COLLECTION           ArangoDocument = "MTGA_Sets"
+	// Application collections
+	APPLICATION_CONFIG_COLLECTION ArangoDocument = "ApplicationConfig"
+	// MTG Set collections
+	MTG_ORIGINAL_SETS_COLLECTION ArangoDocument = "MTG_Original_Sets"
+	MTG_SETS_COLLECTION          ArangoDocument = "MTG_Sets"
+	// MTG collections
+	MTG_CARDS_COLLECTION          ArangoDocument = "MTG_Cards"
+	MTG_ORIGINAL_CARDS_COLLECTION ArangoDocument = "MTG_Original_Cards"
+	MTG_DECKS_COLLECTION          ArangoDocument = "MTG_Decks"
 )
 
 func (d ArangoDocument) String() string {
@@ -20,8 +23,9 @@ func (d ArangoDocument) String() string {
 type ArangoEdge string
 
 const (
-	MTGA_CARD_DECK_EDGE             ArangoEdge = "MTGA_Card_Deck"
-	MTGA_DECK_FRONT_CARD_IMAGE_EDGE ArangoEdge = "MTGA_Deck_Front_Card_Image"
+	// MTG edge collections
+	MTG_CARD_DECK_EDGE             ArangoEdge = "MTG_Card_Deck"
+	MTG_DECK_FRONT_CARD_IMAGE_EDGE ArangoEdge = "MTG_Deck_Front_Card_Image"
 )
 
 func (e ArangoEdge) String() string {
@@ -30,15 +34,18 @@ func (e ArangoEdge) String() string {
 
 // Arrays of collections, views, and indexes
 var DOCUMENT_COLLECTIONS = []ArangoDocument{
+	// Application collections
 	APPLICATION_CONFIG_COLLECTION,
-	MTGA_CARDS_COLLECTION,
-	MTGA_ORIGINAL_CARDS_COLLECTION,
-	MTGA_DECKS_COLLECTION,
-	MTGA_SETS_COLLECTION,
-	MTGA_ORIGINAL_SETS_COLLECTION,
+	// MTG collections
+	MTG_SETS_COLLECTION,
+	MTG_ORIGINAL_SETS_COLLECTION,
+	MTG_CARDS_COLLECTION,
+	MTG_ORIGINAL_CARDS_COLLECTION,
+	MTG_DECKS_COLLECTION,
 }
 
 var EDGE_COLLECTIONS = []ArangoEdge{
-	MTGA_CARD_DECK_EDGE,
-	MTGA_DECK_FRONT_CARD_IMAGE_EDGE,
+	// MTG edge collections
+	MTG_CARD_DECK_EDGE,
+	MTG_DECK_FRONT_CARD_IMAGE_EDGE,
 }

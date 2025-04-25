@@ -1,0 +1,23 @@
+type MTG_Deck {
+    ID: ID! @goTag(key: "json", value: "_key")
+    name: String!
+    cardFrontImage: String
+    cards: [MTG_DeckCard!]!
+    zones: [FlowZone!]!
+    ignoredCards: [String!]!
+}
+
+type MTG_DeckCard {
+    card: MTG_Card!
+    selectedSet: String
+    count: Int!
+    position: Position!
+    mainOrSide: MainOrSide!
+    deckCardType: MTG_DeckCardType!
+    phantoms: [Phantom!]!
+}
+
+type Phantom {
+    position: Position!
+    ID: ID!
+}

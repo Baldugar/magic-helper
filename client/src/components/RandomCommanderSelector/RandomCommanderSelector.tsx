@@ -1,11 +1,11 @@
 import { ExpandMore } from '@mui/icons-material'
 import { Accordion, AccordionDetails, AccordionSummary, Button, Grid, Typography } from '@mui/material'
 import { useState } from 'react'
-import { MTGA_Card } from '../../graphql/types'
+import { MTG_Card } from '../../graphql/types'
 
 const RandomCommanderSelector = (): JSX.Element => {
-    const cards: MTGA_Card[] = []
-    const [selectedCommander, setSelectedCommander] = useState<MTGA_Card>()
+    const cards: MTG_Card[] = []
+    const [selectedCommander, setSelectedCommander] = useState<MTG_Card>()
 
     const calculateRandomCommander = () => {
         const random = Math.floor(Math.random() * cards.length)

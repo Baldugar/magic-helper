@@ -7,7 +7,7 @@ cp gqlgen.yml gqlgen_temp.yml
 TEMP_FILE=$(mktemp)
 
 # Find all .graphqls files in the graphql directory but exclude .history and its subdirectories
-find ../graphql -name "*.graphqls" ! -path "../graphql/.history*" ! -name "fragment.graphqls" > $TEMP_FILE
+find ../graphql -name "*.graphqls" ! -path "../graphql/.history*" ! -name "fragment.graphqls" ! -name "unified.graphqls" > $TEMP_FILE
 
 printf "Found the following .graphqls files:\n"
 cat $TEMP_FILE
@@ -23,10 +23,10 @@ printf "$INSERT_TEXT" >> gqlgen_temp.yml
 cat gqlgen_temp.yml
 
 # Ensure all dependencies are available
-go get github.com/99designs/gqlgen@v0.17.45
+go get github.com/99designs/gqlgen@v0.17.66
 
 # Execute gqlgen with the temporary configuration
-go run github.com/99designs/gqlgen@v0.17.45 generate --config gqlgen_temp.yml
+go run github.com/99designs/gqlgen@v0.17.66 generate --config gqlgen_temp.yml
 
 printf "Regeneration complete.\n"
 
