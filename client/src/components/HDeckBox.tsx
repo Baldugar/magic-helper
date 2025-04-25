@@ -51,11 +51,17 @@ const HDeckBox = ({
     const [cardIndexes, setCardIndexes] = useState(() => getUniqueRandomIntegers(deck.cards.length - 1, 3))
 
     const defaultFirstCard = deck.cards[cardIndexes[0]]
-    const defaultFirstCardVersion = defaultFirstCard?.card.versions.find((v) => v.isDefault)
+    const defaultFirstCardVersion = defaultFirstCard?.card.versions.find((v) =>
+        defaultFirstCard?.selectedSet ? defaultFirstCard?.selectedSet === v.set : v.isDefault,
+    )
     const defaultSecondCard = deck.cards[cardIndexes[1]]
-    const defaultSecondCardVersion = defaultSecondCard?.card.versions.find((v) => v.isDefault)
+    const defaultSecondCardVersion = defaultSecondCard?.card.versions.find((v) =>
+        defaultSecondCard?.selectedSet ? defaultSecondCard?.selectedSet === v.set : v.isDefault,
+    )
     const defaultThirdCard = deck.cards[cardIndexes[2]]
-    const defaultThirdCardVersion = defaultThirdCard?.card.versions.find((v) => v.isDefault)
+    const defaultThirdCardVersion = defaultThirdCard?.card.versions.find((v) =>
+        defaultThirdCard?.selectedSet ? defaultThirdCard?.selectedSet === v.set : v.isDefault,
+    )
 
     const currentRightLidRotation = hovered ? hoverLidRotation : lidRotation
     const rightLidTransition = hovered ? 'transform 0.3s ease' : 'transform 0.3s ease'
