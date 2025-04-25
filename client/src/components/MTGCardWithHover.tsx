@@ -2,9 +2,11 @@ import { Box } from '@mui/material'
 import { FC, useState } from 'react'
 import { useDnD } from '../context/DnD/useDnD'
 import { useMTGDeckCreator } from '../context/MTGA/DeckCreator/useMTGDeckCreator'
+import { useMTGFilter } from '../context/MTGA/Filter/useMTGFilter'
 import { MTG_Card } from '../graphql/types'
 import { CARD_SIZE_VALUES } from '../utils/constants'
 import { getCorrectCardImage } from '../utils/functions/cardFunctions'
+import { singleSetSelected } from '../utils/functions/filterFunctions'
 import { HoverMouseComponent } from './HoverMouseComponent'
 import { ImageWithSkeleton } from './ImageWithSkeleton'
 
@@ -18,15 +20,21 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
     const { card, hideHover, debugValue } = props
     const { viewMode } = useMTGDeckCreator()
     const { onDragStart, onDragEnd } = useDnD()
+    const { filter } = useMTGFilter()
+    const set = singleSetSelected(filter)
 
     const [hover, setHover] = useState(false)
 
-    const small = getCorrectCardImage(card, 'small')
+    const setVersion = card.versions.find((v) => v.set === set)
+    const version = set && setVersion ? setVersion : card.versions.find((v) => v.isDefault)
+    if (!version) return null
+
+    const small = getCorrectCardImage(version, card.layout, 'small')
 
     if (!small) return null
 
-    const large = getCorrectCardImage(card, 'large')
-    const otherLarge = getCorrectCardImage(card, 'large', true)
+    const large = getCorrectCardImage(version, card.layout, 'large')
+    const otherLarge = getCorrectCardImage(version, card.layout, 'large', true)
 
     const { height, width } = CARD_SIZE_VALUES['small']
 

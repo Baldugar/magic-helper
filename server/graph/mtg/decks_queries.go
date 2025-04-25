@@ -8,7 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func GetMTGDecks(ctx context.Context, list model.MtgCardListType, deckID *string) ([]*model.MtgDeck, error) {
+func GetMTGDecks(ctx context.Context, deckID *string) ([]*model.MtgDeck, error) {
 	log.Info().Msg("GetMTGADecks: Started")
 
 	aq := arango.NewQuery( /* aql */ `
@@ -34,9 +34,6 @@ func GetMTGDecks(ctx context.Context, list model.MtgCardListType, deckID *string
 	`)
 
 	col := arango.MTG_DECKS_COLLECTION
-	if list == model.MtgCardListTypeMtga {
-		col = arango.MTGA_DECKS_COLLECTION
-	}
 
 	aq.AddBindVar("@collection", col)
 	aq.AddBindVar("@edge", arango.MTG_DECK_FRONT_CARD_IMAGE_EDGE)

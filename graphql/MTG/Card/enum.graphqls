@@ -8,22 +8,41 @@ enum MTG_Color {
 }
 
 enum MTG_Rarity {
-    COMMON
-    UNCOMMON
-    RARE
-    MYTHIC
+    common
+    uncommon
+    rare
+    mythic
 }
 
 enum MTG_Layout {
-    NORMAL
-    MODAL_DFC
-    TRANSFORM
-    ADVENTURE
-    CLASS
-    SAGA
-    SPLIT
-    PROTOTYPE
-    MUTATE
-    MELD
-    CASE
+    normal
+    split
+    flip
+    transform
+    modal_dfc
+    meld
+    leveler
+    class
+    case
+    saga
+    adventure
+    mutate
+    prototype
+    battle
+    planar
+    scheme
+    vanguard
+    token
+    double_faced_token
+    emblem
+    augment
+    host
+    art_series
+    reversible_card
+}
+
+enum MTG_Game {
+    paper
+    mtgo
+    arena
 }

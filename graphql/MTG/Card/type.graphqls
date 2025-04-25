@@ -1,40 +1,61 @@
-type MTG_Card implements MTG_CommonFields {
+type MTG_Card {
     ID: ID! @goTag(key: "json", value: "_key")
-    cardFaces: [MTG_CardFace!]
-    cmc: Int!
+    layout: MTG_Layout!
+    CMC: Float!
     colorIdentity: [MTG_Color!]!
+    colorIndicator: [String!]
     colors: [MTG_Color!]
-    description: String
-    flavorText: String
-    image: MTG_Image
-    layout: String!
-    legalities: Map!
+    EDHRecRank: Int
+    keywords: [String!]!
     loyalty: String
     manaCost: String
     name: String!
+    oracleText: String
     power: String
     producedMana: [MTG_Color!]
-    rarity: MTG_Rarity!
-    releasedAt: String!
-    set: String!
-    setName: String!
     toughness: String
     typeLine: String!
-    scryfallURL: String!
+    versions: [MTG_CardVersion!]!
 }
 
-type MTG_CardFace implements MTG_CommonFields {
-    colors: [MTG_Color!]
-    description: String!
+type MTG_CardVersion {
+    ID: ID!
+    isDefault: Boolean!
+    isAlchemy: Boolean!
+    artist: String
+    lang: String!
+    flavorName: String
     flavorText: String
-    image: MTG_Image
+    cardFaces: [MTG_CardFace!]
+    legalities: Map!
+    games: [MTG_Game!]!
+    imageUris: MTG_Image
+    rarity: MTG_Rarity!
+    releasedAt: String!
+    reprint: Boolean!
+    setName: String!
+    setType: String!
+    set: String!
+    setID: String!
+    variation: Boolean!
+    variationOf: String
+}
+
+type MTG_CardFace {
+    artist: String
+    CMC: Float
+    colorIndicator: [String!]
+    colors: [MTG_Color!]
+    flavorText: String
+    imageUris: MTG_Image
+    layout: MTG_Layout
     loyalty: String
     manaCost: String!
     name: String!
+    oracleText: String
     power: String
-    producedMana: [MTG_Color!]
     toughness: String
-    typeLine: String!
+    typeLine: String
 }
 
 type MTG_Image {
@@ -42,6 +63,6 @@ type MTG_Image {
     borderCrop: String!
     large: String!
     normal: String!
-    png: String!
+    PNG: String!
     small: String!
 }

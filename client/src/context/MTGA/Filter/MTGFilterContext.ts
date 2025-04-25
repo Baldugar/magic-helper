@@ -13,6 +13,7 @@ export interface MTGFilterType {
     multiColor: TernaryBoolean
     subtypes: Record<string, Record<string, TernaryBoolean>>
     sets: Record<string, { setName: string; value: TernaryBoolean; imageURL: string; releasedAt: number }>
+    legalities: Record<string, Record<string, TernaryBoolean>>
     legalityFormats: string[]
     legalityValues: string[]
     legalityFormat: string | null
@@ -86,12 +87,13 @@ export const initialMTGFilter: MTGFilterType = {
     },
     multiColor: TernaryBoolean.UNSET,
     rarity: {
-        COMMON: TernaryBoolean.UNSET,
-        MYTHIC: TernaryBoolean.UNSET,
-        RARE: TernaryBoolean.UNSET,
-        UNCOMMON: TernaryBoolean.UNSET,
+        common: TernaryBoolean.UNSET,
+        uncommon: TernaryBoolean.UNSET,
+        rare: TernaryBoolean.UNSET,
+        mythic: TernaryBoolean.UNSET,
     },
     subtypes: {},
+    legalities: {},
     legalityFormat: null,
     legalityFormats: [],
     legalityValue: null,

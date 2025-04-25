@@ -1,7 +1,6 @@
 import { fetchData } from '../../utils/functions/fetchData'
 import {
     MTG_Card,
-    MTG_CardListType,
     MTG_CreateDeckInput,
     MTG_Deck,
     MTG_UpdateDeckInput,
@@ -10,7 +9,6 @@ import {
     MutationdeleteMTGDeckArgs,
     MutationupdateMTGDeckArgs,
     Query,
-    QuerygetMTGCardsArgs,
     QuerygetMTGDecksArgs,
 } from '../types'
 import createMTGDeck from './mutations/createMTGDeck'
@@ -22,9 +20,9 @@ import getMTGDecks from './queries/getMTGDecks'
 
 // ----- QUERIES -----
 
-const getMTGCardsQuery = async (list: MTG_CardListType): Promise<MTG_Card[]> =>
+const getMTGCardsQuery = async (): Promise<MTG_Card[]> =>
     new Promise((resolve, reject) => {
-        fetchData<Query, QuerygetMTGCardsArgs>(getMTGCards, { list }).then((response) => {
+        fetchData<Query>(getMTGCards).then((response) => {
             if (response && response.data && !response.errors) {
                 resolve(response.data.getMTGCards)
             } else {
@@ -33,9 +31,9 @@ const getMTGCardsQuery = async (list: MTG_CardListType): Promise<MTG_Card[]> =>
         })
     })
 
-const getMTGDecksQuery = async (list: MTG_CardListType, ID?: string): Promise<MTG_Deck[]> =>
+const getMTGDecksQuery = async (ID?: string): Promise<MTG_Deck[]> =>
     new Promise((resolve, reject) => {
-        fetchData<Query, QuerygetMTGDecksArgs>(getMTGDecks, { deckID: ID, list }).then((response) => {
+        fetchData<Query, QuerygetMTGDecksArgs>(getMTGDecks, { deckID: ID }).then((response) => {
             if (response && response.data && !response.errors) {
                 resolve(response.data.getMTGDecks)
             } else {
@@ -57,17 +55,15 @@ const createMTGDeckMutation = async (input: MTG_CreateDeckInput): Promise<MTG_De
         })
     })
 
-const deleteMTGDeckMutation = async (ID: string, list: MTG_CardListType): Promise<boolean> =>
+const deleteMTGDeckMutation = async (ID: string): Promise<boolean> =>
     new Promise((resolve, reject) => {
-        fetchData<Mutation, MutationdeleteMTGDeckArgs>(deleteMTGADeck, { input: { deckID: ID, list } }).then(
-            (response) => {
-                if (response && response.data && !response.errors) {
-                    resolve(response.data.deleteMTGDeck)
-                } else {
-                    reject('Failed to fetch MTG cards')
-                }
-            },
-        )
+        fetchData<Mutation, MutationdeleteMTGDeckArgs>(deleteMTGADeck, { input: { deckID: ID } }).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.deleteMTGDeck)
+            } else {
+                reject('Failed to fetch MTG cards')
+            }
+        })
     })
 
 const updateMTGDeckMutation = async (input: MTG_UpdateDeckInput): Promise<MTG_Deck> =>

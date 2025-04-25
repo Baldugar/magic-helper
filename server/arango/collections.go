@@ -13,10 +13,6 @@ const (
 	MTG_CARDS_COLLECTION          ArangoDocument = "MTG_Cards"
 	MTG_ORIGINAL_CARDS_COLLECTION ArangoDocument = "MTG_Original_Cards"
 	MTG_DECKS_COLLECTION          ArangoDocument = "MTG_Decks"
-	// MTGA collections
-	MTGA_CARDS_COLLECTION          ArangoDocument = "MTGA_Cards"
-	MTGA_ORIGINAL_CARDS_COLLECTION ArangoDocument = "MTGA_Original_Cards"
-	MTGA_DECKS_COLLECTION          ArangoDocument = "MTGA_Decks"
 )
 
 func (d ArangoDocument) String() string {
@@ -46,10 +42,6 @@ var DOCUMENT_COLLECTIONS = []ArangoDocument{
 	MTG_CARDS_COLLECTION,
 	MTG_ORIGINAL_CARDS_COLLECTION,
 	MTG_DECKS_COLLECTION,
-	// MTGA collections
-	MTGA_CARDS_COLLECTION,
-	MTGA_ORIGINAL_CARDS_COLLECTION,
-	MTGA_DECKS_COLLECTION,
 }
 
 var EDGE_COLLECTIONS = []ArangoEdge{

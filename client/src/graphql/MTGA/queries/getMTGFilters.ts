@@ -1,8 +1,8 @@
 import gql from 'graphql-tag'
 
 export default gql`
-    query getMTGFilters($list: MTG_CardListType!) {
-        getMTGFilters(list: $list) {
+    query getMTGFilters {
+        getMTGFilters {
             types {
                 cardType
                 subtypes

@@ -4,9 +4,8 @@ import { sortBy } from 'lodash'
 import { useMemo } from 'react'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGDecks } from '../../../context/MTGA/Decks/useMTGDecks'
-import { useSystem } from '../../../context/MTGA/System/useSystem'
 import { MTGFunctions } from '../../../graphql/MTGA/functions'
-import { DeckType, MainOrSide, MTG_DeckCard, MTG_DeckCardType, MTG_UpdateDeckInput } from '../../../graphql/types'
+import { MainOrSide, MTG_DeckCard, MTG_DeckCardType, MTG_UpdateDeckInput } from '../../../graphql/types'
 import { calculateCardsFromNodes, calculateZonesFromNodes, NodeType } from '../../../utils/functions/nodeFunctions'
 import { DeckCard } from './DeckCard'
 
@@ -14,7 +13,6 @@ export const Drawer = () => {
     const { deckTab, setDeckTab, deck, selectingCommander, setSelectingCommander, removeCard } = useMTGDeckCreator()
     const { getNodes, setNodes } = useReactFlow<NodeType>()
     const { updateDeck } = useMTGDecks()
-    const { list } = useSystem()
 
     const {
         mutations: { updateMTGDeck, saveMTGDeckAsCopy },
@@ -27,11 +25,9 @@ export const Drawer = () => {
             cards: calculateCardsFromNodes(nodes, deck.cards),
             deckID: deck.ID,
             name: deck.name,
-            type: deck.type,
             zones: calculateZonesFromNodes(nodes),
             cardFrontImage: deck.cardFrontImage,
             ignoredCards: deck.ignoredCards,
-            list,
         }
         updateMTGDeck(deckInput).then((deck) => {
             updateDeck(deck)
@@ -45,11 +41,9 @@ export const Drawer = () => {
             cards: calculateCardsFromNodes(nodes, deck.cards),
             deckID: deck.ID,
             name: deck.name,
-            type: deck.type,
             zones: calculateZonesFromNodes(nodes),
             cardFrontImage: deck.cardFrontImage,
             ignoredCards: deck.ignoredCards,
-            list,
         }
         saveMTGDeckAsCopy(deckInput)
     }
@@ -95,17 +89,11 @@ export const Drawer = () => {
                 )}{' '}
                 cards
             </Typography>
-            {(deck.type === DeckType.BRAWL_60 || deck.type === DeckType.BRAWL_100) && (
-                <>
-                    <Typography>Commander</Typography>
-                    <Button fullWidth variant={'contained'} onClick={() => setSelectingCommander((prev) => !prev)}>
-                        <Typography>
-                            {selectingCommander ? 'Selecting a commander' : 'Click to select a commander'}
-                        </Typography>
-                    </Button>
-                    {commander && <DeckCard deckCard={commander} removeCard={handleRemoveCard} />}
-                </>
-            )}
+            <Typography>Commander</Typography>
+            <Button fullWidth variant={'contained'} onClick={() => setSelectingCommander((prev) => !prev)}>
+                <Typography>{selectingCommander ? 'Selecting a commander' : 'Click to select a commander'}</Typography>
+            </Button>
+            {commander && <DeckCard deckCard={commander} removeCard={handleRemoveCard} />}
             <Typography>{deckTab === MainOrSide.MAIN ? 'Main Deck' : 'Sideboard'}</Typography>
             <Box sx={{ overflowY: 'auto', flex: 1 }}>
                 <Grid container>

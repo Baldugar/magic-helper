@@ -1,34 +1,17 @@
-import {
-    Box,
-    Button,
-    FormControl,
-    Grid,
-    InputLabel,
-    MenuItem,
-    Paper,
-    Popover,
-    Select,
-    Stack,
-    TextField,
-    Typography,
-} from '@mui/material'
+import { Box, Button, Grid, Paper, Popover, Stack, TextField, Typography } from '@mui/material'
 import { useContext, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import RotatingHDeckBox from '../../components/HDeckBox'
 import { MTGDecksContext } from '../../context/MTGA/Decks/MTGDecksContext'
-import { useSystem } from '../../context/MTGA/System/useSystem'
 import { MTGFunctions } from '../../graphql/MTGA/functions'
-import { DeckType, MTG_CardListType } from '../../graphql/types'
 
 export const DeckList = () => {
     const { decks, setDecks } = useContext(MTGDecksContext)
-    const { list, setList } = useSystem()
 
     const navigate = useNavigate()
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
     const [name, setName] = useState('')
-    const [type, setType] = useState<DeckType>()
 
     const handleClick = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget)
@@ -37,7 +20,6 @@ export const DeckList = () => {
     const handleClose = () => {
         setAnchorEl(null)
         setName('')
-        setType(undefined)
     }
 
     const open = Boolean(anchorEl)
@@ -52,16 +34,6 @@ export const DeckList = () => {
                 <Button variant={'contained'} color={'secondary'} onClick={handleClick}>
                     Create Deck
                 </Button>
-                <FormControl variant="filled">
-                    <InputLabel>List</InputLabel>
-                    <Select<MTG_CardListType>
-                        value={list}
-                        onChange={(e) => setList(e.target.value as MTG_CardListType)}
-                    >
-                        <MenuItem value={MTG_CardListType.MTG}>MTG</MenuItem>
-                        <MenuItem value={MTG_CardListType.MTGA}>MTGA</MenuItem>
-                    </Select>
-                </FormControl>
                 <Popover
                     open={open}
                     anchorEl={anchorEl}
@@ -83,34 +55,14 @@ export const DeckList = () => {
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                         />
-                        <FormControl variant="filled" fullWidth sx={{ marginTop: 2 }}>
-                            <InputLabel>Type</InputLabel>
-                            <Select<DeckType | undefined>
-                                value={type}
-                                onChange={(e) => {
-                                    setType(e.target.value as DeckType | undefined)
-                                }}
-                            >
-                                <MenuItem>
-                                    <em>None</em>
-                                </MenuItem>
-                                {Object.values(DeckType).map((type) => (
-                                    <MenuItem key={type} value={type}>
-                                        {type}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
                         <Box display={'flex'} justifyContent={'flex-end'} marginTop={2}>
                             <Button
                                 variant={'contained'}
                                 color={'primary'}
-                                disabled={name.length === 0 || !type}
+                                disabled={name.length === 0}
                                 onClick={() =>
                                     createMTGADeck({
                                         name,
-                                        type: type!,
-                                        list,
                                     }).then((deck) => {
                                         setDecks([...decks, deck])
                                         handleClose()

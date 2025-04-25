@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"io"
 	"magic-helper/arango"
-	"magic-helper/graph/model"
+	"magic-helper/graph/model/scryfall"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -17,10 +18,11 @@ import (
 func PeriodicFetchMTGSets() {
 	log.Info().Msg("Starting periodic fetch sets daemon")
 	for {
-		fetched := fetchSets()
-		if fetched {
-			updateDatabaseSets()
-		}
+		// fetched :=
+		fetchSets()
+		// if fetched {
+		updateDatabaseSets()
+		// }
 		time.Sleep(24 * time.Hour)
 	}
 }
@@ -93,9 +95,9 @@ func fetchSets() bool {
 
 	log.Info().Msgf("Fetched %v sets", len(allSets))
 
-	sets := []map[string]any{}
+	sets := []scryfall.Set{}
 	for _, set := range allSets {
-		var setMap map[string]any
+		var setMap scryfall.Set
 		err := json.Unmarshal(set, &setMap)
 		if err != nil {
 			log.Error().Err(err).Str("set", string(set)).Msgf("Error unmarshalling set")
@@ -125,6 +127,14 @@ func fetchSets() bool {
 		return false
 	}
 
+	// Download the icons
+	for _, set := range sets {
+		err := downloadSetIconIfNeeded(ctx, set)
+		if err != nil {
+			log.Error().Err(err).Msgf("Error downloading set icon for %s", set.Code)
+		}
+	}
+
 	// Update the last time we fetched sets
 	err = updateLastTimeFetched("MTG_sets")
 	if err != nil {
@@ -138,106 +148,10 @@ func fetchSets() bool {
 	return true
 }
 
-// updateDatabaseSets fetches all sets from the DB (arango.MTGA_ORIGINAL_SETS_COLLECTION),
-// then conditionally downloads their icons using an ETag check.
-func updateDatabaseSets() {
-	log.Info().Msg("Updating database sets")
-
-	ctx := context.Background()
-
-	aq := arango.NewQuery( /* aql */ `
-		FOR c IN @@collection
-		RETURN c
-	`)
-
-	aq.AddBindVar("@collection", arango.MTG_ORIGINAL_SETS_COLLECTION)
-
-	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
-	if err != nil {
-		log.Error().Err(err).Msgf("Error querying database")
-		return
-	}
-
-	defer cursor.Close()
-
-	var importedSets []model.MTG_ImportedSet
-	for cursor.HasMore() {
-		var set model.MTG_ImportedSet
-		_, err := cursor.ReadDocument(ctx, &set)
-		if err != nil {
-			log.Error().Err(err).Msgf("Error reading document")
-			return
-		}
-		importedSets = append(importedSets, set)
-	}
-	log.Info().Msgf("Read %v sets from database", len(importedSets))
-
-	// Download or skip icons based on ETag
-	for i := range importedSets {
-		set := &importedSets[i]
-		err := downloadSetIconIfNeeded(ctx, set)
-		if err != nil {
-			log.Error().Err(err).Msgf("Error downloading set icon for %s", set.Code)
-			continue
-		}
-	}
-
-	// Insert the data into the database
-	var sets []model.MTG_Set
-
-	for _, set := range importedSets {
-		s := model.MTG_Set{
-			ID:            set.Code,
-			ArenaCode:     set.ArenaCode,
-			Block:         set.Block,
-			BlockCode:     set.BlockCode,
-			CardCount:     set.CardCount,
-			Code:          set.Code,
-			Digital:       set.Digital,
-			FoilOnly:      set.FoilOnly,
-			IconSVGURI:    "public/images/sets/" + set.Code + ".svg",
-			MTGOCode:      set.MTGOCode,
-			Name:          set.Name,
-			NonFoilOnly:   set.NonFoilOnly,
-			ParentSetCode: set.ParentSetCode,
-			PrintedSize:   set.PrintedSize,
-			ReleasedAt:    set.ReleasedAt,
-			ScryfallURI:   set.ScryfallURI,
-			SearchURI:     set.SearchURI,
-			SetType:       set.SetType,
-			TCGPlayerID:   set.TCGPlayerID,
-			URI:           set.URI,
-		}
-
-		sets = append(sets, s)
-	}
-
-	log.Info().Msgf("Unmarshalled %v sets", len(sets))
-
-	aq = arango.NewQuery( /* aql */ `
-		FOR s IN @sets
-			UPSERT { _key: s.code }
-			INSERT s
-			UPDATE s
-			IN @@collection
-	`)
-
-	aq.AddBindVar("sets", sets)
-	aq.AddBindVar("@collection", arango.MTG_SETS_COLLECTION)
-
-	_, err = arango.DB.Query(ctx, aq.Query, aq.BindVars)
-	if err != nil {
-		log.Error().Err(err).Msgf("Error inserting sets into database")
-		return
-	}
-
-	log.Info().Msgf("Inserted sets into database")
-}
-
 // downloadSetIconIfNeeded uses a HEAD request with If-None-Match (ETag) to see
 // if the icon changed. If server returns 304 Not Modified, it skips. Otherwise,
 // it downloads the file, then updates the ETag in DB.
-func downloadSetIconIfNeeded(ctx context.Context, set *model.MTG_ImportedSet) error {
+func downloadSetIconIfNeeded(ctx context.Context, set scryfall.Set) error {
 	if set.IconSVGURI == "" {
 		// If there's no icon URL, nothing to do
 		return nil
@@ -294,7 +208,7 @@ func downloadSetIconIfNeeded(ctx context.Context, set *model.MTG_ImportedSet) er
 }
 
 // doDownloadAndSave does the actual GET request, saves the file, and updates the ETag in DB.
-func doDownloadAndSave(ctx context.Context, set *model.MTG_ImportedSet, newETag string) error {
+func doDownloadAndSave(ctx context.Context, set scryfall.Set, newETag string) error {
 	resp, err := http.Get(set.IconSVGURI)
 	if err != nil {
 		return fmt.Errorf("GET request failed for %s: %w", set.Code, err)
@@ -317,9 +231,6 @@ func doDownloadAndSave(ctx context.Context, set *model.MTG_ImportedSet, newETag 
 	}
 
 	// log.Info().Msgf("Downloaded set icon: %s (new ETag: %q)", iconPath, newETag)
-
-	// Update ETag in-memory
-	set.ETag = newETag
 
 	// Also update the ETag in Arango
 	if err := updateSetETagInDB(ctx, set.Code, newETag); err != nil {
@@ -347,4 +258,84 @@ func updateSetETagInDB(ctx context.Context, code, newETag string) error {
 	}
 
 	return nil
+}
+
+func updateDatabaseSets() {
+	log.Info().Msg("Updating database sets")
+
+	ctx := context.Background()
+
+	aq := arango.NewQuery( /* aql */ `
+		FOR s IN @@collection
+			RETURN s
+	`)
+
+	aq.AddBindVar("@collection", arango.MTG_ORIGINAL_SETS_COLLECTION)
+
+	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
+	if err != nil {
+		log.Error().Err(err).Msgf("Error querying database")
+		return
+	}
+	defer cursor.Close()
+
+	var sets []scryfall.Set
+
+	for cursor.HasMore() {
+		var set scryfall.Set
+		_, err := cursor.ReadDocument(ctx, &set)
+		if err != nil {
+			log.Error().Err(err).Msgf("Error reading document")
+			return
+		}
+		sets = append(sets, set)
+	}
+
+	log.Info().Msgf("Found %v sets", len(sets))
+
+	dbSets := make([]scryfall.MTG_SetDB, len(sets))
+	for i, set := range sets {
+		dbSets[i] = scryfall.MTG_SetDB{
+			ID:            strings.ToLower(set.Code),
+			Name:          set.Name,
+			Code:          set.Code,
+			ReleasedAt:    set.ReleasedAt,
+			IconSVGURI:    set.IconSVGURI,
+			ETag:          set.ETag,
+			MTGOCode:      set.MTGOCode,
+			ArenaCode:     set.ArenaCode,
+			TCGPlayerID:   set.TCGPlayerID,
+			CardCount:     set.CardCount,
+			Digital:       set.Digital,
+			NonFoilOnly:   set.NonFoilOnly,
+			SetType:       set.SetType.String(),
+			Block:         set.Block,
+			BlockCode:     set.BlockCode,
+			ParentSetCode: set.ParentSetCode,
+			PrintedSize:   set.PrintedSize,
+			FoilOnly:      set.FoilOnly,
+			ScryfallURI:   set.ScryfallURI,
+			URI:           set.URI,
+			SearchURI:     set.SearchURI,
+		}
+	}
+
+	aq = arango.NewQuery( /* aql */ `
+		FOR s IN @sets
+			UPSERT { _key: s._key }
+			INSERT MERGE({ _key: s._key }, s)
+			UPDATE s
+			IN @@collection
+	`)
+
+	aq.AddBindVar("sets", dbSets)
+	aq.AddBindVar("@collection", arango.MTG_SETS_COLLECTION)
+
+	_, err = arango.DB.Query(ctx, aq.Query, aq.BindVars)
+	if err != nil {
+		log.Error().Err(err).Msgf("Error updating database sets")
+	}
+
+	log.Info().Msgf("Updated database sets")
+	log.Info().Msgf("Done")
 }

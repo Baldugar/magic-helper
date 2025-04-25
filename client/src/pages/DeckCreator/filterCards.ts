@@ -22,7 +22,7 @@ export const filterCards = <T extends MTG_Card>(
 
     if (filter.searchString.length > 0) {
         const strings = filter.searchString.split(';')
-        const getQueryForString = (s: string) => calculateQuery(s, remainingCards)
+        const getQueryForString = (s: string) => calculateQuery(s)
         const searchQueries = strings.map(getQueryForString)
         remainingCards = remainingCards.filter((card) => {
             for (const query of searchQueries) {
@@ -37,15 +37,15 @@ export const filterCards = <T extends MTG_Card>(
                         break
                     case 'Rarity':
                         {
-                            const fails = card.rarity !== query.q
-                            if ((query.not && !fails) || (!query.not && fails)) {
+                            const allVersionsFail = card.versions.every((v) => v.rarity !== query.q)
+                            if ((query.not && !allVersionsFail) || (!query.not && allVersionsFail)) {
                                 return false
                             }
                         }
                         break
                     case 'CMC=':
                         {
-                            const fails = card.cmc !== query.q
+                            const fails = card.CMC !== query.q
                             if ((query.not && !fails) || (!query.not && fails)) {
                                 return false
                             }
@@ -53,7 +53,7 @@ export const filterCards = <T extends MTG_Card>(
                         break
                     case 'CMC>':
                         {
-                            const fails = card.cmc <= query.q
+                            const fails = card.CMC <= query.q
                             if ((query.not && !fails) || (!query.not && fails)) {
                                 return false
                             }
@@ -61,7 +61,7 @@ export const filterCards = <T extends MTG_Card>(
                         break
                     case 'CMC<':
                         {
-                            const fails = card.cmc >= query.q
+                            const fails = card.CMC >= query.q
                             if ((query.not && !fails) || (!query.not && fails)) {
                                 return false
                             }
@@ -69,7 +69,7 @@ export const filterCards = <T extends MTG_Card>(
                         break
                     case 'CMC>=':
                         {
-                            const fails = card.cmc < query.q
+                            const fails = card.CMC < query.q
                             if ((query.not && !fails) || (!query.not && fails)) {
                                 return false
                             }
@@ -77,7 +77,7 @@ export const filterCards = <T extends MTG_Card>(
                         break
                     case 'CMC<=':
                         {
-                            const fails = card.cmc > query.q
+                            const fails = card.CMC > query.q
                             if ((query.not && !fails) || (!query.not && fails)) {
                                 return false
                             }
@@ -93,10 +93,12 @@ export const filterCards = <T extends MTG_Card>(
                         break
                     case 'Set':
                         {
-                            const fails =
-                                card.set.toLowerCase() !== query.q.toLowerCase() &&
-                                card.setName.toLowerCase() !== query.q.toLowerCase()
-                            if ((query.not && !fails) || (!query.not && fails)) {
+                            const allVersionsFail = card.versions.every(
+                                (v) =>
+                                    v.set.toLowerCase() !== query.q.toLowerCase() &&
+                                    v.setName.toLowerCase() !== query.q.toLowerCase(),
+                            )
+                            if ((query.not && !allVersionsFail) || (!query.not && allVersionsFail)) {
                                 return false
                             }
                         }
@@ -104,11 +106,16 @@ export const filterCards = <T extends MTG_Card>(
                     case 'search': {
                         const cardNameChecks = card.name.toLowerCase().includes(query.q.toLowerCase())
                         const cardTypeLineChecks = card.typeLine.toLowerCase().includes(query.q.toLowerCase())
-                        const cardSetNameChecks = card.setName.toLowerCase().includes(query.q.toLowerCase())
-                        const cardSetChecks = card.set.toLowerCase().includes(query.q.toLowerCase())
-                        const cardOracleChecks =
-                            card.description?.toLowerCase().includes(query.q.toLowerCase()) || false
-                        const cardFlavorChecks = card.flavorText?.toLowerCase().includes(query.q.toLowerCase()) || false
+                        const cardSetNameChecks = card.versions.some((v) =>
+                            v.setName.toLowerCase().includes(query.q.toLowerCase()),
+                        )
+                        const cardSetChecks = card.versions.some((v) =>
+                            v.set.toLowerCase().includes(query.q.toLowerCase()),
+                        )
+                        const cardOracleChecks = card.oracleText?.toLowerCase().includes(query.q.toLowerCase()) || false
+                        const cardFlavorChecks =
+                            card.versions.some((v) => v.flavorText?.toLowerCase().includes(query.q.toLowerCase())) ||
+                            false
                         let checks =
                             cardNameChecks ||
                             cardTypeLineChecks ||
@@ -116,23 +123,27 @@ export const filterCards = <T extends MTG_Card>(
                             cardSetChecks ||
                             cardOracleChecks ||
                             cardFlavorChecks
-                        if (card.cardFaces) {
-                            for (const cardFace of card.cardFaces) {
-                                const cardFaceNameChecks = cardFace.name.toLowerCase().includes(query.q.toLowerCase())
-                                const cardFaceTypeLineChecks = cardFace.typeLine
-                                    .toLowerCase()
-                                    .includes(query.q.toLowerCase())
-                                const cardFaceOracleChecks = cardFace.description
-                                    .toLowerCase()
-                                    .includes(query.q.toLowerCase())
-                                const cardFaceFlavorChecks =
-                                    cardFace.flavorText?.toLowerCase().includes(query.q.toLowerCase()) || false
-                                checks =
-                                    checks ||
-                                    cardFaceNameChecks ||
-                                    cardFaceTypeLineChecks ||
-                                    cardFaceOracleChecks ||
-                                    cardFaceFlavorChecks
+                        for (const v of card.versions) {
+                            if (v.cardFaces) {
+                                for (const cardFace of v.cardFaces) {
+                                    const cardFaceNameChecks = cardFace.name
+                                        .toLowerCase()
+                                        .includes(query.q.toLowerCase())
+                                    const cardFaceTypeLineChecks = cardFace.typeLine
+                                        ?.toLowerCase()
+                                        .includes(query.q.toLowerCase())
+                                    const cardFaceOracleChecks = cardFace.oracleText
+                                        ?.toLowerCase()
+                                        .includes(query.q.toLowerCase())
+                                    const cardFaceFlavorChecks =
+                                        cardFace.flavorText?.toLowerCase().includes(query.q.toLowerCase()) || false
+                                    checks =
+                                        checks ||
+                                        cardFaceNameChecks ||
+                                        cardFaceTypeLineChecks ||
+                                        cardFaceOracleChecks ||
+                                        cardFaceFlavorChecks
+                                }
                             }
                         }
 
@@ -249,9 +260,13 @@ export const filterCards = <T extends MTG_Card>(
     if (rarityEntries.length > 0) {
         if (rarityEntries.length === 1) {
             if (isPositiveTB(rarityEntries[0][1])) {
-                remainingCards = remainingCards.filter((card) => card.rarity === rarityEntries[0][0])
+                remainingCards = remainingCards.filter((card) =>
+                    card.versions.some((v) => v.rarity === rarityEntries[0][0]),
+                )
             } else {
-                remainingCards = remainingCards.filter((card) => card.rarity !== rarityEntries[0][0])
+                remainingCards = remainingCards.filter(
+                    (card) => !card.versions.some((v) => v.rarity === rarityEntries[0][0]),
+                )
             }
         } else {
             const positiveRarities = rarityEntries.filter(([, value]) => isPositiveTB(value))
@@ -259,21 +274,21 @@ export const filterCards = <T extends MTG_Card>(
             // TODOS POSITIVOS
             if (positiveRarities.length === rarityEntries.length) {
                 remainingCards = remainingCards.filter((card) =>
-                    positiveRarities.some(([rarity]) => rarity === card.rarity),
+                    positiveRarities.some(([rarity]) => card.versions.some((v) => v.rarity === rarity)),
                 )
             }
             // TODOS NEGATIVOS
             else if (negativeRarities.length === rarityEntries.length) {
                 remainingCards = remainingCards.filter((card) =>
-                    negativeRarities.every(([rarity]) => rarity !== card.rarity),
+                    negativeRarities.every(([rarity]) => !card.versions.some((v) => v.rarity === rarity)),
                 )
             }
             // MIXTO
             else {
                 remainingCards = remainingCards.filter(
                     (card) =>
-                        positiveRarities.some(([rarity]) => rarity === card.rarity) &&
-                        negativeRarities.every(([rarity]) => rarity !== card.rarity),
+                        positiveRarities.some(([rarity]) => card.versions.some((v) => v.rarity === rarity)) &&
+                        negativeRarities.every(([rarity]) => !card.versions.some((v) => v.rarity === rarity)),
                 )
             }
         }
@@ -289,11 +304,11 @@ export const filterCards = <T extends MTG_Card>(
             const isInfinite = manaCostEntries[0][0] === 'infinite'
             if (isPositiveTB(manaCostEntries[0][1])) {
                 remainingCards = remainingCards.filter((card) =>
-                    isInfinite ? card.cmc > 9 : card.cmc === Number(manaCostEntries[0][0]),
+                    isInfinite ? card.CMC > 9 : card.CMC === Number(manaCostEntries[0][0]),
                 )
             } else {
                 remainingCards = remainingCards.filter((card) =>
-                    isInfinite ? card.cmc <= 9 : card.cmc !== Number(manaCostEntries[0][0]),
+                    isInfinite ? card.CMC <= 9 : card.CMC !== Number(manaCostEntries[0][0]),
                 )
             }
         } else {
@@ -304,7 +319,7 @@ export const filterCards = <T extends MTG_Card>(
                 remainingCards = remainingCards.filter((card) =>
                     positiveManaCosts.some(([manaCost]) => {
                         const isInfinite = manaCost === 'infinite'
-                        return isInfinite ? card.cmc > 9 : Number(manaCost) === card.cmc
+                        return isInfinite ? card.CMC > 9 : Number(manaCost) === card.CMC
                     }),
                 )
             }
@@ -313,7 +328,7 @@ export const filterCards = <T extends MTG_Card>(
                 remainingCards = remainingCards.filter((card) =>
                     negativeManaCosts.every(([manaCost]) => {
                         const isInfinite = manaCost === 'infinite'
-                        return isInfinite ? card.cmc <= 9 : Number(manaCost) !== card.cmc
+                        return isInfinite ? card.CMC <= 9 : Number(manaCost) !== card.CMC
                     }),
                 )
             }
@@ -323,11 +338,11 @@ export const filterCards = <T extends MTG_Card>(
                     (card) =>
                         positiveManaCosts.some(([manaCost]) => {
                             const isInfinite = manaCost === 'infinite'
-                            return isInfinite ? card.cmc > 9 : Number(manaCost) === card.cmc
+                            return isInfinite ? card.CMC > 9 : Number(manaCost) === card.CMC
                         }) &&
                         negativeManaCosts.every(([manaCost]) => {
                             const isInfinite = manaCost === 'infinite'
-                            return isInfinite ? card.cmc <= 9 : Number(manaCost) !== card.cmc
+                            return isInfinite ? card.CMC <= 9 : Number(manaCost) !== card.CMC
                         }),
                 )
             }
@@ -344,27 +359,35 @@ export const filterCards = <T extends MTG_Card>(
     if (setEntries.length > 0) {
         if (setEntries.length === 1) {
             if (isPositiveTB(setEntries[0][1])) {
-                remainingCards = remainingCards.filter((card) => card.set === setEntries[0][0])
+                remainingCards = remainingCards.filter((card) =>
+                    card.versions.some((v) => v.set.toLowerCase() === setEntries[0][0]),
+                )
             } else {
-                remainingCards = remainingCards.filter((card) => card.set !== setEntries[0][0])
+                remainingCards = remainingCards.filter(
+                    (card) => !card.versions.some((v) => v.set.toLowerCase() === setEntries[0][0]),
+                )
             }
         } else {
             const positiveSets = setEntries.filter(([, value]) => isPositiveTB(value))
             const negativeSets = setEntries.filter(([, value]) => isNegativeTB(value))
             // TODOS POSITIVOS
             if (positiveSets.length === setEntries.length) {
-                remainingCards = remainingCards.filter((card) => positiveSets.some(([set]) => set === card.set))
+                remainingCards = remainingCards.filter((card) =>
+                    positiveSets.some(([set]) => card.versions.some((v) => v.set.toLowerCase() === set)),
+                )
             }
             // TODOS NEGATIVOS
             else if (negativeSets.length === setEntries.length) {
-                remainingCards = remainingCards.filter((card) => negativeSets.every(([set]) => set !== card.set))
+                remainingCards = remainingCards.filter((card) =>
+                    negativeSets.every(([set]) => !card.versions.some((v) => v.set.toLowerCase() === set)),
+                )
             }
             // MIXTO
             else {
                 remainingCards = remainingCards.filter(
                     (card) =>
-                        positiveSets.some(([set]) => set === card.set) &&
-                        negativeSets.every(([set]) => set !== card.set),
+                        positiveSets.some(([set]) => card.versions.some((v) => v.set.toLowerCase() === set)) &&
+                        negativeSets.every(([set]) => !card.versions.some((v) => v.set.toLowerCase() === set)),
                 )
             }
         }
@@ -434,12 +457,28 @@ export const filterCards = <T extends MTG_Card>(
     }
 
     // Legality
-    if (filter.legalityFormat && filter.legalityValue) {
-        remainingCards = remainingCards.filter(
-            (card) =>
-                card.legalities[filter.legalityFormat!] &&
-                card.legalities[filter.legalityFormat!] === filter.legalityValue,
-        )
+    const legalityEntries = Object.entries(filter.legalities).filter(([, value]) =>
+        Object.values(value).some((v) => isNotUnsetTB(v)),
+    ) as [string, Record<string, TernaryBoolean>][]
+    if (legalityEntries.length > 0) {
+        for (const [format, legalityValues] of legalityEntries) {
+            const positiveLegalityValues = Object.entries(legalityValues).filter(([, value]) => isPositiveTB(value))
+            const negativeLegalityValues = Object.entries(legalityValues).filter(([, value]) => isNegativeTB(value))
+            if (positiveLegalityValues.length > 0) {
+                remainingCards = remainingCards.filter((card) =>
+                    positiveLegalityValues.every(([legalityValue]) =>
+                        card.versions.some((v) => v.legalities[format] === legalityValue),
+                    ),
+                )
+            }
+            if (negativeLegalityValues.length > 0) {
+                remainingCards = remainingCards.filter((card) =>
+                    negativeLegalityValues.every(
+                        ([legalityValue]) => !card.versions.some((v) => v.legalities[format] === legalityValue),
+                    ),
+                )
+            }
+        }
     }
 
     // Sort
@@ -461,13 +500,13 @@ export const filterCards = <T extends MTG_Card>(
     }
     const rarityToValue = (r: MTG_Rarity): number => {
         switch (r) {
-            case MTG_Rarity.COMMON:
+            case MTG_Rarity.common:
                 return 0
-            case MTG_Rarity.UNCOMMON:
+            case MTG_Rarity.uncommon:
                 return 1
-            case MTG_Rarity.RARE:
+            case MTG_Rarity.rare:
                 return 2
-            case MTG_Rarity.MYTHIC:
+            case MTG_Rarity.mythic:
                 return 3
         }
     }
@@ -518,11 +557,12 @@ export const filterCards = <T extends MTG_Card>(
                     case SortEnum.NAME:
                         return (c: MTG_Card) => (c.name.startsWith('A-') ? c.name.slice(2) + '2' : c.name)
                     case SortEnum.CMC:
-                        return (c: MTG_Card) => c.cmc
+                        return (c: MTG_Card) => c.CMC
                     case SortEnum.COLOR:
                         return ['colorIdentity.length', (c: MTG_Card) => c.colorIdentity.map(colorToValue).join('')]
                     case SortEnum.RARITY:
-                        return (c: MTG_Card) => rarityToValue(c.rarity)
+                        return (c: MTG_Card) =>
+                            c.versions.map((v) => rarityToValue(v.rarity)).reduce((acc, curr) => acc + curr, 0)
                     case SortEnum.TYPE:
                         return (c: MTG_Card) => {
                             const types: Record<string, boolean> = {}
@@ -535,9 +575,16 @@ export const filterCards = <T extends MTG_Card>(
                             }, 0)
                         }
                     case SortEnum.SET:
-                        return (c: MTG_Card) => expansions.find((e) => e.set.toLowerCase() === c.set)?.releasedAt
+                        return (c: MTG_Card) =>
+                            expansions.find((e) => c.versions.some((v) => v.set.toLowerCase() === e.set.toLowerCase()))
+                                ?.releasedAt
                     case SortEnum.RELEASED_AT:
-                        return (c: MTG_Card) => new Date(c.releasedAt).getTime()
+                        // If sort direction is asc, return the earliest release date
+                        // If sort direction is desc, return the latest release date
+                        return (c: MTG_Card) =>
+                            s.sortDirection === SortDirection.ASC
+                                ? Math.min(...c.versions.map((v) => new Date(v.releasedAt).getTime()))
+                                : Math.max(...c.versions.map((v) => new Date(v.releasedAt).getTime()))
                 }
             })
             .flat(),
@@ -549,7 +596,6 @@ export const filterCards = <T extends MTG_Card>(
 
 const calculateQuery = (
     s: string,
-    cards: MTG_Card[],
 ):
     | {
           q: string
@@ -568,19 +614,10 @@ const calculateQuery = (
       } => {
     if (s.includes('set:')) {
         const q = s.split('set:')[1].trim()
-        const sets = Array.from(new Set(cards.map((c) => [c.set.toLowerCase(), c.setName.toLowerCase()]).flat()))
-        if (sets.filter((s) => s === q.toLowerCase().substring(q.startsWith('!') ? 1 : 0)).length > 0) {
-            return {
-                q: q.startsWith('!') ? q.substring(1) : q,
-                t: 'Set',
-                not: q.startsWith('!'),
-            }
-        } else {
-            return {
-                q: q.startsWith('!') ? q.substring(1) : q,
-                t: 'Set',
-                not: q.startsWith('!'),
-            }
+        return {
+            q: q.startsWith('!') ? q.substring(1) : q,
+            t: 'Set',
+            not: q.startsWith('!'),
         }
     }
 
@@ -672,18 +709,18 @@ const convertToRarity = (r: string): MTG_Rarity => {
     switch (r) {
         case 'common':
         case 'c':
-            return MTG_Rarity.COMMON
+            return MTG_Rarity.common
         case 'uncommon':
         case 'u':
-            return MTG_Rarity.UNCOMMON
+            return MTG_Rarity.uncommon
         case 'rare':
         case 'r':
-            return MTG_Rarity.RARE
+            return MTG_Rarity.rare
         case 'mythic':
         case 'm':
-            return MTG_Rarity.MYTHIC
+            return MTG_Rarity.mythic
         default:
-            return MTG_Rarity.COMMON
+            return MTG_Rarity.common
     }
 }
 

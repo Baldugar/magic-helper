@@ -3,7 +3,6 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import './App.css'
 import { MTGCardsProvider } from './context/MTGA/Cards/MTGCardsProvider'
 import { MTGDecksProvider } from './context/MTGA/Decks/MTGDecksProvider'
-import { SystemProvider } from './context/MTGA/System/SystemProvider'
 import { DeckCreatorWrapper } from './pages/DeckCreator/DeckCreator'
 import { DeckList } from './pages/DeckList/DeckList'
 
@@ -27,13 +26,11 @@ function WrappedApp() {
 
 function App() {
     return (
-        <SystemProvider>
-            <MTGCardsProvider>
-                <MTGDecksProvider>
-                    <WrappedApp />
-                </MTGDecksProvider>
-            </MTGCardsProvider>
-        </SystemProvider>
+        <MTGCardsProvider>
+            <MTGDecksProvider>
+                <WrappedApp />
+            </MTGDecksProvider>
+        </MTGCardsProvider>
     )
 }
 

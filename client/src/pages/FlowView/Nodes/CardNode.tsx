@@ -31,6 +31,10 @@ export const CardNode = (props: CardNodeProps) => {
     const { setNodes, addNodes, getNodes, updateNode } = useReactFlow<NodeType>()
     const { anchorRef, handleClick, handleClose, handleContextMenu, open } = useContextMenu<HTMLDivElement>()
 
+    const selectedVersion =
+        card.card.versions.find((v) => v.set === card.selectedSet) || card.card.versions.find((v) => v.isDefault)
+    if (!selectedVersion) return null
+
     const options: ContextMenuOption[] = [
         {
             label: 'Delete',
@@ -54,7 +58,7 @@ export const CardNode = (props: CardNodeProps) => {
                 addNodes([
                     {
                         data: {
-                            card: card.card,
+                            card: card,
                             index: card.phantoms.length,
                             onDelete: handleDeletePhantom,
                             phantomOf: card.card.ID,
@@ -147,7 +151,7 @@ export const CardNode = (props: CardNodeProps) => {
         <>
             <div ref={anchorRef} onContextMenu={handleContextMenu}>
                 <img
-                    src={getCorrectCardImage(card.card, 'normal')}
+                    src={getCorrectCardImage(selectedVersion, card.card.layout, 'normal')}
                     alt={card.card.name}
                     width={100}
                     style={{ borderRadius: 5 }}

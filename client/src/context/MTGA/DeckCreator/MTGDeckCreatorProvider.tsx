@@ -1,12 +1,16 @@
 import { ReactNode, useEffect, useState } from 'react'
 import { MainOrSide, MTG_Card, MTG_Deck, MTG_DeckCard, MTG_DeckCardType, Position } from '../../../graphql/types'
+import { singleSetSelected } from '../../../utils/functions/filterFunctions'
 import { uuidv4 } from '../../../utils/functions/IDFunctions'
 import { findNextAvailablePosition } from '../../../utils/functions/nodeFunctions'
 import { useMTGDecks } from '../Decks/useMTGDecks'
+import { useMTGFilter } from '../Filter/useMTGFilter'
 import { MTGDeckCreatorContext } from './MTGDeckCreatorContext'
 
 export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNode; deckID: string | undefined }) => {
     const { decks } = useMTGDecks()
+    const { filter } = useMTGFilter()
+    const set = singleSetSelected(filter)
 
     const [deck, setDeck] = useState<MTG_Deck>()
     const [openDrawer, setOpenDrawer] = useState(false)
@@ -33,13 +37,14 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
                 // Remove the previous commander
                 newDeck.cards = newDeck.cards.filter((c) => c.deckCardType !== MTG_DeckCardType.COMMANDER)
                 // Add the new commander
-                const cardToReturn = {
+                const cardToReturn: MTG_DeckCard = {
                     card,
                     count: 1,
                     deckCardType: MTG_DeckCardType.COMMANDER,
                     mainOrSide: MainOrSide.MAIN,
                     position: position || { x: 0, y: 0 },
                     phantoms: [],
+                    selectedSet: set,
                 }
                 newDeck.cards.push(cardToReturn)
                 setSelectingCommander(false)
@@ -58,6 +63,7 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
                         mainOrSide: deckTab,
                         position: position || nextAvailableSpot,
                         phantoms: [],
+                        selectedSet: set,
                     }
                     newDeck.cards.push(cardToReturn)
                 }
@@ -114,9 +120,6 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
                 if (deckCard.deckCardType === MTG_DeckCardType.COMMANDER) {
                     newDeck.cards = newDeck.cards.filter((c) => c.deckCardType !== MTG_DeckCardType.COMMANDER)
                 }
-                if (deckCard.deckCardType === MTG_DeckCardType.COMPANION) {
-                    newDeck.cards = newDeck.cards.filter((c) => c.deckCardType !== MTG_DeckCardType.COMPANION)
-                }
                 break
             case MainOrSide.SIDEBOARD:
                 if (deckCard.deckCardType === MTG_DeckCardType.NORMAL) {
@@ -141,16 +144,10 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
         const isCommander = deck.cards.find(
             (c) => c.card.ID === card.ID && c.deckCardType === MTG_DeckCardType.COMMANDER,
         )
-        const isCompanion = deck.cards.find(
-            (c) => c.card.ID === card.ID && c.deckCardType === MTG_DeckCardType.COMPANION,
-        )
         switch (deckTab) {
             case MainOrSide.MAIN:
                 if (isCommander) {
                     newDeck.cards = newDeck.cards.filter((c) => c.deckCardType !== MTG_DeckCardType.COMMANDER)
-                }
-                if (isCompanion) {
-                    newDeck.cards = newDeck.cards.filter((c) => c.deckCardType !== MTG_DeckCardType.COMPANION)
                 }
                 newDeck.cards = newDeck.cards.filter(
                     (c) => !(c.card.ID === card.ID && c.mainOrSide === MainOrSide.MAIN),

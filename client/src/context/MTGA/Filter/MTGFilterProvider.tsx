@@ -1,16 +1,14 @@
 import { cloneDeep } from 'lodash'
 import { ReactNode, useEffect, useState } from 'react'
 import getMTGAFilters from '../../../graphql/MTGA/queries/getMTGFilters'
-import { Query, QuerygetMTGFiltersArgs } from '../../../graphql/types'
+import { Query } from '../../../graphql/types'
 import { TernaryBoolean } from '../../../types/ternaryBoolean'
 import { fetchData } from '../../../utils/functions/fetchData'
-import { useSystem } from '../System/useSystem'
 import { initialMTGFilter, MTGFilterContext, MTGFilterType, SortDirection, SortEnum } from './MTGFilterContext'
 
 export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
     const [filter, setFilter] = useState<MTGFilterType>(initialMTGFilter)
     const [originalFilter, setOriginalFilter] = useState<MTGFilterType>(initialMTGFilter)
-    const { list } = useSystem()
 
     const [sort, setSort] = useState(
         Object.values(SortEnum).map((key) => ({
@@ -23,7 +21,7 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         if (Object.keys(filter.cardTypes).length) return
-        fetchData<Query, QuerygetMTGFiltersArgs>(getMTGAFilters, { list }).then((data) => {
+        fetchData<Query>(getMTGAFilters).then((data) => {
             if (!data) throw new Error('No data from getMTGFilters')
             const result = data.data.getMTGFilters
             setFilter((prev) => {
@@ -45,15 +43,19 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
                 }
                 for (const key of result.legality.formats) {
                     prev.legalityFormats.push(key)
+                    prev.legalities[key] = {}
                 }
                 for (const key of result.legality.legalityValues) {
                     prev.legalityValues.push(key)
+                    for (const format of result.legality.formats) {
+                        prev.legalities[format][key] = TernaryBoolean.UNSET
+                    }
                 }
                 setOriginalFilter({ ...prev })
                 return { ...prev }
             })
         })
-    }, [filter.cardTypes, list])
+    }, [filter.cardTypes])
 
     const clearFilter = () => {
         setFilter(originalFilter)

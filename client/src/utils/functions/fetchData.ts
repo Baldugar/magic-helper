@@ -6,9 +6,7 @@ import {
     MutationsaveMTGDeckAsCopyArgs,
     MutationupdateMTGDeckArgs,
     Query,
-    QuerygetMTGCardsArgs,
     QuerygetMTGDecksArgs,
-    QuerygetMTGFiltersArgs,
 } from '../../graphql/types'
 import { getGraphQLServerURI } from './getEnvConfig'
 
@@ -22,7 +20,7 @@ export interface FetchError {
     path: string[]
 }
 type VariablesFor<Result> = Result extends { __typename?: 'Query' }
-    ? QuerygetMTGDecksArgs | QuerygetMTGCardsArgs | QuerygetMTGFiltersArgs | undefined
+    ? QuerygetMTGDecksArgs | undefined
     : Result extends { __typename?: 'Mutation' }
     ?
           | MutationcreateMTGDeckArgs
@@ -32,9 +30,9 @@ type VariablesFor<Result> = Result extends { __typename?: 'Query' }
           | undefined
     : never
 
-export const fetchData = async <Result = Query | Mutation, Variables = VariablesFor<Result>>(
+export const fetchData = async <Result = Query | Mutation, Variables = VariablesFor<Result> | undefined>(
     query: DocumentNode,
-    variables: Variables,
+    variables?: Variables,
 ): Promise<FetchResult<Result> | undefined> => {
     if (!query.loc) return
 

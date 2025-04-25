@@ -246,7 +246,7 @@ export const organizeNodes = (
         } as Node<CardNodeData>)
         for (const p of card.phantoms) {
             const phantomNodeData: PhantomNodeData = {
-                card: card.card,
+                card: card,
                 phantomOf: card.card.ID,
                 position: p.position,
                 onDelete: onDeletePhantom,
@@ -300,6 +300,7 @@ export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTG_DeckCar
 
         cardMap.set(cardId, {
             card: cardId,
+            selectedSet: card.selectedSet,
             count: currentCard?.count || 1,
             position,
             phantoms,
@@ -316,6 +317,7 @@ export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTG_DeckCar
         if (!cardMap.has(cardId)) {
             cardMap.set(cardId, {
                 card: cardId,
+                selectedSet: currentCard.selectedSet,
                 count: currentCard.count,
                 position: currentCard.position ?? { x: 0, y: 0 },
                 phantoms: currentCard.phantoms ?? [],

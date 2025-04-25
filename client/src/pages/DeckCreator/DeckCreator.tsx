@@ -13,7 +13,6 @@ import { useMTGDeckCreatorPagination } from '../../context/MTGA/DeckCreatorPagin
 import { useMTGDecks } from '../../context/MTGA/Decks/useMTGDecks'
 import { MTGAFilterProvider } from '../../context/MTGA/Filter/MTGFilterProvider'
 import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
-import { useSystem } from '../../context/MTGA/System/useSystem'
 import { MTGFunctions } from '../../graphql/MTGA/functions'
 import { MTG_UpdateDeckInput } from '../../graphql/types'
 import { PAGE_SIZE } from '../../utils/constants'
@@ -42,7 +41,6 @@ export const DeckCreator = () => {
     const { loadLocalStoreFilter, saveLocalStoreFilter } = useLocalStoreFilter()
     const { clearFilter } = useMTGFilter()
     const { getNodes } = useReactFlow()
-    const { list } = useSystem()
     const {
         mutations: { updateMTGDeck: updateMTGADeck },
     } = MTGFunctions
@@ -61,11 +59,9 @@ export const DeckCreator = () => {
             cards: calculateCardsFromNodes(nodes, deck.cards),
             deckID: deck.ID,
             name: deck.name,
-            type: deck.type,
             zones: calculateZonesFromNodes(nodes),
             cardFrontImage: deck.cardFrontImage,
             ignoredCards: deck.ignoredCards,
-            list,
         }
         updateMTGADeck(deckInput).then((deck) => {
             updateDeck(deck)
@@ -177,15 +173,15 @@ export const DeckCreatorWrapper = () => {
 
     return (
         <ReactFlowProvider>
-            <MTGDeckCreatorProvider deckID={deckID}>
-                <DndProvider>
-                    <MTGAFilterProvider>
+            <MTGAFilterProvider>
+                <MTGDeckCreatorProvider deckID={deckID}>
+                    <DndProvider>
                         <MTGDeckCreatorPaginationProvider>
                             <DeckCreator />
                         </MTGDeckCreatorPaginationProvider>
-                    </MTGAFilterProvider>
-                </DndProvider>
-            </MTGDeckCreatorProvider>
+                    </DndProvider>
+                </MTGDeckCreatorProvider>
+            </MTGAFilterProvider>
         </ReactFlowProvider>
     )
 }

@@ -11,6 +11,5 @@ enum MainOrSide {
 
 enum MTG_DeckCardType {
     NORMAL
-    COMPANION
     COMMANDER
 }

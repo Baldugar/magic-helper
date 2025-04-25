@@ -12,18 +12,18 @@ import (
 )
 
 // GetMTGCards is the resolver for the getMTGCards field.
-func (r *queryResolver) GetMTGCards(ctx context.Context, list model.MtgCardListType) ([]*model.MtgCard, error) {
-	return mtg.GetMTGCards(ctx, list)
+func (r *queryResolver) GetMTGCards(ctx context.Context) ([]*model.MtgCard, error) {
+	return mtg.GetMTGCards(ctx)
 }
 
 // GetMTGFilters is the resolver for the getMTGFilters field.
-func (r *queryResolver) GetMTGFilters(ctx context.Context, list model.MtgCardListType) (*model.MtgFilterEntries, error) {
-	return mtg.GetMTGFilters(ctx, list)
+func (r *queryResolver) GetMTGFilters(ctx context.Context) (*model.MtgFilterEntries, error) {
+	return mtg.GetMTGFilters(ctx)
 }
 
 // GetMTGDecks is the resolver for the getMTGDecks field.
-func (r *queryResolver) GetMTGDecks(ctx context.Context, list model.MtgCardListType, deckID *string) ([]*model.MtgDeck, error) {
-	return mtg.GetMTGDecks(ctx, list, deckID)
+func (r *queryResolver) GetMTGDecks(ctx context.Context, deckID *string) ([]*model.MtgDeck, error) {
+	return mtg.GetMTGDecks(ctx, deckID)
 }
 
 // Query returns gentypes.QueryResolver implementation.

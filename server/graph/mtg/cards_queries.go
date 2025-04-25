@@ -9,7 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func GetMTGCards(ctx context.Context, list model.MtgCardListType) ([]*model.MtgCard, error) {
+func GetMTGCards(ctx context.Context) ([]*model.MtgCard, error) {
 	log.Info().Msg("GetMTGCards: Started")
 
 	aq := arango.NewQuery( /* aql */ `
@@ -18,9 +18,6 @@ func GetMTGCards(ctx context.Context, list model.MtgCardListType) ([]*model.MtgC
 	`)
 
 	col := arango.MTG_CARDS_COLLECTION
-	if list == model.MtgCardListTypeMtga {
-		col = arango.MTGA_CARDS_COLLECTION
-	}
 
 	aq.AddBindVar("@collection", col)
 
@@ -46,7 +43,7 @@ func GetMTGCards(ctx context.Context, list model.MtgCardListType) ([]*model.MtgC
 	return cards, nil
 }
 
-func GetMTGFilters(ctx context.Context, list model.MtgCardListType) (*model.MtgFilterEntries, error) {
+func GetMTGFilters(ctx context.Context) (*model.MtgFilterEntries, error) {
 	log.Info().Msg("GetMTGFilters: Started")
 
 	// Query ArangoDB to get all typeLines
@@ -59,9 +56,6 @@ func GetMTGFilters(ctx context.Context, list model.MtgCardListType) (*model.MtgF
     `)
 
 	col := arango.MTG_CARDS_COLLECTION
-	if list == model.MtgCardListTypeMtga {
-		col = arango.MTGA_CARDS_COLLECTION
-	}
 
 	aq.AddBindVar("@collection", col)
 
@@ -132,7 +126,7 @@ func GetMTGFilters(ctx context.Context, list model.MtgCardListType) (*model.MtgF
 	}
 
 	// Fetch expansions (set and setName)
-	expansionsFilter, err := GetMTGExpansions(ctx, list)
+	expansionsFilter, err := GetMTGExpansions(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +134,7 @@ func GetMTGFilters(ctx context.Context, list model.MtgCardListType) (*model.MtgF
 	filterEntries.Expansions = expansionsFilter
 
 	// Fetch legalities (formats and legalityValues)
-	legalitiesFilter, err := GetMTGLegalities(ctx, list)
+	legalitiesFilter, err := GetMTGLegalities(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +146,7 @@ func GetMTGFilters(ctx context.Context, list model.MtgCardListType) (*model.MtgF
 }
 
 // GetMTGExpansions fetches distinct expansions (set and setName) from the database
-func GetMTGExpansions(ctx context.Context, list model.MtgCardListType) ([]*model.MtgFilterExpansion, error) {
+func GetMTGExpansions(ctx context.Context) ([]*model.MtgFilterExpansion, error) {
 	log.Info().Msg("GetMTGExpansions: Started")
 
 	// AQL query to fetch distinct sets and setNames
@@ -160,7 +154,8 @@ func GetMTGExpansions(ctx context.Context, list model.MtgCardListType) ([]*model
         FOR card IN @@collection
 			LET setRecord = DOCUMENT(@@setsCollection, card.set)
 			// FILTER DATE_ADD(DATE_NOW(), 1, "week") >= DATE_TIMESTAMP(setRecord.releasedAt)
-            COLLECT set = card.set, setName = card.setName
+			FOR cv IN card.versions
+	            COLLECT set = cv.set, setName = cv.setName
 			LET setRecord = DOCUMENT(@@setsCollection, set)
             RETURN {
                 set: UPPER(set),
@@ -171,9 +166,6 @@ func GetMTGExpansions(ctx context.Context, list model.MtgCardListType) ([]*model
     `)
 
 	col := arango.MTG_CARDS_COLLECTION
-	if list == model.MtgCardListTypeMtga {
-		col = arango.MTGA_CARDS_COLLECTION
-	}
 
 	aq.AddBindVar("@collection", col)
 	aq.AddBindVar("@setsCollection", arango.MTG_SETS_COLLECTION)
@@ -201,13 +193,13 @@ func GetMTGExpansions(ctx context.Context, list model.MtgCardListType) ([]*model
 }
 
 // GetMTGLegalities fetches all legality formats and statuses, then performs aggregation in Go
-func GetMTGLegalities(ctx context.Context, list model.MtgCardListType) (*model.MtgFilterLegality, error) {
+func GetMTGLegalities(ctx context.Context) (*model.MtgFilterLegality, error) {
 	log.Info().Msg("GetMTGLegalities: Started")
 
 	// AQL query to fetch legality formats and statuses for all cards
 	aq := arango.NewQuery( /* aql */ `
         FOR card IN @@collection
-            LET legalities = card.legalities
+            LET legalities = FIRST(card.versions).legalities
             FOR legalityFormat IN ATTRIBUTES(legalities)
                 LET legalityStatus = legalities[legalityFormat]
                 RETURN {
@@ -217,9 +209,6 @@ func GetMTGLegalities(ctx context.Context, list model.MtgCardListType) (*model.M
     `)
 
 	col := arango.MTG_CARDS_COLLECTION
-	if list == model.MtgCardListTypeMtga {
-		col = arango.MTGA_CARDS_COLLECTION
-	}
 
 	aq.AddBindVar("@collection", col)
 

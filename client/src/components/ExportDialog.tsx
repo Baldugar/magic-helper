@@ -13,24 +13,17 @@ export const ExportDialog = () => {
         if (!deck) return ''
         const { cards } = deck
         const commander = cards.find((c) => c.deckCardType === MTG_DeckCardType.COMMANDER)
-        const companion = cards.find((c) => c.deckCardType === MTG_DeckCardType.COMPANION)
         const rest = cards.filter((c) => c.deckCardType === MTG_DeckCardType.NORMAL)
 
         let exportString = ''
         if (commander) {
             exportString += `Commander\n1 ${nameForExport(commander.card.name)}\n\n`
         }
-        if (companion) {
-            exportString += `Companion\n1 ${nameForExport(companion.card.name)}\n\n`
-        }
         if (rest.length) {
             exportString += 'Deck\n'
             rest.forEach((c) => {
                 exportString += `${c.count} ${nameForExport(c.card.name)}\n`
             })
-        }
-        if (companion) {
-            exportString += `\nSideboard\n1 ${nameForExport(companion.card.name)}\n`
         }
         return exportString
     }

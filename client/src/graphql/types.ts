@@ -39,51 +39,68 @@ export type FlowZoneInput = {
   width: Scalars['Float']['input'];
 };
 
-export type MTG_Card = MTG_CommonFields & {
+export type MTG_Card = {
   __typename?: 'MTG_Card';
+  CMC: Scalars['Float']['output'];
+  EDHRecRank?: Maybe<Scalars['Int']['output']>;
   ID: Scalars['ID']['output'];
-  cardFaces?: Maybe<Array<MTG_CardFace>>;
-  cmc: Scalars['Int']['output'];
   colorIdentity: Array<MTG_Color>;
+  colorIndicator?: Maybe<Array<Scalars['String']['output']>>;
   colors?: Maybe<Array<MTG_Color>>;
-  description?: Maybe<Scalars['String']['output']>;
-  flavorText?: Maybe<Scalars['String']['output']>;
-  image?: Maybe<MTG_Image>;
-  layout: Scalars['String']['output'];
-  legalities: Scalars['Map']['output'];
+  keywords: Array<Scalars['String']['output']>;
+  layout: MTG_Layout;
   loyalty?: Maybe<Scalars['String']['output']>;
   manaCost?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
+  oracleText?: Maybe<Scalars['String']['output']>;
   power?: Maybe<Scalars['String']['output']>;
   producedMana?: Maybe<Array<MTG_Color>>;
-  rarity: MTG_Rarity;
-  releasedAt: Scalars['String']['output'];
-  scryfallURL: Scalars['String']['output'];
-  set: Scalars['String']['output'];
-  setName: Scalars['String']['output'];
   toughness?: Maybe<Scalars['String']['output']>;
   typeLine: Scalars['String']['output'];
+  versions: Array<MTG_CardVersion>;
 };
 
-export type MTG_CardFace = MTG_CommonFields & {
+export type MTG_CardFace = {
   __typename?: 'MTG_CardFace';
+  CMC?: Maybe<Scalars['Float']['output']>;
+  artist?: Maybe<Scalars['String']['output']>;
+  colorIndicator?: Maybe<Array<Scalars['String']['output']>>;
   colors?: Maybe<Array<MTG_Color>>;
-  description: Scalars['String']['output'];
   flavorText?: Maybe<Scalars['String']['output']>;
-  image?: Maybe<MTG_Image>;
+  imageUris?: Maybe<MTG_Image>;
+  layout?: Maybe<MTG_Layout>;
   loyalty?: Maybe<Scalars['String']['output']>;
   manaCost: Scalars['String']['output'];
   name: Scalars['String']['output'];
+  oracleText?: Maybe<Scalars['String']['output']>;
   power?: Maybe<Scalars['String']['output']>;
-  producedMana?: Maybe<Array<MTG_Color>>;
   toughness?: Maybe<Scalars['String']['output']>;
-  typeLine: Scalars['String']['output'];
+  typeLine?: Maybe<Scalars['String']['output']>;
 };
 
-export enum MTG_CardListType {
-  MTG = 'MTG',
-  MTGA = 'MTGA'
-}
+export type MTG_CardVersion = {
+  __typename?: 'MTG_CardVersion';
+  ID: Scalars['ID']['output'];
+  artist?: Maybe<Scalars['String']['output']>;
+  cardFaces?: Maybe<Array<MTG_CardFace>>;
+  flavorName?: Maybe<Scalars['String']['output']>;
+  flavorText?: Maybe<Scalars['String']['output']>;
+  games: Array<MTG_Game>;
+  imageUris?: Maybe<MTG_Image>;
+  isAlchemy: Scalars['Boolean']['output'];
+  isDefault: Scalars['Boolean']['output'];
+  lang: Scalars['String']['output'];
+  legalities: Scalars['Map']['output'];
+  rarity: MTG_Rarity;
+  releasedAt: Scalars['String']['output'];
+  reprint: Scalars['Boolean']['output'];
+  set: Scalars['String']['output'];
+  setID: Scalars['String']['output'];
+  setName: Scalars['String']['output'];
+  setType: Scalars['String']['output'];
+  variation: Scalars['Boolean']['output'];
+  variationOf?: Maybe<Scalars['String']['output']>;
+};
 
 export enum MTG_Color {
   B = 'B',
@@ -94,22 +111,8 @@ export enum MTG_Color {
   W = 'W'
 }
 
-export type MTG_CommonFields = {
-  colors?: Maybe<Array<MTG_Color>>;
-  flavorText?: Maybe<Scalars['String']['output']>;
-  image?: Maybe<MTG_Image>;
-  loyalty?: Maybe<Scalars['String']['output']>;
-  name: Scalars['String']['output'];
-  power?: Maybe<Scalars['String']['output']>;
-  producedMana?: Maybe<Array<MTG_Color>>;
-  toughness?: Maybe<Scalars['String']['output']>;
-  typeLine: Scalars['String']['output'];
-};
-
 export type MTG_CreateDeckInput = {
-  list: MTG_CardListType;
   name: Scalars['String']['input'];
-  type: DeckType;
 };
 
 export type MTG_Deck = {
@@ -118,9 +121,7 @@ export type MTG_Deck = {
   cardFrontImage?: Maybe<Scalars['String']['output']>;
   cards: Array<MTG_DeckCard>;
   ignoredCards: Array<Scalars['String']['output']>;
-  list: MTG_CardListType;
   name: Scalars['String']['output'];
-  type: DeckType;
   zones: Array<FlowZone>;
 };
 
@@ -132,6 +133,7 @@ export type MTG_DeckCard = {
   mainOrSide: MainOrSide;
   phantoms: Array<Phantom>;
   position: Position;
+  selectedSet?: Maybe<Scalars['String']['output']>;
 };
 
 export type MTG_DeckCardInput = {
@@ -142,17 +144,16 @@ export type MTG_DeckCardInput = {
   mainOrSide: MainOrSide;
   phantoms: Array<PhantomInput>;
   position: PositionInput;
+  selectedSet?: InputMaybe<Scalars['String']['input']>;
 };
 
 export enum MTG_DeckCardType {
   COMMANDER = 'COMMANDER',
-  COMPANION = 'COMPANION',
   NORMAL = 'NORMAL'
 }
 
 export type MTG_DeleteDeckInput = {
   deckID: Scalars['ID']['input'];
-  list: MTG_CardListType;
 };
 
 export type MTG_Filter_CardTypes = {
@@ -182,35 +183,54 @@ export type MTG_Filter_Legality = {
   legalityValues: Array<Scalars['String']['output']>;
 };
 
+export enum MTG_Game {
+  arena = 'arena',
+  mtgo = 'mtgo',
+  paper = 'paper'
+}
+
 export type MTG_Image = {
   __typename?: 'MTG_Image';
+  PNG: Scalars['String']['output'];
   artCrop: Scalars['String']['output'];
   borderCrop: Scalars['String']['output'];
   large: Scalars['String']['output'];
   normal: Scalars['String']['output'];
-  png: Scalars['String']['output'];
   small: Scalars['String']['output'];
 };
 
 export enum MTG_Layout {
-  ADVENTURE = 'ADVENTURE',
-  CASE = 'CASE',
-  CLASS = 'CLASS',
-  MELD = 'MELD',
-  MODAL_DFC = 'MODAL_DFC',
-  MUTATE = 'MUTATE',
-  NORMAL = 'NORMAL',
-  PROTOTYPE = 'PROTOTYPE',
-  SAGA = 'SAGA',
-  SPLIT = 'SPLIT',
-  TRANSFORM = 'TRANSFORM'
+  adventure = 'adventure',
+  art_series = 'art_series',
+  augment = 'augment',
+  battle = 'battle',
+  case = 'case',
+  class = 'class',
+  double_faced_token = 'double_faced_token',
+  emblem = 'emblem',
+  flip = 'flip',
+  host = 'host',
+  leveler = 'leveler',
+  meld = 'meld',
+  modal_dfc = 'modal_dfc',
+  mutate = 'mutate',
+  normal = 'normal',
+  planar = 'planar',
+  prototype = 'prototype',
+  reversible_card = 'reversible_card',
+  saga = 'saga',
+  scheme = 'scheme',
+  split = 'split',
+  token = 'token',
+  transform = 'transform',
+  vanguard = 'vanguard'
 }
 
 export enum MTG_Rarity {
-  COMMON = 'COMMON',
-  MYTHIC = 'MYTHIC',
-  RARE = 'RARE',
-  UNCOMMON = 'UNCOMMON'
+  common = 'common',
+  mythic = 'mythic',
+  rare = 'rare',
+  uncommon = 'uncommon'
 }
 
 export type MTG_UpdateDeckInput = {
@@ -218,9 +238,7 @@ export type MTG_UpdateDeckInput = {
   cards: Array<MTG_DeckCardInput>;
   deckID: Scalars['ID']['input'];
   ignoredCards: Array<Scalars['String']['input']>;
-  list: MTG_CardListType;
   name: Scalars['String']['input'];
-  type: DeckType;
   zones: Array<FlowZoneInput>;
 };
 
@@ -287,19 +305,8 @@ export type Query = {
 };
 
 
-export type QuerygetMTGCardsArgs = {
-  list: MTG_CardListType;
-};
-
-
 export type QuerygetMTGDecksArgs = {
   deckID?: InputMaybe<Scalars['ID']['input']>;
-  list: MTG_CardListType;
-};
-
-
-export type QuerygetMTGFiltersArgs = {
-  list: MTG_CardListType;
 };
 
 export type Response = {

@@ -14,14 +14,18 @@ export type DeckCardProps = {
     commander?: MTG_DeckCard
 }
 
-export const DeckCard = (props: DeckCardProps): JSX.Element => {
+export const DeckCard = (props: DeckCardProps): JSX.Element | null => {
     const { deckCard, addOne, removeCard, removeOne, commander } = props
     const { card } = deckCard
 
     const [hover, setHover] = useState(false)
 
-    const normal = getCorrectCardImage(card, 'normal')
-    const otherNormal = getCorrectCardImage(card, 'normal', true)
+    const selectedVersion =
+        card.versions.find((v) => v.set === deckCard.selectedSet) || card.versions.find((v) => v.isDefault)
+    if (!selectedVersion) return null
+
+    const normal = getCorrectCardImage(selectedVersion, card.layout, 'normal')
+    const otherNormal = getCorrectCardImage(selectedVersion, card.layout, 'normal', true)
 
     const outline = matchesCommanderColorIdentity(deckCard, commander) ? undefined : '4px solid red'
 
@@ -34,7 +38,7 @@ export const DeckCard = (props: DeckCardProps): JSX.Element => {
                 paddingX={2}
                 alignItems={'center'}
                 sx={{
-                    backgroundImage: `url(${getCorrectCardImage(deckCard.card, 'artCrop')})`,
+                    backgroundImage: `url(${getCorrectCardImage(selectedVersion, card.layout, 'artCrop')})`,
                     backgroundSize: 'cover',
                     backgroundPositionY: '15%',
                     border: outline,

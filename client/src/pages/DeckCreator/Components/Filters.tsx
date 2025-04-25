@@ -13,6 +13,7 @@ import {
 } from '@mui/material'
 import { MouseEvent, useState } from 'react'
 import { CMCSelector } from '../../../components/FilterSelectors/CMCSelector'
+import LegalitySelector from '../../../components/FilterSelectors/LegalitySelector'
 import ManaSelector from '../../../components/FilterSelectors/ManaSelector'
 import RaritySelector from '../../../components/FilterSelectors/RaritySelector'
 import SetSelector from '../../../components/FilterSelectors/SetSelector'
@@ -198,6 +199,22 @@ export const Filters = () => {
                     return acc
                 }, {} as Record<string, TernaryBoolean>)}
                 iconSize={30}
+            />
+            <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
+            <LegalitySelector
+                selected={filter.legalities}
+                onSelect={(format, legalityValue, value) => {
+                    setFilter({
+                        ...filter,
+                        legalities: {
+                            ...filter.legalities,
+                            [format]: {
+                                ...filter.legalities[format],
+                                [legalityValue]: value,
+                            },
+                        },
+                    })
+                }}
             />
             <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
             <SortSelector />

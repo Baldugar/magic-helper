@@ -8,7 +8,7 @@ export const CARD_SIZE_VALUES: {
     large: { width: 672, height: 936 },
     normal: { width: 488, height: 680 },
     small: { width: 146, height: 204 },
-    png: { width: 745, height: 1040 },
+    PNG: { width: 745, height: 1040 },
 }
 
 export const PAGE_SIZE = 50

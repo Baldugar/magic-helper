@@ -7,7 +7,7 @@ cp gqlgen.yml gqlgen_temp.yml
 TEMP_FILE=$(mktemp)
 
 # Find all .graphqls files in the graphql directory but exclude .history and its subdirectories
-find ../graphql -name "*.graphqls" ! -path "../graphql/.history*" ! -name "fragment.graphqls" > $TEMP_FILE
+find ../graphql -name "*.graphqls" ! -path "../graphql/.history*" ! -name "fragment.graphqls" ! -name "unified.graphqls" > $TEMP_FILE
 
 printf "Found the following .graphqls files:\n"
 cat $TEMP_FILE

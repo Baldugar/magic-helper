@@ -1,5 +1,5 @@
 import { NodeProps } from '@xyflow/react'
-import { MTG_Card, Position as NodePosition } from '../../../graphql/types'
+import { MTG_DeckCard, Position as NodePosition } from '../../../graphql/types'
 import { getCorrectCardImage } from '../../../utils/functions/cardFunctions'
 import { ContextMenu } from '../../../utils/hooks/ContextMenu/ContextMenu'
 import { ContextMenuOption } from '../../../utils/hooks/ContextMenu/types'
@@ -8,7 +8,7 @@ import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
 export type PhantomNodeData = {
     phantomOf: string
     position: NodePosition
-    card: MTG_Card
+    card: MTG_DeckCard
     onDelete: (id: string) => void
 }
 
@@ -21,6 +21,10 @@ export const PhantomNode = (props: PhantomNodeProps) => {
     const { card, onDelete } = data
 
     const { anchorRef, handleClick, handleClose, handleContextMenu, open } = useContextMenu<HTMLDivElement>()
+
+    const selectedVersion =
+        card.card.versions.find((v) => v.set === card.selectedSet) || card.card.versions.find((v) => v.isDefault)
+    if (!selectedVersion) return null
 
     const options: ContextMenuOption[] = [
         {
@@ -37,7 +41,12 @@ export const PhantomNode = (props: PhantomNodeProps) => {
     return (
         <>
             <div ref={anchorRef} onContextMenu={handleContextMenu}>
-                <img src={getCorrectCardImage(card, 'normal')} alt={card.name} width={100} style={{ opacity: 0.5 }} />
+                <img
+                    src={getCorrectCardImage(selectedVersion, card.card.layout, 'normal')}
+                    alt={card.card.name}
+                    width={100}
+                    style={{ opacity: 0.5 }}
+                />
             </div>
             <ContextMenu
                 anchorRef={anchorRef}

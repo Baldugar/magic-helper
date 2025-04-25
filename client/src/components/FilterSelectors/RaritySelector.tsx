@@ -13,7 +13,7 @@ export interface RaritySelectorProps {
 const RaritySelector = (props: RaritySelectorProps): JSX.Element => {
     const { onNext, onPrev, selected, iconSize } = props
 
-    const order = [MTG_Rarity.COMMON, MTG_Rarity.UNCOMMON, MTG_Rarity.RARE, MTG_Rarity.MYTHIC]
+    const order = [MTG_Rarity.common, MTG_Rarity.uncommon, MTG_Rarity.rare, MTG_Rarity.mythic]
 
     return (
         <Grid container item xs={'auto'}>

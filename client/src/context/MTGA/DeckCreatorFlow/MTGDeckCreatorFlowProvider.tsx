@@ -216,18 +216,20 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
         const idx = nodes.findIndex((n) => n.id === cardID)
         // If the card is already in the deck, add a phantom
         if (idx !== -1) {
-            const phantomData: PhantomNodeData = {
-                card,
-                phantomOf: cardID,
-                position,
-                onDelete: handleDeletePhantom,
+            if (deckCard) {
+                const phantomData: PhantomNodeData = {
+                    card: deckCard,
+                    phantomOf: cardID,
+                    position,
+                    onDelete: handleDeletePhantom,
+                }
+                newNode = {
+                    data: phantomData,
+                    id: uuidv4(),
+                    position,
+                    type: 'phantomNode',
+                } as Node<PhantomNodeData>
             }
-            newNode = {
-                data: phantomData,
-                id: uuidv4(),
-                position,
-                type: 'phantomNode',
-            } as Node<PhantomNodeData>
         } else if (deckCard) {
             const cardData: CardNodeData = { card: deckCard }
             newNode = {

@@ -1,44 +1,81 @@
 import gql from 'graphql-tag'
 
 export const MTG_CardFragments = gql`
-    fragment MTG_CommonFieldsFragment on MTG_CommonFields {
+    fragment MTG_ImageFragment on MTG_Image {
+        artCrop
+        borderCrop
+        large
+        normal
+        small
+        PNG
+    }
+
+    fragment MTG_CardFaceFragment on MTG_CardFace {
+        imageUris {
+            ...MTG_ImageFragment
+        }
+        artist
+        oracleText
+        power
+        toughness
+        typeLine
+        CMC
+        colorIndicator
         colors
         flavorText
-        image {
-            small
-            normal
-            large
-            png
-            artCrop
-            borderCrop
-        }
-        loyalty
+        layout
+        manaCost
         name
+    }
+
+    fragment MTG_CardVersionFragment on MTG_CardVersion {
+        ID
+        imageUris {
+            ...MTG_ImageFragment
+        }
+        rarity
+        releasedAt
+        reprint
+        setName
+        setType
+        set
+        setID
+        variation
+        variationOf
+        isDefault
+        isAlchemy
+        artist
+        lang
+        flavorName
+        flavorText
+        legalities
+        games
+        cardFaces {
+            ...MTG_CardFaceFragment
+        }
+    }
+
+    fragment MTG_CardFragment on MTG_Card {
+        colorIdentity
+        ID
+        name
+        oracleText
         power
         producedMana
         toughness
         typeLine
-    }
-
-    fragment MTG_CardFragment on MTG_Card {
-        ...MTG_CommonFieldsFragment
-        colorIdentity
-        cmc
-        cardFaces {
-            ...MTG_CommonFieldsFragment
-            manaCost
-            description
+        versions {
+            ...MTG_CardVersionFragment
         }
-        setName
-        set
-        ID
-        rarity
-        manaCost
-        description
         layout
-        legalities
-        releasedAt
-        scryfallURL
+        CMC
+        colorIdentity
+        colorIndicator
+        colors
+        EDHRecRank
+        keywords
+        loyalty
+        manaCost
     }
 `
 
@@ -56,6 +93,7 @@ export const MTG_DeckFragments = gql`
             card {
                 ...MTG_CardFragment
             }
+            selectedSet
             count
             mainOrSide
             deckCardType
@@ -79,7 +117,6 @@ export const MTG_DeckFragments = gql`
             height
             childrenIDs
         }
-        type
         ignoredCards
     }
     ${MTG_CardFragments}

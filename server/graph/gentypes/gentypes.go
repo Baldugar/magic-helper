@@ -56,42 +56,63 @@ type ComplexityRoot struct {
 	}
 
 	MTG_Card struct {
-		CardFaces     func(childComplexity int) int
-		Cmc           func(childComplexity int) int
-		ColorIdentity func(childComplexity int) int
-		Colors        func(childComplexity int) int
-		Description   func(childComplexity int) int
-		FlavorText    func(childComplexity int) int
-		ID            func(childComplexity int) int
-		Image         func(childComplexity int) int
-		Layout        func(childComplexity int) int
-		Legalities    func(childComplexity int) int
-		Loyalty       func(childComplexity int) int
-		ManaCost      func(childComplexity int) int
-		Name          func(childComplexity int) int
-		Power         func(childComplexity int) int
-		ProducedMana  func(childComplexity int) int
-		Rarity        func(childComplexity int) int
-		ReleasedAt    func(childComplexity int) int
-		ScryfallURL   func(childComplexity int) int
-		Set           func(childComplexity int) int
-		SetName       func(childComplexity int) int
-		Toughness     func(childComplexity int) int
-		TypeLine      func(childComplexity int) int
+		Cmc            func(childComplexity int) int
+		ColorIdentity  func(childComplexity int) int
+		ColorIndicator func(childComplexity int) int
+		Colors         func(childComplexity int) int
+		EDHRecRank     func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Keywords       func(childComplexity int) int
+		Layout         func(childComplexity int) int
+		Loyalty        func(childComplexity int) int
+		ManaCost       func(childComplexity int) int
+		Name           func(childComplexity int) int
+		OracleText     func(childComplexity int) int
+		Power          func(childComplexity int) int
+		ProducedMana   func(childComplexity int) int
+		Toughness      func(childComplexity int) int
+		TypeLine       func(childComplexity int) int
+		Versions       func(childComplexity int) int
 	}
 
 	MTG_CardFace struct {
-		Colors       func(childComplexity int) int
-		Description  func(childComplexity int) int
-		FlavorText   func(childComplexity int) int
-		Image        func(childComplexity int) int
-		Loyalty      func(childComplexity int) int
-		ManaCost     func(childComplexity int) int
-		Name         func(childComplexity int) int
-		Power        func(childComplexity int) int
-		ProducedMana func(childComplexity int) int
-		Toughness    func(childComplexity int) int
-		TypeLine     func(childComplexity int) int
+		Artist         func(childComplexity int) int
+		Cmc            func(childComplexity int) int
+		ColorIndicator func(childComplexity int) int
+		Colors         func(childComplexity int) int
+		FlavorText     func(childComplexity int) int
+		ImageUris      func(childComplexity int) int
+		Layout         func(childComplexity int) int
+		Loyalty        func(childComplexity int) int
+		ManaCost       func(childComplexity int) int
+		Name           func(childComplexity int) int
+		OracleText     func(childComplexity int) int
+		Power          func(childComplexity int) int
+		Toughness      func(childComplexity int) int
+		TypeLine       func(childComplexity int) int
+	}
+
+	MTG_CardVersion struct {
+		Artist      func(childComplexity int) int
+		CardFaces   func(childComplexity int) int
+		FlavorName  func(childComplexity int) int
+		FlavorText  func(childComplexity int) int
+		Games       func(childComplexity int) int
+		ID          func(childComplexity int) int
+		ImageUris   func(childComplexity int) int
+		IsAlchemy   func(childComplexity int) int
+		IsDefault   func(childComplexity int) int
+		Lang        func(childComplexity int) int
+		Legalities  func(childComplexity int) int
+		Rarity      func(childComplexity int) int
+		ReleasedAt  func(childComplexity int) int
+		Reprint     func(childComplexity int) int
+		Set         func(childComplexity int) int
+		SetID       func(childComplexity int) int
+		SetName     func(childComplexity int) int
+		SetType     func(childComplexity int) int
+		Variation   func(childComplexity int) int
+		VariationOf func(childComplexity int) int
 	}
 
 	MTG_Deck struct {
@@ -99,9 +120,7 @@ type ComplexityRoot struct {
 		Cards          func(childComplexity int) int
 		ID             func(childComplexity int) int
 		IgnoredCards   func(childComplexity int) int
-		List           func(childComplexity int) int
 		Name           func(childComplexity int) int
-		Type           func(childComplexity int) int
 		Zones          func(childComplexity int) int
 	}
 
@@ -112,6 +131,7 @@ type ComplexityRoot struct {
 		MainOrSide   func(childComplexity int) int
 		Phantoms     func(childComplexity int) int
 		Position     func(childComplexity int) int
+		SelectedSet  func(childComplexity int) int
 	}
 
 	MTG_Filter_CardTypes struct {
@@ -164,9 +184,9 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		GetMTGCards   func(childComplexity int, list model.MtgCardListType) int
-		GetMTGDecks   func(childComplexity int, list model.MtgCardListType, deckID *string) int
-		GetMTGFilters func(childComplexity int, list model.MtgCardListType) int
+		GetMTGCards   func(childComplexity int) int
+		GetMTGDecks   func(childComplexity int, deckID *string) int
+		GetMTGFilters func(childComplexity int) int
 	}
 
 	Response struct {
@@ -182,9 +202,9 @@ type MutationResolver interface {
 	SaveMTGDeckAsCopy(ctx context.Context, input model.MtgUpdateDeckInput) (*model.MtgDeck, error)
 }
 type QueryResolver interface {
-	GetMTGCards(ctx context.Context, list model.MtgCardListType) ([]*model.MtgCard, error)
-	GetMTGFilters(ctx context.Context, list model.MtgCardListType) (*model.MtgFilterEntries, error)
-	GetMTGDecks(ctx context.Context, list model.MtgCardListType, deckID *string) ([]*model.MtgDeck, error)
+	GetMTGCards(ctx context.Context) ([]*model.MtgCard, error)
+	GetMTGFilters(ctx context.Context) (*model.MtgFilterEntries, error)
+	GetMTGDecks(ctx context.Context, deckID *string) ([]*model.MtgDeck, error)
 }
 
 type executableSchema struct {
@@ -248,14 +268,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.FlowZone.Width(childComplexity), true
 
-	case "MTG_Card.cardFaces":
-		if e.complexity.MTG_Card.CardFaces == nil {
-			break
-		}
-
-		return e.complexity.MTG_Card.CardFaces(childComplexity), true
-
-	case "MTG_Card.cmc":
+	case "MTG_Card.CMC":
 		if e.complexity.MTG_Card.Cmc == nil {
 			break
 		}
@@ -269,6 +282,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MTG_Card.ColorIdentity(childComplexity), true
 
+	case "MTG_Card.colorIndicator":
+		if e.complexity.MTG_Card.ColorIndicator == nil {
+			break
+		}
+
+		return e.complexity.MTG_Card.ColorIndicator(childComplexity), true
+
 	case "MTG_Card.colors":
 		if e.complexity.MTG_Card.Colors == nil {
 			break
@@ -276,19 +296,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MTG_Card.Colors(childComplexity), true
 
-	case "MTG_Card.description":
-		if e.complexity.MTG_Card.Description == nil {
+	case "MTG_Card.EDHRecRank":
+		if e.complexity.MTG_Card.EDHRecRank == nil {
 			break
 		}
 
-		return e.complexity.MTG_Card.Description(childComplexity), true
-
-	case "MTG_Card.flavorText":
-		if e.complexity.MTG_Card.FlavorText == nil {
-			break
-		}
-
-		return e.complexity.MTG_Card.FlavorText(childComplexity), true
+		return e.complexity.MTG_Card.EDHRecRank(childComplexity), true
 
 	case "MTG_Card.ID":
 		if e.complexity.MTG_Card.ID == nil {
@@ -297,12 +310,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MTG_Card.ID(childComplexity), true
 
-	case "MTG_Card.image":
-		if e.complexity.MTG_Card.Image == nil {
+	case "MTG_Card.keywords":
+		if e.complexity.MTG_Card.Keywords == nil {
 			break
 		}
 
-		return e.complexity.MTG_Card.Image(childComplexity), true
+		return e.complexity.MTG_Card.Keywords(childComplexity), true
 
 	case "MTG_Card.layout":
 		if e.complexity.MTG_Card.Layout == nil {
@@ -310,13 +323,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MTG_Card.Layout(childComplexity), true
-
-	case "MTG_Card.legalities":
-		if e.complexity.MTG_Card.Legalities == nil {
-			break
-		}
-
-		return e.complexity.MTG_Card.Legalities(childComplexity), true
 
 	case "MTG_Card.loyalty":
 		if e.complexity.MTG_Card.Loyalty == nil {
@@ -339,6 +345,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MTG_Card.Name(childComplexity), true
 
+	case "MTG_Card.oracleText":
+		if e.complexity.MTG_Card.OracleText == nil {
+			break
+		}
+
+		return e.complexity.MTG_Card.OracleText(childComplexity), true
+
 	case "MTG_Card.power":
 		if e.complexity.MTG_Card.Power == nil {
 			break
@@ -352,41 +365,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MTG_Card.ProducedMana(childComplexity), true
-
-	case "MTG_Card.rarity":
-		if e.complexity.MTG_Card.Rarity == nil {
-			break
-		}
-
-		return e.complexity.MTG_Card.Rarity(childComplexity), true
-
-	case "MTG_Card.releasedAt":
-		if e.complexity.MTG_Card.ReleasedAt == nil {
-			break
-		}
-
-		return e.complexity.MTG_Card.ReleasedAt(childComplexity), true
-
-	case "MTG_Card.scryfallURL":
-		if e.complexity.MTG_Card.ScryfallURL == nil {
-			break
-		}
-
-		return e.complexity.MTG_Card.ScryfallURL(childComplexity), true
-
-	case "MTG_Card.set":
-		if e.complexity.MTG_Card.Set == nil {
-			break
-		}
-
-		return e.complexity.MTG_Card.Set(childComplexity), true
-
-	case "MTG_Card.setName":
-		if e.complexity.MTG_Card.SetName == nil {
-			break
-		}
-
-		return e.complexity.MTG_Card.SetName(childComplexity), true
 
 	case "MTG_Card.toughness":
 		if e.complexity.MTG_Card.Toughness == nil {
@@ -402,19 +380,40 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MTG_Card.TypeLine(childComplexity), true
 
+	case "MTG_Card.versions":
+		if e.complexity.MTG_Card.Versions == nil {
+			break
+		}
+
+		return e.complexity.MTG_Card.Versions(childComplexity), true
+
+	case "MTG_CardFace.artist":
+		if e.complexity.MTG_CardFace.Artist == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardFace.Artist(childComplexity), true
+
+	case "MTG_CardFace.CMC":
+		if e.complexity.MTG_CardFace.Cmc == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardFace.Cmc(childComplexity), true
+
+	case "MTG_CardFace.colorIndicator":
+		if e.complexity.MTG_CardFace.ColorIndicator == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardFace.ColorIndicator(childComplexity), true
+
 	case "MTG_CardFace.colors":
 		if e.complexity.MTG_CardFace.Colors == nil {
 			break
 		}
 
 		return e.complexity.MTG_CardFace.Colors(childComplexity), true
-
-	case "MTG_CardFace.description":
-		if e.complexity.MTG_CardFace.Description == nil {
-			break
-		}
-
-		return e.complexity.MTG_CardFace.Description(childComplexity), true
 
 	case "MTG_CardFace.flavorText":
 		if e.complexity.MTG_CardFace.FlavorText == nil {
@@ -423,12 +422,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MTG_CardFace.FlavorText(childComplexity), true
 
-	case "MTG_CardFace.image":
-		if e.complexity.MTG_CardFace.Image == nil {
+	case "MTG_CardFace.imageUris":
+		if e.complexity.MTG_CardFace.ImageUris == nil {
 			break
 		}
 
-		return e.complexity.MTG_CardFace.Image(childComplexity), true
+		return e.complexity.MTG_CardFace.ImageUris(childComplexity), true
+
+	case "MTG_CardFace.layout":
+		if e.complexity.MTG_CardFace.Layout == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardFace.Layout(childComplexity), true
 
 	case "MTG_CardFace.loyalty":
 		if e.complexity.MTG_CardFace.Loyalty == nil {
@@ -451,19 +457,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MTG_CardFace.Name(childComplexity), true
 
+	case "MTG_CardFace.oracleText":
+		if e.complexity.MTG_CardFace.OracleText == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardFace.OracleText(childComplexity), true
+
 	case "MTG_CardFace.power":
 		if e.complexity.MTG_CardFace.Power == nil {
 			break
 		}
 
 		return e.complexity.MTG_CardFace.Power(childComplexity), true
-
-	case "MTG_CardFace.producedMana":
-		if e.complexity.MTG_CardFace.ProducedMana == nil {
-			break
-		}
-
-		return e.complexity.MTG_CardFace.ProducedMana(childComplexity), true
 
 	case "MTG_CardFace.toughness":
 		if e.complexity.MTG_CardFace.Toughness == nil {
@@ -478,6 +484,146 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MTG_CardFace.TypeLine(childComplexity), true
+
+	case "MTG_CardVersion.artist":
+		if e.complexity.MTG_CardVersion.Artist == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardVersion.Artist(childComplexity), true
+
+	case "MTG_CardVersion.cardFaces":
+		if e.complexity.MTG_CardVersion.CardFaces == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardVersion.CardFaces(childComplexity), true
+
+	case "MTG_CardVersion.flavorName":
+		if e.complexity.MTG_CardVersion.FlavorName == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardVersion.FlavorName(childComplexity), true
+
+	case "MTG_CardVersion.flavorText":
+		if e.complexity.MTG_CardVersion.FlavorText == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardVersion.FlavorText(childComplexity), true
+
+	case "MTG_CardVersion.games":
+		if e.complexity.MTG_CardVersion.Games == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardVersion.Games(childComplexity), true
+
+	case "MTG_CardVersion.ID":
+		if e.complexity.MTG_CardVersion.ID == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardVersion.ID(childComplexity), true
+
+	case "MTG_CardVersion.imageUris":
+		if e.complexity.MTG_CardVersion.ImageUris == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardVersion.ImageUris(childComplexity), true
+
+	case "MTG_CardVersion.isAlchemy":
+		if e.complexity.MTG_CardVersion.IsAlchemy == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardVersion.IsAlchemy(childComplexity), true
+
+	case "MTG_CardVersion.isDefault":
+		if e.complexity.MTG_CardVersion.IsDefault == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardVersion.IsDefault(childComplexity), true
+
+	case "MTG_CardVersion.lang":
+		if e.complexity.MTG_CardVersion.Lang == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardVersion.Lang(childComplexity), true
+
+	case "MTG_CardVersion.legalities":
+		if e.complexity.MTG_CardVersion.Legalities == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardVersion.Legalities(childComplexity), true
+
+	case "MTG_CardVersion.rarity":
+		if e.complexity.MTG_CardVersion.Rarity == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardVersion.Rarity(childComplexity), true
+
+	case "MTG_CardVersion.releasedAt":
+		if e.complexity.MTG_CardVersion.ReleasedAt == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardVersion.ReleasedAt(childComplexity), true
+
+	case "MTG_CardVersion.reprint":
+		if e.complexity.MTG_CardVersion.Reprint == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardVersion.Reprint(childComplexity), true
+
+	case "MTG_CardVersion.set":
+		if e.complexity.MTG_CardVersion.Set == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardVersion.Set(childComplexity), true
+
+	case "MTG_CardVersion.setID":
+		if e.complexity.MTG_CardVersion.SetID == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardVersion.SetID(childComplexity), true
+
+	case "MTG_CardVersion.setName":
+		if e.complexity.MTG_CardVersion.SetName == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardVersion.SetName(childComplexity), true
+
+	case "MTG_CardVersion.setType":
+		if e.complexity.MTG_CardVersion.SetType == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardVersion.SetType(childComplexity), true
+
+	case "MTG_CardVersion.variation":
+		if e.complexity.MTG_CardVersion.Variation == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardVersion.Variation(childComplexity), true
+
+	case "MTG_CardVersion.variationOf":
+		if e.complexity.MTG_CardVersion.VariationOf == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardVersion.VariationOf(childComplexity), true
 
 	case "MTG_Deck.cardFrontImage":
 		if e.complexity.MTG_Deck.CardFrontImage == nil {
@@ -507,26 +653,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MTG_Deck.IgnoredCards(childComplexity), true
 
-	case "MTG_Deck.list":
-		if e.complexity.MTG_Deck.List == nil {
-			break
-		}
-
-		return e.complexity.MTG_Deck.List(childComplexity), true
-
 	case "MTG_Deck.name":
 		if e.complexity.MTG_Deck.Name == nil {
 			break
 		}
 
 		return e.complexity.MTG_Deck.Name(childComplexity), true
-
-	case "MTG_Deck.type":
-		if e.complexity.MTG_Deck.Type == nil {
-			break
-		}
-
-		return e.complexity.MTG_Deck.Type(childComplexity), true
 
 	case "MTG_Deck.zones":
 		if e.complexity.MTG_Deck.Zones == nil {
@@ -576,6 +708,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MTG_DeckCard.Position(childComplexity), true
+
+	case "MTG_DeckCard.selectedSet":
+		if e.complexity.MTG_DeckCard.SelectedSet == nil {
+			break
+		}
+
+		return e.complexity.MTG_DeckCard.SelectedSet(childComplexity), true
 
 	case "MTG_Filter_CardTypes.cardType":
 		if e.complexity.MTG_Filter_CardTypes.CardType == nil {
@@ -682,7 +821,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MTG_Image.Normal(childComplexity), true
 
-	case "MTG_Image.png":
+	case "MTG_Image.PNG":
 		if e.complexity.MTG_Image.Png == nil {
 			break
 		}
@@ -777,12 +916,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Query_getMTGCards_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.GetMTGCards(childComplexity, args["list"].(model.MtgCardListType)), true
+		return e.complexity.Query.GetMTGCards(childComplexity), true
 
 	case "Query.getMTGDecks":
 		if e.complexity.Query.GetMTGDecks == nil {
@@ -794,19 +928,14 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.GetMTGDecks(childComplexity, args["list"].(model.MtgCardListType), args["deckID"].(*string)), true
+		return e.complexity.Query.GetMTGDecks(childComplexity, args["deckID"].(*string)), true
 
 	case "Query.getMTGFilters":
 		if e.complexity.Query.GetMTGFilters == nil {
 			break
 		}
 
-		args, err := ec.field_Query_getMTGFilters_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.GetMTGFilters(childComplexity, args["list"].(model.MtgCardListType)), true
+		return e.complexity.Query.GetMTGFilters(childComplexity), true
 
 	case "Response.message":
 		if e.complexity.Response.Message == nil {
@@ -972,75 +1101,103 @@ type Position {
 }
 
 enum MTG_Rarity {
-    COMMON
-    UNCOMMON
-    RARE
-    MYTHIC
+    common
+    uncommon
+    rare
+    mythic
 }
 
 enum MTG_Layout {
-    NORMAL
-    MODAL_DFC
-    TRANSFORM
-    ADVENTURE
-    CLASS
-    SAGA
-    SPLIT
-    PROTOTYPE
-    MUTATE
-    MELD
-    CASE
+    normal
+    split
+    flip
+    transform
+    modal_dfc
+    meld
+    leveler
+    class
+    case
+    saga
+    adventure
+    mutate
+    prototype
+    battle
+    planar
+    scheme
+    vanguard
+    token
+    double_faced_token
+    emblem
+    augment
+    host
+    art_series
+    reversible_card
+}
+
+enum MTG_Game {
+    paper
+    mtgo
+    arena
 }
 `, BuiltIn: false},
-	{Name: "../../../graphql/MTG/Card/interface.graphqls", Input: `interface MTG_CommonFields {
-    colors: [MTG_Color!]
-    flavorText: String
-    image: MTG_Image
-    loyalty: String
-    name: String!
-    power: String
-    producedMana: [MTG_Color!]
-    toughness: String
-    typeLine: String!
-}
-`, BuiltIn: false},
-	{Name: "../../../graphql/MTG/Card/type.graphqls", Input: `type MTG_Card implements MTG_CommonFields {
+	{Name: "../../../graphql/MTG/Card/type.graphqls", Input: `type MTG_Card {
     ID: ID! @goTag(key: "json", value: "_key")
-    cardFaces: [MTG_CardFace!]
-    cmc: Int!
+    layout: MTG_Layout!
+    CMC: Float!
     colorIdentity: [MTG_Color!]!
+    colorIndicator: [String!]
     colors: [MTG_Color!]
-    description: String
-    flavorText: String
-    image: MTG_Image
-    layout: String!
-    legalities: Map!
+    EDHRecRank: Int
+    keywords: [String!]!
     loyalty: String
     manaCost: String
     name: String!
+    oracleText: String
     power: String
     producedMana: [MTG_Color!]
-    rarity: MTG_Rarity!
-    releasedAt: String!
-    set: String!
-    setName: String!
     toughness: String
     typeLine: String!
-    scryfallURL: String!
+    versions: [MTG_CardVersion!]!
 }
 
-type MTG_CardFace implements MTG_CommonFields {
-    colors: [MTG_Color!]
-    description: String!
+type MTG_CardVersion {
+    ID: ID!
+    isDefault: Boolean!
+    isAlchemy: Boolean!
+    artist: String
+    lang: String!
+    flavorName: String
     flavorText: String
-    image: MTG_Image
+    cardFaces: [MTG_CardFace!]
+    legalities: Map!
+    games: [MTG_Game!]!
+    imageUris: MTG_Image
+    rarity: MTG_Rarity!
+    releasedAt: String!
+    reprint: Boolean!
+    setName: String!
+    setType: String!
+    set: String!
+    setID: String!
+    variation: Boolean!
+    variationOf: String
+}
+
+type MTG_CardFace {
+    artist: String
+    CMC: Float
+    colorIndicator: [String!]
+    colors: [MTG_Color!]
+    flavorText: String
+    imageUris: MTG_Image
+    layout: MTG_Layout
     loyalty: String
     manaCost: String!
     name: String!
+    oracleText: String
     power: String
-    producedMana: [MTG_Color!]
     toughness: String
-    typeLine: String!
+    typeLine: String
 }
 
 type MTG_Image {
@@ -1048,7 +1205,7 @@ type MTG_Image {
     borderCrop: String!
     large: String!
     normal: String!
-    png: String!
+    PNG: String!
     small: String!
 }
 `, BuiltIn: false},
@@ -1065,26 +1222,20 @@ enum MainOrSide {
 
 enum MTG_DeckCardType {
     NORMAL
-    COMPANION
     COMMANDER
 }
 `, BuiltIn: false},
 	{Name: "../../../graphql/MTG/Deck/input.graphqls", Input: `input MTG_CreateDeckInput {
-    list: MTG_CardListType!
     name: String!
-    type: DeckType!
 }
 
 input MTG_DeleteDeckInput {
     deckID: ID!
-    list: MTG_CardListType!
 }
 
 input MTG_UpdateDeckInput {
     deckID: ID!
-    list: MTG_CardListType!
     name: String!
-    type: DeckType!
     cardFrontImage: String
     cards: [MTG_DeckCardInput!]!
     zones: [FlowZoneInput!]!
@@ -1094,6 +1245,7 @@ input MTG_UpdateDeckInput {
 input MTG_DeckCardInput {
     ID: ID!
     card: ID!
+    selectedSet: String
     count: Int!
     position: PositionInput!
     mainOrSide: MainOrSide!
@@ -1108,17 +1260,16 @@ input PhantomInput {
 `, BuiltIn: false},
 	{Name: "../../../graphql/MTG/Deck/type.graphqls", Input: `type MTG_Deck {
     ID: ID! @goTag(key: "json", value: "_key")
-    list: MTG_CardListType!
     name: String!
     cardFrontImage: String
     cards: [MTG_DeckCard!]!
     zones: [FlowZone!]!
-    type: DeckType!
     ignoredCards: [String!]!
 }
 
 type MTG_DeckCard {
     card: MTG_Card!
+    selectedSet: String
     count: Int!
     position: Position!
     mainOrSide: MainOrSide!
@@ -1129,11 +1280,6 @@ type MTG_DeckCard {
 type Phantom {
     position: Position!
     ID: ID!
-}
-`, BuiltIn: false},
-	{Name: "../../../graphql/MTG/enum.graphqls", Input: `enum MTG_CardListType {
-    MTG
-    MTGA
 }
 `, BuiltIn: false},
 	{Name: "../../../graphql/MTG/Filter/type.graphqls", Input: `type MTG_Filter_Entries {
@@ -1169,10 +1315,10 @@ type MTG_Filter_Expansion {
 `, BuiltIn: false},
 	{Name: "../../../graphql/query.graphqls", Input: `type Query {
     # Cards
-    getMTGCards(list: MTG_CardListType!): [MTG_Card!]!
-    getMTGFilters(list: MTG_CardListType!): MTG_Filter_Entries!
+    getMTGCards: [MTG_Card!]!
+    getMTGFilters: MTG_Filter_Entries!
     # Decks
-    getMTGDecks(list: MTG_CardListType!, deckID: ID): [MTG_Deck!]!
+    getMTGDecks(deckID: ID): [MTG_Deck!]!
 }
 `, BuiltIn: false},
 	{Name: "../../../graphql/type.base.graphqls", Input: `directive @goTag(key: String!, value: String) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
@@ -1330,67 +1476,16 @@ func (ec *executionContext) field_Query___type_argsName(
 	return zeroVal, nil
 }
 
-func (ec *executionContext) field_Query_getMTGCards_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := ec.field_Query_getMTGCards_argsList(ctx, rawArgs)
-	if err != nil {
-		return nil, err
-	}
-	args["list"] = arg0
-	return args, nil
-}
-func (ec *executionContext) field_Query_getMTGCards_argsList(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (model.MtgCardListType, error) {
-	if _, ok := rawArgs["list"]; !ok {
-		var zeroVal model.MtgCardListType
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("list"))
-	if tmp, ok := rawArgs["list"]; ok {
-		return ec.unmarshalNMTG_CardListType2magicᚑhelperᚋgraphᚋmodelᚐMtgCardListType(ctx, tmp)
-	}
-
-	var zeroVal model.MtgCardListType
-	return zeroVal, nil
-}
-
 func (ec *executionContext) field_Query_getMTGDecks_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_getMTGDecks_argsList(ctx, rawArgs)
+	arg0, err := ec.field_Query_getMTGDecks_argsDeckID(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["list"] = arg0
-	arg1, err := ec.field_Query_getMTGDecks_argsDeckID(ctx, rawArgs)
-	if err != nil {
-		return nil, err
-	}
-	args["deckID"] = arg1
+	args["deckID"] = arg0
 	return args, nil
 }
-func (ec *executionContext) field_Query_getMTGDecks_argsList(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (model.MtgCardListType, error) {
-	if _, ok := rawArgs["list"]; !ok {
-		var zeroVal model.MtgCardListType
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("list"))
-	if tmp, ok := rawArgs["list"]; ok {
-		return ec.unmarshalNMTG_CardListType2magicᚑhelperᚋgraphᚋmodelᚐMtgCardListType(ctx, tmp)
-	}
-
-	var zeroVal model.MtgCardListType
-	return zeroVal, nil
-}
-
 func (ec *executionContext) field_Query_getMTGDecks_argsDeckID(
 	ctx context.Context,
 	rawArgs map[string]any,
@@ -1406,34 +1501,6 @@ func (ec *executionContext) field_Query_getMTGDecks_argsDeckID(
 	}
 
 	var zeroVal *string
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Query_getMTGFilters_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := ec.field_Query_getMTGFilters_argsList(ctx, rawArgs)
-	if err != nil {
-		return nil, err
-	}
-	args["list"] = arg0
-	return args, nil
-}
-func (ec *executionContext) field_Query_getMTGFilters_argsList(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (model.MtgCardListType, error) {
-	if _, ok := rawArgs["list"]; !ok {
-		var zeroVal model.MtgCardListType
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("list"))
-	if tmp, ok := rawArgs["list"]; ok {
-		return ec.unmarshalNMTG_CardListType2magicᚑhelperᚋgraphᚋmodelᚐMtgCardListType(ctx, tmp)
-	}
-
-	var zeroVal model.MtgCardListType
 	return zeroVal, nil
 }
 
@@ -1871,8 +1938,8 @@ func (ec *executionContext) fieldContext_MTG_Card_ID(_ context.Context, field gr
 	return fc, nil
 }
 
-func (ec *executionContext) _MTG_Card_cardFaces(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_Card_cardFaces(ctx, field)
+func (ec *executionContext) _MTG_Card_layout(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_Card_layout(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1885,59 +1952,38 @@ func (ec *executionContext) _MTG_Card_cardFaces(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.CardFaces, nil
+		return obj.Layout, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.MtgCardFace)
+	res := resTmp.(model.MtgLayout)
 	fc.Result = res
-	return ec.marshalOMTG_CardFace2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgCardFaceᚄ(ctx, field.Selections, res)
+	return ec.marshalNMTG_Layout2magicᚑhelperᚋgraphᚋmodelᚐMtgLayout(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MTG_Card_cardFaces(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MTG_Card_layout(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MTG_Card",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "colors":
-				return ec.fieldContext_MTG_CardFace_colors(ctx, field)
-			case "description":
-				return ec.fieldContext_MTG_CardFace_description(ctx, field)
-			case "flavorText":
-				return ec.fieldContext_MTG_CardFace_flavorText(ctx, field)
-			case "image":
-				return ec.fieldContext_MTG_CardFace_image(ctx, field)
-			case "loyalty":
-				return ec.fieldContext_MTG_CardFace_loyalty(ctx, field)
-			case "manaCost":
-				return ec.fieldContext_MTG_CardFace_manaCost(ctx, field)
-			case "name":
-				return ec.fieldContext_MTG_CardFace_name(ctx, field)
-			case "power":
-				return ec.fieldContext_MTG_CardFace_power(ctx, field)
-			case "producedMana":
-				return ec.fieldContext_MTG_CardFace_producedMana(ctx, field)
-			case "toughness":
-				return ec.fieldContext_MTG_CardFace_toughness(ctx, field)
-			case "typeLine":
-				return ec.fieldContext_MTG_CardFace_typeLine(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type MTG_CardFace", field.Name)
+			return nil, errors.New("field of type MTG_Layout does not have child fields")
 		},
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _MTG_Card_cmc(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_Card_cmc(ctx, field)
+func (ec *executionContext) _MTG_Card_CMC(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_Card_CMC(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1962,19 +2008,19 @@ func (ec *executionContext) _MTG_Card_cmc(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(float64)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MTG_Card_cmc(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MTG_Card_CMC(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MTG_Card",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			return nil, errors.New("field of type Float does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2024,6 +2070,47 @@ func (ec *executionContext) fieldContext_MTG_Card_colorIdentity(_ context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _MTG_Card_colorIndicator(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_Card_colorIndicator(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ColorIndicator, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_Card_colorIndicator(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_Card",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MTG_Card_colors(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MTG_Card_colors(ctx, field)
 	if err != nil {
@@ -2065,8 +2152,8 @@ func (ec *executionContext) fieldContext_MTG_Card_colors(_ context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _MTG_Card_description(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_Card_description(ctx, field)
+func (ec *executionContext) _MTG_Card_EDHRecRank(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_Card_EDHRecRank(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2079,7 +2166,7 @@ func (ec *executionContext) _MTG_Card_description(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Description, nil
+		return obj.EDHRecRank, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2088,26 +2175,26 @@ func (ec *executionContext) _MTG_Card_description(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*int)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MTG_Card_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MTG_Card_EDHRecRank(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MTG_Card",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _MTG_Card_flavorText(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_Card_flavorText(ctx, field)
+func (ec *executionContext) _MTG_Card_keywords(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_Card_keywords(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2120,103 +2207,7 @@ func (ec *executionContext) _MTG_Card_flavorText(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.FlavorText, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MTG_Card_flavorText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MTG_Card",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MTG_Card_image(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_Card_image(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Image, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.MtgImage)
-	fc.Result = res
-	return ec.marshalOMTG_Image2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgImage(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MTG_Card_image(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MTG_Card",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "artCrop":
-				return ec.fieldContext_MTG_Image_artCrop(ctx, field)
-			case "borderCrop":
-				return ec.fieldContext_MTG_Image_borderCrop(ctx, field)
-			case "large":
-				return ec.fieldContext_MTG_Image_large(ctx, field)
-			case "normal":
-				return ec.fieldContext_MTG_Image_normal(ctx, field)
-			case "png":
-				return ec.fieldContext_MTG_Image_png(ctx, field)
-			case "small":
-				return ec.fieldContext_MTG_Image_small(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type MTG_Image", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MTG_Card_layout(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_Card_layout(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Layout, nil
+		return obj.Keywords, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2228,12 +2219,12 @@ func (ec *executionContext) _MTG_Card_layout(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MTG_Card_layout(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MTG_Card_keywords(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MTG_Card",
 		Field:      field,
@@ -2241,50 +2232,6 @@ func (ec *executionContext) fieldContext_MTG_Card_layout(_ context.Context, fiel
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MTG_Card_legalities(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_Card_legalities(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Legalities, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(map[string]any)
-	fc.Result = res
-	return ec.marshalNMap2map(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MTG_Card_legalities(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MTG_Card",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Map does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2416,6 +2363,47 @@ func (ec *executionContext) fieldContext_MTG_Card_name(_ context.Context, field 
 	return fc, nil
 }
 
+func (ec *executionContext) _MTG_Card_oracleText(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_Card_oracleText(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OracleText, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_Card_oracleText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_Card",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MTG_Card_power(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MTG_Card_power(ctx, field)
 	if err != nil {
@@ -2493,182 +2481,6 @@ func (ec *executionContext) fieldContext_MTG_Card_producedMana(_ context.Context
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type MTG_Color does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MTG_Card_rarity(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_Card_rarity(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Rarity, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(model.MtgRarity)
-	fc.Result = res
-	return ec.marshalNMTG_Rarity2magicᚑhelperᚋgraphᚋmodelᚐMtgRarity(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MTG_Card_rarity(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MTG_Card",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type MTG_Rarity does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MTG_Card_releasedAt(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_Card_releasedAt(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ReleasedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MTG_Card_releasedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MTG_Card",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MTG_Card_set(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_Card_set(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Set, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MTG_Card_set(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MTG_Card",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MTG_Card_setName(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_Card_setName(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.SetName, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MTG_Card_setName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MTG_Card",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2759,8 +2571,8 @@ func (ec *executionContext) fieldContext_MTG_Card_typeLine(_ context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _MTG_Card_scryfallURL(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_Card_scryfallURL(ctx, field)
+func (ec *executionContext) _MTG_Card_versions(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_Card_versions(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2773,7 +2585,7 @@ func (ec *executionContext) _MTG_Card_scryfallURL(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ScryfallURL, nil
+		return obj.Versions, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2785,14 +2597,179 @@ func (ec *executionContext) _MTG_Card_scryfallURL(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.([]*model.MtgCardVersion)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNMTG_CardVersion2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgCardVersionᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MTG_Card_scryfallURL(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MTG_Card_versions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MTG_Card",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ID":
+				return ec.fieldContext_MTG_CardVersion_ID(ctx, field)
+			case "isDefault":
+				return ec.fieldContext_MTG_CardVersion_isDefault(ctx, field)
+			case "isAlchemy":
+				return ec.fieldContext_MTG_CardVersion_isAlchemy(ctx, field)
+			case "artist":
+				return ec.fieldContext_MTG_CardVersion_artist(ctx, field)
+			case "lang":
+				return ec.fieldContext_MTG_CardVersion_lang(ctx, field)
+			case "flavorName":
+				return ec.fieldContext_MTG_CardVersion_flavorName(ctx, field)
+			case "flavorText":
+				return ec.fieldContext_MTG_CardVersion_flavorText(ctx, field)
+			case "cardFaces":
+				return ec.fieldContext_MTG_CardVersion_cardFaces(ctx, field)
+			case "legalities":
+				return ec.fieldContext_MTG_CardVersion_legalities(ctx, field)
+			case "games":
+				return ec.fieldContext_MTG_CardVersion_games(ctx, field)
+			case "imageUris":
+				return ec.fieldContext_MTG_CardVersion_imageUris(ctx, field)
+			case "rarity":
+				return ec.fieldContext_MTG_CardVersion_rarity(ctx, field)
+			case "releasedAt":
+				return ec.fieldContext_MTG_CardVersion_releasedAt(ctx, field)
+			case "reprint":
+				return ec.fieldContext_MTG_CardVersion_reprint(ctx, field)
+			case "setName":
+				return ec.fieldContext_MTG_CardVersion_setName(ctx, field)
+			case "setType":
+				return ec.fieldContext_MTG_CardVersion_setType(ctx, field)
+			case "set":
+				return ec.fieldContext_MTG_CardVersion_set(ctx, field)
+			case "setID":
+				return ec.fieldContext_MTG_CardVersion_setID(ctx, field)
+			case "variation":
+				return ec.fieldContext_MTG_CardVersion_variation(ctx, field)
+			case "variationOf":
+				return ec.fieldContext_MTG_CardVersion_variationOf(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTG_CardVersion", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardFace_artist(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardFace) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardFace_artist(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Artist, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardFace_artist(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardFace",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardFace_CMC(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardFace) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardFace_CMC(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cmc, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardFace_CMC(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardFace",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardFace_colorIndicator(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardFace) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardFace_colorIndicator(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ColorIndicator, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardFace_colorIndicator(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardFace",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -2844,50 +2821,6 @@ func (ec *executionContext) fieldContext_MTG_CardFace_colors(_ context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _MTG_CardFace_description(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardFace) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_CardFace_description(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Description, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MTG_CardFace_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MTG_CardFace",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _MTG_CardFace_flavorText(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardFace) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MTG_CardFace_flavorText(ctx, field)
 	if err != nil {
@@ -2929,8 +2862,8 @@ func (ec *executionContext) fieldContext_MTG_CardFace_flavorText(_ context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _MTG_CardFace_image(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardFace) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_CardFace_image(ctx, field)
+func (ec *executionContext) _MTG_CardFace_imageUris(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardFace) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardFace_imageUris(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2943,7 +2876,7 @@ func (ec *executionContext) _MTG_CardFace_image(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Image, nil
+		return obj.ImageUris, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2957,7 +2890,7 @@ func (ec *executionContext) _MTG_CardFace_image(ctx context.Context, field graph
 	return ec.marshalOMTG_Image2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgImage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MTG_CardFace_image(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MTG_CardFace_imageUris(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MTG_CardFace",
 		Field:      field,
@@ -2973,12 +2906,53 @@ func (ec *executionContext) fieldContext_MTG_CardFace_image(_ context.Context, f
 				return ec.fieldContext_MTG_Image_large(ctx, field)
 			case "normal":
 				return ec.fieldContext_MTG_Image_normal(ctx, field)
-			case "png":
-				return ec.fieldContext_MTG_Image_png(ctx, field)
+			case "PNG":
+				return ec.fieldContext_MTG_Image_PNG(ctx, field)
 			case "small":
 				return ec.fieldContext_MTG_Image_small(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTG_Image", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardFace_layout(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardFace) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardFace_layout(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Layout, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.MtgLayout)
+	fc.Result = res
+	return ec.marshalOMTG_Layout2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgLayout(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardFace_layout(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardFace",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MTG_Layout does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3113,6 +3087,47 @@ func (ec *executionContext) fieldContext_MTG_CardFace_name(_ context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _MTG_CardFace_oracleText(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardFace) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardFace_oracleText(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OracleText, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardFace_oracleText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardFace",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MTG_CardFace_power(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardFace) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MTG_CardFace_power(ctx, field)
 	if err != nil {
@@ -3149,47 +3164,6 @@ func (ec *executionContext) fieldContext_MTG_CardFace_power(_ context.Context, f
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MTG_CardFace_producedMana(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardFace) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_CardFace_producedMana(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ProducedMana, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]model.MtgColor)
-	fc.Result = res
-	return ec.marshalOMTG_Color2ᚕmagicᚑhelperᚋgraphᚋmodelᚐMtgColorᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MTG_CardFace_producedMana(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MTG_CardFace",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type MTG_Color does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3257,6 +3231,220 @@ func (ec *executionContext) _MTG_CardFace_typeLine(ctx context.Context, field gr
 		return graphql.Null
 	}
 	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardFace_typeLine(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardFace",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardVersion_ID(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardVersion_ID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardVersion_ID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardVersion_isDefault(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardVersion_isDefault(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsDefault, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardVersion_isDefault(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardVersion_isAlchemy(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardVersion_isAlchemy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsAlchemy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardVersion_isAlchemy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardVersion_artist(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardVersion_artist(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Artist, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardVersion_artist(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardVersion_lang(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardVersion_lang(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Lang, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
 			ec.Errorf(ctx, "must not be null")
 		}
@@ -3267,9 +3455,698 @@ func (ec *executionContext) _MTG_CardFace_typeLine(ctx context.Context, field gr
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MTG_CardFace_typeLine(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MTG_CardVersion_lang(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "MTG_CardFace",
+		Object:     "MTG_CardVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardVersion_flavorName(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardVersion_flavorName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FlavorName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardVersion_flavorName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardVersion_flavorText(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardVersion_flavorText(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FlavorText, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardVersion_flavorText(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardVersion_cardFaces(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardVersion_cardFaces(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CardFaces, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.MtgCardFace)
+	fc.Result = res
+	return ec.marshalOMTG_CardFace2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgCardFaceᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardVersion_cardFaces(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "artist":
+				return ec.fieldContext_MTG_CardFace_artist(ctx, field)
+			case "CMC":
+				return ec.fieldContext_MTG_CardFace_CMC(ctx, field)
+			case "colorIndicator":
+				return ec.fieldContext_MTG_CardFace_colorIndicator(ctx, field)
+			case "colors":
+				return ec.fieldContext_MTG_CardFace_colors(ctx, field)
+			case "flavorText":
+				return ec.fieldContext_MTG_CardFace_flavorText(ctx, field)
+			case "imageUris":
+				return ec.fieldContext_MTG_CardFace_imageUris(ctx, field)
+			case "layout":
+				return ec.fieldContext_MTG_CardFace_layout(ctx, field)
+			case "loyalty":
+				return ec.fieldContext_MTG_CardFace_loyalty(ctx, field)
+			case "manaCost":
+				return ec.fieldContext_MTG_CardFace_manaCost(ctx, field)
+			case "name":
+				return ec.fieldContext_MTG_CardFace_name(ctx, field)
+			case "oracleText":
+				return ec.fieldContext_MTG_CardFace_oracleText(ctx, field)
+			case "power":
+				return ec.fieldContext_MTG_CardFace_power(ctx, field)
+			case "toughness":
+				return ec.fieldContext_MTG_CardFace_toughness(ctx, field)
+			case "typeLine":
+				return ec.fieldContext_MTG_CardFace_typeLine(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTG_CardFace", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardVersion_legalities(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardVersion_legalities(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Legalities, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(map[string]any)
+	fc.Result = res
+	return ec.marshalNMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardVersion_legalities(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardVersion_games(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardVersion_games(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Games, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]model.MtgGame)
+	fc.Result = res
+	return ec.marshalNMTG_Game2ᚕmagicᚑhelperᚋgraphᚋmodelᚐMtgGameᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardVersion_games(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MTG_Game does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardVersion_imageUris(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardVersion_imageUris(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ImageUris, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.MtgImage)
+	fc.Result = res
+	return ec.marshalOMTG_Image2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgImage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardVersion_imageUris(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "artCrop":
+				return ec.fieldContext_MTG_Image_artCrop(ctx, field)
+			case "borderCrop":
+				return ec.fieldContext_MTG_Image_borderCrop(ctx, field)
+			case "large":
+				return ec.fieldContext_MTG_Image_large(ctx, field)
+			case "normal":
+				return ec.fieldContext_MTG_Image_normal(ctx, field)
+			case "PNG":
+				return ec.fieldContext_MTG_Image_PNG(ctx, field)
+			case "small":
+				return ec.fieldContext_MTG_Image_small(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTG_Image", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardVersion_rarity(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardVersion_rarity(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Rarity, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.MtgRarity)
+	fc.Result = res
+	return ec.marshalNMTG_Rarity2magicᚑhelperᚋgraphᚋmodelᚐMtgRarity(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardVersion_rarity(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MTG_Rarity does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardVersion_releasedAt(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardVersion_releasedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReleasedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardVersion_releasedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardVersion_reprint(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardVersion_reprint(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reprint, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardVersion_reprint(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardVersion_setName(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardVersion_setName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SetName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardVersion_setName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardVersion_setType(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardVersion_setType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SetType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardVersion_setType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardVersion_set(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardVersion_set(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Set, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardVersion_set(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardVersion_setID(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardVersion_setID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SetID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardVersion_setID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardVersion_variation(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardVersion_variation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Variation, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardVersion_variation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardVersion_variationOf(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardVersion_variationOf(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VariationOf, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardVersion_variationOf(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardVersion",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -3319,50 +4196,6 @@ func (ec *executionContext) fieldContext_MTG_Deck_ID(_ context.Context, field gr
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type ID does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MTG_Deck_list(ctx context.Context, field graphql.CollectedField, obj *model.MtgDeck) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_Deck_list(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.List, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(model.MtgCardListType)
-	fc.Result = res
-	return ec.marshalNMTG_CardListType2magicᚑhelperᚋgraphᚋmodelᚐMtgCardListType(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MTG_Deck_list(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MTG_Deck",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type MTG_CardListType does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3494,6 +4327,8 @@ func (ec *executionContext) fieldContext_MTG_Deck_cards(_ context.Context, field
 			switch field.Name {
 			case "card":
 				return ec.fieldContext_MTG_DeckCard_card(ctx, field)
+			case "selectedSet":
+				return ec.fieldContext_MTG_DeckCard_selectedSet(ctx, field)
 			case "count":
 				return ec.fieldContext_MTG_DeckCard_count(ctx, field)
 			case "position":
@@ -3564,50 +4399,6 @@ func (ec *executionContext) fieldContext_MTG_Deck_zones(_ context.Context, field
 				return ec.fieldContext_FlowZone_childrenIDs(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type FlowZone", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MTG_Deck_type(ctx context.Context, field graphql.CollectedField, obj *model.MtgDeck) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_Deck_type(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Type, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(model.DeckType)
-	fc.Result = res
-	return ec.marshalNDeckType2magicᚑhelperᚋgraphᚋmodelᚐDeckType(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_MTG_Deck_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MTG_Deck",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type DeckType does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3698,50 +4489,81 @@ func (ec *executionContext) fieldContext_MTG_DeckCard_card(_ context.Context, fi
 			switch field.Name {
 			case "ID":
 				return ec.fieldContext_MTG_Card_ID(ctx, field)
-			case "cardFaces":
-				return ec.fieldContext_MTG_Card_cardFaces(ctx, field)
-			case "cmc":
-				return ec.fieldContext_MTG_Card_cmc(ctx, field)
-			case "colorIdentity":
-				return ec.fieldContext_MTG_Card_colorIdentity(ctx, field)
-			case "colors":
-				return ec.fieldContext_MTG_Card_colors(ctx, field)
-			case "description":
-				return ec.fieldContext_MTG_Card_description(ctx, field)
-			case "flavorText":
-				return ec.fieldContext_MTG_Card_flavorText(ctx, field)
-			case "image":
-				return ec.fieldContext_MTG_Card_image(ctx, field)
 			case "layout":
 				return ec.fieldContext_MTG_Card_layout(ctx, field)
-			case "legalities":
-				return ec.fieldContext_MTG_Card_legalities(ctx, field)
+			case "CMC":
+				return ec.fieldContext_MTG_Card_CMC(ctx, field)
+			case "colorIdentity":
+				return ec.fieldContext_MTG_Card_colorIdentity(ctx, field)
+			case "colorIndicator":
+				return ec.fieldContext_MTG_Card_colorIndicator(ctx, field)
+			case "colors":
+				return ec.fieldContext_MTG_Card_colors(ctx, field)
+			case "EDHRecRank":
+				return ec.fieldContext_MTG_Card_EDHRecRank(ctx, field)
+			case "keywords":
+				return ec.fieldContext_MTG_Card_keywords(ctx, field)
 			case "loyalty":
 				return ec.fieldContext_MTG_Card_loyalty(ctx, field)
 			case "manaCost":
 				return ec.fieldContext_MTG_Card_manaCost(ctx, field)
 			case "name":
 				return ec.fieldContext_MTG_Card_name(ctx, field)
+			case "oracleText":
+				return ec.fieldContext_MTG_Card_oracleText(ctx, field)
 			case "power":
 				return ec.fieldContext_MTG_Card_power(ctx, field)
 			case "producedMana":
 				return ec.fieldContext_MTG_Card_producedMana(ctx, field)
-			case "rarity":
-				return ec.fieldContext_MTG_Card_rarity(ctx, field)
-			case "releasedAt":
-				return ec.fieldContext_MTG_Card_releasedAt(ctx, field)
-			case "set":
-				return ec.fieldContext_MTG_Card_set(ctx, field)
-			case "setName":
-				return ec.fieldContext_MTG_Card_setName(ctx, field)
 			case "toughness":
 				return ec.fieldContext_MTG_Card_toughness(ctx, field)
 			case "typeLine":
 				return ec.fieldContext_MTG_Card_typeLine(ctx, field)
-			case "scryfallURL":
-				return ec.fieldContext_MTG_Card_scryfallURL(ctx, field)
+			case "versions":
+				return ec.fieldContext_MTG_Card_versions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTG_Card", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_DeckCard_selectedSet(ctx context.Context, field graphql.CollectedField, obj *model.MtgDeckCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_DeckCard_selectedSet(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SelectedSet, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_DeckCard_selectedSet(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_DeckCard",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4661,8 +5483,8 @@ func (ec *executionContext) fieldContext_MTG_Image_normal(_ context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _MTG_Image_png(ctx context.Context, field graphql.CollectedField, obj *model.MtgImage) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_Image_png(ctx, field)
+func (ec *executionContext) _MTG_Image_PNG(ctx context.Context, field graphql.CollectedField, obj *model.MtgImage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_Image_PNG(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -4692,7 +5514,7 @@ func (ec *executionContext) _MTG_Image_png(ctx context.Context, field graphql.Co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MTG_Image_png(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MTG_Image_PNG(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MTG_Image",
 		Field:      field,
@@ -4790,8 +5612,6 @@ func (ec *executionContext) fieldContext_Mutation_createMTGDeck(ctx context.Cont
 			switch field.Name {
 			case "ID":
 				return ec.fieldContext_MTG_Deck_ID(ctx, field)
-			case "list":
-				return ec.fieldContext_MTG_Deck_list(ctx, field)
 			case "name":
 				return ec.fieldContext_MTG_Deck_name(ctx, field)
 			case "cardFrontImage":
@@ -4800,8 +5620,6 @@ func (ec *executionContext) fieldContext_Mutation_createMTGDeck(ctx context.Cont
 				return ec.fieldContext_MTG_Deck_cards(ctx, field)
 			case "zones":
 				return ec.fieldContext_MTG_Deck_zones(ctx, field)
-			case "type":
-				return ec.fieldContext_MTG_Deck_type(ctx, field)
 			case "ignoredCards":
 				return ec.fieldContext_MTG_Deck_ignoredCards(ctx, field)
 			}
@@ -4918,8 +5736,6 @@ func (ec *executionContext) fieldContext_Mutation_updateMTGDeck(ctx context.Cont
 			switch field.Name {
 			case "ID":
 				return ec.fieldContext_MTG_Deck_ID(ctx, field)
-			case "list":
-				return ec.fieldContext_MTG_Deck_list(ctx, field)
 			case "name":
 				return ec.fieldContext_MTG_Deck_name(ctx, field)
 			case "cardFrontImage":
@@ -4928,8 +5744,6 @@ func (ec *executionContext) fieldContext_Mutation_updateMTGDeck(ctx context.Cont
 				return ec.fieldContext_MTG_Deck_cards(ctx, field)
 			case "zones":
 				return ec.fieldContext_MTG_Deck_zones(ctx, field)
-			case "type":
-				return ec.fieldContext_MTG_Deck_type(ctx, field)
 			case "ignoredCards":
 				return ec.fieldContext_MTG_Deck_ignoredCards(ctx, field)
 			}
@@ -4991,8 +5805,6 @@ func (ec *executionContext) fieldContext_Mutation_saveMTGDeckAsCopy(ctx context.
 			switch field.Name {
 			case "ID":
 				return ec.fieldContext_MTG_Deck_ID(ctx, field)
-			case "list":
-				return ec.fieldContext_MTG_Deck_list(ctx, field)
 			case "name":
 				return ec.fieldContext_MTG_Deck_name(ctx, field)
 			case "cardFrontImage":
@@ -5001,8 +5813,6 @@ func (ec *executionContext) fieldContext_Mutation_saveMTGDeckAsCopy(ctx context.
 				return ec.fieldContext_MTG_Deck_cards(ctx, field)
 			case "zones":
 				return ec.fieldContext_MTG_Deck_zones(ctx, field)
-			case "type":
-				return ec.fieldContext_MTG_Deck_type(ctx, field)
 			case "ignoredCards":
 				return ec.fieldContext_MTG_Deck_ignoredCards(ctx, field)
 			}
@@ -5219,7 +6029,7 @@ func (ec *executionContext) _Query_getMTGCards(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetMTGCards(rctx, fc.Args["list"].(model.MtgCardListType))
+		return ec.resolvers.Query().GetMTGCards(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5236,7 +6046,7 @@ func (ec *executionContext) _Query_getMTGCards(ctx context.Context, field graphq
 	return ec.marshalNMTG_Card2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgCardᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_getMTGCards(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_getMTGCards(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -5246,62 +6056,41 @@ func (ec *executionContext) fieldContext_Query_getMTGCards(ctx context.Context, 
 			switch field.Name {
 			case "ID":
 				return ec.fieldContext_MTG_Card_ID(ctx, field)
-			case "cardFaces":
-				return ec.fieldContext_MTG_Card_cardFaces(ctx, field)
-			case "cmc":
-				return ec.fieldContext_MTG_Card_cmc(ctx, field)
-			case "colorIdentity":
-				return ec.fieldContext_MTG_Card_colorIdentity(ctx, field)
-			case "colors":
-				return ec.fieldContext_MTG_Card_colors(ctx, field)
-			case "description":
-				return ec.fieldContext_MTG_Card_description(ctx, field)
-			case "flavorText":
-				return ec.fieldContext_MTG_Card_flavorText(ctx, field)
-			case "image":
-				return ec.fieldContext_MTG_Card_image(ctx, field)
 			case "layout":
 				return ec.fieldContext_MTG_Card_layout(ctx, field)
-			case "legalities":
-				return ec.fieldContext_MTG_Card_legalities(ctx, field)
+			case "CMC":
+				return ec.fieldContext_MTG_Card_CMC(ctx, field)
+			case "colorIdentity":
+				return ec.fieldContext_MTG_Card_colorIdentity(ctx, field)
+			case "colorIndicator":
+				return ec.fieldContext_MTG_Card_colorIndicator(ctx, field)
+			case "colors":
+				return ec.fieldContext_MTG_Card_colors(ctx, field)
+			case "EDHRecRank":
+				return ec.fieldContext_MTG_Card_EDHRecRank(ctx, field)
+			case "keywords":
+				return ec.fieldContext_MTG_Card_keywords(ctx, field)
 			case "loyalty":
 				return ec.fieldContext_MTG_Card_loyalty(ctx, field)
 			case "manaCost":
 				return ec.fieldContext_MTG_Card_manaCost(ctx, field)
 			case "name":
 				return ec.fieldContext_MTG_Card_name(ctx, field)
+			case "oracleText":
+				return ec.fieldContext_MTG_Card_oracleText(ctx, field)
 			case "power":
 				return ec.fieldContext_MTG_Card_power(ctx, field)
 			case "producedMana":
 				return ec.fieldContext_MTG_Card_producedMana(ctx, field)
-			case "rarity":
-				return ec.fieldContext_MTG_Card_rarity(ctx, field)
-			case "releasedAt":
-				return ec.fieldContext_MTG_Card_releasedAt(ctx, field)
-			case "set":
-				return ec.fieldContext_MTG_Card_set(ctx, field)
-			case "setName":
-				return ec.fieldContext_MTG_Card_setName(ctx, field)
 			case "toughness":
 				return ec.fieldContext_MTG_Card_toughness(ctx, field)
 			case "typeLine":
 				return ec.fieldContext_MTG_Card_typeLine(ctx, field)
-			case "scryfallURL":
-				return ec.fieldContext_MTG_Card_scryfallURL(ctx, field)
+			case "versions":
+				return ec.fieldContext_MTG_Card_versions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTG_Card", field.Name)
 		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_getMTGCards_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
 	}
 	return fc, nil
 }
@@ -5320,7 +6109,7 @@ func (ec *executionContext) _Query_getMTGFilters(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetMTGFilters(rctx, fc.Args["list"].(model.MtgCardListType))
+		return ec.resolvers.Query().GetMTGFilters(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5337,7 +6126,7 @@ func (ec *executionContext) _Query_getMTGFilters(ctx context.Context, field grap
 	return ec.marshalNMTG_Filter_Entries2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterEntries(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_getMTGFilters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_getMTGFilters(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -5354,17 +6143,6 @@ func (ec *executionContext) fieldContext_Query_getMTGFilters(ctx context.Context
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTG_Filter_Entries", field.Name)
 		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_getMTGFilters_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
 	}
 	return fc, nil
 }
@@ -5383,7 +6161,7 @@ func (ec *executionContext) _Query_getMTGDecks(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetMTGDecks(rctx, fc.Args["list"].(model.MtgCardListType), fc.Args["deckID"].(*string))
+		return ec.resolvers.Query().GetMTGDecks(rctx, fc.Args["deckID"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5410,8 +6188,6 @@ func (ec *executionContext) fieldContext_Query_getMTGDecks(ctx context.Context, 
 			switch field.Name {
 			case "ID":
 				return ec.fieldContext_MTG_Deck_ID(ctx, field)
-			case "list":
-				return ec.fieldContext_MTG_Deck_list(ctx, field)
 			case "name":
 				return ec.fieldContext_MTG_Deck_name(ctx, field)
 			case "cardFrontImage":
@@ -5420,8 +6196,6 @@ func (ec *executionContext) fieldContext_Query_getMTGDecks(ctx context.Context, 
 				return ec.fieldContext_MTG_Deck_cards(ctx, field)
 			case "zones":
 				return ec.fieldContext_MTG_Deck_zones(ctx, field)
-			case "type":
-				return ec.fieldContext_MTG_Deck_type(ctx, field)
 			case "ignoredCards":
 				return ec.fieldContext_MTG_Deck_ignoredCards(ctx, field)
 			}
@@ -7678,20 +8452,13 @@ func (ec *executionContext) unmarshalInputMTG_CreateDeckInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"list", "name", "type"}
+	fieldsInOrder := [...]string{"name"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "list":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("list"))
-			data, err := ec.unmarshalNMTG_CardListType2magicᚑhelperᚋgraphᚋmodelᚐMtgCardListType(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.List = data
 		case "name":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			data, err := ec.unmarshalNString2string(ctx, v)
@@ -7699,13 +8466,6 @@ func (ec *executionContext) unmarshalInputMTG_CreateDeckInput(ctx context.Contex
 				return it, err
 			}
 			it.Name = data
-		case "type":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
-			data, err := ec.unmarshalNDeckType2magicᚑhelperᚋgraphᚋmodelᚐDeckType(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Type = data
 		}
 	}
 
@@ -7719,7 +8479,7 @@ func (ec *executionContext) unmarshalInputMTG_DeckCardInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"ID", "card", "count", "position", "mainOrSide", "deckCardType", "phantoms"}
+	fieldsInOrder := [...]string{"ID", "card", "selectedSet", "count", "position", "mainOrSide", "deckCardType", "phantoms"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7740,6 +8500,13 @@ func (ec *executionContext) unmarshalInputMTG_DeckCardInput(ctx context.Context,
 				return it, err
 			}
 			it.Card = data
+		case "selectedSet":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("selectedSet"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SelectedSet = data
 		case "count":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("count"))
 			data, err := ec.unmarshalNInt2int(ctx, v)
@@ -7788,7 +8555,7 @@ func (ec *executionContext) unmarshalInputMTG_DeleteDeckInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"deckID", "list"}
+	fieldsInOrder := [...]string{"deckID"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7802,13 +8569,6 @@ func (ec *executionContext) unmarshalInputMTG_DeleteDeckInput(ctx context.Contex
 				return it, err
 			}
 			it.DeckID = data
-		case "list":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("list"))
-			data, err := ec.unmarshalNMTG_CardListType2magicᚑhelperᚋgraphᚋmodelᚐMtgCardListType(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.List = data
 		}
 	}
 
@@ -7822,7 +8582,7 @@ func (ec *executionContext) unmarshalInputMTG_UpdateDeckInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"deckID", "list", "name", "type", "cardFrontImage", "cards", "zones", "ignoredCards"}
+	fieldsInOrder := [...]string{"deckID", "name", "cardFrontImage", "cards", "zones", "ignoredCards"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7836,13 +8596,6 @@ func (ec *executionContext) unmarshalInputMTG_UpdateDeckInput(ctx context.Contex
 				return it, err
 			}
 			it.DeckID = data
-		case "list":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("list"))
-			data, err := ec.unmarshalNMTG_CardListType2magicᚑhelperᚋgraphᚋmodelᚐMtgCardListType(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.List = data
 		case "name":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			data, err := ec.unmarshalNString2string(ctx, v)
@@ -7850,13 +8603,6 @@ func (ec *executionContext) unmarshalInputMTG_UpdateDeckInput(ctx context.Contex
 				return it, err
 			}
 			it.Name = data
-		case "type":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
-			data, err := ec.unmarshalNDeckType2magicᚑhelperᚋgraphᚋmodelᚐDeckType(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Type = data
 		case "cardFrontImage":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cardFrontImage"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -7963,29 +8709,6 @@ func (ec *executionContext) unmarshalInputPositionInput(ctx context.Context, obj
 
 // region    ************************** interface.gotpl ***************************
 
-func (ec *executionContext) _MTG_CommonFields(ctx context.Context, sel ast.SelectionSet, obj model.MtgCommonFields) graphql.Marshaler {
-	switch obj := (obj).(type) {
-	case nil:
-		return graphql.Null
-	case model.MtgCard:
-		return ec._MTG_Card(ctx, sel, &obj)
-	case *model.MtgCard:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._MTG_Card(ctx, sel, obj)
-	case model.MtgCardFace:
-		return ec._MTG_CardFace(ctx, sel, &obj)
-	case *model.MtgCardFace:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._MTG_CardFace(ctx, sel, obj)
-	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
-	}
-}
-
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
@@ -8054,7 +8777,7 @@ func (ec *executionContext) _FlowZone(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
-var mTG_CardImplementors = []string{"MTG_Card", "MTG_CommonFields"}
+var mTG_CardImplementors = []string{"MTG_Card"}
 
 func (ec *executionContext) _MTG_Card(ctx context.Context, sel ast.SelectionSet, obj *model.MtgCard) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, mTG_CardImplementors)
@@ -8070,10 +8793,13 @@ func (ec *executionContext) _MTG_Card(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "cardFaces":
-			out.Values[i] = ec._MTG_Card_cardFaces(ctx, field, obj)
-		case "cmc":
-			out.Values[i] = ec._MTG_Card_cmc(ctx, field, obj)
+		case "layout":
+			out.Values[i] = ec._MTG_Card_layout(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "CMC":
+			out.Values[i] = ec._MTG_Card_CMC(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -8082,21 +8808,14 @@ func (ec *executionContext) _MTG_Card(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "colorIndicator":
+			out.Values[i] = ec._MTG_Card_colorIndicator(ctx, field, obj)
 		case "colors":
 			out.Values[i] = ec._MTG_Card_colors(ctx, field, obj)
-		case "description":
-			out.Values[i] = ec._MTG_Card_description(ctx, field, obj)
-		case "flavorText":
-			out.Values[i] = ec._MTG_Card_flavorText(ctx, field, obj)
-		case "image":
-			out.Values[i] = ec._MTG_Card_image(ctx, field, obj)
-		case "layout":
-			out.Values[i] = ec._MTG_Card_layout(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "legalities":
-			out.Values[i] = ec._MTG_Card_legalities(ctx, field, obj)
+		case "EDHRecRank":
+			out.Values[i] = ec._MTG_Card_EDHRecRank(ctx, field, obj)
+		case "keywords":
+			out.Values[i] = ec._MTG_Card_keywords(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -8109,30 +8828,12 @@ func (ec *executionContext) _MTG_Card(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "oracleText":
+			out.Values[i] = ec._MTG_Card_oracleText(ctx, field, obj)
 		case "power":
 			out.Values[i] = ec._MTG_Card_power(ctx, field, obj)
 		case "producedMana":
 			out.Values[i] = ec._MTG_Card_producedMana(ctx, field, obj)
-		case "rarity":
-			out.Values[i] = ec._MTG_Card_rarity(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "releasedAt":
-			out.Values[i] = ec._MTG_Card_releasedAt(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "set":
-			out.Values[i] = ec._MTG_Card_set(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "setName":
-			out.Values[i] = ec._MTG_Card_setName(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "toughness":
 			out.Values[i] = ec._MTG_Card_toughness(ctx, field, obj)
 		case "typeLine":
@@ -8140,8 +8841,8 @@ func (ec *executionContext) _MTG_Card(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "scryfallURL":
-			out.Values[i] = ec._MTG_Card_scryfallURL(ctx, field, obj)
+		case "versions":
+			out.Values[i] = ec._MTG_Card_versions(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -8168,7 +8869,7 @@ func (ec *executionContext) _MTG_Card(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
-var mTG_CardFaceImplementors = []string{"MTG_CardFace", "MTG_CommonFields"}
+var mTG_CardFaceImplementors = []string{"MTG_CardFace"}
 
 func (ec *executionContext) _MTG_CardFace(ctx context.Context, sel ast.SelectionSet, obj *model.MtgCardFace) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, mTG_CardFaceImplementors)
@@ -8179,17 +8880,20 @@ func (ec *executionContext) _MTG_CardFace(ctx context.Context, sel ast.Selection
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MTG_CardFace")
+		case "artist":
+			out.Values[i] = ec._MTG_CardFace_artist(ctx, field, obj)
+		case "CMC":
+			out.Values[i] = ec._MTG_CardFace_CMC(ctx, field, obj)
+		case "colorIndicator":
+			out.Values[i] = ec._MTG_CardFace_colorIndicator(ctx, field, obj)
 		case "colors":
 			out.Values[i] = ec._MTG_CardFace_colors(ctx, field, obj)
-		case "description":
-			out.Values[i] = ec._MTG_CardFace_description(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "flavorText":
 			out.Values[i] = ec._MTG_CardFace_flavorText(ctx, field, obj)
-		case "image":
-			out.Values[i] = ec._MTG_CardFace_image(ctx, field, obj)
+		case "imageUris":
+			out.Values[i] = ec._MTG_CardFace_imageUris(ctx, field, obj)
+		case "layout":
+			out.Values[i] = ec._MTG_CardFace_layout(ctx, field, obj)
 		case "loyalty":
 			out.Values[i] = ec._MTG_CardFace_loyalty(ctx, field, obj)
 		case "manaCost":
@@ -8202,17 +8906,130 @@ func (ec *executionContext) _MTG_CardFace(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "oracleText":
+			out.Values[i] = ec._MTG_CardFace_oracleText(ctx, field, obj)
 		case "power":
 			out.Values[i] = ec._MTG_CardFace_power(ctx, field, obj)
-		case "producedMana":
-			out.Values[i] = ec._MTG_CardFace_producedMana(ctx, field, obj)
 		case "toughness":
 			out.Values[i] = ec._MTG_CardFace_toughness(ctx, field, obj)
 		case "typeLine":
 			out.Values[i] = ec._MTG_CardFace_typeLine(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var mTG_CardVersionImplementors = []string{"MTG_CardVersion"}
+
+func (ec *executionContext) _MTG_CardVersion(ctx context.Context, sel ast.SelectionSet, obj *model.MtgCardVersion) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mTG_CardVersionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MTG_CardVersion")
+		case "ID":
+			out.Values[i] = ec._MTG_CardVersion_ID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "isDefault":
+			out.Values[i] = ec._MTG_CardVersion_isDefault(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "isAlchemy":
+			out.Values[i] = ec._MTG_CardVersion_isAlchemy(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "artist":
+			out.Values[i] = ec._MTG_CardVersion_artist(ctx, field, obj)
+		case "lang":
+			out.Values[i] = ec._MTG_CardVersion_lang(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "flavorName":
+			out.Values[i] = ec._MTG_CardVersion_flavorName(ctx, field, obj)
+		case "flavorText":
+			out.Values[i] = ec._MTG_CardVersion_flavorText(ctx, field, obj)
+		case "cardFaces":
+			out.Values[i] = ec._MTG_CardVersion_cardFaces(ctx, field, obj)
+		case "legalities":
+			out.Values[i] = ec._MTG_CardVersion_legalities(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "games":
+			out.Values[i] = ec._MTG_CardVersion_games(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "imageUris":
+			out.Values[i] = ec._MTG_CardVersion_imageUris(ctx, field, obj)
+		case "rarity":
+			out.Values[i] = ec._MTG_CardVersion_rarity(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "releasedAt":
+			out.Values[i] = ec._MTG_CardVersion_releasedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "reprint":
+			out.Values[i] = ec._MTG_CardVersion_reprint(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "setName":
+			out.Values[i] = ec._MTG_CardVersion_setName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "setType":
+			out.Values[i] = ec._MTG_CardVersion_setType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "set":
+			out.Values[i] = ec._MTG_CardVersion_set(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "setID":
+			out.Values[i] = ec._MTG_CardVersion_setID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "variation":
+			out.Values[i] = ec._MTG_CardVersion_variation(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "variationOf":
+			out.Values[i] = ec._MTG_CardVersion_variationOf(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8252,11 +9069,6 @@ func (ec *executionContext) _MTG_Deck(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "list":
-			out.Values[i] = ec._MTG_Deck_list(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "name":
 			out.Values[i] = ec._MTG_Deck_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -8271,11 +9083,6 @@ func (ec *executionContext) _MTG_Deck(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "zones":
 			out.Values[i] = ec._MTG_Deck_zones(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "type":
-			out.Values[i] = ec._MTG_Deck_type(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -8323,6 +9130,8 @@ func (ec *executionContext) _MTG_DeckCard(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "selectedSet":
+			out.Values[i] = ec._MTG_DeckCard_selectedSet(ctx, field, obj)
 		case "count":
 			out.Values[i] = ec._MTG_DeckCard_count(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -8593,8 +9402,8 @@ func (ec *executionContext) _MTG_Image(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "png":
-			out.Values[i] = ec._MTG_Image_png(ctx, field, obj)
+		case "PNG":
+			out.Values[i] = ec._MTG_Image_PNG(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -9291,16 +10100,6 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) unmarshalNDeckType2magicᚑhelperᚋgraphᚋmodelᚐDeckType(ctx context.Context, v any) (model.DeckType, error) {
-	var res model.DeckType
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNDeckType2magicᚑhelperᚋgraphᚋmodelᚐDeckType(ctx context.Context, sel ast.SelectionSet, v model.DeckType) graphql.Marshaler {
-	return v
-}
-
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v any) (float64, error) {
 	res, err := graphql.UnmarshalFloatContext(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -9518,14 +10317,58 @@ func (ec *executionContext) marshalNMTG_CardFace2ᚖmagicᚑhelperᚋgraphᚋmod
 	return ec._MTG_CardFace(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNMTG_CardListType2magicᚑhelperᚋgraphᚋmodelᚐMtgCardListType(ctx context.Context, v any) (model.MtgCardListType, error) {
-	var res model.MtgCardListType
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
+func (ec *executionContext) marshalNMTG_CardVersion2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgCardVersionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MtgCardVersion) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMTG_CardVersion2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgCardVersion(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
-func (ec *executionContext) marshalNMTG_CardListType2magicᚑhelperᚋgraphᚋmodelᚐMtgCardListType(ctx context.Context, sel ast.SelectionSet, v model.MtgCardListType) graphql.Marshaler {
-	return v
+func (ec *executionContext) marshalNMTG_CardVersion2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgCardVersion(ctx context.Context, sel ast.SelectionSet, v *model.MtgCardVersion) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MTG_CardVersion(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNMTG_Color2magicᚑhelperᚋgraphᚋmodelᚐMtgColor(ctx context.Context, v any) (model.MtgColor, error) {
@@ -9883,6 +10726,87 @@ func (ec *executionContext) marshalNMTG_Filter_Legality2ᚖmagicᚑhelperᚋgrap
 		return graphql.Null
 	}
 	return ec._MTG_Filter_Legality(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNMTG_Game2magicᚑhelperᚋgraphᚋmodelᚐMtgGame(ctx context.Context, v any) (model.MtgGame, error) {
+	var res model.MtgGame
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMTG_Game2magicᚑhelperᚋgraphᚋmodelᚐMtgGame(ctx context.Context, sel ast.SelectionSet, v model.MtgGame) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNMTG_Game2ᚕmagicᚑhelperᚋgraphᚋmodelᚐMtgGameᚄ(ctx context.Context, v any) ([]model.MtgGame, error) {
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]model.MtgGame, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNMTG_Game2magicᚑhelperᚋgraphᚋmodelᚐMtgGame(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNMTG_Game2ᚕmagicᚑhelperᚋgraphᚋmodelᚐMtgGameᚄ(ctx context.Context, sel ast.SelectionSet, v []model.MtgGame) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMTG_Game2magicᚑhelperᚋgraphᚋmodelᚐMtgGame(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalNMTG_Layout2magicᚑhelperᚋgraphᚋmodelᚐMtgLayout(ctx context.Context, v any) (model.MtgLayout, error) {
+	var res model.MtgLayout
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMTG_Layout2magicᚑhelperᚋgraphᚋmodelᚐMtgLayout(ctx context.Context, sel ast.SelectionSet, v model.MtgLayout) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) unmarshalNMTG_Rarity2magicᚑhelperᚋgraphᚋmodelᚐMtgRarity(ctx context.Context, v any) (model.MtgRarity, error) {
@@ -10348,6 +11272,22 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
+func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v any) (*float64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel ast.SelectionSet, v *float64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalFloatContext(*v)
+	return graphql.WrapContextMarshaler(ctx, res)
+}
+
 func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v any) (*string, error) {
 	if v == nil {
 		return nil, nil
@@ -10361,6 +11301,22 @@ func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.Se
 		return graphql.Null
 	}
 	res := graphql.MarshalID(*v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v any) (*int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalInt(*v)
 	return res
 }
 
@@ -10483,6 +11439,60 @@ func (ec *executionContext) marshalOMTG_Image2ᚖmagicᚑhelperᚋgraphᚋmodel�
 		return graphql.Null
 	}
 	return ec._MTG_Image(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOMTG_Layout2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgLayout(ctx context.Context, v any) (*model.MtgLayout, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.MtgLayout)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOMTG_Layout2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgLayout(ctx context.Context, sel ast.SelectionSet, v *model.MtgLayout) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {

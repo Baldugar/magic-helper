@@ -14,19 +14,14 @@ func CreateMTGDeck(ctx context.Context, input model.MtgCreateDeckInput) (*model.
 	aq := arango.NewQuery( /* aql */ `
 		INSERT {
 			name: @name,
-			type: @type,
 		} INTO @@collection
 		RETURN NEW
 	`)
 
 	col := arango.MTG_DECKS_COLLECTION
-	if input.List == model.MtgCardListTypeMtga {
-		col = arango.MTGA_DECKS_COLLECTION
-	}
 
 	aq.AddBindVar("@collection", col)
 	aq.AddBindVar("name", input.Name)
-	aq.AddBindVar("type", input.Type)
 
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {
@@ -52,7 +47,6 @@ func CreateMTGDeck(ctx context.Context, input model.MtgCreateDeckInput) (*model.
 		CardFrontImage: nil,
 		Cards:          []*model.MtgDeckCard{},
 		Zones:          []*model.FlowZone{},
-		Type:           deckDB.Type,
 	}
 
 	log.Info().Msg("CreateMTGDeck: Finished")
@@ -86,9 +80,6 @@ func DeleteMTGDeck(ctx context.Context, input model.MtgDeleteDeckInput) (bool, e
 	`)
 
 	col := arango.MTG_DECKS_COLLECTION
-	if input.List == model.MtgCardListTypeMtga {
-		col = arango.MTGA_DECKS_COLLECTION
-	}
 
 	aq.AddBindVar("@collection", col)
 	aq.AddBindVar("collection", col)
@@ -123,15 +114,10 @@ func UpdateMTGDeck(ctx context.Context, input model.MtgUpdateDeckInput) (*model.
 
 	col := arango.MTG_DECKS_COLLECTION
 	col2 := arango.MTG_CARDS_COLLECTION
-	if input.List == model.MtgCardListTypeMtga {
-		col = arango.MTGA_DECKS_COLLECTION
-		col2 = arango.MTGA_CARDS_COLLECTION
-	}
 
 	aq.AddBindVar("@collection", col)
 	aq.AddBindVar("deckID", input.DeckID)
 	aq.AddBindVar("name", input.Name)
-	aq.AddBindVar("type", input.Type)
 	aq.AddBindVar("zones", input.Zones)
 	aq.AddBindVar("ignoredCards", input.IgnoredCards)
 
@@ -251,7 +237,7 @@ func UpdateMTGDeck(ctx context.Context, input model.MtgUpdateDeckInput) (*model.
 
 	log.Info().Msg("UpdateMTGDeck: Finished")
 
-	deck, err := GetMTGDecks(ctx, input.List, &input.DeckID)
+	deck, err := GetMTGDecks(ctx, &input.DeckID)
 	if err != nil {
 		log.Error().Err(err).Msgf("UpdateMTGDeck: Error getting deck")
 		return nil, err
@@ -267,8 +253,6 @@ func SaveMTGDeckAsCopy(ctx context.Context, input model.MtgUpdateDeckInput) (*mo
 
 	createdDeck, err := CreateMTGDeck(ctx, model.MtgCreateDeckInput{
 		Name: newName,
-		List: input.List,
-		Type: input.Type,
 	})
 	if err != nil {
 		log.Error().Err(err).Msgf("SaveDeckAsCopy: Error creating deck")
@@ -279,12 +263,10 @@ func SaveMTGDeckAsCopy(ctx context.Context, input model.MtgUpdateDeckInput) (*mo
 	newInput := model.MtgUpdateDeckInput{
 		DeckID:         createdDeck.ID,
 		Name:           newName,
-		Type:           input.Type,
 		Zones:          input.Zones,
 		CardFrontImage: input.CardFrontImage,
 		Cards:          input.Cards,
 		IgnoredCards:   input.IgnoredCards,
-		List:           input.List,
 	}
 
 	newDeck, err := UpdateMTGDeck(ctx, newInput)
