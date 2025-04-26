@@ -82,7 +82,7 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
                                                         },
                                                         loading: 'lazy',
                                                     }}
-                                                    URL={`http://${envConfig.domain}:${envConfig.port}/set/${set.code}`}
+                                                    URL={`${envConfig.apiUrl}/set/${set.code}`}
                                                 />
                                             </Box>
                                         </Tooltip>

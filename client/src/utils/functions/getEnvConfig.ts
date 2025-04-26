@@ -1,26 +1,18 @@
+// client/src/utils/functions/getEnvConfig.ts
 export interface EnvConfig {
-    domain: string
-    port: number
+    apiUrl: string
 }
 
 export default function getEnvConfig(): EnvConfig {
-    const envConfig: EnvConfig = {
-        domain: 'localhost',
-        port: 8080,
+    return {
+        apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:8080',
     }
-    return envConfig
 }
 
-export const getGraphQLServerURI = (): string => {
-    const envConfig = getEnvConfig()
-
-    return `http://${envConfig.domain}:${envConfig.port}/graphql`
-    // return process.env.NODE_ENV !== 'production' ? `http://${envConfig.domain}:${envConfig.port}/graphql` : '/graphql'
-}
+export const getGraphQLServerURI = () => '/graphql'
 
 export const getDomain = (): string => {
-    const envConfig = getEnvConfig()
-
-    return envConfig.domain
-    // return process.env.NODE_ENV !== 'production' ? envConfig.domain : ''
+    // Si lo necesitas en otro sitio, lo puedes extraer de apiUrl:
+    const url = new URL(getGraphQLServerURI())
+    return url.hostname
 }

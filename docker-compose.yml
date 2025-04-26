@@ -1,0 +1,41 @@
+services:
+  arangodb:
+    image: arangodb:latest
+    environment:
+      - ARANGO_ROOT_PASSWORD=arangodb
+    volumes:
+      - arango-data:/var/lib/arangodb3
+    ports:
+      - "8529:8529"
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    environment:
+      - ARANGO_ADDR=arangodb
+    depends_on:
+      - arangodb
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: "/graphql"
+    depends_on:
+      - server
+    # (no exponemos directamente el puerto 80)
+
+  proxy:
+    image: nginx:stable-alpine
+    volumes:
+      - ./nginx/proxy.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "3000:80"   # Host:3000 → nginx:80
+    depends_on:
+      - client
+      - server
+
+volumes:
+  arango-data:

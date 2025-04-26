@@ -18,11 +18,10 @@ import (
 func PeriodicFetchMTGSets() {
 	log.Info().Msg("Starting periodic fetch sets daemon")
 	for {
-		// fetched :=
-		fetchSets()
-		// if fetched {
-		updateDatabaseSets()
-		// }
+		fetched := fetchSets()
+		if fetched {
+			updateDatabaseSets()
+		}
 		time.Sleep(24 * time.Hour)
 	}
 }

@@ -88,11 +88,10 @@ func PeriodicFetchMTGCards() {
 	log.Info().Msg("Starting periodic fetch cards daemon")
 	ctx := context.Background() // Create context once for the loop iteration
 	for {
-		// fetched :=
-		fetchMTGCards(ctx) // Pass context
-		// if fetched {
-		// }
-		collectCards(ctx)
+		fetched := fetchMTGCards(ctx) // Pass context
+		if fetched {
+			collectCards(ctx)
+		}
 
 		time.Sleep(24 * time.Hour)
 	}
@@ -369,9 +368,13 @@ func collectCards(ctx context.Context) {
 
 	log.Info().Msgf("Processing %d groups", len(allGroups))
 
-	// Save each group into a file named after the group name and download images
+	// Calculate total number of groups
+	totalGroups := len(allGroups)
+	processedGroups := 0
+	progressInterval := 10 // Log every 10%
+	logThreshold := progressInterval
+
 	for key, groupData := range allGroups { // Renamed variables for clarity
-		log.Info().Msgf("Processing group %s", key)
 		groupName := key
 		groupCards := groupData
 
@@ -484,8 +487,6 @@ func collectCards(ctx context.Context) {
 			cardForGroup.Versions = append(cardForGroup.Versions, cardVersionModel)
 		}
 
-		log.Info().Msg("Determining default version...")
-
 		// Filter out duplicate versions based on specific fields
 		uniqueVersions := make([]*model.MtgCardVersion, 0)
 		seen := make(map[string]bool)
@@ -592,6 +593,14 @@ func collectCards(ctx context.Context) {
 		// --- End: Logic to determine the single default version ---
 
 		allCardsToSave = append(allCardsToSave, cardForGroup)
+
+		// Update processed groups count
+		processedGroups++
+		progress := (processedGroups * 100) / totalGroups
+		if progress >= logThreshold {
+			log.Info().Msgf("Processing progress: %d%% (%d / %d groups)", progress, processedGroups, totalGroups)
+			logThreshold += progressInterval
+		}
 
 		// // Step 1: Save the filtered group data to a JSON file
 		// _, saveErr := saveGroupToFile(groupName, filteredGroupCards, cardsDir)

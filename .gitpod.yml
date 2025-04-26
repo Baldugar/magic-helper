@@ -1,0 +1,21 @@
+image: gitpod/workspace-full
+
+# Habilita prebuilds para la rama main (acelera el arranque tras cada push)
+prebuild:
+    push:
+        branches:
+            - main
+
+tasks:
+    - init: |
+          # Arranca Docker-in-Docker
+          sudo docker-up
+    - command: |
+          # Construye y levanta tu stack completo
+          docker-compose up --build
+
+ports:
+    - port: 3000
+      onOpen: open-preview # tu frontend + proxy
+    - port: 8529
+      onOpen: open-preview # ArangoDB UI
