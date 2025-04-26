@@ -27,7 +27,7 @@ export const getCorrectCardImage = (
         case MTG_Layout.battle:
         case MTG_Layout.flip: {
             const cardFaces = card.cardFaces
-            if (!cardFaces) return other ? undefined : card.imageUris![size]
+            if (!cardFaces || !cardFaces.every((c) => c.imageUris)) return other ? undefined : card.imageUris![size]
             return cardFaces[other ? 1 : 0].imageUris![size]
         }
         case MTG_Layout.modal_dfc:

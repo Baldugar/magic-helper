@@ -2,7 +2,6 @@ import { Box, Button, Grid, Paper, Popper, Tooltip } from '@mui/material'
 import { MouseEvent, useState } from 'react'
 import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
 import { TernaryBoolean } from '../../types/ternaryBoolean'
-import getEnvConfig from '../../utils/functions/getEnvConfig'
 import { TernaryToggle } from './TernaryToggle'
 
 export interface SetSelectorProps {
@@ -19,7 +18,6 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
     const handleClick = (event: MouseEvent<HTMLElement>) => {
         setAnchorEl(anchorEl ? null : event.currentTarget)
     }
-    const envConfig = getEnvConfig()
 
     const open = Boolean(anchorEl)
 
@@ -82,7 +80,7 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
                                                         },
                                                         loading: 'lazy',
                                                     }}
-                                                    URL={`${envConfig.apiUrl}/set/${set.code}`}
+                                                    URL={set.imageURL}
                                                 />
                                             </Box>
                                         </Tooltip>
