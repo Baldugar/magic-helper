@@ -82,9 +82,12 @@ export const DeckList = () => {
                         <RotatingHDeckBox
                             deck={deck}
                             onClick={(d) => navigate(`/deck/${d.ID}`)}
-                            onDelete={() =>
-                                deleteMTGDeck(deck.ID).then(() => setDecks(decks.filter((d) => d.ID !== deck.ID)))
-                            }
+                            onDelete={() => {
+                                const confirmed = window.confirm('Are you sure you want to delete this deck?')
+                                if (confirmed) {
+                                    deleteMTGDeck(deck.ID).then(() => setDecks(decks.filter((d) => d.ID !== deck.ID)))
+                                }
+                            }}
                         />
                         {/* 
                             // image={deck.cardFrontImage}
