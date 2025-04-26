@@ -24,7 +24,7 @@ export const DeckList = () => {
 
     const open = Boolean(anchorEl)
     const {
-        mutations: { createMTGDeck },
+        mutations: { createMTGDeck, deleteMTGDeck },
     } = MTGFunctions
 
     return (
@@ -79,7 +79,13 @@ export const DeckList = () => {
                 {decks.map((deck) => (
                     <Grid item xs={12} md={6} lg={4} xl={3} key={deck.ID} container justifyContent={'center'}>
                         {/* <RotatingDeckBox /> */}
-                        <RotatingHDeckBox deck={deck} onClick={(d) => navigate(`/deck/${d.ID}`)} />
+                        <RotatingHDeckBox
+                            deck={deck}
+                            onClick={(d) => navigate(`/deck/${d.ID}`)}
+                            onDelete={() =>
+                                deleteMTGDeck(deck.ID).then(() => setDecks(decks.filter((d) => d.ID !== deck.ID)))
+                            }
+                        />
                         {/* 
                             // image={deck.cardFrontImage}
                             // name={deck.name}

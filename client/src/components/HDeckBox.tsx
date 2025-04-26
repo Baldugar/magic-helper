@@ -1,3 +1,5 @@
+import { Delete } from '@mui/icons-material'
+import { IconButton } from '@mui/material'
 import Box from '@mui/material/Box'
 import Slider from '@mui/material/Slider'
 import Typography from '@mui/material/Typography'
@@ -16,6 +18,7 @@ interface HDeckBoxProps {
         hovered?: boolean
     }
     deck: MTG_Deck
+    onDelete?: () => void
 }
 
 const HDeckBox = ({
@@ -28,6 +31,7 @@ const HDeckBox = ({
         hovered = false,
     },
     deck,
+    onDelete,
 }: HDeckBoxProps) => {
     const halfDepth = depth / 2
     const halfHeight = height / 2
@@ -89,301 +93,314 @@ const HDeckBox = ({
     }
 
     return (
-        <Box
-            sx={{
-                position: 'relative',
-                width: width,
-                height: height,
-                transformStyle: 'preserve-3d',
-            }}
-        >
-            {/* Front Face */}
+        <>
             <Box
                 sx={{
-                    ...commonFaceStyle,
-                    width: boxWidth,
+                    position: 'relative',
+                    width: width,
                     height: height,
-                    transform: `translateZ(${halfDepth}px)`,
-                    overflow: 'hidden',
-                }}
-            >
-                {deck.cardFrontImage && (
-                    <img
-                        src={deck.cardFrontImage}
-                        alt={deck.name}
-                        height={'100%'}
-                        style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            outline: '2px solid rgba(0,0,0,0.5)',
-                            outlineOffset: '-2px',
-                        }}
-                    />
-                )}
-            </Box>
-
-            {/* Top Face */}
-            <Box
-                sx={{
-                    ...commonFaceStyle,
-                    width: boxWidth,
-                    height: depth,
-                    transform: `rotateX(90deg) translateZ(${halfDepth}px)`,
-                }}
-            />
-
-            {/* Back Face */}
-            <Box
-                sx={{
-                    ...commonFaceStyle,
-                    width: boxWidth,
-                    height: height,
-                    transform: `rotateY(180deg) translateZ(${halfDepth}px)`,
-                    transformOrigin: 'center',
-                    background:
-                        commonFaceStyle.background +
-                        ` center/cover no-repeat,
-                    rgba(0, 0, 0, 0.5)`,
-                    backgroundBlendMode: 'multiply',
-                }}
-            />
-
-            {/* Right Face */}
-            <Box
-                sx={{
-                    ...commonFaceStyle,
-                    width: depth,
-                    height: height,
-                    background: 'unset',
-                    backgroundColor: 'transparent',
-                    transform: `rotateY(90deg) translateZ(${boxWidth - halfDepth}px)`,
-                }}
-            />
-
-            {/* Left Face */}
-            <Box
-                sx={{
-                    ...commonFaceStyle,
-                    width: depth,
-                    height: height,
-                    transform: `rotateY(-90deg) translateZ(${halfDepth}px)`,
-                }}
-            />
-
-            {/* Bottom Face */}
-            <Box
-                sx={{
-                    ...commonFaceStyle,
-                    width: boxWidth,
-                    height: depth,
-                    transform: `rotateX(-90deg) translateZ(${height - halfDepth}px)`,
-                    background:
-                        commonFaceStyle.background +
-                        ` center/cover no-repeat,
-                    rgba(0, 0, 0, 0.5)`,
-                    backgroundBlendMode: 'multiply',
-                }}
-            />
-
-            {/* Right Lid */}
-            <Box
-                sx={{
-                    position: 'absolute',
-                    width: depth,
-                    height: height,
-                    transform: `rotateY(90deg) translateZ(${-depth / 2 + boxWidth}px)`,
                     transformStyle: 'preserve-3d',
                 }}
             >
+                {/* Front Face */}
                 <Box
-                    onTransitionEnd={handleLidTransitionEnd}
                     sx={{
                         ...commonFaceStyle,
-                        position: 'relative',
-                        width: '100%',
-                        height: '100%',
-                        transformOrigin: 'right center',
-                        transform: `rotateY(${currentRightLidRotation}deg)`,
-                        transition: rightLidTransition,
-                        transitionDelay: rightLidDelay,
-                        transformStyle: 'preserve-3d',
-                        background: 'unset',
+                        width: boxWidth,
+                        height: height,
+                        transform: `translateZ(${halfDepth}px)`,
+                        overflow: 'hidden',
                     }}
                 >
-                    <Box
-                        sx={{
-                            ...commonFaceStyle,
-                            position: 'absolute',
-                            width: lidWidth,
-                            height: '100%',
-                            transform: `rotateY(90deg) translateX(-50%) translateZ(${halfDepth}px)`,
-                            background:
-                                commonFaceStyle.background +
-                                ` center/cover no-repeat,
-                                    rgba(0, 0, 0, 0.5)`,
-                            backgroundBlendMode: 'multiply',
-                        }}
-                    />
-                    <Box
-                        sx={{
-                            ...commonFaceStyle,
-                            position: 'absolute',
-                            width: lidWidth,
-                            height: '100%',
-                            transform: `rotateY(-90deg) translateX(50%) translateZ(${halfDepth}px)`,
-                            // overflow: 'hidden',
-                            transformStyle: 'preserve-3d',
-                            backfaceVisibility: 'hidden',
-                            background: deck.cardFrontImage
-                                ? `url(${deck.cardFrontImage}) center/cover no-repeat`
-                                : commonFaceStyle.background,
-                            backgroundPosition: 'center right',
-                            '&::after': {
-                                content: '""',
-                                position: 'relative',
-                                width: '100%',
-                                height: '100%',
-                                background:
-                                    commonFaceStyle.background +
-                                    ` center/cover no-repeat,
-                                    rgba(0, 0, 0, 0.5)`,
-                                backgroundBlendMode: 'multiply',
-                                transform: 'scaleX(-1) translateZ(-1px)',
-                                outline: '2px solid rgba(0,0,0)',
+                    {deck.cardFrontImage && (
+                        <img
+                            src={deck.cardFrontImage}
+                            alt={deck.name}
+                            height={'100%'}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                outline: '2px solid rgba(0,0,0,0.5)',
                                 outlineOffset: '-2px',
-                            },
-                        }}
-                    />
-                    {/* RIGHT / OUTER */}
+                            }}
+                        />
+                    )}
+                </Box>
+
+                {/* Top Face */}
+                <Box
+                    sx={{
+                        ...commonFaceStyle,
+                        width: boxWidth,
+                        height: depth,
+                        transform: `rotateX(90deg) translateZ(${halfDepth}px)`,
+                    }}
+                />
+
+                {/* Back Face */}
+                <Box
+                    sx={{
+                        ...commonFaceStyle,
+                        width: boxWidth,
+                        height: height,
+                        transform: `rotateY(180deg) translateZ(${halfDepth}px)`,
+                        transformOrigin: 'center',
+                        background:
+                            commonFaceStyle.background +
+                            ` center/cover no-repeat,
+                    rgba(0, 0, 0, 0.5)`,
+                        backgroundBlendMode: 'multiply',
+                    }}
+                />
+
+                {/* Right Face */}
+                <Box
+                    sx={{
+                        ...commonFaceStyle,
+                        width: depth,
+                        height: height,
+                        background: 'unset',
+                        backgroundColor: 'transparent',
+                        transform: `rotateY(90deg) translateZ(${boxWidth - halfDepth}px)`,
+                    }}
+                />
+
+                {/* Left Face */}
+                <Box
+                    sx={{
+                        ...commonFaceStyle,
+                        width: depth,
+                        height: height,
+                        transform: `rotateY(-90deg) translateZ(${halfDepth}px)`,
+                    }}
+                />
+
+                {/* Bottom Face */}
+                <Box
+                    sx={{
+                        ...commonFaceStyle,
+                        width: boxWidth,
+                        height: depth,
+                        transform: `rotateX(-90deg) translateZ(${height - halfDepth}px)`,
+                        background:
+                            commonFaceStyle.background +
+                            ` center/cover no-repeat,
+                    rgba(0, 0, 0, 0.5)`,
+                        backgroundBlendMode: 'multiply',
+                    }}
+                />
+
+                {/* Right Lid */}
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        width: depth,
+                        height: height,
+                        transform: `rotateY(90deg) translateZ(${-depth / 2 + boxWidth}px)`,
+                        transformStyle: 'preserve-3d',
+                    }}
+                >
                     <Box
+                        onTransitionEnd={handleLidTransitionEnd}
                         sx={{
                             ...commonFaceStyle,
-                            position: 'absolute',
-                            width: lidWidth,
-                            height: height,
-                            transform: `translateZ(${lidWidth}px)`,
+                            position: 'relative',
+                            width: '100%',
+                            height: '100%',
+                            transformOrigin: 'right center',
+                            transform: `rotateY(${currentRightLidRotation}deg)`,
+                            transition: rightLidTransition,
+                            transitionDelay: rightLidDelay,
                             transformStyle: 'preserve-3d',
-                            backfaceVisibility: 'hidden',
-                            background: commonFaceStyle.background,
-                            backgroundPosition: 'center right',
-                            '&::after': {
-                                content: '""',
-                                position: 'relative',
-                                width: '100%',
+                            background: 'unset',
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                ...commonFaceStyle,
+                                position: 'absolute',
+                                width: lidWidth,
                                 height: '100%',
+                                transform: `rotateY(90deg) translateX(-50%) translateZ(${halfDepth}px)`,
                                 background:
                                     commonFaceStyle.background +
                                     ` center/cover no-repeat,
                                     rgba(0, 0, 0, 0.5)`,
                                 backgroundBlendMode: 'multiply',
-                                transform: 'scaleX(-1) translateZ(-1px)',
-                                outline: '2px solid black',
-                                outlineOffset: '-4px',
-                            },
-                        }}
-                    />
-                    {/* TOP */}
-                    <Box
-                        sx={{
-                            ...commonFaceStyle,
-                            position: 'absolute',
-                            width: depth,
-                            height: lidWidth,
-                            transform: `rotateX(90deg) translateZ(${halfHeight}px) translateY(${lidWidth / 2}px)`,
-                        }}
-                    />
-                    {/* BOTTOM */}
-                    <Box
-                        sx={{
-                            ...commonFaceStyle,
-                            position: 'absolute',
-                            width: depth,
-                            height: lidWidth,
-                            transform: `rotateX(90deg) translateZ(${-halfHeight}px) translateY(${lidWidth / 2}px)`,
-                            transformStyle: 'preserve-3d',
-                            background:
-                                commonFaceStyle.background +
-                                ` center/cover no-repeat,
+                            }}
+                        />
+                        <Box
+                            sx={{
+                                ...commonFaceStyle,
+                                position: 'absolute',
+                                width: lidWidth,
+                                height: '100%',
+                                transform: `rotateY(-90deg) translateX(50%) translateZ(${halfDepth}px)`,
+                                // overflow: 'hidden',
+                                transformStyle: 'preserve-3d',
+                                backfaceVisibility: 'hidden',
+                                background: deck.cardFrontImage
+                                    ? `url(${deck.cardFrontImage}) center/cover no-repeat`
+                                    : commonFaceStyle.background,
+                                backgroundPosition: 'center right',
+                                '&::after': {
+                                    content: '""',
+                                    position: 'relative',
+                                    width: '100%',
+                                    height: '100%',
+                                    background:
+                                        commonFaceStyle.background +
+                                        ` center/cover no-repeat,
+                                    rgba(0, 0, 0, 0.5)`,
+                                    backgroundBlendMode: 'multiply',
+                                    transform: 'scaleX(-1) translateZ(-1px)',
+                                    outline: '2px solid rgba(0,0,0)',
+                                    outlineOffset: '-2px',
+                                },
+                            }}
+                        />
+                        {/* RIGHT / OUTER */}
+                        <Box
+                            sx={{
+                                ...commonFaceStyle,
+                                position: 'absolute',
+                                width: lidWidth,
+                                height: height,
+                                transform: `translateZ(${lidWidth}px)`,
+                                transformStyle: 'preserve-3d',
+                                backfaceVisibility: 'hidden',
+                                background: commonFaceStyle.background,
+                                backgroundPosition: 'center right',
+                                '&::after': {
+                                    content: '""',
+                                    position: 'relative',
+                                    width: '100%',
+                                    height: '100%',
+                                    background:
+                                        commonFaceStyle.background +
+                                        ` center/cover no-repeat,
+                                    rgba(0, 0, 0, 0.5)`,
+                                    backgroundBlendMode: 'multiply',
+                                    transform: 'scaleX(-1) translateZ(-1px)',
+                                    outline: '2px solid black',
+                                    outlineOffset: '-4px',
+                                },
+                            }}
+                        />
+                        {/* TOP */}
+                        <Box
+                            sx={{
+                                ...commonFaceStyle,
+                                position: 'absolute',
+                                width: depth,
+                                height: lidWidth,
+                                transform: `rotateX(90deg) translateZ(${halfHeight}px) translateY(${lidWidth / 2}px)`,
+                            }}
+                        />
+                        {/* BOTTOM */}
+                        <Box
+                            sx={{
+                                ...commonFaceStyle,
+                                position: 'absolute',
+                                width: depth,
+                                height: lidWidth,
+                                transform: `rotateX(90deg) translateZ(${-halfHeight}px) translateY(${lidWidth / 2}px)`,
+                                transformStyle: 'preserve-3d',
+                                background:
+                                    commonFaceStyle.background +
+                                    ` center/cover no-repeat,
                     rgba(0, 0, 0, 0.5)`,
-                            backgroundBlendMode: 'multiply',
+                                backgroundBlendMode: 'multiply',
+                            }}
+                        />
+                    </Box>
+                </Box>
+
+                {/* Card 1 */}
+                {cardIndexes.length > 0 && defaultFirstCardVersion && (
+                    <Box
+                        sx={{
+                            ...commonFaceStyle,
+                            width: width - 50,
+                            height: height - 20,
+                            transform: hovered ? card1Final : card1Initial,
+                            transition: 'transform 0.5s ease',
+                            transitionDelay: card1Delay,
+                            borderRadius: 4,
+                            overflow: 'hidden',
                         }}
-                    />
-                </Box>
+                    >
+                        <img
+                            src={getCorrectCardImage(defaultFirstCardVersion, defaultFirstCard?.card.layout, 'artCrop')}
+                            alt={defaultFirstCard?.card.name}
+                            width={'100%'}
+                            height={'100%'}
+                            style={{ borderRadius: 5 }}
+                        />
+                    </Box>
+                )}
+
+                {/* Card 2 */}
+                {cardIndexes.length > 1 && defaultSecondCardVersion && (
+                    <Box
+                        sx={{
+                            ...commonFaceStyle,
+                            width: width - 50,
+                            height: height - 20,
+                            transform: hovered ? card2Final : card2Initial,
+                            transition: 'transform 0.75s ease',
+                            transitionDelay: card2Delay,
+                            borderRadius: 4,
+                            overflow: 'hidden',
+                        }}
+                    >
+                        <img
+                            src={getCorrectCardImage(
+                                defaultSecondCardVersion,
+                                defaultSecondCard?.card.layout,
+                                'artCrop',
+                            )}
+                            alt={defaultSecondCard?.card.name}
+                            width={'100%'}
+                            height={'100%'}
+                            style={{ borderRadius: 5 }}
+                        />
+                    </Box>
+                )}
+
+                {/* Card 3 */}
+                {cardIndexes.length > 2 && defaultThirdCardVersion && (
+                    <Box
+                        sx={{
+                            ...commonFaceStyle,
+                            width: width - 50,
+                            height: height - 20,
+                            transform: hovered ? card3Final : card3Initial,
+                            transition: 'transform 1s ease',
+                            transitionDelay: card3Delay,
+                            borderRadius: 4,
+                            overflow: 'hidden',
+                        }}
+                    >
+                        <img
+                            src={getCorrectCardImage(defaultThirdCardVersion, defaultThirdCard?.card.layout, 'artCrop')}
+                            alt={defaultThirdCard?.card.name}
+                            width={'100%'}
+                            height={'100%'}
+                            style={{ borderRadius: 5 }}
+                        />
+                    </Box>
+                )}
             </Box>
-
-            {/* Card 1 */}
-            {cardIndexes.length > 0 && defaultFirstCardVersion && (
-                <Box
-                    sx={{
-                        ...commonFaceStyle,
-                        width: width - 50,
-                        height: height - 20,
-                        transform: hovered ? card1Final : card1Initial,
-                        transition: 'transform 0.5s ease',
-                        transitionDelay: card1Delay,
-                        borderRadius: 4,
-                        overflow: 'hidden',
-                    }}
-                >
-                    <img
-                        src={getCorrectCardImage(defaultFirstCardVersion, defaultFirstCard?.card.layout, 'artCrop')}
-                        alt={defaultFirstCard?.card.name}
-                        width={'100%'}
-                        height={'100%'}
-                        style={{ borderRadius: 5 }}
-                    />
+            {onDelete && (
+                <Box position={'absolute'} top={0} right={0} onClick={onDelete}>
+                    <IconButton>
+                        <Delete />
+                    </IconButton>
                 </Box>
             )}
-
-            {/* Card 2 */}
-            {cardIndexes.length > 1 && defaultSecondCardVersion && (
-                <Box
-                    sx={{
-                        ...commonFaceStyle,
-                        width: width - 50,
-                        height: height - 20,
-                        transform: hovered ? card2Final : card2Initial,
-                        transition: 'transform 0.75s ease',
-                        transitionDelay: card2Delay,
-                        borderRadius: 4,
-                        overflow: 'hidden',
-                    }}
-                >
-                    <img
-                        src={getCorrectCardImage(defaultSecondCardVersion, defaultSecondCard?.card.layout, 'artCrop')}
-                        alt={defaultSecondCard?.card.name}
-                        width={'100%'}
-                        height={'100%'}
-                        style={{ borderRadius: 5 }}
-                    />
-                </Box>
-            )}
-
-            {/* Card 3 */}
-            {cardIndexes.length > 2 && defaultThirdCardVersion && (
-                <Box
-                    sx={{
-                        ...commonFaceStyle,
-                        width: width - 50,
-                        height: height - 20,
-                        transform: hovered ? card3Final : card3Initial,
-                        transition: 'transform 1s ease',
-                        transitionDelay: card3Delay,
-                        borderRadius: 4,
-                        overflow: 'hidden',
-                    }}
-                >
-                    <img
-                        src={getCorrectCardImage(defaultThirdCardVersion, defaultThirdCard?.card.layout, 'artCrop')}
-                        alt={defaultThirdCard?.card.name}
-                        width={'100%'}
-                        height={'100%'}
-                        style={{ borderRadius: 5 }}
-                    />
-                </Box>
-            )}
-        </Box>
+        </>
     )
 }
 
@@ -393,10 +410,12 @@ const RotatingHDeckBox = ({
     debug = false,
     deck,
     onClick,
+    onDelete,
 }: {
     debug?: boolean
     deck: MTG_Deck
     onClick: (deck: MTG_Deck) => void
+    onDelete?: () => void
 }) => {
     const width = 313
     const height = 228.5
@@ -437,7 +456,7 @@ const RotatingHDeckBox = ({
     }
 
     return (
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ textAlign: 'center', position: 'relative' }}>
             {/* Perspective Container */}
             <Box
                 sx={{
@@ -527,6 +546,13 @@ const RotatingHDeckBox = ({
                         max={180}
                         valueLabelDisplay="auto"
                     />
+                </Box>
+            )}
+            {onDelete && (
+                <Box position={'absolute'} bottom={0} right={0} onClick={onDelete}>
+                    <IconButton>
+                        <Delete />
+                    </IconButton>
                 </Box>
             )}
         </div>
