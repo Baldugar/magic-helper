@@ -1,6 +1,14 @@
 import { cloneDeep, intersection, orderBy } from 'lodash'
 import { CMCFilter, MTGFilterType, SortDirection, SortEnum } from '../../context/MTGA/Filter/MTGFilterContext'
-import { MTG_Card, MTG_Color, MTG_DeckCard, MTG_Filter_Expansion, MTG_Layout, MTG_Rarity } from '../../graphql/types'
+import {
+    MTG_Card,
+    MTG_Color,
+    MTG_DeckCard,
+    MTG_Filter_Expansion,
+    MTG_Game,
+    MTG_Layout,
+    MTG_Rarity,
+} from '../../graphql/types'
 import { isNegativeTB, isNotUnsetTB, isPositiveTB, TernaryBoolean } from '../../types/ternaryBoolean'
 
 export const filterCards = <T extends MTG_Card>(
@@ -487,20 +495,48 @@ export const filterCards = <T extends MTG_Card>(
         TernaryBoolean,
     ][]
     if (layoutEntries.length > 0) {
-        for (const [layout, value] of layoutEntries) {
-            if (isPositiveTB(value)) {
-                remainingCards = remainingCards.filter(
-                    (card) =>
+        const positiveLayouts = layoutEntries.filter(([, value]) => isPositiveTB(value)).map(([layout]) => layout)
+        const negativeLayouts = layoutEntries.filter(([, value]) => isNegativeTB(value)).map(([layout]) => layout)
+
+        if (positiveLayouts.length > 0) {
+            remainingCards = remainingCards.filter((card) =>
+                positiveLayouts.some(
+                    (layout) =>
                         card.layout === layout ||
                         card.versions.some((v) => v.cardFaces && v.cardFaces.some((f) => f.layout === layout)),
-                )
-            } else {
-                remainingCards = remainingCards.filter(
-                    (card) =>
+                ),
+            )
+        }
+
+        if (negativeLayouts.length > 0) {
+            remainingCards = remainingCards.filter((card) =>
+                negativeLayouts.every(
+                    (layout) =>
                         card.layout !== layout &&
                         !card.versions.some((v) => v.cardFaces && v.cardFaces.some((f) => f.layout === layout)),
-                )
-            }
+                ),
+            )
+        }
+    }
+
+    // Games
+    const gameEntries = Object.entries(filter.games).filter(([, value]) => isNotUnsetTB(value)) as [
+        MTG_Game,
+        TernaryBoolean,
+    ][]
+    if (gameEntries.length > 0) {
+        const positiveGames = gameEntries.filter(([, value]) => isPositiveTB(value)).map(([game]) => game)
+        const negativeGames = gameEntries.filter(([, value]) => isNegativeTB(value)).map(([game]) => game)
+
+        if (positiveGames.length > 0) {
+            remainingCards = remainingCards.filter((card) =>
+                positiveGames.some((game) => card.versions.some((v) => v.games.includes(game))),
+            )
+        }
+        if (negativeGames.length > 0) {
+            remainingCards = remainingCards.filter((card) =>
+                negativeGames.every((game) => !card.versions.some((v) => v.games.includes(game))),
+            )
         }
     }
 
@@ -585,7 +621,7 @@ export const filterCards = <T extends MTG_Card>(
                         return ['colorIdentity.length', (c: MTG_Card) => c.colorIdentity.map(colorToValue).join('')]
                     case SortEnum.RARITY:
                         return (c: MTG_Card) =>
-                            c.versions.map((v) => rarityToValue(v.rarity)).reduce((acc, curr) => acc + curr, 0)
+                            rarityToValue(c.versions.find((v) => v.isDefault)?.rarity ?? MTG_Rarity.common)
                     case SortEnum.TYPE:
                         return (c: MTG_Card) => {
                             const types: Record<string, boolean> = {}

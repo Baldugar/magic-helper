@@ -25,6 +25,7 @@ export const CardsGrid = () => {
                 overflowY: 'auto',
                 flex: 1,
             }}
+            spacing={2}
         >
             {cardsToShow.map((card) => (
                 <CardsGridButton card={card} key={card.ID} />

@@ -13,6 +13,7 @@ import {
 } from '@mui/material'
 import { MouseEvent, useState } from 'react'
 import { CMCSelector } from '../../../components/FilterSelectors/CMCSelector'
+import GameSelector from '../../../components/FilterSelectors/GameSelector'
 import LayoutSelector from '../../../components/FilterSelectors/LayoutSelector'
 import LegalitySelector from '../../../components/FilterSelectors/LegalitySelector'
 import ManaSelector from '../../../components/FilterSelectors/ManaSelector'
@@ -37,7 +38,7 @@ export const Filters = () => {
     }
 
     return (
-        <Grid container>
+        <Grid container alignItems={'center'}>
             <Grid item xs={'auto'}>
                 <IconButton size={'small'} onClick={openSearchMenu}>
                     {filter.searchString === initialMTGFilter.searchString ? (
@@ -228,6 +229,16 @@ export const Filters = () => {
                         ...filter,
                         layouts: { ...filter.layouts, [layout]: prevTB(filter.layouts[layout]) },
                     })
+                }}
+            />
+            <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
+            <GameSelector
+                selected={filter.games}
+                onNext={(game) => {
+                    setFilter({ ...filter, games: { ...filter.games, [game]: nextTB(filter.games[game]) } })
+                }}
+                onPrev={(game) => {
+                    setFilter({ ...filter, games: { ...filter.games, [game]: prevTB(filter.games[game]) } })
                 }}
             />
             <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />

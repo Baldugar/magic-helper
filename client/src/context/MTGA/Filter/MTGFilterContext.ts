@@ -1,5 +1,5 @@
 import { createContext, Dispatch, SetStateAction } from 'react'
-import { MTG_Color, MTG_Layout, MTG_Rarity } from '../../../graphql/types'
+import { MTG_Color, MTG_Game, MTG_Layout, MTG_Rarity } from '../../../graphql/types'
 import { TernaryBoolean } from '../../../types/ternaryBoolean'
 
 export type CMCFilter = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 'infinite'
@@ -15,6 +15,7 @@ export interface MTGFilterType {
     sets: Record<string, { setName: string; value: TernaryBoolean; imageURL: string; releasedAt: number }>
     legalities: Record<string, Record<string, TernaryBoolean>>
     layouts: Partial<Record<MTG_Layout, TernaryBoolean>>
+    games: Record<MTG_Game, TernaryBoolean>
     hideIgnored: boolean
 }
 
@@ -92,6 +93,11 @@ export const initialMTGFilter: MTGFilterType = {
     subtypes: {},
     legalities: {},
     layouts: {},
+    games: {
+        arena: TernaryBoolean.UNSET,
+        mtgo: TernaryBoolean.UNSET,
+        paper: TernaryBoolean.UNSET,
+    },
     hideIgnored: false,
 }
 

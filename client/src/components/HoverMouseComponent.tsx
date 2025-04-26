@@ -133,7 +133,7 @@ export const HoverMouseComponent: FC<HoverMouseComponentProps> = (props) => {
                         transformOrigin: 'center center',
                     }}
                 >
-                    <img src={img} loading={'lazy'} /> {/* Render the image lazily */}
+                    <img src={img} loading={'lazy'} style={{ borderRadius: '30px' }} /> {/* Render the image lazily */}
                 </Box>
             </Box>
             {otherImg && (

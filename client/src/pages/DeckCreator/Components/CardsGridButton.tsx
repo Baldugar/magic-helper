@@ -1,7 +1,9 @@
+import { keyframes } from '@emotion/react'
 import { Close } from '@mui/icons-material'
 import { ButtonBase, Dialog, DialogContent, DialogTitle, Grid } from '@mui/material'
 import { useReactFlow } from '@xyflow/react'
 import { useState } from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
 import { MTGACardWithHover } from '../../../components/MTGCardWithHover'
 import { useDnD } from '../../../context/DnD/useDnD'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
@@ -236,53 +238,76 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
 
     return (
         <Grid item xs={'auto'}>
-            <div ref={anchorRef} onContextMenu={handleContextMenu}>
-                <ButtonBase
-                    onClick={() => handleAddCard(card)}
-                    sx={{
-                        filter: deckCardIDs.includes(card.ID) ? 'brightness(0.5)' : 'brightness(1)',
-                        transition: 'filter 0.3s ease, opacity 0.3s ease',
-                        position: 'relative',
-                        opacity: deck.ignoredCards.includes(card.ID) ? 0.5 : 1,
-                    }}
-                >
-                    {selectedVersion ? (
-                        <MTGACardWithHover
-                            data={{
-                                card: selectedVersion,
-                                type: 'cardVersion',
-                                cardTypeLine: card.typeLine,
-                                layout: card.layout,
-                                debugValue: 'set',
-                            }}
-                            hideHover={draggedCard !== null}
-                        />
-                    ) : (
-                        <MTGACardWithHover
-                            data={{
-                                card,
-                                type: 'card',
-                                debugValue: 'layout',
-                            }}
-                            hideHover={draggedCard !== null}
-                        />
-                    )}
-                    {deck.ignoredCards.includes(card.ID) && (
-                        <Close
-                            sx={{
-                                position: 'absolute',
-                                top: 15,
-                                left: `calc(50% - 15px)`,
-                                color: 'red',
-                                backgroundColor: '#00000099',
-                                borderRadius: '50%',
-                                width: 30,
-                                height: 30,
-                            }}
-                        />
-                    )}
-                </ButtonBase>
-            </div>
+            <ErrorBoundary fallback={<div>Something went wrong {card.ID}</div>}>
+                <div ref={anchorRef} onContextMenu={handleContextMenu}>
+                    <ButtonBase
+                        onClick={() => handleAddCard(card)}
+                        sx={{
+                            filter: deckCardIDs.includes(card.ID) ? 'brightness(0.5)' : 'brightness(1)',
+                            transition: 'filter 0.3s ease, opacity 0.3s ease, transform 0.3s ease, outline 0.3s ease',
+                            outline: 'none',
+                            position: 'relative',
+                            opacity: deck.ignoredCards.includes(card.ID) ? 0.5 : 1,
+                            '&:hover': {
+                                filter: 'brightness(1.3)',
+                                transform: 'scale(1.1)',
+                                position: 'relative',
+                                '&::before': {
+                                    content: '""',
+                                    position: 'absolute',
+                                    top: '0px',
+                                    left: '0px',
+                                    right: '0px',
+                                    bottom: '0px',
+                                    borderRadius: '8px',
+                                    animation: `${colorCycle} 4s linear infinite`,
+                                    zIndex: -1,
+                                },
+                            },
+                            '& img': {
+                                borderRadius: '8px',
+                            },
+                        }}
+                        id={`card-${card.ID}`}
+                    >
+                        {selectedVersion ? (
+                            <MTGACardWithHover
+                                data={{
+                                    card: selectedVersion,
+                                    type: 'cardVersion',
+                                    cardTypeLine: card.typeLine,
+                                    layout: card.layout,
+                                    debugValue: 'set',
+                                }}
+                                hideHover={draggedCard !== null}
+                            />
+                        ) : (
+                            <MTGACardWithHover
+                                data={{
+                                    card,
+                                    type: 'card',
+                                    debugValue: 'layout',
+                                }}
+                                hideHover={draggedCard !== null}
+                            />
+                        )}
+                        {deck.ignoredCards.includes(card.ID) && (
+                            <Close
+                                sx={{
+                                    position: 'absolute',
+                                    top: 15,
+                                    left: `calc(50% - 15px)`,
+                                    color: 'red',
+                                    backgroundColor: '#00000099',
+                                    borderRadius: '50%',
+                                    width: 30,
+                                    height: 30,
+                                }}
+                            />
+                        )}
+                    </ButtonBase>
+                </div>
+            </ErrorBoundary>
             <ContextMenu
                 anchorRef={anchorRef}
                 options={options}
@@ -316,3 +341,22 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
         </Grid>
     )
 }
+
+// Define a keyframe animation for rotating colors
+const colorCycle = keyframes`
+    0% {
+        box-shadow: 0 0 15px #ff0000, 0 0 20px #ff0000;
+    }
+    25% {
+        box-shadow: 0 0 15px #ff7f00, 0 0 20px #ff7f00;
+    }
+    50% {
+        box-shadow: 0 0 15px #ffff00, 0 0 20px #ffff00;
+    }
+    75% {
+        box-shadow: 0 0 15px #00ff00, 0 0 20px #00ff00;
+    }
+    100% {
+        box-shadow: 0 0 15px #ff0000, 0 0 20px #ff0000;
+    }
+`
