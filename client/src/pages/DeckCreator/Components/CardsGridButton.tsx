@@ -306,7 +306,7 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                             position: 'relative',
                             opacity: deck.ignoredCards.includes(card.ID) ? 0.5 : 1,
                             '&:hover': {
-                                filter: 'brightness(1.3)',
+                                filter: 'brightness(1.2)',
                                 transform: 'scale(1.1)',
                                 position: 'relative',
                                 '&::before': {
@@ -380,22 +380,24 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                 <DialogTitle>All versions of {card.name}</DialogTitle>
                 <DialogContent>
                     <Grid container spacing={2}>
-                        {card.versions.map((v) => (
-                            <Grid item key={v.ID}>
-                                <ButtonBase onClick={() => handleAddCard(card, v.ID)}>
-                                    <MTGACardWithHover
-                                        data={{
-                                            card: v,
-                                            type: 'cardVersion',
-                                            cardTypeLine: card.typeLine,
-                                            layout: card.layout,
-                                            debugValue: 'set',
-                                        }}
-                                        hideHover={draggedCard !== null}
-                                    />
-                                </ButtonBase>
-                            </Grid>
-                        ))}
+                        {card.versions
+                            .sort((a, b) => new Date(a.releasedAt).getTime() - new Date(b.releasedAt).getTime())
+                            .map((v) => (
+                                <Grid item key={v.ID}>
+                                    <ButtonBase onClick={() => handleAddCard(card, v.ID)}>
+                                        <MTGACardWithHover
+                                            data={{
+                                                card: v,
+                                                type: 'cardVersion',
+                                                cardTypeLine: card.typeLine,
+                                                layout: card.layout,
+                                                debugValue: 'set',
+                                            }}
+                                            hideHover={draggedCard !== null}
+                                        />
+                                    </ButtonBase>
+                                </Grid>
+                            ))}
                     </Grid>
                 </DialogContent>
             </Dialog>

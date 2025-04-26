@@ -1,9 +1,9 @@
 import { MTGFilterType } from '../../context/MTGA/Filter/MTGFilterContext'
-import { isNotUnsetTB, isPositiveTB, TernaryBoolean } from '../../types/ternaryBoolean'
+import { isPositiveTB, TernaryBoolean } from '../../types/ternaryBoolean'
 
 export const singleSetSelected = (filter: MTGFilterType) => {
     const setEntries = Object.entries(filter.sets)
-        .filter(([, value]) => isNotUnsetTB(value.value))
+        .filter(([, value]) => isPositiveTB(value.value))
         .map(([key, value]) => {
             return [key.toLowerCase(), value.value] as [string, TernaryBoolean]
         })

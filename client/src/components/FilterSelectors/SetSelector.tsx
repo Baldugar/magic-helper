@@ -1,7 +1,7 @@
-import { Box, Button, Grid, Paper, Popper, Tooltip } from '@mui/material'
+import { Badge, Box, Button, Grid, Paper, Popper, Tooltip } from '@mui/material'
 import { MouseEvent, useState } from 'react'
 import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
-import { TernaryBoolean } from '../../types/ternaryBoolean'
+import { isNegativeTB, isPositiveTB, TernaryBoolean } from '../../types/ternaryBoolean'
 import { TernaryToggle } from './TernaryToggle'
 
 export interface SetSelectorProps {
@@ -46,9 +46,24 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
             },
         )
 
+    const howManyPositive = Object.values(selected).filter(isPositiveTB).length
+    const howManyNegative = Object.values(selected).filter(isNegativeTB).length
+
     return (
         <Grid container item xs={'auto'}>
-            <Button onClick={handleClick}>Sets</Button>
+            <Badge
+                badgeContent={howManyPositive}
+                color="success"
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Badge
+                    badgeContent={howManyNegative}
+                    color="error"
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                >
+                    <Button onClick={handleClick}>Sets</Button>
+                </Badge>
+            </Badge>
             <Popper open={open} anchorEl={anchorEl}>
                 <Paper sx={{ maxHeight: '80vh', overflow: 'auto' }}>
                     {Object.entries(sortedSets)

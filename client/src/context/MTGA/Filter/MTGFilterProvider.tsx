@@ -6,12 +6,21 @@ import { TernaryBoolean } from '../../../types/ternaryBoolean'
 import { fetchData } from '../../../utils/functions/fetchData'
 import { initialMTGFilter, MTGFilterContext, MTGFilterType, SortDirection, SortEnum } from './MTGFilterContext'
 
+const initialSortOrder = [
+    SortEnum.COLOR,
+    SortEnum.CMC,
+    SortEnum.NAME,
+    SortEnum.RARITY,
+    SortEnum.SET,
+    SortEnum.RELEASED_AT,
+]
+
 export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
     const [filter, setFilter] = useState<MTGFilterType>(initialMTGFilter)
     const [originalFilter, setOriginalFilter] = useState<MTGFilterType>(initialMTGFilter)
 
     const [sort, setSort] = useState(
-        Object.values(SortEnum).map((key) => ({
+        initialSortOrder.map((key) => ({
             sortBy: key,
             sortDirection: SortDirection.ASC,
             enabled: true,

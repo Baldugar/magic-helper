@@ -10,7 +10,8 @@ import { calculateCardsFromNodes, calculateZonesFromNodes, NodeType } from '../.
 import { DeckCard } from './DeckCard'
 
 export const Drawer = () => {
-    const { deckTab, setDeckTab, deck, selectingCommander, setSelectingCommander, removeCard } = useMTGDeckCreator()
+    const { deckTab, setDeckTab, deck, selectingCommander, setSelectingCommander, removeCard, addOne, removeOne } =
+        useMTGDeckCreator()
     const { getNodes, setNodes } = useReactFlow<NodeType>()
     const { updateDeck } = useMTGDecks()
 
@@ -102,8 +103,8 @@ export const Drawer = () => {
                             <Grid xs={12} item key={c.card.ID}>
                                 <DeckCard
                                     deckCard={c}
-                                    // addOne={deck.type === DeckType.STANDARD ? addOne : undefined}
-                                    // removeOne={deck.type === DeckType.STANDARD ? removeOne : undefined}
+                                    addOne={addOne}
+                                    removeOne={removeOne}
                                     removeCard={handleRemoveCard}
                                     commander={commander}
                                 />
@@ -114,8 +115,8 @@ export const Drawer = () => {
                             <Grid xs={12} item key={c.card.ID}>
                                 <DeckCard
                                     deckCard={c}
-                                    // addOne={deck.type === DeckType.STANDARD ? addOne : undefined}
-                                    // removeOne={deck.type === DeckType.STANDARD ? removeOne : undefined}
+                                    addOne={addOne}
+                                    removeOne={removeOne}
                                     removeCard={handleRemoveCard}
                                     commander={commander}
                                 />

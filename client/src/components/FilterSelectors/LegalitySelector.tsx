@@ -1,7 +1,7 @@
-import { Box, Button, Grid, Paper, Popper, Typography } from '@mui/material'
+import { Badge, Box, Button, Grid, Paper, Popper, Typography } from '@mui/material'
 import { MouseEvent, useState } from 'react'
 import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
-import { TernaryBoolean } from '../../types/ternaryBoolean'
+import { isNegativeTB, isPositiveTB, TernaryBoolean } from '../../types/ternaryBoolean'
 import { TernaryToggle } from './TernaryToggle'
 
 export interface LegalitySelectorProps {
@@ -28,9 +28,29 @@ const LegalitySelector = (props: LegalitySelectorProps): JSX.Element => {
 
     const legalitySortValues = ['legal', 'restricted', 'banned', 'not_legal']
 
+    const howManyPositive = Object.values(selected).reduce((acc, curr) => {
+        return acc + Object.values(curr).filter(isPositiveTB).length
+    }, 0)
+
+    const howManyNegative = Object.values(selected).reduce((acc, curr) => {
+        return acc + Object.values(curr).filter(isNegativeTB).length
+    }, 0)
+
     return (
         <Grid container item xs={'auto'}>
-            <Button onClick={handleClick}>Legalities</Button>
+            <Badge
+                badgeContent={howManyPositive}
+                color="success"
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Badge
+                    badgeContent={howManyNegative}
+                    color="error"
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                >
+                    <Button onClick={handleClick}>Legalities</Button>
+                </Badge>
+            </Badge>
             <Popper open={open} anchorEl={anchorEl}>
                 <Paper sx={{ maxHeight: '80vh', overflow: 'auto' }}>
                     {sortedLegalities.map(([format, legalityValues]) => (

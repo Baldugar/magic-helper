@@ -1,6 +1,6 @@
-import { Box, Button, ButtonBase, Grid, Paper, Popper, Typography } from '@mui/material'
+import { Badge, Box, Button, ButtonBase, Grid, Paper, Popper, Typography } from '@mui/material'
 import { MouseEvent, useState } from 'react'
-import { TernaryBoolean } from '../../types/ternaryBoolean'
+import { isNegativeTB, isPositiveTB, TernaryBoolean } from '../../types/ternaryBoolean'
 import { TernaryToggle } from './TernaryToggle'
 
 export interface TypeSelectorProps {
@@ -32,9 +32,24 @@ const TypeSelector = (props: TypeSelectorProps): JSX.Element => {
         'Sorcery',
     ]
 
+    const howManyPositive = Object.values(selected).filter(isPositiveTB).length
+    const howManyNegative = Object.values(selected).filter(isNegativeTB).length
+
     return (
         <Grid container item xs={'auto'}>
-            <Button onClick={handleClick}>Type</Button>
+            <Badge
+                badgeContent={howManyPositive}
+                color="success"
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Badge
+                    badgeContent={howManyNegative}
+                    color="error"
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                >
+                    <Button onClick={handleClick}>Type</Button>
+                </Badge>
+            </Badge>
             <Popper open={open} anchorEl={anchorEl}>
                 <Paper
                     sx={{

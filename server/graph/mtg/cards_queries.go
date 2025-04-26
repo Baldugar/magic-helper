@@ -14,6 +14,7 @@ func GetMTGCards(ctx context.Context) ([]*model.MtgCard, error) {
 
 	aq := arango.NewQuery( /* aql */ `
 		FOR doc IN @@collection
+			FILTER (doc.manaCost == "" AND doc.layout != "meld") OR doc.manaCost != ""
 		RETURN doc
 	`)
 

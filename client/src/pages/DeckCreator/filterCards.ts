@@ -23,7 +23,9 @@ export const filterCards = <T extends MTG_Card>(
     if (selectingCommander) {
         remainingCards = remainingCards.filter(
             (card) =>
-                card.typeLine.includes('Legendary') &&
+                (card.typeLine.includes('//')
+                    ? card.typeLine.split('//')[0].includes('Legendary')
+                    : card.typeLine.includes('Legendary')) &&
                 (card.typeLine.includes('Creature') || card.typeLine.includes('Planeswalker')),
         )
     }
@@ -409,9 +411,13 @@ export const filterCards = <T extends MTG_Card>(
     if (cardTypeEntries.length > 0) {
         if (cardTypeEntries.length === 1) {
             if (isPositiveTB(cardTypeEntries[0][1])) {
-                remainingCards = remainingCards.filter((card) => card.typeLine.includes(cardTypeEntries[0][0]))
+                remainingCards = remainingCards.filter((card) =>
+                    card.typeLine.toLowerCase().includes(cardTypeEntries[0][0].toLowerCase()),
+                )
             } else {
-                remainingCards = remainingCards.filter((card) => !card.typeLine.includes(cardTypeEntries[0][0]))
+                remainingCards = remainingCards.filter(
+                    (card) => !card.typeLine.toLowerCase().includes(cardTypeEntries[0][0].toLowerCase()),
+                )
             }
         } else {
             const positiveCardTypes = cardTypeEntries.filter(([, value]) => isPositiveTB(value))
@@ -618,7 +624,11 @@ export const filterCards = <T extends MTG_Card>(
                     case SortEnum.CMC:
                         return (c: MTG_Card) => c.CMC
                     case SortEnum.COLOR:
-                        return ['colorIdentity.length', (c: MTG_Card) => c.colorIdentity.map(colorToValue).join('')]
+                        return [
+                            (c: MTG_Card) => (c.typeLine.includes('Land') && !c.typeLine.includes('//') ? 1 : 0),
+                            'colorIdentity.length',
+                            (c: MTG_Card) => c.colorIdentity.map(colorToValue).join(''),
+                        ]
                     case SortEnum.RARITY:
                         return (c: MTG_Card) =>
                             rarityToValue(c.versions.find((v) => v.isDefault)?.rarity ?? MTG_Rarity.common)

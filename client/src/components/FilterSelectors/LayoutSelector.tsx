@@ -1,8 +1,8 @@
-import { Button, Grid, Paper, Popper } from '@mui/material'
+import { Badge, Button, Grid, Paper, Popper } from '@mui/material'
 import { MouseEvent, useState } from 'react'
 import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
 import { MTG_Layout } from '../../graphql/types'
-import { TernaryBoolean } from '../../types/ternaryBoolean'
+import { isNegativeTB, isPositiveTB, TernaryBoolean } from '../../types/ternaryBoolean'
 import { TernaryToggle } from './TernaryToggle'
 
 export interface LayoutSelectorProps {
@@ -29,9 +29,24 @@ const LayoutSelector = (props: LayoutSelectorProps): JSX.Element => {
         TernaryBoolean,
     ][]
 
+    const howManyPositive = Object.values(selected).filter(isPositiveTB).length
+    const howManyNegative = Object.values(selected).filter(isNegativeTB).length
+
     return (
         <Grid container item xs={'auto'}>
-            <Button onClick={handleClick}>Layouts</Button>
+            <Badge
+                badgeContent={howManyPositive}
+                color="success"
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Badge
+                    badgeContent={howManyNegative}
+                    color="error"
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                >
+                    <Button onClick={handleClick}>Layouts</Button>
+                </Badge>
+            </Badge>
             <Popper open={open} anchorEl={anchorEl}>
                 <Paper sx={{ maxHeight: '80vh', overflow: 'auto' }}>
                     {sortedLayouts.map(([layout]) => (

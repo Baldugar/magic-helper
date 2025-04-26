@@ -47,7 +47,16 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
     if (type === 'card') {
         const { card } = data
         typeLine = card.typeLine
-        version = card.versions.find((v) => v.set === set || v.isDefault)
+        if (set) {
+            const defaultIsOfSet = card.versions.find((v) => v.set === set && v.isDefault)
+            if (defaultIsOfSet) {
+                version = defaultIsOfSet
+            } else {
+                version = card.versions.find((v) => v.set === set)
+            }
+        } else {
+            version = card.versions.find((v) => v.isDefault)
+        }
         if (!version) return null
         small = getCorrectCardImage(version, card.layout, 'small')
         if (!small) return null
