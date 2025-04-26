@@ -27,7 +27,8 @@ COPY --from=builder /app/wait-for-it.sh .
 COPY entrypoint.sh .
 
 # Make sure our scripts are executable
-RUN chmod +x wait-for-it.sh entrypoint.sh
+RUN sed -i 's/\r$//' wait-for-it.sh entrypoint.sh \
+ && chmod +x wait-for-it.sh entrypoint.sh
 
 EXPOSE 8080
 
