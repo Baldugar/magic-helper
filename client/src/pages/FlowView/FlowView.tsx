@@ -4,12 +4,7 @@ import '@xyflow/react/dist/style.css'
 import { useMTGDeckCreator } from '../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGDeckFlowCreator } from '../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
 import { uuidv4 } from '../../utils/functions/IDFunctions'
-import {
-    calculateZonesFromNodes,
-    NodeType,
-    organizeNodes,
-    sortNodesByNesting,
-} from '../../utils/functions/nodeFunctions'
+import { NodeType, organizeNodes, sortNodesByNesting } from '../../utils/functions/nodeFunctions'
 import { CardNode } from './Nodes/CardNode'
 import { GroupNode, GroupNodeData, MIN_SIZE } from './Nodes/GroupNode'
 import { PhantomNode } from './Nodes/PhantomNode'
@@ -23,8 +18,8 @@ const nodeTypes: NodeTypes = {
 export const FlowView = () => {
     const { handleNodeDragStop, onDragOver, onDrop, handleDeleteZone, handleRenameZone, handleDeletePhantom } =
         useMTGDeckFlowCreator()
-    const { deck, setDeck } = useMTGDeckCreator()
-    const { setNodes } = useReactFlow<NodeType>()
+    const { deck } = useMTGDeckCreator()
+    const { setNodes, getNodes } = useReactFlow<NodeType>()
 
     if (!deck) return null
 
@@ -48,6 +43,7 @@ export const FlowView = () => {
                         onClick={() => {
                             const name = prompt('Enter the name of the zone')
                             if (name) {
+                                const nodes = getNodes()
                                 const newNode = {
                                     id: uuidv4(),
                                     type: 'groupNode',
@@ -63,12 +59,6 @@ export const FlowView = () => {
                                 } as Node<GroupNodeData>
                                 const newNodes = sortNodesByNesting(nodes.concat(newNode))
                                 setNodes(newNodes)
-                                setDeck((d) => {
-                                    if (d) {
-                                        return { ...d, zones: calculateZonesFromNodes(newNodes) }
-                                    }
-                                    return d
-                                })
                             }
                         }}
                     >

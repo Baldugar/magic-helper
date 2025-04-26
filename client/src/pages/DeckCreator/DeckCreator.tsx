@@ -1,5 +1,7 @@
-import { Box, Button, Collapse, Pagination } from '@mui/material'
+import MenuIcon from '@mui/icons-material/Menu'
+import { Box, Button, Collapse, Divider, IconButton, Menu, MenuItem, Pagination, Typography } from '@mui/material'
 import { ReactFlowProvider, useReactFlow } from '@xyflow/react'
+import React from 'react'
 import { useParams } from 'react-router-dom'
 import { CardPackageImportDialog } from '../../components/CardPackageImportDialog'
 import { ExportDialog } from '../../components/ExportDialog'
@@ -46,6 +48,8 @@ export const DeckCreator = () => {
     const {
         mutations: { updateMTGDeck: updateMTGADeck },
     } = MTGFunctions
+    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
+    const open = Boolean(anchorEl)
 
     const handleChangeView = (newViewMode: 'catalogue' | 'board' | 'both') => {
         if (viewMode === 'board' || viewMode === 'both') {
@@ -68,6 +72,14 @@ export const DeckCreator = () => {
         updateMTGADeck(deckInput).then((deck) => {
             updateDeck(deck)
         })
+    }
+
+    const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+        setAnchorEl(event.currentTarget)
+    }
+
+    const handleMenuClose = () => {
+        setAnchorEl(null)
     }
 
     if (!deck) return null
@@ -122,48 +134,109 @@ export const DeckCreator = () => {
                         </Box>
                     )}
                     <Box position={'absolute'} top={10} right={10} display={'flex'} gap={1}>
-                        <Button
-                            variant={'contained'}
-                            color={'primary'}
-                            onClick={() => setOpenImportCardPackageDialog(true)}
+                        <IconButton
+                            size="large"
+                            edge="start"
+                            color="inherit"
+                            aria-label="menu"
+                            onClick={handleMenuClick}
                         >
-                            Import Card Package
-                        </Button>
-                        <Button variant={'contained'} color={'primary'} onClick={saveDeck} sx={{ mr: 2 }}>
-                            Save Deck
-                        </Button>
-                        <Button variant={'contained'} color={'primary'} onClick={clearFilter} sx={{ mr: 2 }}>
-                            Clear filter
-                        </Button>
-                        <Button variant={'contained'} color={'primary'} onClick={saveLocalStoreFilter}>
-                            Save filter
-                        </Button>
-                        <Button variant={'contained'} color={'primary'} onClick={loadLocalStoreFilter} sx={{ mr: 2 }}>
-                            Load filter
-                        </Button>
-                        <Button variant={'contained'} color={'primary'} onClick={() => setOpenImportDialog(true)}>
-                            Import
-                        </Button>
-                        <Button
-                            variant={'contained'}
-                            color={'primary'}
-                            onClick={() => setOpenExportDialog(true)}
-                            sx={{ mr: 2 }}
+                            <MenuIcon />
+                        </IconButton>
+                        <Menu
+                            anchorEl={anchorEl}
+                            open={open}
+                            onClose={handleMenuClose}
+                            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                         >
-                            Export
-                        </Button>
+                            <MenuItem
+                                onClick={() => {
+                                    setOpenImportCardPackageDialog(true)
+                                    handleMenuClose()
+                                }}
+                            >
+                                Import Card Package
+                            </MenuItem>
+                            <Divider />
+                            <Typography variant="caption" display="block" gutterBottom>
+                                Deck Operations
+                            </Typography>
+                            <MenuItem
+                                onClick={() => {
+                                    saveDeck()
+                                    handleMenuClose()
+                                }}
+                            >
+                                Save Deck
+                            </MenuItem>
+                            <MenuItem
+                                onClick={() => {
+                                    setOpenImportDialog(true)
+                                    handleMenuClose()
+                                }}
+                            >
+                                Import Deck
+                            </MenuItem>
+                            <MenuItem
+                                onClick={() => {
+                                    setOpenExportDialog(true)
+                                    handleMenuClose()
+                                }}
+                            >
+                                Export Deck
+                            </MenuItem>
+                            <Divider />
+                            <Typography variant="caption" display="block" gutterBottom>
+                                Filter Operations
+                            </Typography>
+                            <MenuItem
+                                onClick={() => {
+                                    clearFilter()
+                                    handleMenuClose()
+                                }}
+                            >
+                                Clear filter
+                            </MenuItem>
+                            <MenuItem
+                                onClick={() => {
+                                    saveLocalStoreFilter()
+                                    handleMenuClose()
+                                }}
+                            >
+                                Save filter
+                            </MenuItem>
+                            <MenuItem
+                                onClick={() => {
+                                    loadLocalStoreFilter()
+                                    handleMenuClose()
+                                }}
+                            >
+                                Load filter
+                            </MenuItem>
+                            <Divider />
+                            <Typography variant="caption" display="block" gutterBottom>
+                                View Options
+                            </Typography>
+                            <MenuItem
+                                onClick={() => {
+                                    handleChangeView(viewMode === 'catalogue' ? 'board' : 'catalogue')
+                                    handleMenuClose()
+                                }}
+                            >
+                                Change View
+                            </MenuItem>
+                            <MenuItem
+                                onClick={() => {
+                                    handleChangeView('both')
+                                    handleMenuClose()
+                                }}
+                            >
+                                Both View
+                            </MenuItem>
+                        </Menu>
                         <Button variant={'contained'} color={'primary'} onClick={() => setOpenDrawer(!openDrawer)}>
                             Open Drawer
-                        </Button>
-                        <Button
-                            variant={'contained'}
-                            color={'primary'}
-                            onClick={() => handleChangeView(viewMode === 'catalogue' ? 'board' : 'catalogue')}
-                        >
-                            Change View
-                        </Button>
-                        <Button variant={'contained'} color={'primary'} onClick={() => handleChangeView('both')}>
-                            Both View
                         </Button>
                     </Box>
                 </Box>

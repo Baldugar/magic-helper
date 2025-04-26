@@ -4,7 +4,6 @@ import { MainOrSide, MTG_Card, MTG_Deck, MTG_DeckCard, MTG_DeckCardType, Positio
 import { CardNodeData } from '../../../pages/FlowView/Nodes/CardNode'
 import { GroupNodeData, MIN_SIZE } from '../../../pages/FlowView/Nodes/GroupNode'
 import { PhantomNodeData } from '../../../pages/FlowView/Nodes/PhantomNode'
-import { calculateNewDeck } from '../../../utils/functions/deckFunctions'
 import { singleSetSelected } from '../../../utils/functions/filterFunctions'
 import { uuidv4 } from '../../../utils/functions/IDFunctions'
 import {
@@ -14,13 +13,11 @@ import {
     sortNodesByNesting,
 } from '../../../utils/functions/nodeFunctions'
 import { useDnD } from '../../DnD/useDnD'
-import { useMTGCards } from '../Cards/useMTGCards'
 import { useMTGDeckCreator } from '../DeckCreator/useMTGDeckCreator'
 import { useMTGFilter } from '../Filter/useMTGFilter'
 import { MTGDeckCreatorFlowContext } from './MTGDeckCreatorFlowContext'
 
 export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: ReactNode; deck: MTG_Deck }) => {
-    const { cards } = useMTGCards()
     const { card, type } = useDnD()
     const { selectingCommander, setSelectingCommander, deckTab, setDeck, removeCard } = useMTGDeckCreator()
     const { screenToFlowPosition, getIntersectingNodes, setNodes, getNodes } = useReactFlow<NodeType>()
@@ -257,7 +254,6 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
     const handleNodeDragStop: OnNodeDrag<NodeType> = (_, node) => {
         const nodes = getNodes()
         onNodeDragStop(node, getIntersectingNodes, nodes, setNodes)
-        calculateNewDeck(cards, deck, getNodes, setDeck)
     }
 
     return (
