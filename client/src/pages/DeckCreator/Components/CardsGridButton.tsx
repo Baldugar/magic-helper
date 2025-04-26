@@ -372,7 +372,11 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                 handleClose={handleClose}
                 handleClick={handleClick}
             />
-            <Dialog open={showAllVersions} onClose={() => setShowAllVersions(false)}>
+            <Dialog
+                open={showAllVersions}
+                onClose={() => setShowAllVersions(false)}
+                onWheel={(e) => e.stopPropagation()}
+            >
                 <DialogTitle>All versions of {card.name}</DialogTitle>
                 <DialogContent>
                     <Grid container spacing={2}>
