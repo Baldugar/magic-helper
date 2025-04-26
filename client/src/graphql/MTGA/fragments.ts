@@ -93,7 +93,7 @@ export const MTG_DeckFragments = gql`
             card {
                 ...MTG_CardFragment
             }
-            selectedSet
+            selectedVersionID
             count
             mainOrSide
             deckCardType

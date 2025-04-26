@@ -37,8 +37,6 @@ export const calculateHash = (filter: MTGFilterType) => {
         }, {} as Record<string, TernaryBoolean>)
         return acc
     }, {} as Record<string, Record<string, TernaryBoolean>>)
-    newFilter.legalityFormats = filter.legalityFormats
-    newFilter.legalityValues = filter.legalityValues
     const str = JSON.stringify(newFilter)
     let hash = 0
     if (str.length === 0) return hash

@@ -52,15 +52,15 @@ const HDeckBox = ({
 
     const defaultFirstCard = deck.cards[cardIndexes[0]]
     const defaultFirstCardVersion = defaultFirstCard?.card.versions.find((v) =>
-        defaultFirstCard?.selectedSet ? defaultFirstCard?.selectedSet === v.set : v.isDefault,
+        defaultFirstCard?.selectedVersionID ? defaultFirstCard?.selectedVersionID === v.ID : v.isDefault,
     )
     const defaultSecondCard = deck.cards[cardIndexes[1]]
     const defaultSecondCardVersion = defaultSecondCard?.card.versions.find((v) =>
-        defaultSecondCard?.selectedSet ? defaultSecondCard?.selectedSet === v.set : v.isDefault,
+        defaultSecondCard?.selectedVersionID ? defaultSecondCard?.selectedVersionID === v.ID : v.isDefault,
     )
     const defaultThirdCard = deck.cards[cardIndexes[2]]
     const defaultThirdCardVersion = defaultThirdCard?.card.versions.find((v) =>
-        defaultThirdCard?.selectedSet ? defaultThirdCard?.selectedSet === v.set : v.isDefault,
+        defaultThirdCard?.selectedVersionID ? defaultThirdCard?.selectedVersionID === v.ID : v.isDefault,
     )
 
     const currentRightLidRotation = hovered ? hoverLidRotation : lidRotation

@@ -213,7 +213,7 @@ input MTG_UpdateDeckInput {
 input MTG_DeckCardInput {
     ID: ID!
     card: ID!
-    selectedSet: String
+    selectedVersionID: String
     count: Int!
     position: PositionInput!
     mainOrSide: MainOrSide!
@@ -238,7 +238,7 @@ type MTG_Deck {
 
 type MTG_DeckCard {
     card: MTG_Card!
-    selectedSet: String
+    selectedVersionID: String
     count: Int!
     position: Position!
     mainOrSide: MainOrSide!
@@ -256,6 +256,7 @@ type MTG_Filter_Entries {
     types: [MTG_Filter_CardTypes!]!
     expansions: [MTG_Filter_Expansion!]!
     legality: MTG_Filter_Legality!
+    layouts: [MTG_Layout!]!
 }
 
 type MTG_Filter_CardTypes {

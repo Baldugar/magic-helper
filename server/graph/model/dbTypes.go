@@ -19,11 +19,12 @@ type MTGDeckFrontCardImageDB struct {
 }
 
 type MTGCardDeckDB struct {
-	From         string          `json:"_from"`
-	To           string          `json:"_to"`
-	Count        int             `json:"count"`
-	Position     Position        `json:"position"`
-	MainOrSide   MainOrSide      `json:"mainOrSide"`
-	DeckCardType MtgDeckCardType `json:"deckCardType"`
-	Phantoms     []Phantom       `json:"phantoms"`
+	From              string          `json:"_from"`
+	To                string          `json:"_to"`
+	Count             int             `json:"count"`
+	Position          Position        `json:"position"`
+	MainOrSide        MainOrSide      `json:"mainOrSide"`
+	DeckCardType      MtgDeckCardType `json:"deckCardType"`
+	Phantoms          []Phantom       `json:"phantoms"`
+	SelectedVersionID *string         `json:"selectedVersionID"`
 }

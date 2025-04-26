@@ -32,7 +32,7 @@ export const CardNode = (props: CardNodeProps) => {
     const { anchorRef, handleClick, handleClose, handleContextMenu, open } = useContextMenu<HTMLDivElement>()
 
     const selectedVersion =
-        card.card.versions.find((v) => v.set === card.selectedSet) || card.card.versions.find((v) => v.isDefault)
+        card.card.versions.find((v) => v.ID === card.selectedVersionID) || card.card.versions.find((v) => v.isDefault)
     if (!selectedVersion) return null
 
     const options: ContextMenuOption[] = [

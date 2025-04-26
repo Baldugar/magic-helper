@@ -133,7 +133,7 @@ export type MTG_DeckCard = {
   mainOrSide: MainOrSide;
   phantoms: Array<Phantom>;
   position: Position;
-  selectedSet?: Maybe<Scalars['String']['output']>;
+  selectedVersionID?: Maybe<Scalars['String']['output']>;
 };
 
 export type MTG_DeckCardInput = {
@@ -144,7 +144,7 @@ export type MTG_DeckCardInput = {
   mainOrSide: MainOrSide;
   phantoms: Array<PhantomInput>;
   position: PositionInput;
-  selectedSet?: InputMaybe<Scalars['String']['input']>;
+  selectedVersionID?: InputMaybe<Scalars['String']['input']>;
 };
 
 export enum MTG_DeckCardType {
@@ -165,6 +165,7 @@ export type MTG_Filter_CardTypes = {
 export type MTG_Filter_Entries = {
   __typename?: 'MTG_Filter_Entries';
   expansions: Array<MTG_Filter_Expansion>;
+  layouts: Array<MTG_Layout>;
   legality: MTG_Filter_Legality;
   types: Array<MTG_Filter_CardTypes>;
 };

@@ -5,6 +5,7 @@ import { CardNodeData } from '../../../pages/FlowView/Nodes/CardNode'
 import { GroupNodeData, MIN_SIZE } from '../../../pages/FlowView/Nodes/GroupNode'
 import { PhantomNodeData } from '../../../pages/FlowView/Nodes/PhantomNode'
 import { calculateNewDeck } from '../../../utils/functions/deckFunctions'
+import { singleSetSelected } from '../../../utils/functions/filterFunctions'
 import { uuidv4 } from '../../../utils/functions/IDFunctions'
 import {
     findNextAvailablePosition,
@@ -15,6 +16,7 @@ import {
 import { useDnD } from '../../DnD/useDnD'
 import { useMTGCards } from '../Cards/useMTGCards'
 import { useMTGDeckCreator } from '../DeckCreator/useMTGDeckCreator'
+import { useMTGFilter } from '../Filter/useMTGFilter'
 import { MTGDeckCreatorFlowContext } from './MTGDeckCreatorFlowContext'
 
 export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: ReactNode; deck: MTG_Deck }) => {
@@ -22,6 +24,9 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
     const { card, type } = useDnD()
     const { selectingCommander, setSelectingCommander, deckTab, setDeck, removeCard } = useMTGDeckCreator()
     const { screenToFlowPosition, getIntersectingNodes, setNodes, getNodes } = useReactFlow<NodeType>()
+
+    const { filter } = useMTGFilter()
+    const set = singleSetSelected(filter)
 
     // Zone Functions
     const handleDeleteZone = (nodeID: string, deleteNodes: boolean) => {
@@ -130,6 +135,7 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
                     newDeck.cards = newDeck.cards.filter((c) => c.deckCardType !== MTG_DeckCardType.COMMANDER)
                 }
                 // Add the new commander
+                const setVersion = card.versions.find((v) => v.set === set)
                 cardToReturn = {
                     card,
                     count: 1,
@@ -137,6 +143,7 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
                     mainOrSide: MainOrSide.MAIN,
                     position: position || { x: 0, y: 0 },
                     phantoms: [],
+                    selectedVersionID: setVersion?.ID,
                 }
                 newDeck.cards.push(cardToReturn)
                 setSelectingCommander(false)
@@ -153,6 +160,7 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
                     })
                     cardToReturn = structuredClone(newDeck.cards[index])
                 } else {
+                    const setVersion = card.versions.find((v) => v.set === set)
                     cardToReturn = {
                         card,
                         count: 1,
@@ -160,6 +168,7 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
                         mainOrSide: deckTab,
                         position: position || nextAvailableSpot,
                         phantoms: [],
+                        selectedVersionID: setVersion?.ID,
                     }
                     newDeck.cards.push(cardToReturn)
                 }

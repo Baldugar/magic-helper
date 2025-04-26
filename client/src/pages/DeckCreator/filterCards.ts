@@ -1,6 +1,6 @@
 import { cloneDeep, intersection, orderBy } from 'lodash'
 import { CMCFilter, MTGFilterType, SortDirection, SortEnum } from '../../context/MTGA/Filter/MTGFilterContext'
-import { MTG_Card, MTG_Color, MTG_DeckCard, MTG_Filter_Expansion, MTG_Rarity } from '../../graphql/types'
+import { MTG_Card, MTG_Color, MTG_DeckCard, MTG_Filter_Expansion, MTG_Layout, MTG_Rarity } from '../../graphql/types'
 import { isNegativeTB, isNotUnsetTB, isPositiveTB, TernaryBoolean } from '../../types/ternaryBoolean'
 
 export const filterCards = <T extends MTG_Card>(
@@ -476,6 +476,29 @@ export const filterCards = <T extends MTG_Card>(
                     negativeLegalityValues.every(
                         ([legalityValue]) => !card.versions.some((v) => v.legalities[format] === legalityValue),
                     ),
+                )
+            }
+        }
+    }
+
+    // Layout
+    const layoutEntries = Object.entries(filter.layouts).filter(([, value]) => isNotUnsetTB(value)) as [
+        MTG_Layout,
+        TernaryBoolean,
+    ][]
+    if (layoutEntries.length > 0) {
+        for (const [layout, value] of layoutEntries) {
+            if (isPositiveTB(value)) {
+                remainingCards = remainingCards.filter(
+                    (card) =>
+                        card.layout === layout ||
+                        card.versions.some((v) => v.cardFaces && v.cardFaces.some((f) => f.layout === layout)),
+                )
+            } else {
+                remainingCards = remainingCards.filter(
+                    (card) =>
+                        card.layout !== layout &&
+                        !card.versions.some((v) => v.cardFaces && v.cardFaces.some((f) => f.layout === layout)),
                 )
             }
         }

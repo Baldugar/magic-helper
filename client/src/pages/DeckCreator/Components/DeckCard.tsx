@@ -21,7 +21,7 @@ export const DeckCard = (props: DeckCardProps): JSX.Element | null => {
     const [hover, setHover] = useState(false)
 
     const selectedVersion =
-        card.versions.find((v) => v.set === deckCard.selectedSet) || card.versions.find((v) => v.isDefault)
+        card.versions.find((v) => v.ID === deckCard.selectedVersionID) || card.versions.find((v) => v.isDefault)
     if (!selectedVersion) return null
 
     const normal = getCorrectCardImage(selectedVersion, card.layout, 'normal')

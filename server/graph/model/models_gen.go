@@ -100,24 +100,24 @@ type MtgDeck struct {
 }
 
 type MtgDeckCard struct {
-	Card         *MtgCard        `json:"card"`
-	SelectedSet  *string         `json:"selectedSet,omitempty"`
-	Count        int             `json:"count"`
-	Position     *Position       `json:"position"`
-	MainOrSide   MainOrSide      `json:"mainOrSide"`
-	DeckCardType MtgDeckCardType `json:"deckCardType"`
-	Phantoms     []*Phantom      `json:"phantoms"`
+	Card              *MtgCard        `json:"card"`
+	SelectedVersionID *string         `json:"selectedVersionID,omitempty"`
+	Count             int             `json:"count"`
+	Position          *Position       `json:"position"`
+	MainOrSide        MainOrSide      `json:"mainOrSide"`
+	DeckCardType      MtgDeckCardType `json:"deckCardType"`
+	Phantoms          []*Phantom      `json:"phantoms"`
 }
 
 type MtgDeckCardInput struct {
-	ID           string          `json:"ID"`
-	Card         string          `json:"card"`
-	SelectedSet  *string         `json:"selectedSet,omitempty"`
-	Count        int             `json:"count"`
-	Position     *PositionInput  `json:"position"`
-	MainOrSide   MainOrSide      `json:"mainOrSide"`
-	DeckCardType MtgDeckCardType `json:"deckCardType"`
-	Phantoms     []*PhantomInput `json:"phantoms"`
+	ID                string          `json:"ID"`
+	Card              string          `json:"card"`
+	SelectedVersionID *string         `json:"selectedVersionID,omitempty"`
+	Count             int             `json:"count"`
+	Position          *PositionInput  `json:"position"`
+	MainOrSide        MainOrSide      `json:"mainOrSide"`
+	DeckCardType      MtgDeckCardType `json:"deckCardType"`
+	Phantoms          []*PhantomInput `json:"phantoms"`
 }
 
 type MtgDeleteDeckInput struct {
@@ -133,6 +133,7 @@ type MtgFilterEntries struct {
 	Types      []*MtgFilterCardTypes `json:"types"`
 	Expansions []*MtgFilterExpansion `json:"expansions"`
 	Legality   *MtgFilterLegality    `json:"legality"`
+	Layouts    []MtgLayout           `json:"layouts"`
 }
 
 type MtgFilterExpansion struct {

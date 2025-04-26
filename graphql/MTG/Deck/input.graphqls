@@ -18,7 +18,7 @@ input MTG_UpdateDeckInput {
 input MTG_DeckCardInput {
     ID: ID!
     card: ID!
-    selectedSet: String
+    selectedVersionID: String
     count: Int!
     position: PositionInput!
     mainOrSide: MainOrSide!

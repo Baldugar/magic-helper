@@ -41,15 +41,14 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
                         releasedAt: key.releasedAt,
                     }
                 }
-                for (const key of result.legality.formats) {
-                    prev.legalityFormats.push(key)
-                    prev.legalities[key] = {}
-                }
-                for (const key of result.legality.legalityValues) {
-                    prev.legalityValues.push(key)
-                    for (const format of result.legality.formats) {
-                        prev.legalities[format][key] = TernaryBoolean.UNSET
+                for (const format of result.legality.formats) {
+                    prev.legalities[format] = {}
+                    for (const legalityValue of result.legality.legalityValues) {
+                        prev.legalities[format][legalityValue] = TernaryBoolean.UNSET
                     }
+                }
+                for (const layout of result.layouts) {
+                    prev.layouts[layout] = TernaryBoolean.UNSET
                 }
                 setOriginalFilter({ ...prev })
                 return { ...prev }

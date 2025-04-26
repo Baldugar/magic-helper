@@ -9,7 +9,7 @@ type MTG_Deck {
 
 type MTG_DeckCard {
     card: MTG_Card!
-    selectedSet: String
+    selectedVersionID: String
     count: Int!
     position: Position!
     mainOrSide: MainOrSide!
