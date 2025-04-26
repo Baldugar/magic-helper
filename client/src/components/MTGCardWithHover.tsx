@@ -1,4 +1,4 @@
-import { Box } from '@mui/material'
+import { Box, useMediaQuery } from '@mui/material'
 import { FC, useState } from 'react'
 import { useDnD } from '../context/DnD/useDnD'
 import { useMTGDeckCreator } from '../context/MTGA/DeckCreator/useMTGDeckCreator'
@@ -41,6 +41,8 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
     let typeLine: string | undefined = undefined
 
     const [hover, setHover] = useState(false)
+    const mdVerticalScreen = useMediaQuery('(max-height: 1200px)')
+    const smVerticalScreen = useMediaQuery('(max-height: 1000px)')
 
     if (type === 'card') {
         const { card } = data
@@ -70,6 +72,8 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
     }
 
     const { height, width } = CARD_SIZE_VALUES['small']
+
+    const scale = smVerticalScreen ? 0.5 : mdVerticalScreen ? 0.6 : 0.7
 
     return (
         <>
@@ -104,7 +108,7 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
                     visible={hover && (hideHover === false || hideHover === undefined)}
                     img={large}
                     height={CARD_SIZE_VALUES['large'].height}
-                    scale={0.75}
+                    scale={scale}
                     width={CARD_SIZE_VALUES['large'].width}
                     otherImg={otherLarge}
                     imgHorizontal={typeLine.startsWith('Battle') || typeLine.includes(' Room')}

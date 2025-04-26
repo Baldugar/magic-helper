@@ -14,7 +14,7 @@ export type HoverMouseComponentProps = {
 export const HoverMouseComponent: FC<HoverMouseComponentProps> = (props) => {
     const { height, img, imgHorizontal, scale: zoomScale, visible, width, otherImg } = props
     const offset = 20
-    const edgeOffset = 20
+    const edgeOffset = 10
 
     const [x, setX] = useState(0)
     const [y, setY] = useState(0)
@@ -69,8 +69,9 @@ export const HoverMouseComponent: FC<HoverMouseComponentProps> = (props) => {
 
                 // Calculate the necessary transformations based on the mouse position
                 if (calculatedCloseToEdge.bottom && calculatedCloseToEdge.right) {
+                    const yToEdge = viewPort.height - e.clientY
                     const xMod = -(totalWidth + offset)
-                    const yMod = -(totalHeight + offset)
+                    const yMod = yToEdge - totalHeight - offset
                     newTransformations.xMod = xMod
                     newTransformations.yMod = yMod
                 } else if (calculatedCloseToEdge.right) {
