@@ -1,6 +1,7 @@
 import { Close } from '@mui/icons-material'
-import { ButtonBase, Grid } from '@mui/material'
+import { ButtonBase, Dialog, DialogContent, DialogTitle, Grid } from '@mui/material'
 import { useReactFlow } from '@xyflow/react'
+import { useState } from 'react'
 import { MTGACardWithHover } from '../../../components/MTGCardWithHover'
 import { useDnD } from '../../../context/DnD/useDnD'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
@@ -26,12 +27,14 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
     const { setNodes } = useReactFlow<NodeType>()
     const { card: draggedCard } = useDnD()
     const { anchorRef, handleClick, handleClose, handleContextMenu, open } = useContextMenu<HTMLDivElement>()
+    const [showAllVersions, setShowAllVersions] = useState(false)
+
     const defaultVersion = card.versions.find((v) => v.isDefault)
 
     if (!defaultVersion) return null
 
-    const handleAddCard = (card: MTG_Card) => {
-        const newDeck = onAddCard(card)
+    const handleAddCard = (card: MTG_Card, versionID?: string) => {
+        const newDeck = onAddCard(card, undefined, undefined, versionID)
         if (!newDeck) return
         setNodes(organizeNodes(newDeck, handleDeleteZone, handleRenameZone, handleDeletePhantom))
     }
@@ -198,6 +201,12 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                 })
             },
         },
+        {
+            label: 'Log card',
+            action: () => {
+                console.log(card)
+            },
+        },
     ]
 
     if (cardIsInDeck) {
@@ -209,7 +218,21 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
         })
     }
 
+    // If the card has more than 1 version add the show all versions option second to last
+    if (card.versions.length > 1) {
+        options.splice(options.length - 1, 0, {
+            label: 'Show all versions',
+            action: () => {
+                setShowAllVersions(true)
+            },
+        })
+    }
+
     if (!deck) return null
+
+    const selectedVersion = deckCardIDs.includes(card.ID)
+        ? card.versions.find((v) => v.ID === deck.cards.find((c) => c.card.ID === card.ID)?.selectedVersionID)
+        : null
 
     return (
         <Grid item xs={'auto'}>
@@ -223,7 +246,27 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                         opacity: deck.ignoredCards.includes(card.ID) ? 0.5 : 1,
                     }}
                 >
-                    <MTGACardWithHover card={card} hideHover={draggedCard !== null} debugValue={'layout'} />
+                    {selectedVersion ? (
+                        <MTGACardWithHover
+                            data={{
+                                card: selectedVersion,
+                                type: 'cardVersion',
+                                cardTypeLine: card.typeLine,
+                                layout: card.layout,
+                                debugValue: 'set',
+                            }}
+                            hideHover={draggedCard !== null}
+                        />
+                    ) : (
+                        <MTGACardWithHover
+                            data={{
+                                card,
+                                type: 'card',
+                                debugValue: 'layout',
+                            }}
+                            hideHover={draggedCard !== null}
+                        />
+                    )}
                     {deck.ignoredCards.includes(card.ID) && (
                         <Close
                             sx={{
@@ -247,6 +290,29 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                 handleClose={handleClose}
                 handleClick={handleClick}
             />
+            <Dialog open={showAllVersions} onClose={() => setShowAllVersions(false)}>
+                <DialogTitle>All versions of {card.name}</DialogTitle>
+                <DialogContent>
+                    <Grid container spacing={2}>
+                        {card.versions.map((v) => (
+                            <Grid item key={v.ID}>
+                                <ButtonBase onClick={() => handleAddCard(card, v.ID)}>
+                                    <MTGACardWithHover
+                                        data={{
+                                            card: v,
+                                            type: 'cardVersion',
+                                            cardTypeLine: card.typeLine,
+                                            layout: card.layout,
+                                            debugValue: 'set',
+                                        }}
+                                        hideHover={draggedCard !== null}
+                                    />
+                                </ButtonBase>
+                            </Grid>
+                        ))}
+                    </Grid>
+                </DialogContent>
+            </Dialog>
         </Grid>
     )
 }

@@ -13,6 +13,7 @@ import {
 } from '@mui/material'
 import { MouseEvent, useState } from 'react'
 import { CMCSelector } from '../../../components/FilterSelectors/CMCSelector'
+import LayoutSelector from '../../../components/FilterSelectors/LayoutSelector'
 import LegalitySelector from '../../../components/FilterSelectors/LegalitySelector'
 import ManaSelector from '../../../components/FilterSelectors/ManaSelector'
 import RaritySelector from '../../../components/FilterSelectors/RaritySelector'
@@ -213,6 +214,19 @@ export const Filters = () => {
                                 [legalityValue]: value,
                             },
                         },
+                    })
+                }}
+            />
+            <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
+            <LayoutSelector
+                selected={filter.layouts}
+                onNext={(layout) => {
+                    setFilter({ ...filter, layouts: { ...filter.layouts, [layout]: nextTB(filter.layouts[layout]) } })
+                }}
+                onPrev={(layout) => {
+                    setFilter({
+                        ...filter,
+                        layouts: { ...filter.layouts, [layout]: prevTB(filter.layouts[layout]) },
                     })
                 }}
             />

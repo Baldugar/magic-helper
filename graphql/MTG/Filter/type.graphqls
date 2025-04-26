@@ -2,6 +2,7 @@ type MTG_Filter_Entries {
     types: [MTG_Filter_CardTypes!]!
     expansions: [MTG_Filter_Expansion!]!
     legality: MTG_Filter_Legality!
+    layouts: [MTG_Layout!]!
 }
 
 type MTG_Filter_CardTypes {

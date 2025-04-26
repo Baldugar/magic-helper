@@ -30,13 +30,19 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
     }, [deckID, decks])
 
     // Add a card to the deck via dragging from the catalogue onto the board
-    const onAddCard = (card: MTG_Card, position?: Position, whatDeck?: MTG_Deck): MTG_Deck | undefined => {
+    const onAddCard = (
+        card: MTG_Card,
+        position?: Position,
+        whatDeck?: MTG_Deck,
+        selectedVersionID?: string,
+    ): MTG_Deck | undefined => {
         const newDeck = structuredClone(whatDeck ?? deck)
         if (newDeck) {
             if (selectingCommander) {
                 // Remove the previous commander
                 newDeck.cards = newDeck.cards.filter((c) => c.deckCardType !== MTG_DeckCardType.COMMANDER)
                 // Add the new commander
+                const setVersion = card.versions.find((v) => v.ID === selectedVersionID || v.set === set)
                 const cardToReturn: MTG_DeckCard = {
                     card,
                     count: 1,
@@ -44,7 +50,7 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
                     mainOrSide: MainOrSide.MAIN,
                     position: position || { x: 0, y: 0 },
                     phantoms: [],
-                    selectedSet: set,
+                    selectedVersionID: setVersion?.ID,
                 }
                 newDeck.cards.push(cardToReturn)
                 setSelectingCommander(false)
@@ -56,6 +62,7 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
                 if (index !== -1) {
                     newDeck.cards[index].phantoms.push({ ID: uuidv4(), position: position || nextAvailableSpot })
                 } else {
+                    const setVersion = card.versions.find((v) => v.ID === selectedVersionID || v.set === set)
                     const cardToReturn: MTG_DeckCard = {
                         card,
                         count: 1,
@@ -63,7 +70,7 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
                         mainOrSide: deckTab,
                         position: position || nextAvailableSpot,
                         phantoms: [],
-                        selectedSet: set,
+                        selectedVersionID: setVersion?.ID,
                     }
                     newDeck.cards.push(cardToReturn)
                 }

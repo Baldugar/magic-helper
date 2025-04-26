@@ -300,7 +300,7 @@ export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTG_DeckCar
 
         cardMap.set(cardId, {
             card: cardId,
-            selectedSet: card.selectedSet,
+            selectedVersionID: card.selectedVersionID,
             count: currentCard?.count || 1,
             position,
             phantoms,
@@ -317,7 +317,7 @@ export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTG_DeckCar
         if (!cardMap.has(cardId)) {
             cardMap.set(cardId, {
                 card: cardId,
-                selectedSet: currentCard.selectedSet,
+                selectedVersionID: currentCard.selectedVersionID,
                 count: currentCard.count,
                 position: currentCard.position ?? { x: 0, y: 0 },
                 phantoms: currentCard.phantoms ?? [],

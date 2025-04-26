@@ -1,5 +1,8 @@
 import { Check, Close, Remove } from '@mui/icons-material'
 import {
+    Box,
+    Button,
+    ButtonProps,
     CheckboxProps,
     FormControlLabelProps,
     IconButton,
@@ -34,6 +37,11 @@ export type TernaryToggleProps =
           value: TernaryBoolean
           type: 'toggleButton'
           toggleButtonGroupProps: ToggleButtonGroupProps
+      }
+    | {
+          value: TernaryBoolean
+          type: 'textButton'
+          textButtonProps: ButtonProps
       }
 
 export const TernaryToggle = (props: TernaryToggleProps): JSX.Element => {
@@ -95,6 +103,42 @@ export const TernaryToggle = (props: TernaryToggleProps): JSX.Element => {
         }
         case 'checkbox':
             break
+        case 'textButton': {
+            const { textButtonProps, value } = props
+            return (
+                <Button
+                    {...textButtonProps}
+                    fullWidth
+                    sx={{
+                        position: 'relative',
+                    }}
+                >
+                    {textButtonProps.children}
+                    <Box
+                        sx={{
+                            width: '30px',
+                            height: '30px',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                        }}
+                    >
+                        {isNotUnsetTB(value) && (
+                            <img
+                                style={{
+                                    width: '20px',
+                                    height: '20px',
+                                    backgroundColor: isPositiveTB(value) ? '#00ff00' : '#ff0000',
+                                    borderRadius: '50%',
+                                    opacity: 0.5,
+                                }}
+                                src={`/img/general/${isPositiveTB(value) ? 'check' : 'cancel'}.svg`}
+                            />
+                        )}
+                    </Box>
+                </Button>
+            )
+        }
         case 'toggleButton': {
             const { value, toggleButtonGroupProps } = props
             const PositiveToggleButton = styled(ToggleButton)(({ theme }) => ({

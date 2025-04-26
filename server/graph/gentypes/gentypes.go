@@ -125,13 +125,13 @@ type ComplexityRoot struct {
 	}
 
 	MTG_DeckCard struct {
-		Card         func(childComplexity int) int
-		Count        func(childComplexity int) int
-		DeckCardType func(childComplexity int) int
-		MainOrSide   func(childComplexity int) int
-		Phantoms     func(childComplexity int) int
-		Position     func(childComplexity int) int
-		SelectedSet  func(childComplexity int) int
+		Card              func(childComplexity int) int
+		Count             func(childComplexity int) int
+		DeckCardType      func(childComplexity int) int
+		MainOrSide        func(childComplexity int) int
+		Phantoms          func(childComplexity int) int
+		Position          func(childComplexity int) int
+		SelectedVersionID func(childComplexity int) int
 	}
 
 	MTG_Filter_CardTypes struct {
@@ -141,6 +141,7 @@ type ComplexityRoot struct {
 
 	MTG_Filter_Entries struct {
 		Expansions func(childComplexity int) int
+		Layouts    func(childComplexity int) int
 		Legality   func(childComplexity int) int
 		Types      func(childComplexity int) int
 	}
@@ -709,12 +710,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MTG_DeckCard.Position(childComplexity), true
 
-	case "MTG_DeckCard.selectedSet":
-		if e.complexity.MTG_DeckCard.SelectedSet == nil {
+	case "MTG_DeckCard.selectedVersionID":
+		if e.complexity.MTG_DeckCard.SelectedVersionID == nil {
 			break
 		}
 
-		return e.complexity.MTG_DeckCard.SelectedSet(childComplexity), true
+		return e.complexity.MTG_DeckCard.SelectedVersionID(childComplexity), true
 
 	case "MTG_Filter_CardTypes.cardType":
 		if e.complexity.MTG_Filter_CardTypes.CardType == nil {
@@ -736,6 +737,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MTG_Filter_Entries.Expansions(childComplexity), true
+
+	case "MTG_Filter_Entries.layouts":
+		if e.complexity.MTG_Filter_Entries.Layouts == nil {
+			break
+		}
+
+		return e.complexity.MTG_Filter_Entries.Layouts(childComplexity), true
 
 	case "MTG_Filter_Entries.legality":
 		if e.complexity.MTG_Filter_Entries.Legality == nil {
@@ -1245,7 +1253,7 @@ input MTG_UpdateDeckInput {
 input MTG_DeckCardInput {
     ID: ID!
     card: ID!
-    selectedSet: String
+    selectedVersionID: String
     count: Int!
     position: PositionInput!
     mainOrSide: MainOrSide!
@@ -1269,7 +1277,7 @@ input PhantomInput {
 
 type MTG_DeckCard {
     card: MTG_Card!
-    selectedSet: String
+    selectedVersionID: String
     count: Int!
     position: Position!
     mainOrSide: MainOrSide!
@@ -1286,6 +1294,7 @@ type Phantom {
     types: [MTG_Filter_CardTypes!]!
     expansions: [MTG_Filter_Expansion!]!
     legality: MTG_Filter_Legality!
+    layouts: [MTG_Layout!]!
 }
 
 type MTG_Filter_CardTypes {
@@ -4327,8 +4336,8 @@ func (ec *executionContext) fieldContext_MTG_Deck_cards(_ context.Context, field
 			switch field.Name {
 			case "card":
 				return ec.fieldContext_MTG_DeckCard_card(ctx, field)
-			case "selectedSet":
-				return ec.fieldContext_MTG_DeckCard_selectedSet(ctx, field)
+			case "selectedVersionID":
+				return ec.fieldContext_MTG_DeckCard_selectedVersionID(ctx, field)
 			case "count":
 				return ec.fieldContext_MTG_DeckCard_count(ctx, field)
 			case "position":
@@ -4528,8 +4537,8 @@ func (ec *executionContext) fieldContext_MTG_DeckCard_card(_ context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _MTG_DeckCard_selectedSet(ctx context.Context, field graphql.CollectedField, obj *model.MtgDeckCard) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_DeckCard_selectedSet(ctx, field)
+func (ec *executionContext) _MTG_DeckCard_selectedVersionID(ctx context.Context, field graphql.CollectedField, obj *model.MtgDeckCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_DeckCard_selectedVersionID(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -4542,7 +4551,7 @@ func (ec *executionContext) _MTG_DeckCard_selectedSet(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.SelectedSet, nil
+		return obj.SelectedVersionID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4556,7 +4565,7 @@ func (ec *executionContext) _MTG_DeckCard_selectedSet(ctx context.Context, field
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MTG_DeckCard_selectedSet(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MTG_DeckCard_selectedVersionID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MTG_DeckCard",
 		Field:      field,
@@ -5038,6 +5047,50 @@ func (ec *executionContext) fieldContext_MTG_Filter_Entries_legality(_ context.C
 				return ec.fieldContext_MTG_Filter_Legality_legalityValues(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTG_Filter_Legality", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_Filter_Entries_layouts(ctx context.Context, field graphql.CollectedField, obj *model.MtgFilterEntries) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_Filter_Entries_layouts(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Layouts, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]model.MtgLayout)
+	fc.Result = res
+	return ec.marshalNMTG_Layout2ᚕmagicᚑhelperᚋgraphᚋmodelᚐMtgLayoutᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_Filter_Entries_layouts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_Filter_Entries",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MTG_Layout does not have child fields")
 		},
 	}
 	return fc, nil
@@ -6140,6 +6193,8 @@ func (ec *executionContext) fieldContext_Query_getMTGFilters(_ context.Context, 
 				return ec.fieldContext_MTG_Filter_Entries_expansions(ctx, field)
 			case "legality":
 				return ec.fieldContext_MTG_Filter_Entries_legality(ctx, field)
+			case "layouts":
+				return ec.fieldContext_MTG_Filter_Entries_layouts(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTG_Filter_Entries", field.Name)
 		},
@@ -8479,7 +8534,7 @@ func (ec *executionContext) unmarshalInputMTG_DeckCardInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"ID", "card", "selectedSet", "count", "position", "mainOrSide", "deckCardType", "phantoms"}
+	fieldsInOrder := [...]string{"ID", "card", "selectedVersionID", "count", "position", "mainOrSide", "deckCardType", "phantoms"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -8500,13 +8555,13 @@ func (ec *executionContext) unmarshalInputMTG_DeckCardInput(ctx context.Context,
 				return it, err
 			}
 			it.Card = data
-		case "selectedSet":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("selectedSet"))
+		case "selectedVersionID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("selectedVersionID"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.SelectedSet = data
+			it.SelectedVersionID = data
 		case "count":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("count"))
 			data, err := ec.unmarshalNInt2int(ctx, v)
@@ -9130,8 +9185,8 @@ func (ec *executionContext) _MTG_DeckCard(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "selectedSet":
-			out.Values[i] = ec._MTG_DeckCard_selectedSet(ctx, field, obj)
+		case "selectedVersionID":
+			out.Values[i] = ec._MTG_DeckCard_selectedVersionID(ctx, field, obj)
 		case "count":
 			out.Values[i] = ec._MTG_DeckCard_count(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -9247,6 +9302,11 @@ func (ec *executionContext) _MTG_Filter_Entries(ctx context.Context, sel ast.Sel
 			}
 		case "legality":
 			out.Values[i] = ec._MTG_Filter_Entries_legality(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "layouts":
+			out.Values[i] = ec._MTG_Filter_Entries_layouts(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -10807,6 +10867,67 @@ func (ec *executionContext) unmarshalNMTG_Layout2magicᚑhelperᚋgraphᚋmodel�
 
 func (ec *executionContext) marshalNMTG_Layout2magicᚑhelperᚋgraphᚋmodelᚐMtgLayout(ctx context.Context, sel ast.SelectionSet, v model.MtgLayout) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) unmarshalNMTG_Layout2ᚕmagicᚑhelperᚋgraphᚋmodelᚐMtgLayoutᚄ(ctx context.Context, v any) ([]model.MtgLayout, error) {
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]model.MtgLayout, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNMTG_Layout2magicᚑhelperᚋgraphᚋmodelᚐMtgLayout(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNMTG_Layout2ᚕmagicᚑhelperᚋgraphᚋmodelᚐMtgLayoutᚄ(ctx context.Context, sel ast.SelectionSet, v []model.MtgLayout) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMTG_Layout2magicᚑhelperᚋgraphᚋmodelᚐMtgLayout(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNMTG_Rarity2magicᚑhelperᚋgraphᚋmodelᚐMtgRarity(ctx context.Context, v any) (model.MtgRarity, error) {

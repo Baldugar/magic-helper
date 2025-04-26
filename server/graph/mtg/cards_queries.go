@@ -51,7 +51,8 @@ func GetMTGFilters(ctx context.Context) (*model.MtgFilterEntries, error) {
         FOR card IN @@collection
         RETURN {
             name: card.name,
-            typeLine: card.typeLine
+            typeLine: card.typeLine,
+			layout: card.layout
         }
     `)
 
@@ -68,11 +69,13 @@ func GetMTGFilters(ctx context.Context) (*model.MtgFilterEntries, error) {
 
 	var typeMap = make(map[string]map[string]struct{}) // Map to store types and their subtypes
 	var gatheredTypes = make(map[string]struct{})      // Set to store all types
+	var layouts = make(map[string]struct{})            // Set to store all layouts
 
 	for cursor.HasMore() {
 		var card struct {
 			Name     string `json:"name"`
 			TypeLine string `json:"typeLine"`
+			Layout   string `json:"layout"`
 		}
 		_, err := cursor.ReadDocument(ctx, &card)
 		if err != nil {
@@ -102,6 +105,9 @@ func GetMTGFilters(ctx context.Context) (*model.MtgFilterEntries, error) {
 				typeMap[cardType][subtype] = struct{}{}
 			}
 		}
+
+		// Add the layout to the layouts set
+		layouts[card.Layout] = struct{}{}
 	}
 
 	// Now perform the final cleaning to remove subtypes that exist in the gathered types
@@ -140,6 +146,11 @@ func GetMTGFilters(ctx context.Context) (*model.MtgFilterEntries, error) {
 	}
 
 	filterEntries.Legality = legalitiesFilter
+
+	filterEntries.Layouts = make([]model.MtgLayout, 0, len(layouts))
+	for layout := range layouts {
+		filterEntries.Layouts = append(filterEntries.Layouts, model.MtgLayout(layout))
+	}
 
 	log.Info().Msg("GetMTGFilters: Finished")
 	return &filterEntries, nil

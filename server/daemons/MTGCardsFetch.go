@@ -279,7 +279,7 @@ func collectCards(ctx context.Context) {
 		
 		// Next, handle the "Name // Name" pattern
 		LET parts = SPLIT(nameWithoutPrefix, " // ")
-		LET groupName = (LENGTH(parts) == 2 AND parts[0] == parts[1]) ? parts[0] : nameWithoutPrefix
+		LET groupName = LENGTH(parts) == 2 ? parts[0] : nameWithoutPrefix
 		
 		SORT DATE_TIMESTAMP(c.released_at) ASC // First show non-reprints, then reprints
 		// Collect based on the derived groupName, unset metadata
