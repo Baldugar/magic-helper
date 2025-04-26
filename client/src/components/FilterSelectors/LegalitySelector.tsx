@@ -26,6 +26,8 @@ const LegalitySelector = (props: LegalitySelectorProps): JSX.Element => {
 
     const sortedLegalities = Object.entries(legalities).sort((a, b) => a[0].localeCompare(b[0]))
 
+    const legalitySortValues = ['legal', 'restricted', 'banned', 'not_legal']
+
     return (
         <Grid container item xs={'auto'}>
             <Button onClick={handleClick}>Legalities</Button>
@@ -43,23 +45,26 @@ const LegalitySelector = (props: LegalitySelectorProps): JSX.Element => {
                                     {format}
                                 </Typography>
                             </Grid>
-                            {Object.entries(legalityValues).map(([legalityValue, _]) => (
-                                <Grid item key={legalityValue} xs={3}>
-                                    <Box display={'flex'} flexDirection={'column'} alignItems={'center'}>
-                                        <Typography>{legalityValue}</Typography>
-                                        <TernaryToggle
-                                            value={selected[format][legalityValue]}
-                                            type={'toggleButton'}
-                                            toggleButtonGroupProps={{
-                                                exclusive: true,
-                                                onChange: (_, value) => {
-                                                    onSelect(format, legalityValue, value ?? TernaryBoolean.UNSET)
-                                                },
-                                            }}
-                                        />
-                                    </Box>
-                                </Grid>
-                            ))}
+                            {Object.entries(legalityValues)
+                                .map(([legalityValue, _]) => legalityValue)
+                                .sort((a, b) => legalitySortValues.indexOf(a) - legalitySortValues.indexOf(b))
+                                .map((legalityValue) => (
+                                    <Grid item key={legalityValue} xs={3}>
+                                        <Box display={'flex'} flexDirection={'column'} alignItems={'center'}>
+                                            <Typography>{legalityValue}</Typography>
+                                            <TernaryToggle
+                                                value={selected[format][legalityValue]}
+                                                type={'toggleButton'}
+                                                toggleButtonGroupProps={{
+                                                    exclusive: true,
+                                                    onChange: (_, value) => {
+                                                        onSelect(format, legalityValue, value ?? TernaryBoolean.UNSET)
+                                                    },
+                                                }}
+                                            />
+                                        </Box>
+                                    </Grid>
+                                ))}
                         </Grid>
                     ))}
                 </Paper>
