@@ -30,6 +30,5 @@ arangodb/backup
 arangodb/dumps
 
 # Server
-server/settings*.json
 server/magic-helper.exe
 server/cards/**

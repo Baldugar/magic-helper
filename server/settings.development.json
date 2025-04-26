@@ -1,0 +1,16 @@
+{
+    "allowCrossOrigin": true,
+    "logging": {
+        "logLevel": "debug"
+    },
+    "domain": "localhost",
+    "httpListen": "8080",
+    "graphQLPlayground": true,
+    "arangoDB": {
+        "addr": "localhost",
+        "port": "8529",
+        "name": "MagicHelper",
+        "user": "root",
+        "password": "arangodb"
+    }
+}
