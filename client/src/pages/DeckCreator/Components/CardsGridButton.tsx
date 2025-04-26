@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { MTGACardWithHover } from '../../../components/MTGCardWithHover'
 import { useDnD } from '../../../context/DnD/useDnD'
+import { useMTGCardPackages } from '../../../context/MTGA/CardPackages/useCardPackages'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGDeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
 import { useMTGDecks } from '../../../context/MTGA/Decks/useMTGDecks'
@@ -24,6 +25,12 @@ export type CardsGridButtonProps = {
 export const CardsGridButton = (props: CardsGridButtonProps) => {
     const { card } = props
     const { decks, updateDeck } = useMTGDecks()
+    const { cardPackages, updateCardPackage } = useMTGCardPackages()
+
+    const {
+        mutations: { addMTGCardToCardPackage, removeMTGCardFromCardPackage, createMTGCardPackage },
+    } = MTGFunctions
+
     const { onAddCard, deck, removeCard, setDeck } = useMTGDeckCreator()
     const { handleDeleteZone, handleRenameZone, handleDeletePhantom } = useMTGDeckFlowCreator()
     const { setNodes } = useReactFlow<NodeType>()
@@ -193,6 +200,56 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                     }),
             ],
         },
+        {
+            id: 'addToCardPackage',
+            label: 'Add to card package',
+            subMenu: [
+                {
+                    label: 'Create new card package',
+                    action: () => {
+                        const name = prompt('Enter the name of the new card package')
+                        if (!name) return
+                        createMTGCardPackage({ name }).then((cardPackage) => {
+                            addMTGCardToCardPackage({
+                                cardPackageID: cardPackage.ID,
+                                card: card.ID,
+                                count: 1,
+                            }).then((cp) => {
+                                updateCardPackage(cp)
+                            })
+                        })
+                    },
+                    shouldKeepOpen: false,
+                },
+                ...cardPackages.map((cp) => {
+                    const alreadyInDeck = cp.cards.find((c) => c.card.ID === card.ID)
+                    return {
+                        label: cp.name,
+                        selected: alreadyInDeck ? true : false,
+                        action: !alreadyInDeck
+                            ? () => {
+                                  addMTGCardToCardPackage({
+                                      cardPackageID: cp.ID,
+                                      card: card.ID,
+                                      count: 1,
+                                  }).then((cp) => {
+                                      updateCardPackage(cp)
+                                  })
+                              }
+                            : () => {
+                                  removeMTGCardFromCardPackage({
+                                      cardPackageID: cp.ID,
+                                      card: card.ID,
+                                  }).then((cp) => {
+                                      updateCardPackage(cp)
+                                  })
+                              },
+                        shouldKeepOpen: false,
+                    } as ContextMenuOption
+                }),
+            ],
+        },
+
         {
             label: 'Add as deck image',
             action: () => {

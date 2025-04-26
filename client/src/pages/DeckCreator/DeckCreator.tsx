@@ -1,6 +1,7 @@
 import { Box, Button, Collapse, Pagination } from '@mui/material'
 import { ReactFlowProvider, useReactFlow } from '@xyflow/react'
 import { useParams } from 'react-router-dom'
+import { CardPackageImportDialog } from '../../components/CardPackageImportDialog'
 import { ExportDialog } from '../../components/ExportDialog'
 import { ImportDialog } from '../../components/ImportDialog'
 import { DndProvider } from '../../context/DnD/DnDProvider'
@@ -35,6 +36,7 @@ export const DeckCreator = () => {
         setOpenImportDialog,
         setOpenExportDialog,
         setDeck,
+        setOpenImportCardPackageDialog,
     } = useMTGDeckCreator()
     const { updateDeck } = useMTGDecks()
     const { filteredCards, page, setPage } = useMTGDeckCreatorPagination()
@@ -120,6 +122,13 @@ export const DeckCreator = () => {
                         </Box>
                     )}
                     <Box position={'absolute'} top={10} right={10} display={'flex'} gap={1}>
+                        <Button
+                            variant={'contained'}
+                            color={'primary'}
+                            onClick={() => setOpenImportCardPackageDialog(true)}
+                        >
+                            Import Card Package
+                        </Button>
                         <Button variant={'contained'} color={'primary'} onClick={saveDeck} sx={{ mr: 2 }}>
                             Save Deck
                         </Button>
@@ -163,6 +172,7 @@ export const DeckCreator = () => {
                 </Collapse>
                 <ImportDialog />
                 <ExportDialog />
+                <CardPackageImportDialog />
             </Box>
         </MTGDeckCreatorFlowProvider>
     )

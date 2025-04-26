@@ -1,5 +1,13 @@
 import { ReactNode, useEffect, useState } from 'react'
-import { MainOrSide, MTG_Card, MTG_Deck, MTG_DeckCard, MTG_DeckCardType, Position } from '../../../graphql/types'
+import {
+    MainOrSide,
+    MTG_Card,
+    MTG_CardPackage,
+    MTG_Deck,
+    MTG_DeckCard,
+    MTG_DeckCardType,
+    Position,
+} from '../../../graphql/types'
 import { singleSetSelected } from '../../../utils/functions/filterFunctions'
 import { uuidv4 } from '../../../utils/functions/IDFunctions'
 import { findNextAvailablePosition } from '../../../utils/functions/nodeFunctions'
@@ -19,6 +27,7 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
     const [deckTab, setDeckTab] = useState<MainOrSide>(MainOrSide.MAIN)
     const [openImportDialog, setOpenImportDialog] = useState(false)
     const [openExportDialog, setOpenExportDialog] = useState(false)
+    const [openImportCardPackageDialog, setOpenImportCardPackageDialog] = useState(false)
 
     useEffect(() => {
         if (deckID) {
@@ -34,7 +43,7 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
         card: MTG_Card,
         position?: Position,
         whatDeck?: MTG_Deck,
-        selectedVersionID?: string,
+        selectedVersionID?: string | null,
     ): MTG_Deck | undefined => {
         const newDeck = structuredClone(whatDeck ?? deck)
         if (newDeck) {
@@ -169,6 +178,41 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
         setDeck(newDeck)
     }
 
+    const importCardPackage = (cardPackage: MTG_CardPackage) => {
+        const newDeck = structuredClone(deck)
+        console.log('cardPackage', cardPackage)
+        console.log('newDeck', newDeck)
+        if (!newDeck) return
+        for (const card of cardPackage.cards) {
+            const index = newDeck.cards.findIndex((c) => c.card.ID === card.card.ID)
+            if (index !== -1) {
+                newDeck.cards[index].count += card.count
+            } else {
+                console.log('adding card', card.card)
+                const ID = card.card.ID
+                const index = newDeck.cards.findIndex((c) => c.card.ID === ID && c.mainOrSide === deckTab)
+                const nextAvailableSpot = findNextAvailablePosition(newDeck.cards)
+                // If the card is already in the deck, add a phantom
+                if (index !== -1) {
+                    newDeck.cards[index].phantoms.push({ ID: uuidv4(), position: nextAvailableSpot })
+                } else {
+                    const setVersion = card.card.versions.find((v) => v.ID === card.selectedVersionID || v.set === set)
+                    const cardToReturn: MTG_DeckCard = {
+                        card: card.card,
+                        count: 1,
+                        deckCardType: MTG_DeckCardType.NORMAL,
+                        mainOrSide: deckTab,
+                        position: nextAvailableSpot,
+                        phantoms: [],
+                        selectedVersionID: setVersion?.ID,
+                    }
+                    newDeck.cards.push(cardToReturn)
+                }
+            }
+        }
+        setDeck(newDeck)
+    }
+
     return (
         <MTGDeckCreatorContext.Provider
             value={{
@@ -190,6 +234,9 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
                 setOpenImportDialog,
                 openExportDialog,
                 setOpenExportDialog,
+                openImportCardPackageDialog,
+                setOpenImportCardPackageDialog,
+                importCardPackage,
             }}
         >
             {children}

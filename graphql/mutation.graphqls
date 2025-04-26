@@ -4,4 +4,9 @@ type Mutation {
     deleteMTGDeck(input: MTG_DeleteDeckInput!): Boolean!
     updateMTGDeck(input: MTG_UpdateDeckInput!): MTG_Deck!
     saveMTGDeckAsCopy(input: MTG_UpdateDeckInput!): MTG_Deck!
+    # Card Packages
+    createMTGCardPackage(input: MTG_CreateCardPackageInput!): MTG_CardPackage!
+    deleteMTGCardPackage(input: MTG_DeleteCardPackageInput!): Boolean!
+    addMTGCardToCardPackage(input: MTG_AddCardToCardPackageInput!): MTG_CardPackage!
+    removeMTGCardFromCardPackage(input: MTG_RemoveCardFromCardPackageInput!): MTG_CardPackage!
 }

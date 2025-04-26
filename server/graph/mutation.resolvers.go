@@ -31,6 +31,26 @@ func (r *mutationResolver) SaveMTGDeckAsCopy(ctx context.Context, input model.Mt
 	return mtg.SaveMTGDeckAsCopy(ctx, input)
 }
 
+// CreateMTGCardPackage is the resolver for the createMTGCardPackage field.
+func (r *mutationResolver) CreateMTGCardPackage(ctx context.Context, input model.MtgCreateCardPackageInput) (*model.MtgCardPackage, error) {
+	return mtg.CreateMTGCardPackage(ctx, input)
+}
+
+// DeleteMTGCardPackage is the resolver for the deleteMTGCardPackage field.
+func (r *mutationResolver) DeleteMTGCardPackage(ctx context.Context, input model.MtgDeleteCardPackageInput) (bool, error) {
+	return mtg.DeleteMTGCardPackage(ctx, input)
+}
+
+// AddMTGCardToCardPackage is the resolver for the addMTGCardToCardPackage field.
+func (r *mutationResolver) AddMTGCardToCardPackage(ctx context.Context, input model.MtgAddCardToCardPackageInput) (*model.MtgCardPackage, error) {
+	return mtg.AddMTGCardToCardPackage(ctx, input)
+}
+
+// RemoveMTGCardFromCardPackage is the resolver for the removeMTGCardFromCardPackage field.
+func (r *mutationResolver) RemoveMTGCardFromCardPackage(ctx context.Context, input model.MtgRemoveCardFromCardPackageInput) (*model.MtgCardPackage, error) {
+	return mtg.RemoveMTGCardFromCardPackage(ctx, input)
+}
+
 // Mutation returns gentypes.MutationResolver implementation.
 func (r *Resolver) Mutation() gentypes.MutationResolver { return &mutationResolver{r} }
 

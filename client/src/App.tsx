@@ -1,10 +1,11 @@
 import { Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import './App.css'
+import { MTGCardPackagesProvider } from './context/MTGA/CardPackages/CardPackagesProvider'
 import { MTGCardsProvider } from './context/MTGA/Cards/MTGCardsProvider'
 import { MTGDecksProvider } from './context/MTGA/Decks/MTGDecksProvider'
+import Dashboard from './pages/Dashboard/Dashboard'
 import { DeckCreatorWrapper } from './pages/DeckCreator/DeckCreator'
-import { DeckList } from './pages/DeckList/DeckList'
 
 function WrappedApp() {
     return (
@@ -15,9 +16,9 @@ function WrappedApp() {
                     {/* <ReactFlowProvider>
                 <FlowView />
             </ReactFlowProvider> */}
-                    <Route path={'/deck'} element={<DeckList />} />
                     <Route path={'/deck/:deckID'} element={<DeckCreatorWrapper />} />
-                    <Route path={'/'} element={<Navigate to={'/deck'} />} />
+                    <Route path={'/'} element={<Navigate to={'/dashboard'} />} />
+                    <Route path={'/dashboard'} element={<Dashboard />} />
                 </Routes>
             </Suspense>
         </BrowserRouter>
@@ -28,7 +29,9 @@ function App() {
     return (
         <MTGCardsProvider>
             <MTGDecksProvider>
-                <WrappedApp />
+                <MTGCardPackagesProvider>
+                    <WrappedApp />
+                </MTGCardPackagesProvider>
             </MTGDecksProvider>
         </MTGCardsProvider>
     )

@@ -39,6 +39,12 @@ export type FlowZoneInput = {
   width: Scalars['Float']['input'];
 };
 
+export type MTG_AddCardToCardPackageInput = {
+  card: Scalars['ID']['input'];
+  cardPackageID: Scalars['ID']['input'];
+  count: Scalars['Int']['input'];
+};
+
 export type MTG_Card = {
   __typename?: 'MTG_Card';
   CMC: Scalars['Float']['output'];
@@ -78,6 +84,28 @@ export type MTG_CardFace = {
   typeLine?: Maybe<Scalars['String']['output']>;
 };
 
+export type MTG_CardPackage = {
+  __typename?: 'MTG_CardPackage';
+  ID: Scalars['ID']['output'];
+  cards: Array<MTG_CardPackageCard>;
+  name: Scalars['String']['output'];
+};
+
+export type MTG_CardPackageCard = {
+  __typename?: 'MTG_CardPackageCard';
+  card: MTG_Card;
+  count: Scalars['Int']['output'];
+  mainOrSide: MainOrSide;
+  selectedVersionID?: Maybe<Scalars['String']['output']>;
+};
+
+export type MTG_CardPackageCardInput = {
+  card: Scalars['ID']['input'];
+  count: Scalars['Int']['input'];
+  mainOrSide: MainOrSide;
+  selectedVersionID?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type MTG_CardVersion = {
   __typename?: 'MTG_CardVersion';
   ID: Scalars['ID']['output'];
@@ -110,6 +138,10 @@ export enum MTG_Color {
   U = 'U',
   W = 'W'
 }
+
+export type MTG_CreateCardPackageInput = {
+  name: Scalars['String']['input'];
+};
 
 export type MTG_CreateDeckInput = {
   name: Scalars['String']['input'];
@@ -151,6 +183,10 @@ export enum MTG_DeckCardType {
   COMMANDER = 'COMMANDER',
   NORMAL = 'NORMAL'
 }
+
+export type MTG_DeleteCardPackageInput = {
+  cardPackageID: Scalars['ID']['input'];
+};
 
 export type MTG_DeleteDeckInput = {
   deckID: Scalars['ID']['input'];
@@ -234,6 +270,11 @@ export enum MTG_Rarity {
   uncommon = 'uncommon'
 }
 
+export type MTG_RemoveCardFromCardPackageInput = {
+  card: Scalars['ID']['input'];
+  cardPackageID: Scalars['ID']['input'];
+};
+
 export type MTG_UpdateDeckInput = {
   cardFrontImage?: InputMaybe<Scalars['String']['input']>;
   cards: Array<MTG_DeckCardInput>;
@@ -250,10 +291,24 @@ export enum MainOrSide {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  addMTGCardToCardPackage: MTG_CardPackage;
+  createMTGCardPackage: MTG_CardPackage;
   createMTGDeck: MTG_Deck;
+  deleteMTGCardPackage: Scalars['Boolean']['output'];
   deleteMTGDeck: Scalars['Boolean']['output'];
+  removeMTGCardFromCardPackage: MTG_CardPackage;
   saveMTGDeckAsCopy: MTG_Deck;
   updateMTGDeck: MTG_Deck;
+};
+
+
+export type MutationaddMTGCardToCardPackageArgs = {
+  input: MTG_AddCardToCardPackageInput;
+};
+
+
+export type MutationcreateMTGCardPackageArgs = {
+  input: MTG_CreateCardPackageInput;
 };
 
 
@@ -262,8 +317,18 @@ export type MutationcreateMTGDeckArgs = {
 };
 
 
+export type MutationdeleteMTGCardPackageArgs = {
+  input: MTG_DeleteCardPackageInput;
+};
+
+
 export type MutationdeleteMTGDeckArgs = {
   input: MTG_DeleteDeckInput;
+};
+
+
+export type MutationremoveMTGCardFromCardPackageArgs = {
+  input: MTG_RemoveCardFromCardPackageInput;
 };
 
 
@@ -300,9 +365,15 @@ export type PositionInput = {
 
 export type Query = {
   __typename?: 'Query';
+  getMTGCardPackages: Array<MTG_CardPackage>;
   getMTGCards: Array<MTG_Card>;
   getMTGDecks: Array<MTG_Deck>;
   getMTGFilters: MTG_Filter_Entries;
+};
+
+
+export type QuerygetMTGCardPackagesArgs = {
+  cardPackageID?: InputMaybe<Scalars['ID']['input']>;
 };
 
 

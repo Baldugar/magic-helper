@@ -5,6 +5,11 @@ type Mutation {
     deleteMTGDeck(input: MTG_DeleteDeckInput!): Boolean!
     updateMTGDeck(input: MTG_UpdateDeckInput!): MTG_Deck!
     saveMTGDeckAsCopy(input: MTG_UpdateDeckInput!): MTG_Deck!
+    # Card Packages
+    createMTGCardPackage(input: MTG_CreateCardPackageInput!): MTG_CardPackage!
+    deleteMTGCardPackage(input: MTG_DeleteCardPackageInput!): Boolean!
+    addMTGCardToCardPackage(input: MTG_AddCardToCardPackageInput!): MTG_CardPackage!
+    removeMTGCardFromCardPackage(input: MTG_RemoveCardFromCardPackageInput!): MTG_CardPackage!
 }
 
 # --- query.graphqls ---
@@ -14,6 +19,8 @@ type Query {
     getMTGFilters: MTG_Filter_Entries!
     # Decks
     getMTGDecks(deckID: ID): [MTG_Deck!]!
+    # Card Packages
+    getMTGCardPackages(cardPackageID: ID): [MTG_CardPackage!]!
 }
 
 # --- type.base.graphqls ---
@@ -173,6 +180,48 @@ type MTG_Image {
     normal: String!
     PNG: String!
     small: String!
+}
+
+# --- MTG\CardPackage\input.graphqls ---
+input MTG_CreateCardPackageInput {
+    name: String!
+}
+
+input MTG_DeleteCardPackageInput {
+    cardPackageID: ID!
+}
+
+input MTG_AddCardToCardPackageInput {
+    cardPackageID: ID!
+    card: ID!
+    count: Int!
+}
+
+input MTG_RemoveCardFromCardPackageInput {
+    cardPackageID: ID!
+    card: ID!
+}
+
+input MTG_CardPackageCardInput {
+    card: ID!
+    selectedVersionID: String
+    count: Int!
+    mainOrSide: MainOrSide!
+}
+
+# --- MTG\CardPackage\type.graphqls ---
+type MTG_CardPackage {
+    ID: ID! @goTag(key: "json", value: "_key")
+    name: String!
+    cards: [MTG_CardPackageCard!]!
+    # zones: [FlowZone!]! TODO: Add zones to card package in the future
+}
+
+type MTG_CardPackageCard {
+    card: MTG_Card!
+    selectedVersionID: String
+    count: Int!
+    mainOrSide: MainOrSide!
 }
 
 # --- MTG\Deck\enum.graphqls ---

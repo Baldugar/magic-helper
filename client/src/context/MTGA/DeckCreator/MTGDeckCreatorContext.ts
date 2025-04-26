@@ -1,5 +1,5 @@
 import { createContext, Dispatch, SetStateAction } from 'react'
-import { MainOrSide, MTG_Card, MTG_Deck, MTG_DeckCard, Position } from '../../../graphql/types'
+import { MainOrSide, MTG_Card, MTG_CardPackage, MTG_Deck, MTG_DeckCard, Position } from '../../../graphql/types'
 
 type MTGDeckCreatorContextType = {
     // Deck & Cards
@@ -32,6 +32,11 @@ type MTGDeckCreatorContextType = {
     // Export Dialog
     openExportDialog: boolean
     setOpenExportDialog: Dispatch<SetStateAction<boolean>>
+
+    // Import Card Package Dialog
+    openImportCardPackageDialog: boolean
+    setOpenImportCardPackageDialog: Dispatch<SetStateAction<boolean>>
+    importCardPackage: (cardPackage: MTG_CardPackage) => void
 }
 
 export const MTGDeckCreatorContext = createContext<MTGDeckCreatorContextType>({
@@ -60,4 +65,9 @@ export const MTGDeckCreatorContext = createContext<MTGDeckCreatorContextType>({
     // Export Dialog
     openExportDialog: false,
     setOpenExportDialog: () => {},
+
+    // Import Card Package Dialog
+    openImportCardPackageDialog: false,
+    setOpenImportCardPackageDialog: () => {},
+    importCardPackage: () => {},
 })

@@ -23,8 +23,8 @@ export const NestedSubMenu = (props: NestedSubMenuProps) => {
                 key={subOption.label}
                 onClick={() => {
                     if (subOption.action) {
-                        handleClick(() => subOption.action!(id), subOption.shouldKeepOpen)
-                        if (!subOption.shouldKeepOpen) {
+                        if (subOption.shouldKeepOpen === false || subOption.shouldKeepOpen === undefined) {
+                            handleClick(() => subOption.action!(id), subOption.shouldKeepOpen)
                             onClose()
                         }
                     }

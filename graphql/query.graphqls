@@ -4,4 +4,6 @@ type Query {
     getMTGFilters: MTG_Filter_Entries!
     # Decks
     getMTGDecks(deckID: ID): [MTG_Deck!]!
+    # Card Packages
+    getMTGCardPackages(cardPackageID: ID): [MTG_CardPackage!]!
 }

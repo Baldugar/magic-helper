@@ -26,6 +26,11 @@ func (r *queryResolver) GetMTGDecks(ctx context.Context, deckID *string) ([]*mod
 	return mtg.GetMTGDecks(ctx, deckID)
 }
 
+// GetMTGCardPackages is the resolver for the getMTGCardPackages field.
+func (r *queryResolver) GetMTGCardPackages(ctx context.Context, cardPackageID *string) ([]*model.MtgCardPackage, error) {
+	return mtg.GetMTGCardPackages(ctx, cardPackageID)
+}
+
 // Query returns gentypes.QueryResolver implementation.
 func (r *Resolver) Query() gentypes.QueryResolver { return &queryResolver{r} }
 

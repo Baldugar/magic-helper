@@ -1,0 +1,25 @@
+input MTG_CreateCardPackageInput {
+    name: String!
+}
+
+input MTG_DeleteCardPackageInput {
+    cardPackageID: ID!
+}
+
+input MTG_AddCardToCardPackageInput {
+    cardPackageID: ID!
+    card: ID!
+    count: Int!
+}
+
+input MTG_RemoveCardFromCardPackageInput {
+    cardPackageID: ID!
+    card: ID!
+}
+
+input MTG_CardPackageCardInput {
+    card: ID!
+    selectedVersionID: String
+    count: Int!
+    mainOrSide: MainOrSide!
+}

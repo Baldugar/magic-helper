@@ -121,3 +121,19 @@ export const MTG_DeckFragments = gql`
     }
     ${MTG_CardFragments}
 `
+
+export const MTG_CardPackageFragments = gql`
+    fragment MTG_CardPackageFragment on MTG_CardPackage {
+        ID
+        name
+        cards {
+            card {
+                ...MTG_CardFragment
+            }
+            selectedVersionID
+            count
+            mainOrSide
+        }
+    }
+    ${MTG_CardFragments}
+`

@@ -1,14 +1,11 @@
 import { Box, Button, Grid, Paper, Popover, Stack, TextField, Typography } from '@mui/material'
 import { useContext, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import RotatingHDeckBox from '../../components/HDeckBox'
-import { MTGDecksContext } from '../../context/MTGA/Decks/MTGDecksContext'
+import MTGCardPackage from '../../components/CardPackageCard'
+import { MTGCardPackagesContext } from '../../context/MTGA/CardPackages/CardPackagesContext'
 import { MTGFunctions } from '../../graphql/MTGA/functions'
 
-export const DeckList = () => {
-    const { decks, setDecks } = useContext(MTGDecksContext)
-
-    const navigate = useNavigate()
+export const CardPackageList = () => {
+    const { cardPackages, setCardPackages } = useContext(MTGCardPackagesContext)
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
     const [name, setName] = useState('')
@@ -24,15 +21,15 @@ export const DeckList = () => {
 
     const open = Boolean(anchorEl)
     const {
-        mutations: { createMTGDeck },
+        mutations: { createMTGCardPackage },
     } = MTGFunctions
 
     return (
         <Stack padding={4} gap={2}>
             <Stack justifyContent={'flex-start'} direction={'row'} spacing={4}>
-                <Typography variant={'h4'}>Decks</Typography>
+                <Typography variant={'h4'}>Card Packages</Typography>
                 <Button variant={'contained'} color={'secondary'} onClick={handleClick}>
-                    Create Deck
+                    Create Card Package
                 </Button>
                 <Popover
                     open={open}
@@ -61,10 +58,10 @@ export const DeckList = () => {
                                 color={'primary'}
                                 disabled={name.length === 0}
                                 onClick={() =>
-                                    createMTGDeck({
+                                    createMTGCardPackage({
                                         name,
-                                    }).then((deck) => {
-                                        setDecks([...decks, deck])
+                                    }).then((cardPackage) => {
+                                        setCardPackages([...cardPackages, cardPackage])
                                         handleClose()
                                     })
                                 }
@@ -76,18 +73,9 @@ export const DeckList = () => {
                 </Popover>
             </Stack>
             <Grid container columnSpacing={4}>
-                {decks.map((deck) => (
-                    <Grid item xs={12} md={6} lg={4} xl={3} key={deck.ID} container justifyContent={'center'}>
-                        {/* <RotatingDeckBox /> */}
-                        <RotatingHDeckBox deck={deck} onClick={(d) => navigate(`/deck/${d.ID}`)} />
-                        {/* 
-                            // image={deck.cardFrontImage}
-                            // name={deck.name}
-                            // onClick={() => navigate(`/deck/${deck.ID}`)}
-                            // onDelete={() =>
-                            //     deleteMTGADeck(deck.ID).then(() => setDecks(decks.filter((d) => d.ID !== deck.ID)))
-                            // }
-                        /> */}
+                {cardPackages.map((cardPackage) => (
+                    <Grid item xs={'auto'} key={cardPackage.ID} container justifyContent={'center'}>
+                        <MTGCardPackage cardPackage={cardPackage} />
                     </Grid>
                 ))}
             </Grid>

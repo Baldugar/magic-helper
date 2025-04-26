@@ -26,6 +26,12 @@ type FlowZoneInput struct {
 	ChildrenIDs []string       `json:"childrenIDs"`
 }
 
+type MtgAddCardToCardPackageInput struct {
+	CardPackageID string `json:"cardPackageID"`
+	Card          string `json:"card"`
+	Count         int    `json:"count"`
+}
+
 type MtgCard struct {
 	ID             string            `json:"_key"`
 	Layout         MtgLayout         `json:"layout"`
@@ -63,6 +69,26 @@ type MtgCardFace struct {
 	TypeLine       *string    `json:"typeLine,omitempty"`
 }
 
+type MtgCardPackage struct {
+	ID    string                `json:"_key"`
+	Name  string                `json:"name"`
+	Cards []*MtgCardPackageCard `json:"cards"`
+}
+
+type MtgCardPackageCard struct {
+	Card              *MtgCard   `json:"card"`
+	SelectedVersionID *string    `json:"selectedVersionID,omitempty"`
+	Count             int        `json:"count"`
+	MainOrSide        MainOrSide `json:"mainOrSide"`
+}
+
+type MtgCardPackageCardInput struct {
+	Card              string     `json:"card"`
+	SelectedVersionID *string    `json:"selectedVersionID,omitempty"`
+	Count             int        `json:"count"`
+	MainOrSide        MainOrSide `json:"mainOrSide"`
+}
+
 type MtgCardVersion struct {
 	ID          string         `json:"ID"`
 	IsDefault   bool           `json:"isDefault"`
@@ -84,6 +110,10 @@ type MtgCardVersion struct {
 	SetID       string         `json:"setID"`
 	Variation   bool           `json:"variation"`
 	VariationOf *string        `json:"variationOf,omitempty"`
+}
+
+type MtgCreateCardPackageInput struct {
+	Name string `json:"name"`
 }
 
 type MtgCreateDeckInput struct {
@@ -118,6 +148,10 @@ type MtgDeckCardInput struct {
 	MainOrSide        MainOrSide      `json:"mainOrSide"`
 	DeckCardType      MtgDeckCardType `json:"deckCardType"`
 	Phantoms          []*PhantomInput `json:"phantoms"`
+}
+
+type MtgDeleteCardPackageInput struct {
+	CardPackageID string `json:"cardPackageID"`
 }
 
 type MtgDeleteDeckInput struct {
@@ -155,6 +189,11 @@ type MtgImage struct {
 	Normal     string `json:"normal"`
 	Png        string `json:"PNG"`
 	Small      string `json:"small"`
+}
+
+type MtgRemoveCardFromCardPackageInput struct {
+	CardPackageID string `json:"cardPackageID"`
+	Card          string `json:"card"`
 }
 
 type MtgUpdateDeckInput struct {
