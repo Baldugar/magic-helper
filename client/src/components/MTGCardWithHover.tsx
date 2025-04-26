@@ -56,11 +56,17 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
         const { card, layout, cardTypeLine } = data
         typeLine = cardTypeLine
         version = card
-        small = getCorrectCardImage(version, layout, 'small')
-        if (!small) return null
-        large = getCorrectCardImage(version, layout, 'large')
-        if (!large) return null
-        otherLarge = getCorrectCardImage(version, layout, 'large', true)
+        console.log('card', card, layout, cardTypeLine)
+        try {
+            small = getCorrectCardImage(version, layout, 'small')
+            if (!small) return null
+            large = getCorrectCardImage(version, layout, 'large')
+            if (!large) return null
+            otherLarge = getCorrectCardImage(version, layout, 'large', true)
+        } catch (error) {
+            console.error('error', error)
+            return <div>Error in version: {version.ID}</div>
+        }
     }
 
     const { height, width } = CARD_SIZE_VALUES['small']
