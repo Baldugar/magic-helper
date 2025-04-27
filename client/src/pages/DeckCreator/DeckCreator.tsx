@@ -1,8 +1,9 @@
+import { ArrowLeft } from '@mui/icons-material'
 import MenuIcon from '@mui/icons-material/Menu'
 import { Box, Button, Collapse, Divider, IconButton, Menu, MenuItem, Pagination, Typography } from '@mui/material'
 import { ReactFlowProvider, useReactFlow } from '@xyflow/react'
 import React from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { CardPackageImportDialog } from '../../components/CardPackageImportDialog'
 import { ExportDialog } from '../../components/ExportDialog'
 import { ImportDialog } from '../../components/ImportDialog'
@@ -58,6 +59,8 @@ export const DeckCreator = () => {
         setViewMode(newViewMode)
     }
 
+    const navigate = useNavigate()
+
     const saveDeck = () => {
         if (!deck) return
         const nodes = getNodes()
@@ -88,7 +91,12 @@ export const DeckCreator = () => {
         <MTGDeckCreatorFlowProvider deck={deck}>
             <Box display={'flex'} maxHeight={'100vh'}>
                 <Box position={'relative'} flex={1} display={'flex'} flexDirection={'column'} height={'100vh'}>
-                    <h1>Deck Creator - {viewMode}</h1>
+                    <Box display={'flex'} gap={1} alignItems={'center'} paddingLeft={1}>
+                        <Button variant={'contained'} color={'primary'} onClick={() => navigate(-1)}>
+                            <ArrowLeft fontSize={'large'} />
+                        </Button>
+                        <h1>Deck Creator - {viewMode}</h1>
+                    </Box>
                     {viewMode === 'catalogue' && (
                         <>
                             <Filters />

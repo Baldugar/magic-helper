@@ -1,6 +1,7 @@
 import {
     Box,
     Card,
+    CardActions,
     CardContent,
     CardHeader,
     Chip,
@@ -12,10 +13,12 @@ import {
     Typography,
 } from '@mui/material'
 
-import { ArrowDownward, ArrowUpward } from '@mui/icons-material'
+import { ArrowDownward, ArrowUpward, Delete } from '@mui/icons-material'
 import { memo, useState } from 'react'
 import AutoSizer from 'react-virtualized-auto-sizer'
 import { FixedSizeList, ListChildComponentProps } from 'react-window'
+import { useMTGCardPackages } from '../context/MTGA/CardPackages/useCardPackages'
+import { MTGFunctions } from '../graphql/MTGA/functions'
 import { MainOrSide, MTG_CardPackage } from '../graphql/types'
 type CardPackageProps = {
     cardPackage: MTG_CardPackage
@@ -23,6 +26,19 @@ type CardPackageProps = {
 
 const MTGCardPackage = (props: CardPackageProps) => {
     const { cardPackage } = props
+
+    const { setCardPackages, cardPackages } = useMTGCardPackages()
+    const {
+        mutations: { deleteMTGCardPackage },
+    } = MTGFunctions
+
+    const handleDelete = () => {
+        const confirm = window.confirm('Are you sure you want to delete this card package?')
+        if (!confirm) return
+        deleteMTGCardPackage(cardPackage.ID).then(() => {
+            setCardPackages(cardPackages.filter((p) => p.ID !== cardPackage.ID))
+        })
+    }
 
     const [expanded, setExpanded] = useState(false)
 
@@ -98,6 +114,11 @@ const MTGCardPackage = (props: CardPackageProps) => {
                     </Typography>
                 )}
             </CardContent>
+            <CardActions sx={{ justifyContent: 'flex-end' }}>
+                <IconButton onClick={handleDelete}>
+                    <Delete />
+                </IconButton>
+            </CardActions>
         </Card>
     )
 }

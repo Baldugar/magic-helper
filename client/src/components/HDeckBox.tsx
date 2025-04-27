@@ -548,13 +548,12 @@ const RotatingHDeckBox = ({
                     />
                 </Box>
             )}
-            {onDelete && (
-                <Box position={'absolute'} bottom={0} right={0} onClick={onDelete}>
-                    <IconButton>
-                        <Delete />
-                    </IconButton>
-                </Box>
-            )}
+            <Box display={'flex'} justifyContent={'center'} gap={1} alignItems={'center'}>
+                <Typography variant={'h5'}>{deck.name}</Typography>
+                <IconButton onClick={onDelete}>
+                    <Delete />
+                </IconButton>
+            </Box>
         </div>
     )
 }
