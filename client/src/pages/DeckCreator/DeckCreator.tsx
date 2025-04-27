@@ -1,4 +1,4 @@
-import { ArrowLeft } from '@mui/icons-material'
+import { ArrowLeft, Edit } from '@mui/icons-material'
 import MenuIcon from '@mui/icons-material/Menu'
 import { Box, Button, Collapse, Divider, IconButton, Menu, MenuItem, Pagination, Typography } from '@mui/material'
 import { ReactFlowProvider, useReactFlow } from '@xyflow/react'
@@ -95,7 +95,18 @@ export const DeckCreator = () => {
                         <Button variant={'contained'} color={'primary'} onClick={() => navigate(-1)}>
                             <ArrowLeft fontSize={'large'} />
                         </Button>
-                        <h1>Deck Creator - {viewMode}</h1>
+                        <h1>
+                            Deck Creator - {viewMode} - {deck.name}
+                        </h1>
+                        <IconButton
+                            onClick={() => {
+                                const prompt = window.prompt('Enter a new name for the deck')
+                                if (!prompt) return
+                                setDeck({ ...deck, name: prompt })
+                            }}
+                        >
+                            <Edit />
+                        </IconButton>
                     </Box>
                     {viewMode === 'catalogue' && (
                         <>

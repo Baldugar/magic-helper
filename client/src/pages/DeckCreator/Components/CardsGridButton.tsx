@@ -17,6 +17,7 @@ import { NodeType, organizeNodes } from '../../../utils/functions/nodeFunctions'
 import { ContextMenu } from '../../../utils/hooks/ContextMenu/ContextMenu'
 import { ContextMenuOption } from '../../../utils/hooks/ContextMenu/types'
 import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
+import { PhantomNodeData } from '../../FlowView/Nodes/PhantomNode'
 
 export type CardsGridButtonProps = {
     card: MTG_Card
@@ -50,7 +51,16 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
 
     const handleRemoveCard = (card: MTG_Card) => {
         removeCard(card)
-        if (setNodes) setNodes((prev) => prev.filter((n) => !n.id.startsWith(card.ID)))
+        if (setNodes)
+            setNodes((prev) =>
+                // Remove the card node and all phantom nodes that have phantomOf as the card ID
+                prev.filter(
+                    (n) =>
+                        !n.id.startsWith(card.ID) &&
+                        (n.type !== 'phantomNode' ||
+                            (n.type === 'phantomNode' && (n.data as PhantomNodeData).phantomOf !== card.ID)),
+                ),
+            )
     }
 
     const deckCardIDs = deck?.cards.map((c) => c.card.ID) || []

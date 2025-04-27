@@ -7,6 +7,7 @@ import { useMTGDecks } from '../../../context/MTGA/Decks/useMTGDecks'
 import { MTGFunctions } from '../../../graphql/MTGA/functions'
 import { MainOrSide, MTG_DeckCard, MTG_DeckCardType, MTG_UpdateDeckInput } from '../../../graphql/types'
 import { calculateCardsFromNodes, calculateZonesFromNodes, NodeType } from '../../../utils/functions/nodeFunctions'
+import { PhantomNodeData } from '../../FlowView/Nodes/PhantomNode'
 import { DeckCard } from './DeckCard'
 
 export const Drawer = () => {
@@ -51,7 +52,16 @@ export const Drawer = () => {
 
     const handleRemoveCard = (deckCard: MTG_DeckCard) => {
         removeCard(deckCard.card)
-        if (setNodes) setNodes((prev) => prev.filter((n) => !n.id.startsWith(deckCard.card.ID)))
+        if (setNodes)
+            setNodes((prev) =>
+                // Remove the card node and all phantom nodes that have phantomOf as the card ID
+                prev.filter(
+                    (n) =>
+                        !n.id.startsWith(deckCard.card.ID) &&
+                        (n.type !== 'phantomNode' ||
+                            (n.type === 'phantomNode' && (n.data as PhantomNodeData).phantomOf !== deckCard.card.ID)),
+                ),
+            )
     }
     const mainDeck = useMemo(
         () =>

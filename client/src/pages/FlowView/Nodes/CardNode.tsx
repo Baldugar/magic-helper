@@ -39,8 +39,20 @@ export const CardNode = (props: CardNodeProps) => {
         {
             label: 'Delete',
             action: () => {
+                const confirm = window.confirm('Are you sure you want to delete this card?')
+                if (!confirm) return
                 removeCard(card.card)
-                if (setNodes) setNodes((prev) => prev.filter((n) => !n.id.startsWith(card.card.ID)))
+                if (setNodes)
+                    setNodes((prev) =>
+                        // Remove the card node and all phantom nodes that have phantomOf as the card ID
+                        prev.filter(
+                            (n) =>
+                                !n.id.startsWith(card.card.ID) &&
+                                (n.type !== 'phantomNode' ||
+                                    (n.type === 'phantomNode' &&
+                                        (n.data as PhantomNodeData).phantomOf !== card.card.ID)),
+                        ),
+                    )
             },
         },
         {
