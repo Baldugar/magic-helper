@@ -30,6 +30,7 @@ export const ImageWithSkeleton: FC<ImageWithSkeletonProps> = (props) => {
                 onLoad={() => setLoaded(true)}
                 onMouseEnter={() => setHover(true)}
                 onMouseLeave={() => onMouseLeave()}
+                onMouseMove={() => setHover(true)}
             />
             {!loaded && <Skeleton variant={'rectangular'} width={width} height={height} />}
         </>
