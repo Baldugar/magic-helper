@@ -42,7 +42,7 @@ export const ContextMenu = (props: ContextMenuProps) => {
                 {option.label}
                 {hasSubMenu && <ChevronRight style={{ marginLeft: 'auto' }} />}
                 {selected && <Check style={{ marginLeft: 'auto', color: 'darkgreen' }} />}
-                {hasSubMenu && (
+                {hasSubMenu && activeSubMenu === option.id && (
                     <NestedSubMenu
                         option={option}
                         anchorEl={subMenuAnchorEl}
