@@ -16,8 +16,8 @@ export const ContextMenu = (props: ContextMenuProps) => {
     }
 
     const handleSubMenuClose = () => {
-        setSubMenuAnchorEl(null)
         setActiveSubMenu(undefined)
+        setSubMenuAnchorEl(null)
     }
 
     const renderMenuItem = (option: ContextMenuOption, depth = 0) => {

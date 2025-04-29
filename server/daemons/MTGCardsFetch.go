@@ -9,7 +9,6 @@ import (
 	"magic-helper/graph/model/scryfall"
 	scryfallModel "magic-helper/graph/model/scryfall/model"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -379,7 +378,7 @@ func collectCards(ctx context.Context) {
 		groupCards := groupData
 
 		// Filter card printings within the group (e.g., prefer combined foil/nonfoil entry)
-		filteredGroupCards := filterGroupCards(groupCards)
+		filteredGroupCards := groupCards
 
 		// Skip group if filtering removed all cards (shouldn't normally happen)
 		if len(filteredGroupCards) == 0 {
@@ -388,7 +387,6 @@ func collectCards(ctx context.Context) {
 		}
 
 		cardForGroup := model.MtgCard{
-			ID:             filteredGroupCards[0].ID,
 			Layout:         model.MtgLayout(filteredGroupCards[0].Layout),
 			Cmc:            filteredGroupCards[0].CMC,
 			ColorIdentity:  convertStringSliceToMtgColorSlice(filteredGroupCards[0].ColorIdentity),
@@ -487,33 +485,6 @@ func collectCards(ctx context.Context) {
 			cardForGroup.Versions = append(cardForGroup.Versions, cardVersionModel)
 		}
 
-		// Filter out duplicate versions based on specific fields
-		uniqueVersions := make([]*model.MtgCardVersion, 0)
-		seen := make(map[string]bool)
-
-		for _, v := range cardForGroup.Versions {
-			artist := ""
-			if v.Artist != nil {
-				artist = *v.Artist
-			}
-			flavorText := ""
-			if v.FlavorText != nil {
-				flavorText = *v.FlavorText
-			}
-			games := make([]string, len(v.Games))
-			for i, game := range v.Games {
-				games[i] = string(game)
-			}
-			sort.Strings(games) // Sort games to ensure order independence
-			key := artist + v.Lang + flavorText + strings.Join(games, ",") + string(v.Rarity) + v.ReleasedAt + v.Set
-			if !seen[key] {
-				seen[key] = true
-				uniqueVersions = append(uniqueVersions, v)
-			}
-		}
-
-		cardForGroup.Versions = uniqueVersions
-
 		// --- Start: Logic to determine the single default version ---
 		if len(cardForGroup.Versions) > 0 {
 			bestDefaultIndex := -1
@@ -583,6 +554,7 @@ func collectCards(ctx context.Context) {
 			if bestDefaultIndex != -1 {
 				for j := range cardForGroup.Versions {
 					cardForGroup.Versions[j].IsDefault = (j == bestDefaultIndex)
+					cardForGroup.ID = normalizeCardName(cardForGroup.Name)
 				}
 			} else {
 				// This case should theoretically not happen if len(versions)>0, but as a fallback:
@@ -733,4 +705,32 @@ func convertLegalitiesMap(input map[string]string) map[string]any {
 		output[k] = v // Direct assignment is fine as string is compatible with any
 	}
 	return output
+}
+
+// normalizeCardName normalizes a card name to be used as a document key in ArangoDB.
+func normalizeCardName(name string) string {
+	// Convert to lowercase
+	name = strings.ToLower(name)
+
+	// Replace spaces and special characters with underscores
+	name = strings.ReplaceAll(name, " ", "_")
+	name = strings.ReplaceAll(name, ":", "_")
+
+	// Remove slashes
+	name = strings.ReplaceAll(name, "/", "")
+
+	// Remove any remaining disallowed characters
+	name = strings.Map(func(r rune) rune {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' {
+			return r
+		}
+		return -1
+	}, name)
+
+	// Ensure the name does not start with an underscore
+	if strings.HasPrefix(name, "_") {
+		name = "key" + name
+	}
+
+	return name
 }
