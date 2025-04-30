@@ -10,7 +10,7 @@ import {
     findNextAvailablePosition,
     NodeType,
     onNodeDragStop,
-    sortNodesByNesting,
+    sortNodesByNestingAndPosition,
 } from '../../../utils/functions/nodeFunctions'
 import { useDnD } from '../../DnD/useDnD'
 import { useMTGDeckCreator } from '../DeckCreator/useMTGDeckCreator'
@@ -95,7 +95,6 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
     const handleDeletePhantom = (phantomID: string) => {
         setNodes((nodes) => {
             const phantomNode = nodes.find((n) => n.id === phantomID)
-            console.log('Phantom Node', phantomNode)
             if (!phantomNode) return nodes
             return nodes
                 .filter((n) => n.id !== phantomNode.id)
@@ -246,7 +245,7 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
             } as Node<CardNodeData>
         }
         if (!newNode) return
-        const newNodes = sortNodesByNesting(nodes.concat(newNode))
+        const newNodes = sortNodesByNestingAndPosition(nodes.concat(newNode))
         setNodes(newNodes)
     }
 

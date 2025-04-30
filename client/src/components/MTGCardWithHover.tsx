@@ -67,7 +67,6 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
         const { card, layout, cardTypeLine } = data
         typeLine = cardTypeLine
         version = card
-        console.log('card', card, layout, cardTypeLine)
         try {
             small = getCorrectCardImage(version, layout, 'small')
             if (!small) return null

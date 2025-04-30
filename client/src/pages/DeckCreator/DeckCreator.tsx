@@ -69,7 +69,12 @@ export const DeckCreator = () => {
             deckID: deck.ID,
             name: deck.name,
             zones: calculateZonesFromNodes(nodes),
-            cardFrontImage: deck.cardFrontImage,
+            cardFrontImage: deck.cardFrontImage
+                ? {
+                      cardID: deck.cardFrontImage.ID,
+                      versionID: deck.cardFrontImage.versions[0].ID,
+                  }
+                : undefined,
             ignoredCards: deck.ignoredCards,
         }
         updateMTGADeck(deckInput).then((deck) => {

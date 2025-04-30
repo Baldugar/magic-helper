@@ -40,6 +40,12 @@ export const getCorrectCardImage = (
     }
 }
 
+export const getCorrectVersionImage = (card: MTG_CardVersion, size: keyof MTG_Image) => {
+    const cardFaces = card.cardFaces
+    if (!cardFaces || !cardFaces[0].imageUris) return card.imageUris![size]
+    return cardFaces[0].imageUris![size]
+}
+
 export const matchesCommanderColorIdentity = (card: MTG_DeckCard, commander?: MTG_DeckCard) => {
     if (
         !commander ||

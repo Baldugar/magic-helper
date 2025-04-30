@@ -150,7 +150,7 @@ export type MTG_CreateDeckInput = {
 export type MTG_Deck = {
   __typename?: 'MTG_Deck';
   ID: Scalars['ID']['output'];
-  cardFrontImage?: Maybe<Scalars['String']['output']>;
+  cardFrontImage?: Maybe<MTG_Card>;
   cards: Array<MTG_DeckCard>;
   ignoredCards: Array<Scalars['String']['output']>;
   name: Scalars['String']['output'];
@@ -166,6 +166,11 @@ export type MTG_DeckCard = {
   phantoms: Array<Phantom>;
   position: Position;
   selectedVersionID?: Maybe<Scalars['String']['output']>;
+};
+
+export type MTG_DeckCardFrontImageInput = {
+  cardID: Scalars['ID']['input'];
+  versionID: Scalars['ID']['input'];
 };
 
 export type MTG_DeckCardInput = {
@@ -276,7 +281,7 @@ export type MTG_RemoveCardFromCardPackageInput = {
 };
 
 export type MTG_UpdateDeckInput = {
-  cardFrontImage?: InputMaybe<Scalars['String']['input']>;
+  cardFrontImage?: InputMaybe<MTG_DeckCardFrontImageInput>;
   cards: Array<MTG_DeckCardInput>;
   deckID: Scalars['ID']['input'];
   ignoredCards: Array<Scalars['String']['input']>;

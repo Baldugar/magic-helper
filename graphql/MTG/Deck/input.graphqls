@@ -9,10 +9,15 @@ input MTG_DeleteDeckInput {
 input MTG_UpdateDeckInput {
     deckID: ID!
     name: String!
-    cardFrontImage: String
+    cardFrontImage: MTG_DeckCardFrontImageInput
     cards: [MTG_DeckCardInput!]!
     zones: [FlowZoneInput!]!
     ignoredCards: [String!]!
+}
+
+input MTG_DeckCardFrontImageInput {
+    cardID: ID!
+    versionID: ID!
 }
 
 input MTG_DeckCardInput {

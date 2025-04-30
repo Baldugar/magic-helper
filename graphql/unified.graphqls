@@ -253,10 +253,15 @@ input MTG_DeleteDeckInput {
 input MTG_UpdateDeckInput {
     deckID: ID!
     name: String!
-    cardFrontImage: String
+    cardFrontImage: MTG_DeckCardFrontImageInput
     cards: [MTG_DeckCardInput!]!
     zones: [FlowZoneInput!]!
     ignoredCards: [String!]!
+}
+
+input MTG_DeckCardFrontImageInput {
+    cardID: ID!
+    versionID: ID!
 }
 
 input MTG_DeckCardInput {
@@ -279,7 +284,7 @@ input PhantomInput {
 type MTG_Deck {
     ID: ID! @goTag(key: "json", value: "_key")
     name: String!
-    cardFrontImage: String
+    cardFrontImage: MTG_Card
     cards: [MTG_DeckCard!]!
     zones: [FlowZone!]!
     ignoredCards: [String!]!

@@ -14,6 +14,7 @@ type MTGDeckCreatorContextType = {
     addOne: (deckCard: MTG_DeckCard) => void
     removeOne: (deckCard: MTG_DeckCard) => void
     removeCard: (card: MTG_Card) => void
+    setCardVersion: (cardID: string, versionID: string) => void
 
     // Views & Drawer
     deckTab: MainOrSide
@@ -47,7 +48,7 @@ export const MTGDeckCreatorContext = createContext<MTGDeckCreatorContextType>({
     addOne: () => {},
     removeOne: () => {},
     removeCard: () => {},
-
+    setCardVersion: () => {},
     // Views & Drawer
     deckTab: MainOrSide.MAIN,
     setDeckTab: () => {},

@@ -5,7 +5,7 @@ import Slider from '@mui/material/Slider'
 import Typography from '@mui/material/Typography'
 import { CSSProperties, useState } from 'react'
 import { MTG_Deck } from '../graphql/types'
-import { getCorrectCardImage } from '../utils/functions/cardFunctions'
+import { getCorrectCardImage, getCorrectVersionImage } from '../utils/functions/cardFunctions'
 import { getUniqueRandomIntegers } from '../utils/functions/deckFunctions'
 
 interface HDeckBoxProps {
@@ -114,9 +114,10 @@ const HDeckBox = ({
                 >
                     {deck.cardFrontImage && (
                         <img
-                            src={deck.cardFrontImage}
+                            src={getCorrectVersionImage(deck.cardFrontImage.versions[0], 'artCrop')}
                             alt={deck.name}
-                            height={'100%'}
+                            width={width}
+                            height={height}
                             style={{
                                 position: 'absolute',
                                 top: 0,
@@ -241,9 +242,13 @@ const HDeckBox = ({
                                 transformStyle: 'preserve-3d',
                                 backfaceVisibility: 'hidden',
                                 background: deck.cardFrontImage
-                                    ? `url(${deck.cardFrontImage}) center/cover no-repeat`
+                                    ? `url(${getCorrectVersionImage(
+                                          deck.cardFrontImage.versions[0],
+                                          'artCrop',
+                                      )}) center/cover no-repeat`
                                     : commonFaceStyle.background,
                                 backgroundPosition: 'center right',
+                                backgroundSize: `${width}px ${height}px`,
                                 '&::after': {
                                     content: '""',
                                     position: 'relative',

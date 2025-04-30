@@ -213,19 +213,22 @@ func UpdateMTGDeck(ctx context.Context, input model.MtgUpdateDeckInput) (*model.
 		}
 	} else {
 		aq = arango.NewQuery( /* aql */ `
-		UPSERT { _from: @deckID }
-			INSERT {
-				_from: @deckID,
-				_to: @imageID
-			}
-			UPDATE {
-				_to: @imageID
-			}
-			IN @@edge
-	`)
+			UPSERT { _from: @deckID }
+				INSERT {
+					_from: @deckID,
+					_to: @imageID,
+					versionID: @versionID
+				}
+				UPDATE {
+					_to: @imageID,
+					versionID: @versionID
+				}
+				IN @@edge
+		`)
 		aq.AddBindVar("@edge", arango.MTG_DECK_FRONT_CARD_IMAGE_EDGE)
 		aq.AddBindVar("deckID", col.String()+"/"+input.DeckID)
-		aq.AddBindVar("imageID", col2.String()+"/"+*input.CardFrontImage)
+		aq.AddBindVar("imageID", col2.String()+"/"+input.CardFrontImage.CardID)
+		aq.AddBindVar("versionID", input.CardFrontImage.VersionID)
 
 		_, err = arango.DB.Query(ctx, aq.Query, aq.BindVars)
 		if err != nil {

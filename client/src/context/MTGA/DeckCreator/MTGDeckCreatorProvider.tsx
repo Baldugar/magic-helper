@@ -180,15 +180,12 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
 
     const importCardPackage = (cardPackage: MTG_CardPackage) => {
         const newDeck = structuredClone(deck)
-        console.log('cardPackage', cardPackage)
-        console.log('newDeck', newDeck)
         if (!newDeck) return
         for (const card of cardPackage.cards) {
             const index = newDeck.cards.findIndex((c) => c.card.ID === card.card.ID)
             if (index !== -1) {
                 newDeck.cards[index].count += card.count
             } else {
-                console.log('adding card', card.card)
                 const ID = card.card.ID
                 const index = newDeck.cards.findIndex((c) => c.card.ID === ID && c.mainOrSide === deckTab)
                 const nextAvailableSpot = findNextAvailablePosition(newDeck.cards)
@@ -209,6 +206,16 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
                     newDeck.cards.push(cardToReturn)
                 }
             }
+        }
+        setDeck(newDeck)
+    }
+
+    const setCardVersion = (cardID: string, versionID: string) => {
+        if (!deck) return
+        const newDeck = structuredClone(deck)
+        const index = newDeck.cards.findIndex((c) => c.card.ID === cardID)
+        if (index !== -1) {
+            newDeck.cards[index].selectedVersionID = versionID
         }
         setDeck(newDeck)
     }
@@ -237,6 +244,7 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
                 openImportCardPackageDialog,
                 setOpenImportCardPackageDialog,
                 importCardPackage,
+                setCardVersion,
             }}
         >
             {children}

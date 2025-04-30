@@ -1,4 +1,4 @@
-import { Check, ChevronRight } from '@mui/icons-material'
+import { Check } from '@mui/icons-material'
 import { Menu, MenuItem } from '@mui/material'
 import { ContextMenuOption } from './types'
 
@@ -8,41 +8,28 @@ type NestedSubMenuProps = {
     onClose: () => void
     handleClick: (callback: () => void, shouldKeepOpen?: boolean) => void
     id?: string
-    activeSubMenu?: string
 }
 
 export const NestedSubMenu = (props: NestedSubMenuProps) => {
-    const { option, anchorEl, onClose, handleClick, id, activeSubMenu } = props
+    const { option, anchorEl, onClose, handleClick, id } = props
 
-    const renderMenuItem = (subOption: ContextMenuOption, depth = 1) => {
-        const hasSubMenu = subOption.subMenu && subOption.subMenu.length > 0
+    const renderMenuItem = (subOption: ContextMenuOption, index: number) => {
         const selected = subOption.selected ?? false
 
         return (
             <MenuItem
-                key={subOption.label}
-                onClick={() => {
-                    if (subOption.action) {
-                        if (subOption.shouldKeepOpen === false || subOption.shouldKeepOpen === undefined) {
-                            handleClick(() => subOption.action!(id), subOption.shouldKeepOpen)
-                            onClose()
-                        }
-                    }
-                }}
-                style={{ paddingLeft: `${depth * 16 + 16}px`, backgroundColor: selected ? 'lightgray' : 'inherit' }}
+                key={subOption.label + index}
+                onClick={
+                    subOption.action
+                        ? () => {
+                              handleClick(() => subOption.action!(id), subOption.shouldKeepOpen)
+                          }
+                        : undefined
+                }
+                style={{ paddingLeft: `32px`, backgroundColor: selected ? 'lightgray' : 'inherit' }}
             >
                 {subOption.label}
-                {hasSubMenu && <ChevronRight style={{ marginLeft: 'auto' }} />}
                 {selected && <Check style={{ marginLeft: 'auto', color: 'darkgreen' }} />}
-                {hasSubMenu && activeSubMenu && activeSubMenu === subOption.id && (
-                    <NestedSubMenu
-                        option={subOption}
-                        anchorEl={anchorEl}
-                        onClose={onClose}
-                        handleClick={handleClick}
-                        id={id}
-                    />
-                )}
             </MenuItem>
         )
     }
@@ -65,7 +52,7 @@ export const NestedSubMenu = (props: NestedSubMenuProps) => {
                 horizontal: 'left',
             }}
         >
-            {option.subMenu?.map((subOption) => renderMenuItem(subOption))}
+            {option.subMenu?.map(renderMenuItem)}
         </Menu>
     )
 }

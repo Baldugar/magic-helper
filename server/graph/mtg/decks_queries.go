@@ -15,8 +15,14 @@ func GetMTGDecks(ctx context.Context, deckID *string) ([]*model.MtgDeck, error) 
 		FOR doc IN @@collection
 			// deckID: FILTER doc._key == @deckID
 			LET cardFrontImage = FIRST(
-				FOR image, edge IN 1..1 OUTBOUND doc @@edge
-				RETURN image.layout == "modal_dfc" OR image.layout == "transform" ? image.cardFaces[0].image.artCrop : image.image.artCrop
+				FOR card, edge IN 1..1 OUTBOUND doc @@edge
+					LET version = (
+						FOR v IN card.versions
+							FILTER v.ID == edge.versionID
+							RETURN v
+					)
+					FILTER LENGTH(version) > 0
+				RETURN MERGE(card, {versions: version})
 			)
 			LET cards = (
 				FOR card, edge IN 1..1 INBOUND doc @@edge2

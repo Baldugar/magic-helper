@@ -123,7 +123,7 @@ type MtgCreateDeckInput struct {
 type MtgDeck struct {
 	ID             string         `json:"_key"`
 	Name           string         `json:"name"`
-	CardFrontImage *string        `json:"cardFrontImage,omitempty"`
+	CardFrontImage *MtgCard       `json:"cardFrontImage,omitempty"`
 	Cards          []*MtgDeckCard `json:"cards"`
 	Zones          []*FlowZone    `json:"zones"`
 	IgnoredCards   []string       `json:"ignoredCards"`
@@ -137,6 +137,11 @@ type MtgDeckCard struct {
 	MainOrSide        MainOrSide      `json:"mainOrSide"`
 	DeckCardType      MtgDeckCardType `json:"deckCardType"`
 	Phantoms          []*Phantom      `json:"phantoms"`
+}
+
+type MtgDeckCardFrontImageInput struct {
+	CardID    string `json:"cardID"`
+	VersionID string `json:"versionID"`
 }
 
 type MtgDeckCardInput struct {
@@ -197,12 +202,12 @@ type MtgRemoveCardFromCardPackageInput struct {
 }
 
 type MtgUpdateDeckInput struct {
-	DeckID         string              `json:"deckID"`
-	Name           string              `json:"name"`
-	CardFrontImage *string             `json:"cardFrontImage,omitempty"`
-	Cards          []*MtgDeckCardInput `json:"cards"`
-	Zones          []*FlowZoneInput    `json:"zones"`
-	IgnoredCards   []string            `json:"ignoredCards"`
+	DeckID         string                      `json:"deckID"`
+	Name           string                      `json:"name"`
+	CardFrontImage *MtgDeckCardFrontImageInput `json:"cardFrontImage,omitempty"`
+	Cards          []*MtgDeckCardInput         `json:"cards"`
+	Zones          []*FlowZoneInput            `json:"zones"`
+	IgnoredCards   []string                    `json:"ignoredCards"`
 }
 
 type Mutation struct {

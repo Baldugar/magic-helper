@@ -1104,6 +1104,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputMTG_CardPackageCardInput,
 		ec.unmarshalInputMTG_CreateCardPackageInput,
 		ec.unmarshalInputMTG_CreateDeckInput,
+		ec.unmarshalInputMTG_DeckCardFrontImageInput,
 		ec.unmarshalInputMTG_DeckCardInput,
 		ec.unmarshalInputMTG_DeleteCardPackageInput,
 		ec.unmarshalInputMTG_DeleteDeckInput,
@@ -1421,10 +1422,15 @@ input MTG_DeleteDeckInput {
 input MTG_UpdateDeckInput {
     deckID: ID!
     name: String!
-    cardFrontImage: String
+    cardFrontImage: MTG_DeckCardFrontImageInput
     cards: [MTG_DeckCardInput!]!
     zones: [FlowZoneInput!]!
     ignoredCards: [String!]!
+}
+
+input MTG_DeckCardFrontImageInput {
+    cardID: ID!
+    versionID: ID!
 }
 
 input MTG_DeckCardInput {
@@ -1446,7 +1452,7 @@ input PhantomInput {
 	{Name: "../../../graphql/MTG/Deck/type.graphqls", Input: `type MTG_Deck {
     ID: ID! @goTag(key: "json", value: "_key")
     name: String!
-    cardFrontImage: String
+    cardFrontImage: MTG_Card
     cards: [MTG_DeckCard!]!
     zones: [FlowZone!]!
     ignoredCards: [String!]!
@@ -4952,9 +4958,9 @@ func (ec *executionContext) _MTG_Deck_cardFrontImage(ctx context.Context, field 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.MtgCard)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOMTG_Card2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgCard(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MTG_Deck_cardFrontImage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4964,7 +4970,43 @@ func (ec *executionContext) fieldContext_MTG_Deck_cardFrontImage(_ context.Conte
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "ID":
+				return ec.fieldContext_MTG_Card_ID(ctx, field)
+			case "layout":
+				return ec.fieldContext_MTG_Card_layout(ctx, field)
+			case "CMC":
+				return ec.fieldContext_MTG_Card_CMC(ctx, field)
+			case "colorIdentity":
+				return ec.fieldContext_MTG_Card_colorIdentity(ctx, field)
+			case "colorIndicator":
+				return ec.fieldContext_MTG_Card_colorIndicator(ctx, field)
+			case "colors":
+				return ec.fieldContext_MTG_Card_colors(ctx, field)
+			case "EDHRecRank":
+				return ec.fieldContext_MTG_Card_EDHRecRank(ctx, field)
+			case "keywords":
+				return ec.fieldContext_MTG_Card_keywords(ctx, field)
+			case "loyalty":
+				return ec.fieldContext_MTG_Card_loyalty(ctx, field)
+			case "manaCost":
+				return ec.fieldContext_MTG_Card_manaCost(ctx, field)
+			case "name":
+				return ec.fieldContext_MTG_Card_name(ctx, field)
+			case "oracleText":
+				return ec.fieldContext_MTG_Card_oracleText(ctx, field)
+			case "power":
+				return ec.fieldContext_MTG_Card_power(ctx, field)
+			case "producedMana":
+				return ec.fieldContext_MTG_Card_producedMana(ctx, field)
+			case "toughness":
+				return ec.fieldContext_MTG_Card_toughness(ctx, field)
+			case "typeLine":
+				return ec.fieldContext_MTG_Card_typeLine(ctx, field)
+			case "versions":
+				return ec.fieldContext_MTG_Card_versions(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTG_Card", field.Name)
 		},
 	}
 	return fc, nil
@@ -9625,6 +9667,40 @@ func (ec *executionContext) unmarshalInputMTG_CreateDeckInput(ctx context.Contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputMTG_DeckCardFrontImageInput(ctx context.Context, obj any) (model.MtgDeckCardFrontImageInput, error) {
+	var it model.MtgDeckCardFrontImageInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"cardID", "versionID"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "cardID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cardID"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CardID = data
+		case "versionID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("versionID"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VersionID = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputMTG_DeckCardInput(ctx context.Context, obj any) (model.MtgDeckCardInput, error) {
 	var it model.MtgDeckCardInput
 	asMap := map[string]any{}
@@ -9819,7 +9895,7 @@ func (ec *executionContext) unmarshalInputMTG_UpdateDeckInput(ctx context.Contex
 			it.Name = data
 		case "cardFrontImage":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cardFrontImage"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOMTG_DeckCardFrontImageInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgDeckCardFrontImageInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -12882,6 +12958,13 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return res
 }
 
+func (ec *executionContext) marshalOMTG_Card2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgCard(ctx context.Context, sel ast.SelectionSet, v *model.MtgCard) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MTG_Card(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOMTG_CardFace2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgCardFaceᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MtgCardFace) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -12994,6 +13077,14 @@ func (ec *executionContext) marshalOMTG_Color2ᚕmagicᚑhelperᚋgraphᚋmodel�
 	}
 
 	return ret
+}
+
+func (ec *executionContext) unmarshalOMTG_DeckCardFrontImageInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgDeckCardFrontImageInput(ctx context.Context, v any) (*model.MtgDeckCardFrontImageInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputMTG_DeckCardFrontImageInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOMTG_Image2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgImage(ctx context.Context, sel ast.SelectionSet, v *model.MtgImage) graphql.Marshaler {

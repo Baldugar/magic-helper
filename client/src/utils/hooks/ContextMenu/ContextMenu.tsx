@@ -1,5 +1,5 @@
 import { Check, ChevronRight } from '@mui/icons-material'
-import { ClickAwayListener, MenuItem, MenuList, Paper, Popover } from '@mui/material'
+import { MenuItem, Paper, Popover } from '@mui/material'
 import type React from 'react'
 import { useState } from 'react'
 import { NestedSubMenu } from './NestedSubMenu'
@@ -7,54 +7,6 @@ import { ContextMenuOption, ContextMenuProps } from './types'
 
 export const ContextMenu = (props: ContextMenuProps) => {
     const { id, open, handleClose, options, handleClick, anchorRef } = props
-    const [subMenuAnchorEl, setSubMenuAnchorEl] = useState<HTMLElement | null>(null)
-    const [activeSubMenu, setActiveSubMenu] = useState<string | undefined>(undefined)
-
-    const handleSubMenuOpen = (event: React.MouseEvent<HTMLElement>, option: ContextMenuOption) => {
-        setSubMenuAnchorEl(event.currentTarget)
-        setActiveSubMenu(option.id)
-    }
-
-    const handleSubMenuClose = () => {
-        setActiveSubMenu(undefined)
-        setSubMenuAnchorEl(null)
-    }
-
-    const renderMenuItem = (option: ContextMenuOption, depth = 0) => {
-        const hasSubMenu = option.subMenu && option.subMenu.length > 0
-        const selected = option.selected ?? false
-
-        return (
-            <MenuItem
-                key={option.label}
-                onClick={(event) => {
-                    if (hasSubMenu) {
-                        handleSubMenuOpen(event, option)
-                    } else if (option.action) {
-                        handleClick(() => option.action!(id), option.shouldKeepOpen)
-                        if (!option.shouldKeepOpen) {
-                            handleClose()
-                        }
-                    }
-                }}
-                style={{ paddingLeft: `${depth * 16 + 16}px`, backgroundColor: selected ? 'lightgray' : 'inherit' }}
-            >
-                {option.label}
-                {hasSubMenu && <ChevronRight style={{ marginLeft: 'auto' }} />}
-                {selected && <Check style={{ marginLeft: 'auto', color: 'darkgreen' }} />}
-                {hasSubMenu && activeSubMenu === option.id && (
-                    <NestedSubMenu
-                        option={option}
-                        anchorEl={subMenuAnchorEl}
-                        onClose={handleSubMenuClose}
-                        handleClick={handleClick}
-                        id={id}
-                        activeSubMenu={activeSubMenu}
-                    />
-                )}
-            </MenuItem>
-        )
-    }
 
     return (
         <Popover
@@ -72,10 +24,71 @@ export const ContextMenu = (props: ContextMenuProps) => {
             }}
         >
             <Paper>
-                <ClickAwayListener onClickAway={handleClose}>
-                    <MenuList autoFocusItem={open}>{options.map((option) => renderMenuItem(option))}</MenuList>
-                </ClickAwayListener>
+                {options.map((option, index) =>
+                    RenderMenuItem({ option, index, handleClose, handleClick, id: option.id }),
+                )}
             </Paper>
         </Popover>
+    )
+}
+
+type RenderMenuItemProps = {
+    option: ContextMenuOption
+    index: number
+    handleClose: () => void
+    handleClick: (callback: () => void, shouldKeepOpen?: boolean) => void
+    id: string | undefined
+}
+
+const RenderMenuItem = (props: RenderMenuItemProps) => {
+    const { option, index, handleClose, handleClick, id } = props
+
+    const hasSubMenu = option.subMenu && option.subMenu.length > 0
+    const selected = option.selected ?? false
+    const [subMenuAnchorEl, setSubMenuAnchorEl] = useState<HTMLElement | null>(null)
+
+    const handleSubMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+        setSubMenuAnchorEl(event.currentTarget)
+    }
+
+    const handleSubMenuClose = () => {
+        setSubMenuAnchorEl(null)
+    }
+
+    const handleSubMenuClick = (callback: () => void, shouldKeepOpen?: boolean) => {
+        if (!shouldKeepOpen) {
+            handleSubMenuClose()
+        }
+        if (!option.shouldKeepOpen) {
+            handleClose()
+        }
+        callback()
+    }
+
+    return (
+        <MenuItem
+            key={option.label + index}
+            onClick={(event) => {
+                if (hasSubMenu) {
+                    handleSubMenuOpen(event)
+                } else if (option.action) {
+                    handleClick(() => option.action!(id), option.shouldKeepOpen)
+                }
+            }}
+            style={{ paddingLeft: `32px`, backgroundColor: selected ? 'lightgray' : 'inherit' }}
+        >
+            {option.label}
+            {hasSubMenu && <ChevronRight style={{ marginLeft: 'auto' }} />}
+            {selected && <Check style={{ marginLeft: 'auto', color: 'darkgreen' }} />}
+            {hasSubMenu && subMenuAnchorEl !== null && (
+                <NestedSubMenu
+                    option={option}
+                    anchorEl={subMenuAnchorEl}
+                    onClose={handleSubMenuClose}
+                    handleClick={handleSubMenuClick}
+                    id={id}
+                />
+            )}
+        </MenuItem>
     )
 }

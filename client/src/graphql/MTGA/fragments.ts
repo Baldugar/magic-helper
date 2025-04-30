@@ -88,7 +88,21 @@ export const MTG_DeckFragments = gql`
     fragment MTG_DeckFragment on MTG_Deck {
         ID
         name
-        cardFrontImage
+        cardFrontImage {
+            ID
+            versions {
+                ID
+                imageUris {
+                    ...MTG_ImageFragment
+                }
+                cardFaces {
+                    layout
+                    imageUris {
+                        ...MTG_ImageFragment
+                    }
+                }
+            }
+        }
         cards {
             card {
                 ...MTG_CardFragment

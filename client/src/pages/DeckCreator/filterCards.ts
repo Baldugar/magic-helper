@@ -625,9 +625,13 @@ export const filterCards = <T extends MTG_Card>(
                         return (c: MTG_Card) => c.CMC
                     case SortEnum.COLOR:
                         return [
-                            (c: MTG_Card) => (c.typeLine.includes('Land') && !c.typeLine.includes('//') ? 1 : 0),
+                            (c: MTG_Card) => (c.typeLine.includes('Land') && !c.typeLine.includes('//') ? 1 : -1),
                             'colorIdentity.length',
                             (c: MTG_Card) => c.colorIdentity.map(colorToValue).join(''),
+                            (c: MTG_Card) => {
+                                const isBasicLand = c.typeLine.includes('Basic Land') && !c.typeLine.includes('//')
+                                return isBasicLand ? 0 : 1
+                            },
                         ]
                     case SortEnum.RARITY:
                         return (c: MTG_Card) =>

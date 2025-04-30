@@ -10,14 +10,17 @@ import { useMTGCardPackages } from '../../../context/MTGA/CardPackages/useCardPa
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGDeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
 import { useMTGDecks } from '../../../context/MTGA/Decks/useMTGDecks'
+import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
 import { MTGFunctions } from '../../../graphql/MTGA/functions'
-import { MTG_Card } from '../../../graphql/types'
+import { MTG_Card, MTG_CardVersion } from '../../../graphql/types'
 import { isCardInDeck } from '../../../utils/functions/cardFunctions'
+import { singleSetSelected } from '../../../utils/functions/filterFunctions'
 import { NodeType, organizeNodes } from '../../../utils/functions/nodeFunctions'
 import { ContextMenu } from '../../../utils/hooks/ContextMenu/ContextMenu'
 import { ContextMenuOption } from '../../../utils/hooks/ContextMenu/types'
 import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
 import { PhantomNodeData } from '../../FlowView/Nodes/PhantomNode'
+import { VersionCard } from './VersionCard'
 
 export type CardsGridButtonProps = {
     card: MTG_Card
@@ -36,7 +39,15 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
     const { handleDeleteZone, handleRenameZone, handleDeletePhantom } = useMTGDeckFlowCreator()
     const { setNodes } = useReactFlow<NodeType>()
     const { card: draggedCard } = useDnD()
-    const { anchorRef, handleClick, handleClose, handleContextMenu, open } = useContextMenu<HTMLDivElement>()
+    const { filter } = useMTGFilter()
+    const {
+        anchorRef: mainCardAnchorRef,
+        handleClick: mainCardHandleClick,
+        handleClose: mainCardHandleClose,
+        handleContextMenu: mainCardHandleContextMenu,
+        open: mainCardOpen,
+    } = useContextMenu<HTMLDivElement>()
+
     const [showAllVersions, setShowAllVersions] = useState(false)
 
     const defaultVersion = card.versions.find((v) => v.isDefault)
@@ -70,7 +81,13 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
         mutations: { updateMTGDeck: updateMTGADeck },
     } = MTGFunctions
 
-    const options: ContextMenuOption[] = [
+    if (!deck) return null
+
+    const selectedVersion = deckCardIDs.includes(card.ID)
+        ? card.versions.find((v) => v.ID === deck.cards.find((c) => c.card.ID === card.ID)?.selectedVersionID)
+        : null
+
+    const mainCardOptions: ContextMenuOption[] = [
         {
             label: !cardIsInDeck ? 'Add to deck' : 'Remove from deck',
             action: () => {
@@ -113,9 +130,12 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
         {
             id: 'addToOtherDeck',
             label: 'Add to other deck',
+            shouldKeepOpen: true,
             subMenu: [
                 {
+                    id: 'createNewDeck',
                     label: 'Create new deck',
+                    shouldKeepOpen: true,
                     action: () => {
                         const name = prompt('Enter the name of the new deck')
                         if (!name) return
@@ -127,6 +147,14 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                             const d = onAddCard(card, undefined, deck)
                             if (!d) return
                             updateDeck(d)
+                            let version: MTG_CardVersion | undefined
+                            const set = singleSetSelected(filter)
+                            if (set) {
+                                version = card.versions.find((v) => v.set === set)
+                            } else {
+                                version = card.versions.find((v) => v.isDefault)
+                            }
+                            if (!version) return
                             updateMTGADeck({
                                 cards: d.cards.map((c) => ({
                                     ...c,
@@ -142,27 +170,37 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                                     name: z.name,
                                     position: z.position,
                                 })),
-                                cardFrontImage: d.cardFrontImage,
+                                cardFrontImage: {
+                                    cardID: card.ID,
+                                    versionID: version.ID,
+                                },
                             })
                             updateDeck(d)
                         })
                     },
-                    shouldKeepOpen: true,
                 },
                 ...decks
                     .filter((d) => d.ID !== deck?.ID)
-                    .map((d) => {
-                        const alreadyInDeck = d.cards.find((c) => c.card.ID === card.ID)
+                    .map((deck) => {
+                        const alreadyInDeck = deck.cards.find((c) => c.card.ID === card.ID)
                         return {
-                            label: d.name,
+                            label: deck.name,
                             selected: alreadyInDeck ? true : false,
+                            shouldKeepOpen: true,
                             action: !alreadyInDeck
                                 ? () => {
-                                      const deck = onAddCard(card, undefined, d)
-                                      if (!deck) return
-                                      updateDeck(deck)
+                                      let version: MTG_CardVersion | undefined
+                                      const set = singleSetSelected(filter)
+                                      if (set) {
+                                          version = card.versions.find((v) => v.set === set)
+                                      } else {
+                                          version = card.versions.find((v) => v.isDefault)
+                                      }
+                                      if (!version) return
+                                      const newDeck = onAddCard(card, undefined, deck, version.ID)
+                                      if (!newDeck) return
                                       updateMTGADeck({
-                                          cards: deck.cards.map((c) => ({
+                                          cards: newDeck.cards.map((c) => ({
                                               ...c,
                                               card: c.card.ID,
                                               ID: c.card.ID,
@@ -176,17 +214,27 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                                               name: z.name,
                                               position: z.position,
                                           })),
-                                          cardFrontImage: deck.cardFrontImage,
+                                          cardFrontImage: {
+                                              cardID: card.ID,
+                                              versionID: version.ID,
+                                          },
+                                      }).then((d) => {
+                                          updateDeck(d)
                                       })
                                   }
                                 : () => {
-                                      const deck = structuredClone(d)
-                                      if (!deck) return
+                                      let version: MTG_CardVersion | undefined
+                                      const set = singleSetSelected(filter)
+                                      if (set) {
+                                          version = card.versions.find((v) => v.set === set)
+                                      } else {
+                                          version = card.versions.find((v) => v.isDefault)
+                                      }
+                                      if (!version) return
                                       const cardIndex = deck.cards.findIndex((c) => c.card.ID === card.ID)
                                       if (cardIndex !== -1) {
                                           deck.cards.splice(cardIndex, 1)
                                       }
-                                      updateDeck(deck)
                                       updateMTGADeck({
                                           cards: deck.cards.map((c) => ({
                                               ...c,
@@ -202,10 +250,14 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                                               name: z.name,
                                               position: z.position,
                                           })),
-                                          cardFrontImage: deck.cardFrontImage,
+                                          cardFrontImage: {
+                                              cardID: card.ID,
+                                              versionID: version.ID,
+                                          },
+                                      }).then((d) => {
+                                          updateDeck(d)
                                       })
                                   },
-                            shouldKeepOpen: true,
                         } as ContextMenuOption
                     }),
             ],
@@ -213,9 +265,11 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
         {
             id: 'addToCardPackage',
             label: 'Add to card package',
+            shouldKeepOpen: true,
             subMenu: [
                 {
                     label: 'Create new card package',
+                    shouldKeepOpen: true,
                     action: () => {
                         const name = prompt('Enter the name of the new card package')
                         if (!name) return
@@ -229,13 +283,13 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                             })
                         })
                     },
-                    shouldKeepOpen: false,
                 },
                 ...cardPackages.map((cp) => {
                     const alreadyInDeck = cp.cards.find((c) => c.card.ID === card.ID)
                     return {
                         label: cp.name,
                         selected: alreadyInDeck ? true : false,
+                        shouldKeepOpen: true,
                         action: !alreadyInDeck
                             ? () => {
                                   addMTGCardToCardPackage({
@@ -254,7 +308,6 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                                       updateCardPackage(cp)
                                   })
                               },
-                        shouldKeepOpen: false,
                     } as ContextMenuOption
                 }),
             ],
@@ -266,7 +319,21 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                 if (!deck) return
                 setDeck((prev) => {
                     if (!prev) return prev
-                    return { ...prev, cardFrontImage: card.ID }
+                    let version: MTG_CardVersion | undefined
+                    const set = singleSetSelected(filter)
+                    if (set) {
+                        version = card.versions.find((v) => v.set === set)
+                    } else {
+                        version = card.versions.find((v) => v.isDefault)
+                    }
+                    if (!version) return prev
+                    return {
+                        ...prev,
+                        cardFrontImage: {
+                            ...card,
+                            versions: [version],
+                        },
+                    }
                 })
             },
         },
@@ -279,7 +346,7 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
     ]
 
     if (cardIsInDeck) {
-        options.splice(1, 0, {
+        mainCardOptions.splice(1, 0, {
             label: 'Add phantom',
             action: () => {
                 handleAddCard(card)
@@ -289,7 +356,7 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
 
     // If the card has more than 1 version add the show all versions option second to last
     if (card.versions.length > 1) {
-        options.splice(options.length - 1, 0, {
+        mainCardOptions.splice(mainCardOptions.length - 1, 0, {
             label: 'Show all versions',
             action: () => {
                 setShowAllVersions(true)
@@ -297,16 +364,10 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
         })
     }
 
-    if (!deck) return null
-
-    const selectedVersion = deckCardIDs.includes(card.ID)
-        ? card.versions.find((v) => v.ID === deck.cards.find((c) => c.card.ID === card.ID)?.selectedVersionID)
-        : null
-
     return (
         <Grid item xs={'auto'}>
             <ErrorBoundary fallback={<div>Something went wrong {card.ID}</div>}>
-                <div ref={anchorRef} onContextMenu={handleContextMenu}>
+                <div ref={mainCardAnchorRef} onContextMenu={mainCardHandleContextMenu}>
                     <ButtonBase
                         onClick={() => handleAddCard(card)}
                         sx={{
@@ -376,11 +437,11 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                 </div>
             </ErrorBoundary>
             <ContextMenu
-                anchorRef={anchorRef}
-                options={options}
-                open={open}
-                handleClose={handleClose}
-                handleClick={handleClick}
+                anchorRef={mainCardAnchorRef}
+                options={mainCardOptions}
+                open={mainCardOpen}
+                handleClose={mainCardHandleClose}
+                handleClick={mainCardHandleClick}
             />
             <Dialog
                 open={showAllVersions}
@@ -394,18 +455,11 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                             .sort((a, b) => new Date(a.releasedAt).getTime() - new Date(b.releasedAt).getTime())
                             .map((v) => (
                                 <Grid item key={v.ID}>
-                                    <ButtonBase onClick={() => handleAddCard(card, v.ID)}>
-                                        <MTGACardWithHover
-                                            data={{
-                                                card: v,
-                                                type: 'cardVersion',
-                                                cardTypeLine: card.typeLine,
-                                                layout: card.layout,
-                                                debugValue: 'set',
-                                            }}
-                                            hideHover={draggedCard !== null}
-                                        />
-                                    </ButtonBase>
+                                    <VersionCard
+                                        card={card}
+                                        version={v}
+                                        closeDialog={() => setShowAllVersions(false)}
+                                    />
                                 </Grid>
                             ))}
                     </Grid>
