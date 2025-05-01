@@ -48,39 +48,39 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
     const { filter } = useMTGFilter()
     const { sets, games } = filter
 
-    const positiveGames = Object.entries(games)
-        .filter(([_, value]) => isPositiveTB(value))
-        .map(([key]) => key as MTG_Game)
-    const negativeGames = Object.entries(games)
-        .filter(([_, value]) => isNegativeTB(value))
-        .map(([key]) => key as MTG_Game)
-    const gameFilterIsNotSet = Object.values(games).every((value) => value === TernaryBoolean.UNSET)
+    const positiveGames = useMemo(
+        () =>
+            Object.entries(games)
+                .filter(([_, v]) => isPositiveTB(v))
+                .map(([k]) => k as MTG_Game),
+        [games],
+    )
+    const negativeGames = useMemo(
+        () =>
+            Object.entries(games)
+                .filter(([_, v]) => isNegativeTB(v))
+                .map(([k]) => k as MTG_Game),
+        [games],
+    )
+    const gameFilterIsNotSet = useMemo(() => Object.values(games).every((v) => v === TernaryBoolean.UNSET), [games])
 
     const grouped = useMemo(() => {
         return Object.entries(sets)
             .map(([code, s]) => ({ code, ...s }))
             .filter((s) => s.setName.toLowerCase().includes(search.toLowerCase()))
             .reduce<Record<string, Record<string, FilterSet[]>>>((acc, curr) => {
-                if (gameFilterIsNotSet) {
-                    const year = new Date(curr.releasedAt).getFullYear().toString()
-                    const type = curr.setType
-                    acc[year] ??= {}
-                    ;(acc[year][type] ??= []).push(curr)
-                } else {
-                    let shouldAdd = false
-                    if (positiveGames.length > 0) {
-                        shouldAdd = positiveGames.some((game) => curr.games.includes(game))
-                    }
-                    if (negativeGames.length > 0) {
-                        shouldAdd = !negativeGames.some((game) => curr.games.includes(game))
-                    }
-                    if (shouldAdd) {
-                        const year = new Date(curr.releasedAt).getFullYear().toString()
-                        const type = curr.setType
-                        acc[year] ??= {}
-                        ;(acc[year][type] ??= []).push(curr)
-                    }
+                if (!gameFilterIsNotSet) {
+                    let allowed = true
+                    if (positiveGames.length) allowed = positiveGames.some((g) => curr.games.includes(g))
+                    if (negativeGames.length) allowed &&= !negativeGames.some((g) => curr.games.includes(g))
+                    if (!allowed) return acc
                 }
+
+                const year = new Date(curr.releasedAt).getFullYear().toString()
+                const typeLabel = TYPE_TO_GROUP[curr.setType] ?? curr.setType // fallback
+
+                acc[year] ??= {}
+                ;(acc[year][typeLabel] ??= []).push(curr as FilterSet)
                 return acc
             }, {})
     }, [sets, gameFilterIsNotSet, positiveGames, negativeGames, search])
@@ -138,6 +138,38 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
 }
 
 export default SetSelector
+
+const SET_TYPE_GROUPS_ORDERED: { label: string; types: string[] }[] = [
+    {
+        label: 'Core & Expansions',
+        types: ['core', 'expansion'],
+    },
+    {
+        label: 'Commander & Decks',
+        types: ['commander', 'duel_deck', 'planechase', 'archenemy', 'starter'],
+    },
+    {
+        label: 'Digital only',
+        types: ['alchemy', 'treasure_chest'],
+    },
+    {
+        label: 'Masters / Reprints',
+        types: ['masters', 'draft_innovation'],
+    },
+    {
+        label: 'Premium Collections',
+        types: ['masterpiece', 'from_the_vault', 'premium_deck', 'arsenal', 'spellbook', 'box'],
+    },
+]
+
+const TYPE_TO_GROUP: Record<string, string> = Object.fromEntries(
+    SET_TYPE_GROUPS_ORDERED.flatMap(({ label, types }) => types.map((t) => [t, label] as const)),
+)
+
+const categoryOrderIndex = (label: string) => {
+    const idx = SET_TYPE_GROUPS_ORDERED.findIndex((g) => g.label === label)
+    return idx === -1 ? Number.MAX_SAFE_INTEGER : idx
+}
 
 const aggregateTernaryBoolean = (values: TernaryBoolean[]): TernaryBoolean => {
     const hasOn = values.includes(TernaryBoolean.TRUE)
@@ -210,58 +242,62 @@ const YearItem: React.FC<{
                 </Grid>
             </AccordionSummary>
             <AccordionDetails>
-                {Object.entries(categories).map(([type, setsInType]) => {
-                    const catState = aggregateTernaryBoolean(
-                        setsInType.map((s) => selected[s.code] ?? TernaryBoolean.UNSET),
-                    )
+                {Object.entries(categories)
+                    .sort(([a], [b]) => categoryOrderIndex(a) - categoryOrderIndex(b) || a.localeCompare(b))
+                    .map(([type, setsInType]) => {
+                        const catState = aggregateTernaryBoolean(
+                            setsInType.map((s) => selected[s.code] ?? TernaryBoolean.UNSET),
+                        )
 
-                    return (
-                        <Box key={type} sx={{ mb: 1 }}>
-                            <Grid container alignItems="center" spacing={1} wrap="nowrap">
-                                <Grid item>
-                                    <TernaryToggle
-                                        type={'checkbox'}
-                                        value={catState}
-                                        labelProps={{
-                                            slotProps: {
-                                                typography: {
-                                                    variant: 'h6',
-                                                    fontWeight: 'bold',
-                                                    sx: {
-                                                        textTransform: 'capitalize',
+                        return (
+                            <Box key={type} sx={{ mb: 1 }}>
+                                <Grid container alignItems="center" spacing={1} wrap="nowrap">
+                                    <Grid item>
+                                        <TernaryToggle
+                                            type={'checkbox'}
+                                            value={catState}
+                                            labelProps={{
+                                                slotProps: {
+                                                    typography: {
+                                                        variant: 'h6',
+                                                        fontWeight: 'bold',
+                                                        sx: {
+                                                            textTransform: 'capitalize',
+                                                        },
                                                     },
                                                 },
-                                            },
-                                            label: type,
-                                        }}
-                                        checkboxProps={{
-                                            onClick: () => {
-                                                const nextValue = nextTB(catState)
-                                                setsInType.forEach((s) => setValue(s.code, nextValue))
-                                            },
-                                            onContextMenu: () => {
-                                                const prevValue = prevTB(catState)
-                                                setsInType.forEach((s) => setValue(s.code, prevValue))
-                                            },
-                                        }}
-                                    />
+                                                label: type,
+                                            }}
+                                            checkboxProps={{
+                                                onClick: () => {
+                                                    const nextValue = nextTB(catState)
+                                                    setsInType.forEach((s) => setValue(s.code, nextValue))
+                                                },
+                                                onContextMenu: () => {
+                                                    const prevValue = prevTB(catState)
+                                                    setsInType.forEach((s) => setValue(s.code, prevValue))
+                                                },
+                                            }}
+                                        />
+                                    </Grid>
                                 </Grid>
-                            </Grid>
-                            <Grid container spacing={0.5} sx={{ pl: 4, mt: 0.5 }} direction={'column'}>
-                                {setsInType.map((set) => (
-                                    <SetItem
-                                        key={set.code}
-                                        set={set}
-                                        value={selected[set.code] ?? TernaryBoolean.UNSET}
-                                        onNext={onNext}
-                                        onPrev={onPrev}
-                                        iconSize={iconSize ?? 40}
-                                    />
-                                ))}
-                            </Grid>
-                        </Box>
-                    )
-                })}
+                                <Grid container spacing={0.5} sx={{ pl: 4, mt: 0.5 }} direction={'column'}>
+                                    {setsInType
+                                        .sort((a, b) => b.releasedAt - a.releasedAt)
+                                        .map((set) => (
+                                            <SetItem
+                                                key={set.code}
+                                                set={set}
+                                                value={selected[set.code] ?? TernaryBoolean.UNSET}
+                                                onNext={onNext}
+                                                onPrev={onPrev}
+                                                iconSize={iconSize ?? 40}
+                                            />
+                                        ))}
+                                </Grid>
+                            </Box>
+                        )
+                    })}
             </AccordionDetails>
         </Accordion>
     )
@@ -295,7 +331,7 @@ const SetItem: React.FC<SetItemProps> = ({ set, value, onNext, onPrev, iconSize 
                             loading="lazy"
                         />
                         <Typography variant="body2" noWrap sx={{ marginLeft: 1 }}>
-                            {set.setName}
+                            {set.setName} ({new Date(set.releasedAt).toLocaleDateString()})
                         </Typography>
                     </Box>
                 ),
