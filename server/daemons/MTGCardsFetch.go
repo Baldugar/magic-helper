@@ -103,15 +103,15 @@ func fetchMTGCards(ctx context.Context) bool {
 	bulkDataUrl := "https://api.scryfall.com/bulk-data"
 
 	// Check if we should fetch cards
-	// shouldFetch, err := shouldDownloadStart("MTG_cards")
-	// if err != nil {
-	// 	log.Error().Err(err).Msgf("Error checking if we should fetch cards")
-	// 	return false
-	// }
+	shouldFetch, err := shouldDownloadStart("MTG_cards")
+	if err != nil {
+		log.Error().Err(err).Msgf("Error checking if we should fetch cards")
+		return false
+	}
 
-	// if !shouldFetch {
-	// 	return false
-	// }
+	if !shouldFetch {
+		return false
+	}
 
 	// Fetch the bulk data list
 	respList, err := fetchURLWithContext(ctx, bulkDataUrl) // Renamed resp to respList for clarity
