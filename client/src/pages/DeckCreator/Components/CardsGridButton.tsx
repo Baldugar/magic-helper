@@ -411,7 +411,6 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                                     type: 'cardVersion',
                                     cardTypeLine: card.typeLine,
                                     layout: card.layout,
-                                    debugValue: 'set',
                                 }}
                                 hideHover={draggedCard !== null}
                             />
@@ -420,7 +419,6 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                                 data={{
                                     card,
                                     type: 'card',
-                                    debugValue: 'layout',
                                 }}
                                 hideHover={draggedCard !== null}
                             />

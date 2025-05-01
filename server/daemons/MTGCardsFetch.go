@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"magic-helper/arango"
+	"magic-helper/graph/model"
 	"magic-helper/graph/model/scryfall"
 	scryfallModel "magic-helper/graph/model/scryfall/model"
 	"math"
@@ -102,15 +103,15 @@ func fetchMTGCards(ctx context.Context) bool {
 	bulkDataUrl := "https://api.scryfall.com/bulk-data"
 
 	// Check if we should fetch cards
-	shouldFetch, err := shouldDownloadStart("MTG_cards")
-	if err != nil {
-		log.Error().Err(err).Msgf("Error checking if we should fetch cards")
-		return false
-	}
+	// shouldFetch, err := shouldDownloadStart("MTG_cards")
+	// if err != nil {
+	// 	log.Error().Err(err).Msgf("Error checking if we should fetch cards")
+	// 	return false
+	// }
 
-	if !shouldFetch {
-		return false
-	}
+	// if !shouldFetch {
+	// 	return false
+	// }
 
 	// Fetch the bulk data list
 	respList, err := fetchURLWithContext(ctx, bulkDataUrl) // Renamed resp to respList for clarity
@@ -450,13 +451,12 @@ func collectCards(ctx context.Context) {
 			var cardFacesDB []scryfall.MTG_CardVersionFaceDB
 			if card.CardFaces != nil {
 				for _, face := range *card.CardFaces {
-					cardFacesDB = append(cardFacesDB, scryfall.MTG_CardVersionFaceDB{
+					cardFace := scryfall.MTG_CardVersionFaceDB{
 						Artist:         face.Artist,
 						CMC:            face.CMC,
 						ColorIndicator: face.ColorIndicator,
 						Colors:         face.Colors,
 						FlavorText:     face.FlavorText,
-						ImageUris:      face.ImageUris, // Will be converted below
 						Loyalty:        face.Loyalty,
 						ManaCost:       face.ManaCost,
 						Name:           face.Name,
@@ -465,14 +465,35 @@ func collectCards(ctx context.Context) {
 						Toughness:      face.Toughness,
 						TypeLine:       face.TypeLine,
 						Layout:         face.Layout, // Will be converted below
-					})
+					}
+
+					if face.ImageUris != nil {
+						cardFace.ImageUris = &model.MtgImage{
+							ArtCrop:    face.ImageUris.ArtCrop,
+							BorderCrop: face.ImageUris.BorderCrop,
+							Large:      face.ImageUris.Large,
+							Normal:     face.ImageUris.Normal,
+							Small:      face.ImageUris.Small,
+							Png:        face.ImageUris.PNG,
+						}
+					}
+					cardFacesDB = append(cardFacesDB, cardFace)
 				}
 			}
 			if len(cardFacesDB) > 0 {
 				cardVersionDB.CardFaces = &cardFacesDB
 			}
 			// Assign ImageUris after potential faces processing (though source struct is flat here)
-			cardVersionDB.ImageUris = card.ImageUris // Assign the scryfall type
+			if card.ImageUris != nil {
+				cardVersionDB.ImageUris = &model.MtgImage{
+					ArtCrop:    card.ImageUris.ArtCrop,
+					BorderCrop: card.ImageUris.BorderCrop,
+					Large:      card.ImageUris.Large,
+					Normal:     card.ImageUris.Normal,
+					Small:      card.ImageUris.Small,
+					Png:        card.ImageUris.PNG,
+				}
+			}
 
 			cardForGroup.Versions = append(cardForGroup.Versions, cardVersionDB)
 		}

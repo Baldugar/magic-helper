@@ -79,7 +79,6 @@ export const VersionCard = (props: VersionCardProps) => {
                             type: 'cardVersion',
                             cardTypeLine: card.typeLine,
                             layout: card.layout,
-                            debugValue: 'set',
                         }}
                     />
                 </ButtonBase>

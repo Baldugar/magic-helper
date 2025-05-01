@@ -1,6 +1,9 @@
 package scryfall
 
-import scryfallModel "magic-helper/graph/model/scryfall/model"
+import (
+	"magic-helper/graph/model"
+	scryfallModel "magic-helper/graph/model/scryfall/model"
+)
 
 type MTG_SetDB struct {
 	ID            string  `json:"_key"`
@@ -58,7 +61,7 @@ type MTG_CardVersionDB struct {
 	FrameEffects    *[]string                  `json:"frameEffects,omitempty"`
 	FullArt         bool                       `json:"fullArt"`
 	Games           []scryfallModel.Game       `json:"games"`
-	ImageUris       *ImageUris                 `json:"imageUris,omitempty"`
+	ImageUris       *model.MtgImage            `json:"imageUris,omitempty"`
 	IsAlchemy       bool                       `json:"isAlchemy"`
 	IsDefault       bool                       `json:"isDefault"`
 	Lang            scryfallModel.CardLanguage `json:"lang"`
@@ -76,18 +79,18 @@ type MTG_CardVersionDB struct {
 }
 
 type MTG_CardVersionFaceDB struct {
-	Artist         *string    `json:"artist,omitempty"`
-	CMC            *float64   `json:"CMC,omitempty"`
-	ColorIndicator *[]string  `json:"colorIndicator,omitempty"`
-	Colors         *[]string  `json:"colors,omitempty"`
-	FlavorText     *string    `json:"flavorText,omitempty"`
-	ImageUris      *ImageUris `json:"imageUris,omitempty"`
-	Layout         *string    `json:"layout,omitempty"`
-	Loyalty        *string    `json:"loyalty,omitempty"`
-	ManaCost       string     `json:"manaCost"`
-	Name           string     `json:"name"`
-	OracleText     *string    `json:"oracleText,omitempty"`
-	Power          *string    `json:"power,omitempty"`
-	Toughness      *string    `json:"toughness,omitempty"`
-	TypeLine       *string    `json:"typeLine,omitempty"`
+	Artist         *string         `json:"artist,omitempty"`
+	CMC            *float64        `json:"CMC,omitempty"`
+	ColorIndicator *[]string       `json:"colorIndicator,omitempty"`
+	Colors         *[]string       `json:"colors,omitempty"`
+	FlavorText     *string         `json:"flavorText,omitempty"`
+	ImageUris      *model.MtgImage `json:"imageUris,omitempty"`
+	Layout         *string         `json:"layout,omitempty"`
+	Loyalty        *string         `json:"loyalty,omitempty"`
+	ManaCost       string          `json:"manaCost"`
+	Name           string          `json:"name"`
+	OracleText     *string         `json:"oracleText,omitempty"`
+	Power          *string         `json:"power,omitempty"`
+	Toughness      *string         `json:"toughness,omitempty"`
+	TypeLine       *string         `json:"typeLine,omitempty"`
 }
