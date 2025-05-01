@@ -1,4 +1,5 @@
 import { Node, Rect, XYPosition } from '@xyflow/react'
+import { cloneDeep } from 'lodash'
 import { SetStateAction } from 'react'
 import { FlowZone, MTG_Deck, MTG_DeckCard, MTG_DeckCardInput, Position } from '../../graphql/types'
 import { CardNodeData } from '../../pages/FlowView/Nodes/CardNode'
@@ -18,6 +19,29 @@ export const getDepth = (node: Node, allNodes: Record<string, Node>) => {
     }
 
     return depth
+}
+
+// Function to sort nodes by nesting without mutating the original array
+export const sortNodesByNesting = (nodes: NodeType[]): NodeType[] => {
+    // Create a deep copy of the nodes array to avoid mutation
+    const nodesCopy = cloneDeep(nodes)
+
+    // Create a map to easily access nodes by id
+    const nodeMap: Record<string, Node> = Object.fromEntries(nodesCopy.map((node) => [node.id, node]))
+
+    // Return a new sorted array without modifying the original
+    return nodesCopy.sort((a, b) => {
+        const depthA = getDepth(a, nodeMap)
+        const depthB = getDepth(b, nodeMap)
+
+        // Nodes without parentId will come first, then by depth
+        if (!a.parentId && b.parentId) return -1
+        if (a.parentId && !b.parentId) return 1
+        if (a.type === 'group' && b.type !== 'group') return -1
+        if (a.type !== 'group' && b.type === 'group') return 1
+
+        return depthA - depthB
+    })
 }
 
 export const onNodeDragStop = (
@@ -64,7 +88,6 @@ export const onNodeDragStop = (
     // We also need to update the original group- node's data to exclude the node's id from the childrenIDs array
 
     if (node.type === 'groupNode') {
-        setNodes(sortNodesByNestingAndPosition(nodes))
         return
     }
 
@@ -73,7 +96,6 @@ export const onNodeDragStop = (
 
     // If the node is free and not intersecting any other node or group node
     if (!node.parentId && (intersectingNodes.length === 0 || intersectingNodes.every((n) => n.type !== 'groupNode'))) {
-        setNodes(sortNodesByNestingAndPosition(nodes))
         return
     }
 
@@ -104,13 +126,12 @@ export const onNodeDragStop = (
             }
             return n
         })
-        setNodes(sortNodesByNestingAndPosition(newNodes))
+        setNodes(sortNodesByNesting(newNodes))
         return
     }
 
     // If the node is bound to a group node and it is intersecting with it
     if (node.parentId && intersectingNodes.some((n) => n.id === node.parentId)) {
-        setNodes(sortNodesByNestingAndPosition(nodes))
         return
     }
 
@@ -141,7 +162,7 @@ export const onNodeDragStop = (
             }
             return n
         })
-        setNodes(sortNodesByNestingAndPosition(newNodes))
+        setNodes(sortNodesByNesting(newNodes))
         return
     }
 
@@ -184,7 +205,7 @@ export const onNodeDragStop = (
             }
             return n
         })
-        setNodes(sortNodesByNestingAndPosition(newNodes))
+        setNodes(sortNodesByNesting(newNodes))
         return
     }
 }
@@ -214,10 +235,10 @@ export const organizeNodes = (
             height: zone.height,
         } as Node<GroupNodeData>)
     }
-    const cardNodes: NodeType[] = []
+
     for (const card of deck.cards) {
         const cardData: CardNodeData = { card: card }
-        cardNodes.push({
+        nodes.push({
             id: card.card.ID,
             position: card.position,
             data: cardData,
@@ -231,7 +252,7 @@ export const organizeNodes = (
                 position: p.position,
                 onDelete: onDeletePhantom,
             }
-            cardNodes.push({
+            nodes.push({
                 id: p.ID,
                 position: p.position,
                 data: phantomNodeData,
@@ -240,7 +261,7 @@ export const organizeNodes = (
             } as Node<PhantomNodeData>)
         }
     }
-    return [...nodes, ...sortNodesByNestingAndPosition(cardNodes)]
+    return nodes
 }
 
 export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTG_DeckCard[]): MTG_DeckCardInput[] => {
@@ -358,30 +379,4 @@ export const findNextAvailablePosition = (cards: MTG_DeckCard[]): Position => {
         // In practice, you can break here or handle an upper bound for y
         // if you ever need to limit the layout to a certain number of rows.
     }
-}
-
-export const sortNodesByNestingAndPosition = (nodes: NodeType[]): NodeType[] => {
-    // Create a map to easily access nodes by id
-    const nodeMap: Record<string, Node> = Object.fromEntries(nodes.map((node) => [node.id, node]))
-
-    // Custom comparator function
-    const comparator = (a: NodeType, b: NodeType): number => {
-        const depthA = getDepth(a, nodeMap)
-        const depthB = getDepth(b, nodeMap)
-
-        // First, compare by depth
-        if (depthA !== depthB) {
-            return depthA - depthB
-        }
-
-        // If depths are equal, compare by position
-        if (a.position.y !== b.position.y) {
-            return a.position.y - b.position.y
-        }
-
-        return a.position.x - b.position.x
-    }
-
-    // Sort using the custom comparator
-    return nodes.slice().sort(comparator)
 }

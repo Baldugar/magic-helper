@@ -4,7 +4,7 @@ import '@xyflow/react/dist/style.css'
 import { useMTGDeckCreator } from '../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGDeckFlowCreator } from '../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
 import { uuidv4 } from '../../utils/functions/IDFunctions'
-import { NodeType, organizeNodes, sortNodesByNestingAndPosition } from '../../utils/functions/nodeFunctions'
+import { NodeType, organizeNodes, sortNodesByNesting } from '../../utils/functions/nodeFunctions'
 import { CardNode } from './Nodes/CardNode'
 import { GroupNode, GroupNodeData, MIN_SIZE } from './Nodes/GroupNode'
 import { PhantomNode } from './Nodes/PhantomNode'
@@ -57,7 +57,7 @@ export const FlowView = () => {
                                     width: MIN_SIZE,
                                     height: MIN_SIZE,
                                 } as Node<GroupNodeData>
-                                const newNodes = sortNodesByNestingAndPosition(nodes.concat(newNode))
+                                const newNodes = sortNodesByNesting(nodes.concat(newNode))
                                 setNodes(newNodes)
                             }
                         }}

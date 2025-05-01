@@ -10,7 +10,7 @@ import {
     findNextAvailablePosition,
     NodeType,
     onNodeDragStop,
-    sortNodesByNestingAndPosition,
+    sortNodesByNesting,
 } from '../../../utils/functions/nodeFunctions'
 import { useDnD } from '../../DnD/useDnD'
 import { useMTGDeckCreator } from '../DeckCreator/useMTGDeckCreator'
@@ -245,7 +245,7 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
             } as Node<CardNodeData>
         }
         if (!newNode) return
-        const newNodes = sortNodesByNestingAndPosition(nodes.concat(newNode))
+        const newNodes = sortNodesByNesting(nodes.concat(newNode))
         setNodes(newNodes)
     }
 
