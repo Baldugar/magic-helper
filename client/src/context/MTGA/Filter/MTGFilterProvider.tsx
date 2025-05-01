@@ -1,10 +1,17 @@
 import { cloneDeep } from 'lodash'
 import { ReactNode, useEffect, useState } from 'react'
 import getMTGAFilters from '../../../graphql/MTGA/queries/getMTGFilters'
-import { Query } from '../../../graphql/types'
-import { TernaryBoolean } from '../../../types/ternaryBoolean'
+import { MTG_Game, Query } from '../../../graphql/types'
+import { isNegativeTB, isPositiveTB, TernaryBoolean } from '../../../types/ternaryBoolean'
 import { fetchData } from '../../../utils/functions/fetchData'
-import { initialMTGFilter, MTGFilterContext, MTGFilterType, SortDirection, SortEnum } from './MTGFilterContext'
+import {
+    initialMTGFilter,
+    MTGFilterContext,
+    MTGFilterType,
+    SetFilter,
+    SortDirection,
+    SortEnum,
+} from './MTGFilterContext'
 
 const initialSortOrder = [
     SortEnum.COLOR,
@@ -29,12 +36,11 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
     const [zoom, setZoom] = useState<'IN' | 'OUT'>('OUT')
 
     useEffect(() => {
-        if (Object.keys(filter.cardTypes).length) return
         fetchData<Query>(getMTGAFilters).then((data) => {
             if (!data) throw new Error('No data from getMTGFilters')
             const result = data.data.getMTGFilters
             setFilter((prev) => {
-                prev = cloneDeep([initialMTGFilter])[0]
+                prev = cloneDeep(initialMTGFilter)
                 for (const key of result.types) {
                     prev.cardTypes[key.cardType] = TernaryBoolean.UNSET
                     prev.subtypes[key.cardType] = {}
@@ -49,6 +55,7 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
                         imageURL: key.imageURL,
                         releasedAt: key.releasedAt,
                         setType: key.setType,
+                        games: key.games,
                     }
                 }
                 for (const format of result.legality.formats) {
@@ -64,7 +71,35 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
                 return { ...prev }
             })
         })
-    }, [filter.cardTypes])
+    }, [])
+
+    useEffect(() => {
+        const games = filter.games
+        const positiveGames = Object.entries(games)
+            .filter(([_, value]) => isPositiveTB(value))
+            .map(([key]) => key as MTG_Game)
+        const negativeGames = Object.entries(games)
+            .filter(([_, value]) => isNegativeTB(value))
+            .map(([key]) => key as MTG_Game)
+        const gameFilterIsNotSet = Object.values(games).every((value) => value === TernaryBoolean.UNSET)
+        if (gameFilterIsNotSet) return
+        setFilter((prev) => {
+            const newSets = Object.entries(prev.sets).reduce<Record<string, SetFilter>>((acc, [code, set]) => {
+                let shouldAdd = false
+                if (positiveGames.length > 0) {
+                    shouldAdd = positiveGames.some((game) => set.games.includes(game))
+                }
+                if (negativeGames.length > 0) {
+                    shouldAdd = !negativeGames.some((game) => set.games.includes(game))
+                }
+                if (!shouldAdd) {
+                    acc[code] = { ...set, value: TernaryBoolean.UNSET }
+                }
+                return acc
+            }, prev.sets)
+            return { ...prev, sets: newSets }
+        })
+    }, [filter.games])
 
     const clearFilter = () => {
         setFilter(originalFilter)

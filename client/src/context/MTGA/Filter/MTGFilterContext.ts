@@ -4,6 +4,14 @@ import { TernaryBoolean } from '../../../types/ternaryBoolean'
 
 export type CMCFilter = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 'infinite'
 
+export type SetFilter = {
+    setName: string
+    value: TernaryBoolean
+    imageURL: string
+    releasedAt: number
+    setType: string
+    games: MTG_Game[]
+}
 export interface MTGFilterType {
     searchString: string
     rarity: Record<MTG_Rarity, TernaryBoolean>
@@ -12,10 +20,7 @@ export interface MTGFilterType {
     cardTypes: Record<string, TernaryBoolean>
     multiColor: TernaryBoolean
     subtypes: Record<string, Record<string, TernaryBoolean>>
-    sets: Record<
-        string,
-        { setName: string; value: TernaryBoolean; imageURL: string; releasedAt: number; setType: string }
-    >
+    sets: Record<string, SetFilter>
     legalities: Record<string, Record<string, TernaryBoolean>>
     layouts: Partial<Record<MTG_Layout, TernaryBoolean>>
     games: Record<MTG_Game, TernaryBoolean>

@@ -167,11 +167,12 @@ func GetMTGExpansions(ctx context.Context) ([]*model.MtgFilterExpansion, error) 
 			LET setRecord = DOCUMENT(@@setsCollection, card.set)
 			// FILTER DATE_ADD(DATE_NOW(), 1, "week") >= DATE_TIMESTAMP(setRecord.releasedAt)
 			FOR cv IN card.versions
-	            COLLECT set = cv.set, setName = cv.setName
+				COLLECT set = cv.set, setName = cv.setName, games = cv.games
 			LET setRecord = DOCUMENT(@@setsCollection, set)
             RETURN {
                 set: UPPER(set),
                 setName: setName,
+                games: games,
 				releasedAt: DATE_TIMESTAMP(setRecord.releasedAt),
 				imageURL: setRecord.iconSVGURI,
 				setType: setRecord.setType

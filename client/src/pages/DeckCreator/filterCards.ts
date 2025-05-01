@@ -1,14 +1,12 @@
 import { cloneDeep, intersection, orderBy } from 'lodash'
-import { CMCFilter, MTGFilterType, SortDirection, SortEnum } from '../../context/MTGA/Filter/MTGFilterContext'
 import {
-    MTG_Card,
-    MTG_Color,
-    MTG_DeckCard,
-    MTG_Filter_Expansion,
-    MTG_Game,
-    MTG_Layout,
-    MTG_Rarity,
-} from '../../graphql/types'
+    CMCFilter,
+    MTGFilterType,
+    SetFilter,
+    SortDirection,
+    SortEnum,
+} from '../../context/MTGA/Filter/MTGFilterContext'
+import { MTG_Card, MTG_Color, MTG_DeckCard, MTG_Game, MTG_Layout, MTG_Rarity } from '../../graphql/types'
 import { isNegativeTB, isNotUnsetTB, isPositiveTB, TernaryBoolean } from '../../types/ternaryBoolean'
 
 export const filterCards = <T extends MTG_Card>(
@@ -606,11 +604,14 @@ export const filterCards = <T extends MTG_Card>(
         }
     }
 
-    const expansions: MTG_Filter_Expansion[] = Object.entries(filter.sets).map(([set, value]) => ({
+    const expansions: (SetFilter & { set: string })[] = Object.entries(filter.sets).map(([set, value]) => ({
         imageURL: value.imageURL,
         releasedAt: value.releasedAt,
         set,
         setName: value.setName,
+        games: value.games,
+        setType: value.setType,
+        value: value.value,
     }))
 
     remainingCards = orderBy(

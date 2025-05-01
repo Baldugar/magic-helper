@@ -213,6 +213,7 @@ export type MTG_Filter_Entries = {
 
 export type MTG_Filter_Expansion = {
   __typename?: 'MTG_Filter_Expansion';
+  games: Array<MTG_Game>;
   imageURL: Scalars['String']['output'];
   releasedAt: Scalars['Int']['output'];
   set: Scalars['String']['output'];

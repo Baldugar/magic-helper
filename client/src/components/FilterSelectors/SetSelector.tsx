@@ -9,10 +9,12 @@ import {
     Grid,
     Paper,
     Popper,
+    TextField,
     Typography,
 } from '@mui/material'
 import { MouseEvent, useMemo, useState } from 'react'
 import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
+import { MTG_Game } from '../../graphql/types'
 import { isNegativeTB, isPositiveTB, nextTB, prevTB, TernaryBoolean } from '../../types/ternaryBoolean'
 import { TernaryToggle } from './TernaryToggle'
 
@@ -35,6 +37,7 @@ type FilterSet = {
 const SetSelector = (props: SetSelectorProps): JSX.Element => {
     const { onNext, onPrev, selected, setValue, iconSize } = props
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+    const [search, setSearch] = useState('')
 
     const handleClick = (event: MouseEvent<HTMLElement>) => {
         setAnchorEl(anchorEl ? null : event.currentTarget)
@@ -43,19 +46,44 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
     const open = Boolean(anchorEl)
 
     const { filter } = useMTGFilter()
-    const { sets } = filter
+    const { sets, games } = filter
+
+    const positiveGames = Object.entries(games)
+        .filter(([_, value]) => isPositiveTB(value))
+        .map(([key]) => key as MTG_Game)
+    const negativeGames = Object.entries(games)
+        .filter(([_, value]) => isNegativeTB(value))
+        .map(([key]) => key as MTG_Game)
+    const gameFilterIsNotSet = Object.values(games).every((value) => value === TernaryBoolean.UNSET)
 
     const grouped = useMemo(() => {
         return Object.entries(sets)
             .map(([code, s]) => ({ code, ...s }))
+            .filter((s) => s.setName.toLowerCase().includes(search.toLowerCase()))
             .reduce<Record<string, Record<string, FilterSet[]>>>((acc, curr) => {
-                const year = new Date(curr.releasedAt).getFullYear().toString()
-                const type = curr.setType
-                acc[year] ??= {}
-                ;(acc[year][type] ??= []).push(curr)
+                if (gameFilterIsNotSet) {
+                    const year = new Date(curr.releasedAt).getFullYear().toString()
+                    const type = curr.setType
+                    acc[year] ??= {}
+                    ;(acc[year][type] ??= []).push(curr)
+                } else {
+                    let shouldAdd = false
+                    if (positiveGames.length > 0) {
+                        shouldAdd = positiveGames.some((game) => curr.games.includes(game))
+                    }
+                    if (negativeGames.length > 0) {
+                        shouldAdd = !negativeGames.some((game) => curr.games.includes(game))
+                    }
+                    if (shouldAdd) {
+                        const year = new Date(curr.releasedAt).getFullYear().toString()
+                        const type = curr.setType
+                        acc[year] ??= {}
+                        ;(acc[year][type] ??= []).push(curr)
+                    }
+                }
                 return acc
             }, {})
-    }, [sets])
+    }, [sets, gameFilterIsNotSet, positiveGames, negativeGames, search])
 
     const howManyPositive = Object.values(selected).filter(isPositiveTB).length
     const howManyNegative = Object.values(selected).filter(isNegativeTB).length
@@ -79,6 +107,17 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
             </Badge>
             <Popper open={open} anchorEl={anchorEl}>
                 <Paper sx={{ maxHeight: '70vh', maxWidth: '50vw', overflow: 'auto' }}>
+                    <TextField
+                        label="Search"
+                        variant={'filled'}
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        fullWidth
+                        sx={{ pl: 1, pt: 1 }}
+                    />
+                    <Typography variant="body2" sx={{ pl: 1, pt: 1 }}>
+                        The game filter is applied to the sets.
+                    </Typography>
                     {yearsSorted.map((year) => (
                         <YearItem
                             key={year}
@@ -134,7 +173,7 @@ const YearItem: React.FC<{
             onChange={(_, expanded) => setOpen(expanded)}
             disableGutters
         >
-            <AccordionSummary expandIcon={<ExpandMore />}>
+            <AccordionSummary expandIcon={<ExpandMore />} sx={{ backgroundColor: 'secondary.main' }}>
                 <Grid container alignItems="center" spacing={1} wrap="nowrap">
                     <Grid item>
                         <TernaryToggle
@@ -246,7 +285,20 @@ const SetItem: React.FC<SetItemProps> = ({ set, value, onNext, onPrev, iconSize 
                         variant: 'body2',
                     },
                 },
-                label: '',
+                label: (
+                    <Box display="flex" alignItems="center">
+                        <Box
+                            component="img"
+                            src={set.imageURL}
+                            alt="set logo"
+                            sx={{ width: iconSize, height: iconSize, objectFit: 'contain' }}
+                            loading="lazy"
+                        />
+                        <Typography variant="body2" noWrap sx={{ marginLeft: 1 }}>
+                            {set.setName}
+                        </Typography>
+                    </Box>
+                ),
                 sx: {
                     mr: 0,
                 },
@@ -256,15 +308,5 @@ const SetItem: React.FC<SetItemProps> = ({ set, value, onNext, onPrev, iconSize 
                 onContextMenu: () => onPrev(set.code),
             }}
         />
-        <Box
-            component="img"
-            src={set.imageURL}
-            alt="set logo"
-            sx={{ width: iconSize, height: iconSize, objectFit: 'contain' }}
-            loading="lazy"
-        />
-        <Typography variant="body2" noWrap sx={{ marginLeft: 1 }}>
-            {set.setName}
-        </Typography>
     </Grid>
 )

@@ -329,4 +329,5 @@ type MTG_Filter_Expansion {
     releasedAt: Int!
     imageURL: String!
     setType: String!
+    games: [MTG_Game!]!
 }

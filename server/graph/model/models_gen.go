@@ -176,11 +176,12 @@ type MtgFilterEntries struct {
 }
 
 type MtgFilterExpansion struct {
-	Set        string `json:"set"`
-	SetName    string `json:"setName"`
-	ReleasedAt int    `json:"releasedAt"`
-	ImageURL   string `json:"imageURL"`
-	SetType    string `json:"setType"`
+	Set        string    `json:"set"`
+	SetName    string    `json:"setName"`
+	ReleasedAt int       `json:"releasedAt"`
+	ImageURL   string    `json:"imageURL"`
+	SetType    string    `json:"setType"`
+	Games      []MtgGame `json:"games"`
 }
 
 type MtgFilterLegality struct {

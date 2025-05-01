@@ -1,5 +1,11 @@
 import { useMTGDeckCreatorPagination } from '../../context/MTGA/DeckCreatorPagination/useMTGDeckCreatorPagination'
-import { initialMTGFilter, MTGFilterType, SortDirection, SortEnum } from '../../context/MTGA/Filter/MTGFilterContext'
+import {
+    initialMTGFilter,
+    MTGFilterType,
+    SetFilter,
+    SortDirection,
+    SortEnum,
+} from '../../context/MTGA/Filter/MTGFilterContext'
 import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
 import { TernaryBoolean } from '../../types/ternaryBoolean'
 
@@ -28,9 +34,10 @@ export const calculateHash = (filter: MTGFilterType) => {
             imageURL: value.imageURL,
             releasedAt: value.releasedAt,
             setType: value.setType,
+            games: value.games,
         }
         return acc
-    }, {} as Record<string, { setName: string; value: TernaryBoolean; imageURL: string; releasedAt: number; setType: string }>)
+    }, {} as Record<string, SetFilter>)
     newFilter.subtypes = Object.entries(filter.subtypes).reduce((acc, [key, value]) => {
         acc[key] = Object.keys(value).reduce((acc2, key2) => {
             acc2[key2] = TernaryBoolean.UNSET

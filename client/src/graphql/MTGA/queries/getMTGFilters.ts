@@ -13,6 +13,7 @@ export default gql`
                 releasedAt
                 imageURL
                 setType
+                games
             }
             legality {
                 formats
