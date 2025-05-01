@@ -29,59 +29,65 @@ type MTG_SetDB struct {
 type MTG_CardDB struct {
 	ID             string               `json:"_key"`
 	Layout         scryfallModel.Layout `json:"layout"`
-	CMC            float64              `json:"cmc"`
-	ColorIdentity  []string             `json:"color_identity"`
-	ColorIndicator *[]string            `json:"color_indicator"`
-	Colors         *[]string            `json:"colors"`
-	EDHRecRank     *int                 `json:"edhrec_rank"`
+	CMC            float64              `json:"CMC"`
+	ColorIdentity  []string             `json:"colorIdentity"`
+	ColorIndicator *[]string            `json:"colorIndicator,omitempty"`
+	Colors         *[]string            `json:"colors,omitempty"`
+	EDHRecRank     *int                 `json:"EDHRecRank,omitempty"`
 	Keywords       []string             `json:"keywords"`
-	Loyalty        *string              `json:"loyalty"`
-	ManaCost       *string              `json:"mana_cost"`
+	Loyalty        *string              `json:"loyalty,omitempty"`
+	ManaCost       *string              `json:"manaCost,omitempty"`
 	Name           string               `json:"name"`
-	OracleText     *string              `json:"oracle_text"`
-	Power          *string              `json:"power"`
-	ProducedMana   *[]string            `json:"produced_mana"`
-	Toughness      *string              `json:"toughness"`
-	TypeLine       string               `json:"type_line"`
+	OracleText     *string              `json:"oracleText,omitempty"`
+	Power          *string              `json:"power,omitempty"`
+	ProducedMana   *[]string            `json:"producedMana,omitempty"`
+	Toughness      *string              `json:"toughness,omitempty"`
+	TypeLine       string               `json:"typeLine"`
 	Versions       []MTG_CardVersionDB  `json:"versions"`
 }
 
 type MTG_CardVersionDB struct {
-	ID          string                     `json:"id"`
-	IsDefault   bool                       `json:"is_default"`
-	IsAlchemy   bool                       `json:"is_alchemy"`
-	Artist      *string                    `json:"artist"`
-	Lang        scryfallModel.CardLanguage `json:"lang"`
-	FlavorName  *string                    `json:"flavor_name"`
-	FlavorText  *string                    `json:"flavor_text"`
-	CardFaces   *[]MTG_CardVersionFaceDB   `json:"card_faces"`
-	Legalities  map[string]string          `json:"legalities"`
-	Games       []scryfallModel.Game       `json:"games"`
-	ImageUris   *ImageUris                 `json:"image_uris"`
-	Rarity      scryfallModel.Rarity       `json:"rarity"`
-	ReleasedAt  string                     `json:"released_at"`
-	Reprint     bool                       `json:"reprint"`
-	SetName     string                     `json:"set_name"`
-	SetType     string                     `json:"set_type"`
-	Set         string                     `json:"set"`
-	SetID       string                     `json:"set_id"`
-	Variation   bool                       `json:"variation"`
-	VariationOf *string                    `json:"variation_of"`
+	ID              string                     `json:"ID"`
+	Artist          *string                    `json:"artist,omitempty"`
+	Booster         bool                       `json:"booster"`
+	CardFaces       *[]MTG_CardVersionFaceDB   `json:"cardFaces,omitempty"`
+	CollectorNumber string                     `json:"collectorNumber"`
+	Finishes        []string                   `json:"finishes"`
+	FlavorName      *string                    `json:"flavorName,omitempty"`
+	FlavorText      *string                    `json:"flavorText,omitempty"`
+	FrameEffects    *[]string                  `json:"frameEffects,omitempty"`
+	FullArt         bool                       `json:"fullArt"`
+	Games           []scryfallModel.Game       `json:"games"`
+	ImageUris       *ImageUris                 `json:"imageUris,omitempty"`
+	IsAlchemy       bool                       `json:"isAlchemy"`
+	IsDefault       bool                       `json:"isDefault"`
+	Lang            scryfallModel.CardLanguage `json:"lang"`
+	Legalities      map[string]string          `json:"legalities"`
+	PromoTypes      *[]string                  `json:"promoTypes,omitempty"`
+	Rarity          scryfallModel.Rarity       `json:"rarity"`
+	ReleasedAt      string                     `json:"releasedAt"`
+	Reprint         bool                       `json:"reprint"`
+	Set             string                     `json:"set"`
+	SetID           string                     `json:"setID"`
+	SetName         string                     `json:"setName"`
+	SetType         string                     `json:"setType"`
+	Variation       bool                       `json:"variation"`
+	VariationOf     *string                    `json:"variationOf,omitempty"`
 }
 
 type MTG_CardVersionFaceDB struct {
-	Artist         *string    `json:"artist"`
-	CMC            *float64   `json:"cmc"`
-	ColorIndicator *[]string  `json:"color_indicator"`
-	Colors         *[]string  `json:"colors"`
-	FlavorText     *string    `json:"flavor_text"`
-	ImageUris      *ImageUris `json:"image_uris"`
-	Layout         *string    `json:"layout"`
-	Loyalty        *string    `json:"loyalty"`
-	ManaCost       string     `json:"mana_cost"`
+	Artist         *string    `json:"artist,omitempty"`
+	CMC            *float64   `json:"CMC,omitempty"`
+	ColorIndicator *[]string  `json:"colorIndicator,omitempty"`
+	Colors         *[]string  `json:"colors,omitempty"`
+	FlavorText     *string    `json:"flavorText,omitempty"`
+	ImageUris      *ImageUris `json:"imageUris,omitempty"`
+	Layout         *string    `json:"layout,omitempty"`
+	Loyalty        *string    `json:"loyalty,omitempty"`
+	ManaCost       string     `json:"manaCost"`
 	Name           string     `json:"name"`
-	OracleText     *string    `json:"oracle_text"`
-	Power          *string    `json:"power"`
-	Toughness      *string    `json:"toughness"`
-	TypeLine       *string    `json:"type_line"`
+	OracleText     *string    `json:"oracleText,omitempty"`
+	Power          *string    `json:"power,omitempty"`
+	Toughness      *string    `json:"toughness,omitempty"`
+	TypeLine       *string    `json:"typeLine,omitempty"`
 }

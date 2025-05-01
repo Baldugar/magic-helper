@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"io"
 	"magic-helper/arango"
-	"magic-helper/graph/model"
 	"magic-helper/graph/model/scryfall"
 	scryfallModel "magic-helper/graph/model/scryfall/model"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -264,7 +264,20 @@ func fetchMTGCards(ctx context.Context) bool {
 func collectCards(ctx context.Context) {
 	log.Info().Msg("Collecting cards")
 
-	aql := arango.NewQuery( /* aql */ `
+	// Clear the collection
+	aq := arango.NewQuery( /* aql */ `
+		FOR c IN @@collection
+			REMOVE c IN @@collection
+	`)
+	aq.AddBindVar("@collection", arango.MTG_CARDS_COLLECTION)
+
+	_, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
+	if err != nil {
+		log.Error().Err(err).Msg("Error clearing collection")
+	}
+
+	// Collect the cards
+	aq = arango.NewQuery( /* aql */ `
 	FOR c IN MTG_Original_Cards
 		FILTER c.lang == "en" // TODO: Remove this later
 		FILTER c.set_type NOT IN ["promo", "funny", "memorabilia", "vanguard", "token"]
@@ -290,7 +303,7 @@ func collectCards(ctx context.Context) {
 		}
 	`)
 
-	cursor, err := arango.DB.Query(ctx, aql.Query, aql.BindVars)
+	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {
 		log.Error().Err(err).Msg("Error querying database")
 		return
@@ -363,7 +376,7 @@ func collectCards(ctx context.Context) {
 		}
 	}
 
-	allCardsToSave := make([]model.MtgCard, 0)
+	allCardsToSave := make([]scryfall.MTG_CardDB, 0)
 
 	log.Info().Msgf("Processing %d groups", len(allGroups))
 
@@ -386,12 +399,12 @@ func collectCards(ctx context.Context) {
 			continue
 		}
 
-		cardForGroup := model.MtgCard{
-			Layout:         model.MtgLayout(filteredGroupCards[0].Layout),
-			Cmc:            filteredGroupCards[0].CMC,
-			ColorIdentity:  convertStringSliceToMtgColorSlice(filteredGroupCards[0].ColorIdentity),
-			ColorIndicator: convertStringPtrSliceToStringSlice(filteredGroupCards[0].ColorIndicator),
-			Colors:         convertStringPtrSliceToMtgColorSlice(filteredGroupCards[0].Colors),
+		cardForGroup := scryfall.MTG_CardDB{
+			Layout:         scryfallModel.Layout(filteredGroupCards[0].Layout),
+			CMC:            filteredGroupCards[0].CMC,
+			ColorIdentity:  filteredGroupCards[0].ColorIdentity,
+			ColorIndicator: filteredGroupCards[0].ColorIndicator,
+			Colors:         filteredGroupCards[0].Colors,
 			EDHRecRank:     filteredGroupCards[0].EDHRecRank,
 			Keywords:       filteredGroupCards[0].Keywords,
 			Loyalty:        filteredGroupCards[0].Loyalty,
@@ -399,7 +412,7 @@ func collectCards(ctx context.Context) {
 			Name:           filteredGroupCards[0].Name,
 			OracleText:     filteredGroupCards[0].OracleText,
 			Power:          filteredGroupCards[0].Power,
-			ProducedMana:   convertStringPtrSliceToMtgColorSlice(filteredGroupCards[0].ProducedMana),
+			ProducedMana:   filteredGroupCards[0].ProducedMana,
 			Toughness:      filteredGroupCards[0].Toughness,
 			TypeLine:       filteredGroupCards[0].TypeLine,
 		}
@@ -415,17 +428,23 @@ func collectCards(ctx context.Context) {
 				FlavorName: card.FlavorName,
 				FlavorText: card.FlavorText,
 				// ImageUris will be converted below
-				Legalities:  card.Legalities,
-				Games:       card.Games,                        // Direct assignment, conversion done below
-				Rarity:      scryfallModel.Rarity(card.Rarity), // Direct cast for enum
-				ReleasedAt:  card.ReleasedAt,
-				Reprint:     card.Reprint,
-				SetName:     card.SetName,
-				SetType:     card.SetType,
-				Set:         card.Set,
-				SetID:       card.SetID,
-				Variation:   card.Variation,
-				VariationOf: card.VariationOf,
+				Legalities:      card.Legalities,
+				Games:           card.Games,                        // Direct assignment, conversion done below
+				Rarity:          scryfallModel.Rarity(card.Rarity), // Direct cast for enum
+				ReleasedAt:      card.ReleasedAt,
+				Reprint:         card.Reprint,
+				SetName:         card.SetName,
+				SetType:         card.SetType,
+				Set:             card.Set,
+				SetID:           card.SetID,
+				Variation:       card.Variation,
+				VariationOf:     card.VariationOf,
+				Booster:         card.Booster,
+				Finishes:        card.Finishes,
+				FrameEffects:    card.FrameEffects,
+				FullArt:         card.FullArt,
+				PromoTypes:      card.PromoTypes,
+				CollectorNumber: card.CollectorNumber,
 			}
 
 			var cardFacesDB []scryfall.MTG_CardVersionFaceDB
@@ -455,112 +474,33 @@ func collectCards(ctx context.Context) {
 			// Assign ImageUris after potential faces processing (though source struct is flat here)
 			cardVersionDB.ImageUris = card.ImageUris // Assign the scryfall type
 
-			// Now convert scryfall.MTG_CardVersionDB to model.MtgCardVersion
-			lang := cardVersionDB.Lang.String()
-			rarity := model.MtgRarity(cardVersionDB.Rarity)
-
-			cardVersionModel := &model.MtgCardVersion{
-				ID:          cardVersionDB.ID,
-				IsDefault:   cardVersionDB.IsDefault, // Default logic will overwrite this later
-				IsAlchemy:   cardVersionDB.IsAlchemy,
-				Artist:      cardVersionDB.Artist,
-				Lang:        lang,
-				FlavorName:  cardVersionDB.FlavorName,
-				FlavorText:  cardVersionDB.FlavorText,
-				CardFaces:   convertCardFaces(cardVersionDB.CardFaces),      // Use helper
-				Legalities:  convertLegalitiesMap(cardVersionDB.Legalities), // Use helper
-				Games:       convertGamesSlice(cardVersionDB.Games),         // Use helper
-				ImageUris:   convertImageUris(cardVersionDB.ImageUris),      // Use helper
-				Rarity:      rarity,
-				ReleasedAt:  cardVersionDB.ReleasedAt,
-				Reprint:     cardVersionDB.Reprint,
-				SetName:     cardVersionDB.SetName,
-				SetType:     cardVersionDB.SetType,
-				Set:         cardVersionDB.Set,
-				SetID:       cardVersionDB.SetID,
-				Variation:   cardVersionDB.Variation,
-				VariationOf: cardVersionDB.VariationOf,
-			}
-
-			cardForGroup.Versions = append(cardForGroup.Versions, cardVersionModel)
+			cardForGroup.Versions = append(cardForGroup.Versions, cardVersionDB)
 		}
 
 		// --- Start: Logic to determine the single default version ---
 		if len(cardForGroup.Versions) > 0 {
-			bestDefaultIndex := -1
-			var earliestDate time.Time
-			maxGames := -1
-			bestIsNonAlchemy := false // Track if the current best is non-alchemy
+			bestIdx := 0
+			bestScore := math.MinInt
 
-			// Iterate through all versions to find the best default candidate
 			for i, v := range cardForGroup.Versions {
-				// Initial candidates are those marked as non-reprints
-				// We will refine this based on other criteria
-				isCandidate := !v.Reprint // Access field directly on pointer
-
-				if !isCandidate {
-					continue // Skip reprints initially
+				if v.Reprint {
+					continue
+				} // mantenemos tu filtro
+				sc := score(&v)
+				if sc > bestScore {
+					bestScore, bestIdx = sc, i
 				}
-
-				isCurrentNonAlchemy := !v.IsAlchemy                        // Access field directly on pointer
-				numGames := len(v.Games)                                   // Access field directly on pointer
-				releaseDate, err := time.Parse("2006-01-02", v.ReleasedAt) // Access field directly on pointer
-				if err != nil {
-					log.Warn().Err(err).Str("card_id", v.ID).Str("release_date", v.ReleasedAt).Msg("Could not parse release date for default version comparison, skipping version.")
-					continue // Skip this version if date is unparseable
-				}
-
-				// Determine if the current version `v` is better than the current best
-				isBetter := false
-				if bestDefaultIndex == -1 {
-					// First valid candidate found
-					isBetter = true
-				} else {
-					// Rule: Prefer non-Alchemy
-					if isCurrentNonAlchemy && !bestIsNonAlchemy {
-						isBetter = true // New one is non-Alchemy, old one was Alchemy
-					} else if !isCurrentNonAlchemy && bestIsNonAlchemy {
-						isBetter = false // New one is Alchemy, old one was non-Alchemy - stick with non-Alchemy
-					} else {
-						// Both are Alchemy or both are non-Alchemy, compare games
-						if numGames > maxGames {
-							isBetter = true
-						} else if numGames == maxGames {
-							// Rule: Tie-break games with earlier release date
-							if releaseDate.Before(earliestDate) {
-								isBetter = true
-							}
-						}
-						// If numGames < maxGames, isBetter remains false
-					}
-				}
-
-				// Update the best candidate if the current one is better
-				if isBetter {
-					bestDefaultIndex = i
-					earliestDate = releaseDate
-					maxGames = numGames
-					bestIsNonAlchemy = isCurrentNonAlchemy
-				}
-			} // End loop finding best candidate
-
-			// Rule: If no non-reprint version was found, pick the first version overall
-			if bestDefaultIndex == -1 && len(cardForGroup.Versions) > 0 {
-				bestDefaultIndex = 0
-				log.Warn().Str("card_name", cardForGroup.Name).Msg("No non-reprint version found, defaulting to the first version.")
 			}
 
-			// Set IsDefault flag based on the determined best index
-			if bestDefaultIndex != -1 {
-				for j := range cardForGroup.Versions {
-					cardForGroup.Versions[j].IsDefault = (j == bestDefaultIndex)
-					cardForGroup.ID = normalizeCardName(cardForGroup.Name)
-				}
-			} else {
-				// This case should theoretically not happen if len(versions)>0, but as a fallback:
-				log.Fatal().Str("card_name", cardForGroup.Name).Msg("Could not determine a default version.")
-				// Perhaps leave all IsDefault as false or handle error appropriately
+			// fallback si todo eran reprints
+			if bestScore == math.MinInt {
+				bestIdx = 0
 			}
+
+			for i := range cardForGroup.Versions {
+				cardForGroup.Versions[i].IsDefault = (i == bestIdx)
+			}
+			cardForGroup.ID = normalizeCardName(cardForGroup.Name)
 		}
 		// --- End: Logic to determine the single default version ---
 
@@ -574,19 +514,9 @@ func collectCards(ctx context.Context) {
 			logThreshold += progressInterval
 		}
 
-		// // Step 1: Save the filtered group data to a JSON file
-		// _, saveErr := saveGroupToFile(groupName, filteredGroupCards, cardsDir)
-		// if saveErr != nil {
-		// 	// Log message already printed inside saveGroupToFile
-		// 	continue // Skip to the next group if saving fails
-		// }
-
-		// // Step 2: Download images for the cards in this filtered group
-		// downloadImagesForGroup(filteredGroupCards, cardsDir)
-
 	} // End group processing loop
 
-	aq := arango.NewQuery( /* aql */ `
+	aq = arango.NewQuery( /* aql */ `
 		FOR c IN @cards
 			UPSERT { _key: c._key }
 			INSERT MERGE({ _key: c._key }, c)
@@ -605,106 +535,61 @@ func collectCards(ctx context.Context) {
 	log.Info().Msgf("Finished processing %d groups. JSON saved to '%s' directory.", len(allGroups), cardsDir)
 }
 
-// Helper function to convert []string to []model.MtgColor
-func convertStringSliceToMtgColorSlice(input []string) []model.MtgColor {
-	if input == nil {
-		return nil
-	}
-	output := make([]model.MtgColor, len(input))
-	for i, s := range input {
-		output[i] = model.MtgColor(s)
-	}
-	return output
-}
-
-// Helper function to convert *[]string to []model.MtgColor
-func convertStringPtrSliceToMtgColorSlice(input *[]string) []model.MtgColor {
-	if input == nil {
-		return nil
-	}
-	return convertStringSliceToMtgColorSlice(*input)
-}
-
-// Helper function to convert *[]string to []string
-func convertStringPtrSliceToStringSlice(input *[]string) []string {
-	if input == nil {
-		return nil
-	}
-	// Create a new slice and copy elements
-	output := make([]string, len(*input))
-	copy(output, *input)
-	return output
-}
-
-// Helper function to convert scryfall game slice to model game slice
-func convertGamesSlice(input []scryfallModel.Game) []model.MtgGame {
-	if input == nil {
-		return nil
-	}
-	output := make([]model.MtgGame, len(input))
-	for i, g := range input {
-		output[i] = model.MtgGame(g)
-	}
-	return output
-}
-
-// Helper function to convert scryfall image uris to model image uris
-func convertImageUris(input *scryfall.ImageUris) *model.MtgImage {
-	if input == nil {
-		return nil
-	}
-	return &model.MtgImage{
-		Small:      input.Small,
-		Normal:     input.Normal,
-		Large:      input.Large,
-		Png:        input.PNG,
-		ArtCrop:    input.ArtCrop,
-		BorderCrop: input.BorderCrop,
-	}
-}
-
-// Helper function to convert scryfall card faces to model card faces
-func convertCardFaces(input *[]scryfall.MTG_CardVersionFaceDB) []*model.MtgCardFace {
-	if input == nil {
-		return nil
-	}
-	output := make([]*model.MtgCardFace, len(*input))
-	for i, faceDB := range *input {
-		var faceLayout *model.MtgLayout
-		if faceDB.Layout != nil {
-			l := model.MtgLayout(*faceDB.Layout)
-			faceLayout = &l
-		}
-		output[i] = &model.MtgCardFace{
-			Artist:         faceDB.Artist,
-			Cmc:            faceDB.CMC,
-			ColorIndicator: convertStringPtrSliceToStringSlice(faceDB.ColorIndicator), // string slice
-			Colors:         convertStringPtrSliceToMtgColorSlice(faceDB.Colors),       // MtgColor slice
-			FlavorText:     faceDB.FlavorText,
-			ImageUris:      convertImageUris(faceDB.ImageUris),
-			Layout:         faceLayout,
-			Loyalty:        faceDB.Loyalty,
-			ManaCost:       faceDB.ManaCost,
-			Name:           faceDB.Name,
-			OracleText:     faceDB.OracleText,
-			Power:          faceDB.Power,
-			Toughness:      faceDB.Toughness,
-			TypeLine:       faceDB.TypeLine,
+func strSliceContains(sl []string, s string) bool {
+	for _, v := range sl {
+		if v == s {
+			return true
 		}
 	}
-	return output
+	return false
 }
+func hasAny(sl []string, targets []string) bool {
+	for _, t := range targets {
+		if strSliceContains(sl, t) {
+			return true
+		}
+	}
+	return false
+}
+func onlyFoil(v *scryfall.MTG_CardVersionDB) bool {
+	return len(v.Finishes) == 1 && v.Finishes[0] == "foil"
+}
+func collectorNum(v *scryfall.MTG_CardVersionDB) int {
+	n, _ := strconv.Atoi(v.CollectorNumber)
+	return n
+}
+func score(v *scryfall.MTG_CardVersionDB) int {
+	s := 0
+	if v.Booster {
+		s += 10000
+	}
+	if !v.IsAlchemy {
+		s += 5000
+	}
+	if strSliceContains(v.Finishes, "nonfoil") {
+		s += 1000
+	}
+	if v.FrameEffects != nil && len(*v.FrameEffects) == 0 && !v.FullArt {
+		s += 500
+	}
+	if v.PromoTypes != nil && !hasAny(*v.PromoTypes, []string{"serialized", "doublerainbow", "boosterfun", "showcase"}) {
+		s += 200
+	}
+	if v.FrameEffects != nil && len(*v.FrameEffects) == 0 && !v.FullArt {
+		s += 500
+	}
+	if onlyFoil(v) {
+		s -= 200
+	}
 
-// Helper function to convert map[string]string to map[string]any
-func convertLegalitiesMap(input map[string]string) map[string]any {
-	if input == nil {
-		return nil
+	s += 100 - collectorNum(v) // cuanto más bajo mejor
+	s += len(v.Games)          // mini-bonus original
+
+	// penaliza las alchemy con una fecha más nueva → queremos la más vieja
+	if t, err := time.Parse("2006-01-02", v.ReleasedAt); err == nil {
+		s -= int(t.Unix() / 86400) // días desde epoch (más viejo = menos resta)
 	}
-	output := make(map[string]any, len(input))
-	for k, v := range input {
-		output[k] = v // Direct assignment is fine as string is compatible with any
-	}
-	return output
+	return s
 }
 
 // normalizeCardName normalizes a card name to be used as a document key in ArangoDB.
