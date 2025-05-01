@@ -24,9 +24,16 @@ export const ContextMenu = (props: ContextMenuProps) => {
             }}
         >
             <Paper>
-                {options.map((option, index) =>
-                    RenderMenuItem({ option, index, handleClose, handleClick, id: option.id }),
-                )}
+                {options.map((option, index) => (
+                    <RenderMenuItem
+                        key={option.label + index}
+                        option={option}
+                        index={index}
+                        handleClose={handleClose}
+                        handleClick={handleClick}
+                        id={id}
+                    />
+                ))}
             </Paper>
         </Popover>
     )
