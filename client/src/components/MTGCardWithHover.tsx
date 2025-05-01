@@ -58,21 +58,21 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
             version = card.versions.find((v) => v.isDefault)
         }
         if (!version) return null
-        small = getCorrectCardImage(version, card.layout, 'small')
+        small = getCorrectCardImage(version, 'small')
         if (!small) return null
-        large = getCorrectCardImage(version, card.layout, 'large')
+        large = getCorrectCardImage(version, 'large')
         if (!large) return null
-        otherLarge = getCorrectCardImage(version, card.layout, 'large', true)
+        otherLarge = getCorrectCardImage(version, 'large', true)
     } else {
-        const { card, layout, cardTypeLine } = data
+        const { card, cardTypeLine } = data
         typeLine = cardTypeLine
         version = card
         try {
-            small = getCorrectCardImage(version, layout, 'small')
+            small = getCorrectCardImage(version, 'small')
             if (!small) return null
-            large = getCorrectCardImage(version, layout, 'large')
+            large = getCorrectCardImage(version, 'large')
             if (!large) return null
-            otherLarge = getCorrectCardImage(version, layout, 'large', true)
+            otherLarge = getCorrectCardImage(version, 'large', true)
         } catch (error) {
             console.error('error', error)
             return <div>Error in version: {version.ID}</div>

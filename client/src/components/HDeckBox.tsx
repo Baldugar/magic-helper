@@ -337,7 +337,7 @@ const HDeckBox = ({
                         }}
                     >
                         <img
-                            src={getCorrectCardImage(defaultFirstCardVersion, defaultFirstCard?.card.layout, 'artCrop')}
+                            src={getCorrectCardImage(defaultFirstCardVersion, 'artCrop')}
                             alt={defaultFirstCard?.card.name}
                             width={'100%'}
                             height={'100%'}
@@ -361,11 +361,7 @@ const HDeckBox = ({
                         }}
                     >
                         <img
-                            src={getCorrectCardImage(
-                                defaultSecondCardVersion,
-                                defaultSecondCard?.card.layout,
-                                'artCrop',
-                            )}
+                            src={getCorrectCardImage(defaultSecondCardVersion, 'artCrop')}
                             alt={defaultSecondCard?.card.name}
                             width={'100%'}
                             height={'100%'}
@@ -389,7 +385,7 @@ const HDeckBox = ({
                         }}
                     >
                         <img
-                            src={getCorrectCardImage(defaultThirdCardVersion, defaultThirdCard?.card.layout, 'artCrop')}
+                            src={getCorrectCardImage(defaultThirdCardVersion, 'artCrop')}
                             alt={defaultThirdCard?.card.name}
                             width={'100%'}
                             height={'100%'}

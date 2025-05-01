@@ -163,7 +163,7 @@ export const CardNode = (props: CardNodeProps) => {
         <>
             <div ref={anchorRef} onContextMenu={handleContextMenu}>
                 <img
-                    src={getCorrectCardImage(selectedVersion, card.card.layout, 'normal')}
+                    src={getCorrectCardImage(selectedVersion, 'normal')}
                     alt={card.card.name}
                     width={100}
                     style={{ borderRadius: 5 }}

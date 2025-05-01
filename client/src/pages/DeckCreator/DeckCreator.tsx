@@ -63,20 +63,46 @@ export const DeckCreator = () => {
 
     const saveDeck = () => {
         if (!deck) return
-        const nodes = getNodes()
-        const deckInput: MTG_UpdateDeckInput = {
-            cards: calculateCardsFromNodes(nodes, deck.cards),
-            deckID: deck.ID,
-            name: deck.name,
-            zones: calculateZonesFromNodes(nodes),
-            cardFrontImage: deck.cardFrontImage
-                ? {
-                      cardID: deck.cardFrontImage.ID,
-                      versionID: deck.cardFrontImage.versions[0].ID,
-                  }
-                : undefined,
-            ignoredCards: deck.ignoredCards,
+        let deckInput: MTG_UpdateDeckInput | undefined
+        if (viewMode === 'catalogue') {
+            deckInput = {
+                cards: deck.cards.map((c) => ({
+                    card: c.card.ID,
+                    count: c.count,
+                    deckCardType: c.deckCardType,
+                    mainOrSide: c.mainOrSide,
+                    ID: c.card.ID,
+                    phantoms: c.phantoms,
+                    position: c.position,
+                })),
+                deckID: deck.ID,
+                name: deck.name,
+                zones: deck.zones,
+                ignoredCards: deck.ignoredCards,
+                cardFrontImage: deck.cardFrontImage
+                    ? {
+                          cardID: deck.cardFrontImage.ID,
+                          versionID: deck.cardFrontImage.versions[0].ID,
+                      }
+                    : undefined,
+            }
+        } else {
+            const nodes = getNodes()
+            deckInput = {
+                cards: calculateCardsFromNodes(nodes, deck.cards),
+                deckID: deck.ID,
+                name: deck.name,
+                zones: calculateZonesFromNodes(nodes),
+                cardFrontImage: deck.cardFrontImage
+                    ? {
+                          cardID: deck.cardFrontImage.ID,
+                          versionID: deck.cardFrontImage.versions[0].ID,
+                      }
+                    : undefined,
+                ignoredCards: deck.ignoredCards,
+            }
         }
+        if (!deckInput) return
         updateMTGADeck(deckInput).then((deck) => {
             updateDeck(deck)
         })

@@ -366,7 +366,13 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
 
     return (
         <Grid item xs={'auto'}>
-            <ErrorBoundary fallback={<div>Something went wrong {card.ID}</div>}>
+            <ErrorBoundary
+                fallback={
+                    <div ref={mainCardAnchorRef} onContextMenu={mainCardHandleContextMenu}>
+                        <div>Something went wrong {card.ID}</div>
+                    </div>
+                }
+            >
                 <div ref={mainCardAnchorRef} onContextMenu={mainCardHandleContextMenu}>
                     <ButtonBase
                         onClick={() => handleAddCard(card)}
