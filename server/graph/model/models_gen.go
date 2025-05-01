@@ -180,6 +180,7 @@ type MtgFilterExpansion struct {
 	SetName    string `json:"setName"`
 	ReleasedAt int    `json:"releasedAt"`
 	ImageURL   string `json:"imageURL"`
+	SetType    string `json:"setType"`
 }
 
 type MtgFilterLegality struct {

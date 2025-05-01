@@ -12,6 +12,7 @@ export default gql`
                 setName
                 releasedAt
                 imageURL
+                setType
             }
             legality {
                 formats

@@ -217,6 +217,7 @@ export type MTG_Filter_Expansion = {
   releasedAt: Scalars['Int']['output'];
   set: Scalars['String']['output'];
   setName: Scalars['String']['output'];
+  setType: Scalars['String']['output'];
 };
 
 export type MTG_Filter_Legality = {

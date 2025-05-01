@@ -48,6 +48,7 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
                         value: TernaryBoolean.UNSET,
                         imageURL: key.imageURL,
                         releasedAt: key.releasedAt,
+                        setType: key.setType,
                     }
                 }
                 for (const format of result.legality.formats) {

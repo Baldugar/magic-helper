@@ -179,22 +179,28 @@ export const Filters = () => {
             <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
             <SetSelector
                 onNext={(setName) => {
-                    setFilter({
+                    setFilter((filter) => ({
                         ...filter,
                         sets: {
                             ...filter.sets,
                             [setName]: { ...filter.sets[setName], value: nextTB(filter.sets[setName].value) },
                         },
-                    })
+                    }))
                 }}
                 onPrev={(setName) => {
-                    setFilter({
+                    setFilter((filter) => ({
                         ...filter,
                         sets: {
                             ...filter.sets,
                             [setName]: { ...filter.sets[setName], value: prevTB(filter.sets[setName].value) },
                         },
-                    })
+                    }))
+                }}
+                setValue={(setName, value) => {
+                    setFilter((filter) => ({
+                        ...filter,
+                        sets: { ...filter.sets, [setName]: { ...filter.sets[setName], value: value } },
+                    }))
                 }}
                 selected={Object.entries(filter.sets).reduce((acc, [key, value]) => {
                     acc[key] = value.value

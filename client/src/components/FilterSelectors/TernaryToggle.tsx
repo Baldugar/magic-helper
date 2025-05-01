@@ -1,9 +1,11 @@
-import { Check, Close, Remove } from '@mui/icons-material'
+import { Check, CheckBox, CheckBoxOutlineBlank, Close, IndeterminateCheckBox, Remove } from '@mui/icons-material'
 import {
     Box,
     Button,
     ButtonProps,
+    Checkbox,
     CheckboxProps,
+    FormControlLabel,
     FormControlLabelProps,
     IconButton,
     IconButtonProps,
@@ -13,7 +15,7 @@ import {
     ToggleButtonGroupProps,
 } from '@mui/material'
 import { DetailedHTMLProps, ImgHTMLAttributes } from 'react'
-import { isNotUnsetTB, isPositiveTB, TernaryBoolean } from '../../types/ternaryBoolean'
+import { isNegativeTB, isNotUnsetTB, isPositiveTB, TernaryBoolean } from '../../types/ternaryBoolean'
 
 export type TernaryToggleProps =
     | {
@@ -31,7 +33,7 @@ export type TernaryToggleProps =
           value: TernaryBoolean
           type: 'checkbox'
           labelProps: Omit<FormControlLabelProps, 'control'>
-          checkboxProps: CheckboxProps
+          checkboxProps: CheckboxProps & { onClick: () => void; onContextMenu: () => void }
       }
     | {
           value: TernaryBoolean
@@ -101,8 +103,67 @@ export const TernaryToggle = (props: TernaryToggleProps): JSX.Element => {
                 </IconButton>
             )
         }
-        case 'checkbox':
-            break
+        case 'checkbox': {
+            const { value, labelProps, checkboxProps } = props
+
+            const indeterminate = value === TernaryBoolean.UNSET
+            const checked = value === TernaryBoolean.TRUE
+            return (
+                <FormControlLabel
+                    {...labelProps}
+                    onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        if (checkboxProps?.onClick) {
+                            checkboxProps.onClick()
+                        }
+                    }}
+                    onContextMenu={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        if (checkboxProps?.onContextMenu) {
+                            checkboxProps.onContextMenu()
+                        }
+                    }}
+                    control={
+                        <Checkbox
+                            {...checkboxProps}
+                            indeterminate={indeterminate}
+                            checked={checked}
+                            icon={<IndeterminateCheckBox />}
+                            checkedIcon={<CheckBox />}
+                            indeterminateIcon={<CheckBoxOutlineBlank />}
+                            onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                if (checkboxProps?.onClick) {
+                                    checkboxProps.onClick()
+                                }
+                            }}
+                            onContextMenu={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                if (checkboxProps?.onContextMenu) {
+                                    checkboxProps.onContextMenu()
+                                }
+                            }}
+                            sx={{
+                                '&.MuiCheckbox-root.Mui-checked': {
+                                    color: 'success.main',
+                                },
+                                '& .MuiSvgIcon-root': {
+                                    fontSize: 20,
+                                },
+                                /* color rojo cuando valor = FALSE */
+                                ...(isNegativeTB(value) && {
+                                    color: 'error.main',
+                                }),
+                            }}
+                        />
+                    }
+                />
+            )
+        }
         case 'textButton': {
             const { textButtonProps, value } = props
             return (

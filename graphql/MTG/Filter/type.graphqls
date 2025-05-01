@@ -20,4 +20,5 @@ type MTG_Filter_Expansion {
     setName: String!
     releasedAt: Int!
     imageURL: String!
+    setType: String!
 }

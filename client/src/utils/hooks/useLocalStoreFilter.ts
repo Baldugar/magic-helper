@@ -27,9 +27,10 @@ export const calculateHash = (filter: MTGFilterType) => {
             value: TernaryBoolean.UNSET,
             imageURL: value.imageURL,
             releasedAt: value.releasedAt,
+            setType: value.setType,
         }
         return acc
-    }, {} as Record<string, { setName: string; value: TernaryBoolean; imageURL: string; releasedAt: number }>)
+    }, {} as Record<string, { setName: string; value: TernaryBoolean; imageURL: string; releasedAt: number; setType: string }>)
     newFilter.subtypes = Object.entries(filter.subtypes).reduce((acc, [key, value]) => {
         acc[key] = Object.keys(value).reduce((acc2, key2) => {
             acc2[key2] = TernaryBoolean.UNSET

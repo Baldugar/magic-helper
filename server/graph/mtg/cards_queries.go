@@ -173,7 +173,8 @@ func GetMTGExpansions(ctx context.Context) ([]*model.MtgFilterExpansion, error) 
                 set: UPPER(set),
                 setName: setName,
 				releasedAt: DATE_TIMESTAMP(setRecord.releasedAt),
-				imageURL: setRecord.iconSVGURI
+				imageURL: setRecord.iconSVGURI,
+				setType: setRecord.setType
             }
     `)
 

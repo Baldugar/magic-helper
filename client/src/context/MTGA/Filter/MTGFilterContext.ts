@@ -12,7 +12,10 @@ export interface MTGFilterType {
     cardTypes: Record<string, TernaryBoolean>
     multiColor: TernaryBoolean
     subtypes: Record<string, Record<string, TernaryBoolean>>
-    sets: Record<string, { setName: string; value: TernaryBoolean; imageURL: string; releasedAt: number }>
+    sets: Record<
+        string,
+        { setName: string; value: TernaryBoolean; imageURL: string; releasedAt: number; setType: string }
+    >
     legalities: Record<string, Record<string, TernaryBoolean>>
     layouts: Partial<Record<MTG_Layout, TernaryBoolean>>
     games: Record<MTG_Game, TernaryBoolean>

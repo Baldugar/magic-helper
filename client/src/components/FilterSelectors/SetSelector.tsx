@@ -1,18 +1,39 @@
-import { Badge, Box, Button, Grid, Paper, Popper, Tooltip } from '@mui/material'
-import { MouseEvent, useState } from 'react'
+import { ExpandMore } from '@mui/icons-material'
+import {
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
+    Badge,
+    Box,
+    Button,
+    Grid,
+    Paper,
+    Popper,
+    Typography,
+} from '@mui/material'
+import { MouseEvent, useMemo, useState } from 'react'
 import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
-import { isNegativeTB, isPositiveTB, TernaryBoolean } from '../../types/ternaryBoolean'
+import { isNegativeTB, isPositiveTB, nextTB, prevTB, TernaryBoolean } from '../../types/ternaryBoolean'
 import { TernaryToggle } from './TernaryToggle'
 
 export interface SetSelectorProps {
     selected: Record<string, TernaryBoolean>
     onNext: (filterOption: string) => void
     onPrev: (filterOption: string) => void
+    setValue: (filterOption: string, value: TernaryBoolean) => void
     iconSize?: number | string
 }
 
+type FilterSet = {
+    setName: string
+    releasedAt: number // epoch ms
+    code: string
+    imageURL: string
+    setType: string
+}
+
 const SetSelector = (props: SetSelectorProps): JSX.Element => {
-    const { onNext, onPrev, selected, iconSize } = props
+    const { onNext, onPrev, selected, setValue, iconSize } = props
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
 
     const handleClick = (event: MouseEvent<HTMLElement>) => {
@@ -23,34 +44,26 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
 
     const { filter } = useMTGFilter()
     const { sets } = filter
-    const sortedSets = Object.entries(sets)
-        .sort((a, b) => b[1].releasedAt - a[1].releasedAt)
-        .map(([key, value]) => ({
-            code: key,
-            ...value,
-        }))
-        .reduce(
-            (acc, curr) => {
+
+    const grouped = useMemo(() => {
+        return Object.entries(sets)
+            .map(([code, s]) => ({ code, ...s }))
+            .reduce<Record<string, Record<string, FilterSet[]>>>((acc, curr) => {
                 const year = new Date(curr.releasedAt).getFullYear().toString()
-                if (!acc[year]) acc[year] = []
-                acc[year].push(curr)
+                const type = curr.setType
+                acc[year] ??= {}
+                ;(acc[year][type] ??= []).push(curr)
                 return acc
-            },
-            {} as {
-                [year: string]: {
-                    setName: string
-                    releasedAt: number
-                    code: string
-                    imageURL: string
-                }[]
-            },
-        )
+            }, {})
+    }, [sets])
 
     const howManyPositive = Object.values(selected).filter(isPositiveTB).length
     const howManyNegative = Object.values(selected).filter(isNegativeTB).length
 
+    const yearsSorted = useMemo(() => Object.keys(grouped).sort((a, b) => Number(b) - Number(a)), [grouped])
+
     return (
-        <Grid container item xs={'auto'}>
+        <Grid container item xs={'auto'} direction="column">
             <Badge
                 badgeContent={howManyPositive}
                 color="success"
@@ -65,44 +78,20 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
                 </Badge>
             </Badge>
             <Popper open={open} anchorEl={anchorEl}>
-                <Paper sx={{ maxHeight: '80vh', overflow: 'auto' }}>
-                    {Object.entries(sortedSets)
-                        .reverse()
-                        .map(([year, sets]) => (
-                            <Grid container key={year}>
-                                <Grid item>{year}</Grid>
-                                {sets.map((set) => (
-                                    <Grid item key={set.code}>
-                                        <Tooltip title={set.setName}>
-                                            <Box>
-                                                <TernaryToggle
-                                                    value={selected[set.code]}
-                                                    type={'icon'}
-                                                    iconButtonProps={{
-                                                        size: 'small',
-                                                        onClick: () => onNext(set.code),
-                                                        onContextMenu: (e) => {
-                                                            e.preventDefault()
-                                                            onPrev(set.code)
-                                                        },
-                                                    }}
-                                                    imgProps={{
-                                                        width: iconSize ?? 40,
-                                                        height: iconSize ?? 40,
-                                                        style: {
-                                                            opacity: selected[set.code] ? 1 : 0.3,
-                                                            transition: 'opacity 250ms',
-                                                        },
-                                                        loading: 'lazy',
-                                                    }}
-                                                    URL={set.imageURL}
-                                                />
-                                            </Box>
-                                        </Tooltip>
-                                    </Grid>
-                                ))}
-                            </Grid>
-                        ))}
+                <Paper sx={{ maxHeight: '70vh', maxWidth: '50vw', overflow: 'auto' }}>
+                    {yearsSorted.map((year) => (
+                        <YearItem
+                            key={year}
+                            grouped={grouped}
+                            iconSize={iconSize}
+                            onNext={onNext}
+                            onPrev={onPrev}
+                            selected={selected}
+                            setValue={setValue}
+                            year={year}
+                            yearsSorted={yearsSorted}
+                        />
+                    ))}
                 </Paper>
             </Popper>
         </Grid>
@@ -110,3 +99,172 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
 }
 
 export default SetSelector
+
+const aggregateTernaryBoolean = (values: TernaryBoolean[]): TernaryBoolean => {
+    const hasOn = values.includes(TernaryBoolean.TRUE)
+    const hasOff = values.includes(TernaryBoolean.FALSE)
+    if (hasOn && hasOff) return TernaryBoolean.UNSET
+    if (hasOn) return TernaryBoolean.TRUE
+    if (hasOff) return TernaryBoolean.FALSE
+    return TernaryBoolean.UNSET
+}
+
+const YearItem: React.FC<{
+    year: string
+    onNext: (filterOption: string) => void
+    onPrev: (filterOption: string) => void
+    setValue: (filterOption: string, value: TernaryBoolean) => void
+    grouped: Record<string, Record<string, FilterSet[]>>
+    selected: Record<string, TernaryBoolean>
+    yearsSorted: string[]
+    iconSize: number | string | undefined
+}> = ({ year, onNext, onPrev, setValue, grouped, selected, yearsSorted, iconSize }) => {
+    const categories = grouped[year]
+    const allStates: TernaryBoolean[] = []
+    Object.values(categories).forEach((arr) =>
+        arr.forEach((s) => allStates.push(selected[s.code] ?? TernaryBoolean.UNSET)),
+    )
+    const yearState = aggregateTernaryBoolean(allStates)
+    const [open, setOpen] = useState(year === yearsSorted[0])
+    return (
+        <Accordion
+            key={year}
+            defaultExpanded={open}
+            expanded={open}
+            onChange={(_, expanded) => setOpen(expanded)}
+            disableGutters
+        >
+            <AccordionSummary expandIcon={<ExpandMore />}>
+                <Grid container alignItems="center" spacing={1} wrap="nowrap">
+                    <Grid item>
+                        <TernaryToggle
+                            type={'checkbox'}
+                            value={yearState}
+                            labelProps={{
+                                slotProps: {
+                                    typography: {
+                                        variant: 'h6',
+                                        fontWeight: 'bold',
+                                        sx: {
+                                            textTransform: 'capitalize',
+                                        },
+                                    },
+                                },
+                                label: year,
+                            }}
+                            checkboxProps={{
+                                onClick: () => {
+                                    const nextValue = nextTB(yearState)
+                                    Object.values(categories).forEach((arr) =>
+                                        arr.forEach((set) => setValue(set.code, nextValue)),
+                                    )
+                                },
+                                onContextMenu: () => {
+                                    const prevValue = prevTB(yearState)
+                                    Object.values(categories).forEach((arr) =>
+                                        arr.forEach((set) => setValue(set.code, prevValue)),
+                                    )
+                                },
+                            }}
+                        />
+                    </Grid>
+                </Grid>
+            </AccordionSummary>
+            <AccordionDetails>
+                {Object.entries(categories).map(([type, setsInType]) => {
+                    const catState = aggregateTernaryBoolean(
+                        setsInType.map((s) => selected[s.code] ?? TernaryBoolean.UNSET),
+                    )
+
+                    return (
+                        <Box key={type} sx={{ mb: 1 }}>
+                            <Grid container alignItems="center" spacing={1} wrap="nowrap">
+                                <Grid item>
+                                    <TernaryToggle
+                                        type={'checkbox'}
+                                        value={catState}
+                                        labelProps={{
+                                            slotProps: {
+                                                typography: {
+                                                    variant: 'h6',
+                                                    fontWeight: 'bold',
+                                                    sx: {
+                                                        textTransform: 'capitalize',
+                                                    },
+                                                },
+                                            },
+                                            label: type,
+                                        }}
+                                        checkboxProps={{
+                                            onClick: () => {
+                                                const nextValue = nextTB(catState)
+                                                setsInType.forEach((s) => setValue(s.code, nextValue))
+                                            },
+                                            onContextMenu: () => {
+                                                const prevValue = prevTB(catState)
+                                                setsInType.forEach((s) => setValue(s.code, prevValue))
+                                            },
+                                        }}
+                                    />
+                                </Grid>
+                            </Grid>
+                            <Grid container spacing={0.5} sx={{ pl: 4, mt: 0.5 }} direction={'column'}>
+                                {setsInType.map((set) => (
+                                    <SetItem
+                                        key={set.code}
+                                        set={set}
+                                        value={selected[set.code] ?? TernaryBoolean.UNSET}
+                                        onNext={onNext}
+                                        onPrev={onPrev}
+                                        iconSize={iconSize ?? 40}
+                                    />
+                                ))}
+                            </Grid>
+                        </Box>
+                    )
+                })}
+            </AccordionDetails>
+        </Accordion>
+    )
+}
+
+interface SetItemProps {
+    set: FilterSet
+    value: TernaryBoolean
+    onNext: (setCode: string) => void
+    onPrev: (setCode: string) => void
+    iconSize: number | string
+}
+const SetItem: React.FC<SetItemProps> = ({ set, value, onNext, onPrev, iconSize }) => (
+    <Grid item xs={12} sm={6} md={4} lg={3} display="flex" alignItems="center">
+        <TernaryToggle
+            value={value}
+            type={'checkbox'}
+            labelProps={{
+                slotProps: {
+                    typography: {
+                        variant: 'body2',
+                    },
+                },
+                label: '',
+                sx: {
+                    mr: 0,
+                },
+            }}
+            checkboxProps={{
+                onClick: () => onNext(set.code),
+                onContextMenu: () => onPrev(set.code),
+            }}
+        />
+        <Box
+            component="img"
+            src={set.imageURL}
+            alt="set logo"
+            sx={{ width: iconSize, height: iconSize, objectFit: 'contain' }}
+            loading="lazy"
+        />
+        <Typography variant="body2" noWrap sx={{ marginLeft: 1 }}>
+            {set.setName}
+        </Typography>
+    </Grid>
+)
