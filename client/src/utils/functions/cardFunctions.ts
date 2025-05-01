@@ -6,9 +6,18 @@ export const getCorrectCardImage = (card: MTG_CardVersion, size: keyof MTG_Image
         return other ? undefined : card.imageUris![size]
     }
     if (other && cardFaces.length > 1) {
-        return cardFaces[1].imageUris![size]
+        if (cardFaces[1].imageUris) {
+            return cardFaces[1].imageUris![size]
+        }
+        if (cardFaces[0].imageUris) {
+            return cardFaces[0].imageUris![size]
+        }
+        return card.imageUris![size]
     }
-    return cardFaces[0].imageUris![size]
+    if (cardFaces[0].imageUris) {
+        return cardFaces[0].imageUris![size]
+    }
+    return card.imageUris![size]
 }
 
 export const getCorrectVersionImage = (card: MTG_CardVersion, size: keyof MTG_Image) => {

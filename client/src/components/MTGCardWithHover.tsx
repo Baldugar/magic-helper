@@ -118,8 +118,15 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
                     height={CARD_SIZE_VALUES['large'].height}
                     scale={scale}
                     width={CARD_SIZE_VALUES['large'].width}
-                    otherImg={otherLarge}
-                    imgHorizontal={typeLine.startsWith('Battle') || typeLine.includes(' Room')}
+                    otherImg={otherLarge !== large ? otherLarge : undefined}
+                    imgHorizontal={
+                        typeLine.startsWith('Battle') ||
+                        typeLine.includes('Room') ||
+                        (otherLarge === large &&
+                            (data.type === 'card'
+                                ? !data.card.keywords.includes('Aftermath') && data.card.layout !== MTG_Layout.flip
+                                : false))
+                    }
                 />
             )}
         </>
