@@ -1,4 +1,4 @@
-import { Badge, Box, Button, Grid, Paper, Popper, Typography } from '@mui/material'
+import { Badge, Box, Button, ClickAwayListener, Grid, Paper, Popper, Typography } from '@mui/material'
 import { MouseEvent, useState } from 'react'
 import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
 import { isNegativeTB, isPositiveTB, TernaryBoolean } from '../../types/ternaryBoolean'
@@ -52,42 +52,48 @@ const LegalitySelector = (props: LegalitySelectorProps): JSX.Element => {
                 </Badge>
             </Badge>
             <Popper open={open} anchorEl={anchorEl}>
-                <Paper sx={{ maxHeight: '80vh', overflow: 'auto' }}>
-                    {sortedLegalities.map(([format, legalityValues]) => (
-                        <Grid item container key={format} xs={12}>
-                            <Grid item xs={12}>
-                                <Typography
-                                    variant={'h6'}
-                                    sx={{
-                                        textTransform: 'capitalize',
-                                    }}
-                                >
-                                    {format}
-                                </Typography>
+                <ClickAwayListener onClickAway={() => setAnchorEl(null)}>
+                    <Paper sx={{ maxHeight: '80vh', overflow: 'auto' }}>
+                        {sortedLegalities.map(([format, legalityValues]) => (
+                            <Grid item container key={format} xs={12}>
+                                <Grid item xs={12}>
+                                    <Typography
+                                        variant={'h6'}
+                                        sx={{
+                                            textTransform: 'capitalize',
+                                        }}
+                                    >
+                                        {format}
+                                    </Typography>
+                                </Grid>
+                                {Object.entries(legalityValues)
+                                    .map(([legalityValue, _]) => legalityValue)
+                                    .sort((a, b) => legalitySortValues.indexOf(a) - legalitySortValues.indexOf(b))
+                                    .map((legalityValue) => (
+                                        <Grid item key={legalityValue} xs={3}>
+                                            <Box display={'flex'} flexDirection={'column'} alignItems={'center'}>
+                                                <Typography>{legalityValue}</Typography>
+                                                <TernaryToggle
+                                                    value={selected[format][legalityValue]}
+                                                    type={'toggleButton'}
+                                                    toggleButtonGroupProps={{
+                                                        exclusive: true,
+                                                        onChange: (_, value) => {
+                                                            onSelect(
+                                                                format,
+                                                                legalityValue,
+                                                                value ?? TernaryBoolean.UNSET,
+                                                            )
+                                                        },
+                                                    }}
+                                                />
+                                            </Box>
+                                        </Grid>
+                                    ))}
                             </Grid>
-                            {Object.entries(legalityValues)
-                                .map(([legalityValue, _]) => legalityValue)
-                                .sort((a, b) => legalitySortValues.indexOf(a) - legalitySortValues.indexOf(b))
-                                .map((legalityValue) => (
-                                    <Grid item key={legalityValue} xs={3}>
-                                        <Box display={'flex'} flexDirection={'column'} alignItems={'center'}>
-                                            <Typography>{legalityValue}</Typography>
-                                            <TernaryToggle
-                                                value={selected[format][legalityValue]}
-                                                type={'toggleButton'}
-                                                toggleButtonGroupProps={{
-                                                    exclusive: true,
-                                                    onChange: (_, value) => {
-                                                        onSelect(format, legalityValue, value ?? TernaryBoolean.UNSET)
-                                                    },
-                                                }}
-                                            />
-                                        </Box>
-                                    </Grid>
-                                ))}
-                        </Grid>
-                    ))}
-                </Paper>
+                        ))}
+                    </Paper>
+                </ClickAwayListener>
             </Popper>
         </Grid>
     )

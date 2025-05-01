@@ -1,4 +1,4 @@
-import { Badge, Button, Grid, Paper, Popper } from '@mui/material'
+import { Badge, Button, ClickAwayListener, Grid, Paper, Popper } from '@mui/material'
 import { MouseEvent, useState } from 'react'
 import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
 import { MTG_Layout } from '../../graphql/types'
@@ -48,24 +48,26 @@ const LayoutSelector = (props: LayoutSelectorProps): JSX.Element => {
                 </Badge>
             </Badge>
             <Popper open={open} anchorEl={anchorEl}>
-                <Paper sx={{ maxHeight: '80vh', overflow: 'auto' }}>
-                    {sortedLayouts.map(([layout]) => (
-                        <Grid item container key={layout} xs={12}>
-                            <TernaryToggle
-                                value={selected[layout] ?? TernaryBoolean.UNSET}
-                                type="textButton"
-                                textButtonProps={{
-                                    onClick: () => onNext(layout),
-                                    onContextMenu: (e) => {
-                                        e.preventDefault()
-                                        onPrev(layout)
-                                    },
-                                    children: layout,
-                                }}
-                            />
-                        </Grid>
-                    ))}
-                </Paper>
+                <ClickAwayListener onClickAway={() => setAnchorEl(null)}>
+                    <Paper sx={{ maxHeight: '80vh', overflow: 'auto' }}>
+                        {sortedLayouts.map(([layout]) => (
+                            <Grid item container key={layout} xs={12}>
+                                <TernaryToggle
+                                    value={selected[layout] ?? TernaryBoolean.UNSET}
+                                    type="textButton"
+                                    textButtonProps={{
+                                        onClick: () => onNext(layout),
+                                        onContextMenu: (e) => {
+                                            e.preventDefault()
+                                            onPrev(layout)
+                                        },
+                                        children: layout,
+                                    }}
+                                />
+                            </Grid>
+                        ))}
+                    </Paper>
+                </ClickAwayListener>
             </Popper>
         </Grid>
     )

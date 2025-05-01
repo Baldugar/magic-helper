@@ -1,6 +1,6 @@
 import { DragDropContext, Draggable, Droppable, OnDragEndResponder } from '@hello-pangea/dnd'
 import { ArrowDownward, ArrowUpward } from '@mui/icons-material'
-import { Box, Button, Checkbox, Grid, IconButton, Paper, Popper, Typography } from '@mui/material'
+import { Box, Button, Checkbox, ClickAwayListener, Grid, IconButton, Paper, Popper, Typography } from '@mui/material'
 import { MouseEvent, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { SortDirection } from '../../context/MTGA/Filter/MTGFilterContext'
@@ -64,70 +64,78 @@ export const SortSelector = () => {
         <Grid container item xs={'auto'}>
             <Button onClick={handleClick}>Sort</Button>
             <Popper open={open} anchorEl={anchorEl} container={document.body}>
-                <Paper sx={{ maxHeight: '80vh', overflow: 'auto' }}>
-                    <DragDropContext onDragEnd={handleDragEnd}>
-                        <Droppable droppableId="sort">
-                            {(provided) => (
-                                <Box {...provided.droppableProps} ref={provided.innerRef}>
-                                    {sort.map((sortOption, i) => (
-                                        <Draggable key={sortOption.sortBy} draggableId={sortOption.sortBy} index={i}>
-                                            {(provided, snapshot) => (
-                                                <DraggablePortalWrapper isDragging={snapshot.isDragging}>
-                                                    <Box
-                                                        ref={provided.innerRef}
-                                                        {...provided.draggableProps}
-                                                        {...provided.dragHandleProps}
-                                                        display={'flex'}
-                                                        justifyContent={'space-between'}
-                                                        alignItems={'center'}
-                                                        minWidth={200}
-                                                    >
-                                                        <Checkbox
-                                                            checked={sortOption.enabled}
-                                                            onChange={() => handleToggleSort(i)}
-                                                        />
-                                                        <Typography>{sortOption.sortBy}</Typography>
-                                                        <Box display={'flex'} gap={1}>
-                                                            <IconButton
-                                                                size={'small'}
-                                                                onClick={() =>
-                                                                    handleChangeSortDirection(i, SortDirection.ASC)
-                                                                }
-                                                            >
-                                                                <ArrowUpward
-                                                                    color={
-                                                                        sortOption.sortDirection === SortDirection.ASC
-                                                                            ? 'primary'
-                                                                            : 'secondary'
+                <ClickAwayListener onClickAway={() => setAnchorEl(null)}>
+                    <Paper sx={{ maxHeight: '80vh', overflow: 'auto' }}>
+                        <DragDropContext onDragEnd={handleDragEnd}>
+                            <Droppable droppableId="sort">
+                                {(provided) => (
+                                    <Box {...provided.droppableProps} ref={provided.innerRef}>
+                                        {sort.map((sortOption, i) => (
+                                            <Draggable
+                                                key={sortOption.sortBy}
+                                                draggableId={sortOption.sortBy}
+                                                index={i}
+                                            >
+                                                {(provided, snapshot) => (
+                                                    <DraggablePortalWrapper isDragging={snapshot.isDragging}>
+                                                        <Box
+                                                            ref={provided.innerRef}
+                                                            {...provided.draggableProps}
+                                                            {...provided.dragHandleProps}
+                                                            display={'flex'}
+                                                            justifyContent={'space-between'}
+                                                            alignItems={'center'}
+                                                            minWidth={200}
+                                                        >
+                                                            <Checkbox
+                                                                checked={sortOption.enabled}
+                                                                onChange={() => handleToggleSort(i)}
+                                                            />
+                                                            <Typography>{sortOption.sortBy}</Typography>
+                                                            <Box display={'flex'} gap={1}>
+                                                                <IconButton
+                                                                    size={'small'}
+                                                                    onClick={() =>
+                                                                        handleChangeSortDirection(i, SortDirection.ASC)
                                                                     }
-                                                                />
-                                                            </IconButton>
-                                                            <IconButton
-                                                                size={'small'}
-                                                                onClick={() =>
-                                                                    handleChangeSortDirection(i, SortDirection.DESC)
-                                                                }
-                                                            >
-                                                                <ArrowDownward
-                                                                    color={
-                                                                        sortOption.sortDirection === SortDirection.DESC
-                                                                            ? 'primary'
-                                                                            : 'secondary'
+                                                                >
+                                                                    <ArrowUpward
+                                                                        color={
+                                                                            sortOption.sortDirection ===
+                                                                            SortDirection.ASC
+                                                                                ? 'primary'
+                                                                                : 'secondary'
+                                                                        }
+                                                                    />
+                                                                </IconButton>
+                                                                <IconButton
+                                                                    size={'small'}
+                                                                    onClick={() =>
+                                                                        handleChangeSortDirection(i, SortDirection.DESC)
                                                                     }
-                                                                />
-                                                            </IconButton>
+                                                                >
+                                                                    <ArrowDownward
+                                                                        color={
+                                                                            sortOption.sortDirection ===
+                                                                            SortDirection.DESC
+                                                                                ? 'primary'
+                                                                                : 'secondary'
+                                                                        }
+                                                                    />
+                                                                </IconButton>
+                                                            </Box>
                                                         </Box>
-                                                    </Box>
-                                                </DraggablePortalWrapper>
-                                            )}
-                                        </Draggable>
-                                    ))}
-                                    {provided.placeholder}
-                                </Box>
-                            )}
-                        </Droppable>
-                    </DragDropContext>
-                </Paper>
+                                                    </DraggablePortalWrapper>
+                                                )}
+                                            </Draggable>
+                                        ))}
+                                        {provided.placeholder}
+                                    </Box>
+                                )}
+                            </Droppable>
+                        </DragDropContext>
+                    </Paper>
+                </ClickAwayListener>
             </Popper>
         </Grid>
     )

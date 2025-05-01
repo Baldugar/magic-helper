@@ -1,4 +1,4 @@
-import { Badge, Box, Button, ButtonBase, Grid, Paper, Popper, Typography } from '@mui/material'
+import { Badge, Box, Button, ButtonBase, ClickAwayListener, Grid, Paper, Popper, Typography } from '@mui/material'
 import { MouseEvent, useState } from 'react'
 import { isNegativeTB, isPositiveTB, TernaryBoolean } from '../../types/ternaryBoolean'
 import { TernaryToggle } from './TernaryToggle'
@@ -51,50 +51,52 @@ const TypeSelector = (props: TypeSelectorProps): JSX.Element => {
                 </Badge>
             </Badge>
             <Popper open={open} anchorEl={anchorEl}>
-                <Paper
-                    sx={{
-                        maxHeight: '80vh',
-                        overflow: 'auto',
-                        display: 'flex',
-                        flexDirection: 'column',
-                    }}
-                >
-                    {order.map((type) => (
-                        <ButtonBase
-                            key={type}
-                            onClick={() => onNext(type)}
-                            onContextMenu={(e) => {
-                                e.preventDefault()
-                                onPrev(type)
-                            }}
-                            sx={{ paddingX: 2 }}
-                        >
-                            <Box display={'flex'} width={1} alignItems={'center'}>
-                                <TernaryToggle
-                                    value={selected[type]}
-                                    type={'icon'}
-                                    imagesFolder={'type'}
-                                    imagesFormat={'svg'}
-                                    iconButtonProps={{
-                                        size: 'small',
-                                        onClick: () => {},
-                                        onContextMenu: () => {},
-                                    }}
-                                    imgProps={{
-                                        width: iconSize ?? 40,
-                                        height: iconSize ?? 40,
-                                        style: {
-                                            opacity: selected[type] ? 1 : 0.3,
-                                            transition: 'opacity 250ms',
-                                        },
-                                    }}
-                                    option={type}
-                                />
-                                <Typography>{type}</Typography>
-                            </Box>
-                        </ButtonBase>
-                    ))}
-                </Paper>
+                <ClickAwayListener onClickAway={() => setAnchorEl(null)}>
+                    <Paper
+                        sx={{
+                            maxHeight: '80vh',
+                            overflow: 'auto',
+                            display: 'flex',
+                            flexDirection: 'column',
+                        }}
+                    >
+                        {order.map((type) => (
+                            <ButtonBase
+                                key={type}
+                                onClick={() => onNext(type)}
+                                onContextMenu={(e) => {
+                                    e.preventDefault()
+                                    onPrev(type)
+                                }}
+                                sx={{ paddingX: 2 }}
+                            >
+                                <Box display={'flex'} width={1} alignItems={'center'}>
+                                    <TernaryToggle
+                                        value={selected[type]}
+                                        type={'icon'}
+                                        imagesFolder={'type'}
+                                        imagesFormat={'svg'}
+                                        iconButtonProps={{
+                                            size: 'small',
+                                            onClick: () => {},
+                                            onContextMenu: () => {},
+                                        }}
+                                        imgProps={{
+                                            width: iconSize ?? 40,
+                                            height: iconSize ?? 40,
+                                            style: {
+                                                opacity: selected[type] ? 1 : 0.3,
+                                                transition: 'opacity 250ms',
+                                            },
+                                        }}
+                                        option={type}
+                                    />
+                                    <Typography>{type}</Typography>
+                                </Box>
+                            </ButtonBase>
+                        ))}
+                    </Paper>
+                </ClickAwayListener>
             </Popper>
         </Grid>
     )

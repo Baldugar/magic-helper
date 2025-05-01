@@ -6,6 +6,7 @@ import {
     Badge,
     Box,
     Button,
+    ClickAwayListener,
     Grid,
     Paper,
     Popper,
@@ -32,6 +33,13 @@ type FilterSet = {
     code: string
     imageURL: string
     setType: string
+    games: MTG_Game[]
+}
+
+const GAME_EMOJIS: Record<MTG_Game, string> = {
+    paper: '🎴',
+    mtgo: '💻',
+    arena: '🎮',
 }
 
 const SetSelector = (props: SetSelectorProps): JSX.Element => {
@@ -106,32 +114,37 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
                 </Badge>
             </Badge>
             <Popper open={open} anchorEl={anchorEl}>
-                <Paper sx={{ maxHeight: '70vh', maxWidth: '50vw', overflow: 'auto' }}>
-                    <TextField
-                        label="Search"
-                        variant={'filled'}
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        fullWidth
-                        sx={{ pl: 1, pt: 1 }}
-                    />
-                    <Typography variant="body2" sx={{ pl: 1, pt: 1 }}>
-                        The game filter is applied to the sets.
-                    </Typography>
-                    {yearsSorted.map((year) => (
-                        <YearItem
-                            key={year}
-                            grouped={grouped}
-                            iconSize={iconSize}
-                            onNext={onNext}
-                            onPrev={onPrev}
-                            selected={selected}
-                            setValue={setValue}
-                            year={year}
-                            yearsSorted={yearsSorted}
+                <ClickAwayListener onClickAway={() => setAnchorEl(null)}>
+                    <Paper sx={{ maxHeight: '70vh', maxWidth: '50vw', overflow: 'auto' }}>
+                        <TextField
+                            label="Search"
+                            variant={'filled'}
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            fullWidth
+                            sx={{ pl: 1, pt: 1 }}
                         />
-                    ))}
-                </Paper>
+                        <Typography variant="body2" sx={{ pl: 1, pt: 1 }}>
+                            The game filter is applied to the sets.
+                        </Typography>
+                        <Typography variant="body2" sx={{ pl: 1, pt: 1 }}>
+                            Legend: 🎴 Paper, 💻 MTGO, 🎮 Arena
+                        </Typography>
+                        {yearsSorted.map((year) => (
+                            <YearItem
+                                key={year}
+                                grouped={grouped}
+                                iconSize={iconSize}
+                                onNext={onNext}
+                                onPrev={onPrev}
+                                selected={selected}
+                                setValue={setValue}
+                                year={year}
+                                yearsSorted={yearsSorted}
+                            />
+                        ))}
+                    </Paper>
+                </ClickAwayListener>
             </Popper>
         </Grid>
     )
@@ -331,7 +344,14 @@ const SetItem: React.FC<SetItemProps> = ({ set, value, onNext, onPrev, iconSize 
                             loading="lazy"
                         />
                         <Typography variant="body2" noWrap sx={{ marginLeft: 1 }}>
-                            {set.setName} ({new Date(set.releasedAt).toLocaleDateString()})
+                            {set.setName} ({new Date(set.releasedAt).toLocaleDateString()}){' '}
+                            {set.games
+                                .sort(
+                                    (a, b) =>
+                                        ['paper', 'mtgo', 'arena'].indexOf(a) - ['paper', 'mtgo', 'arena'].indexOf(b),
+                                )
+                                .map((game) => GAME_EMOJIS[game])
+                                .join(' ')}
                         </Typography>
                     </Box>
                 ),
