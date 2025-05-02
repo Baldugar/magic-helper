@@ -182,7 +182,7 @@ export const filterCards = <T extends MTG_Card>(
                         (isPositiveTB(multi)
                             ? card.colorIdentity.length > 1
                             : isNegativeTB(multi)
-                            ? card.colorIdentity.length === 1
+                            ? card.colorIdentity.length <= 1
                             : true),
                 )
             } else {
@@ -193,7 +193,7 @@ export const filterCards = <T extends MTG_Card>(
                         (isPositiveTB(multi)
                             ? card.colorIdentity.length > 1
                             : isNegativeTB(multi)
-                            ? card.colorIdentity.length === 1
+                            ? card.colorIdentity.length <= 1
                             : true),
                 )
             }
@@ -207,7 +207,7 @@ export const filterCards = <T extends MTG_Card>(
                     )
                 } else if (isNegativeTB(multi)) {
                     remainingCards = remainingCards.filter(
-                        (card) => colors.some((c) => card.colorIdentity.includes(c)) && card.colorIdentity.length === 1,
+                        (card) => colors.some((c) => card.colorIdentity.includes(c)) && card.colorIdentity.length <= 1,
                     )
                 } else {
                     remainingCards = remainingCards.filter((card) => colors.some((c) => card.colorIdentity.includes(c)))
@@ -222,7 +222,7 @@ export const filterCards = <T extends MTG_Card>(
                         (isPositiveTB(multi)
                             ? card.colorIdentity.length > 1
                             : isNegativeTB(multi)
-                            ? card.colorIdentity.length === 1
+                            ? card.colorIdentity.length <= 1
                             : true),
                 )
             }
@@ -237,7 +237,7 @@ export const filterCards = <T extends MTG_Card>(
                         (isPositiveTB(multi)
                             ? card.colorIdentity.length > 1
                             : isNegativeTB(multi)
-                            ? card.colorIdentity.length === 1
+                            ? card.colorIdentity.length <= 1
                             : true),
                 )
             }
@@ -246,7 +246,7 @@ export const filterCards = <T extends MTG_Card>(
         if (isPositiveTB(multi)) {
             remainingCards = remainingCards.filter((card) => card.colorIdentity.length > 1)
         } else if (isNegativeTB(multi)) {
-            remainingCards = remainingCards.filter((card) => card.colorIdentity.length === 1)
+            remainingCards = remainingCards.filter((card) => card.colorIdentity.length <= 1)
         }
     }
 

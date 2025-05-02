@@ -113,11 +113,7 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                     // Then if it's not in the ignore cards, add it
                     // If it is in the ignore cards, remove it
                     const newDeck = { ...prev }
-                    const cardIndex = newDeck.cards.findIndex((c) => c.card.ID === card.ID)
                     const ignoreIndex = newDeck.ignoredCards.findIndex((c) => c === card.ID)
-                    if (cardIndex !== -1) {
-                        newDeck.cards.splice(cardIndex, 1)
-                    }
                     if (ignoreIndex === -1) {
                         newDeck.ignoredCards.push(card.ID)
                     } else {

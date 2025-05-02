@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from 'react'
 import { MTGFunctions } from '../../../graphql/MTGA/functions'
-import { MTG_Deck } from '../../../graphql/types'
+import { MTG_Color, MTG_Deck } from '../../../graphql/types'
 import { MTGDecksContext } from './MTGDecksContext'
 
 export const MTGDecksProvider = ({ children }: { children: ReactNode }) => {
@@ -14,7 +14,18 @@ export const MTGDecksProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         setLoading(true)
         getMTGDecks().then((decks) => {
-            setDecks(decks)
+            setDecks(
+                decks.map((d) => ({
+                    ...d,
+                    cards: d.cards.map((c) => ({
+                        ...c,
+                        card: {
+                            ...c.card,
+                            colorIdentity: c.card.colorIdentity.length === 0 ? [MTG_Color.C] : c.card.colorIdentity,
+                        },
+                    })),
+                })),
+            )
             setLoading(false)
         })
     }, [getMTGDecks])

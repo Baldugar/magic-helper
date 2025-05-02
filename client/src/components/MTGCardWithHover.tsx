@@ -118,7 +118,11 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
                     height={CARD_SIZE_VALUES['large'].height}
                     scale={scale}
                     width={CARD_SIZE_VALUES['large'].width}
-                    otherImg={otherLarge !== large ? otherLarge : undefined}
+                    otherImg={
+                        otherLarge !== large || (data.type === 'card' && data.card.layout === MTG_Layout.flip)
+                            ? otherLarge
+                            : undefined
+                    }
                     imgHorizontal={
                         typeLine.startsWith('Battle') ||
                         typeLine.includes('Room') ||
@@ -126,6 +130,11 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
                             (data.type === 'card'
                                 ? !data.card.keywords.includes('Aftermath') && data.card.layout !== MTG_Layout.flip
                                 : false))
+                    }
+                    rotateOther={
+                        otherLarge === large && data.type === 'card' && data.card.layout === MTG_Layout.flip
+                            ? '180'
+                            : '0'
                     }
                 />
             )}

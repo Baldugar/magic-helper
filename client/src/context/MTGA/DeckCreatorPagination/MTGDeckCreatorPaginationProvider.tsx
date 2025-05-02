@@ -1,3 +1,4 @@
+import { debounce } from 'lodash'
 import { ReactNode, useEffect, useState } from 'react'
 import { MTG_Card, MTG_DeckCardType } from '../../../graphql/types'
 import { filterCards } from '../../../pages/DeckCreator/filterCards'
@@ -15,7 +16,11 @@ export const MTGDeckCreatorPaginationProvider = ({ children }: { children: React
     const commander = deck?.cards.find((c) => c.deckCardType === MTG_DeckCardType.COMMANDER)
 
     useEffect(() => {
-        setFilteredCards(filterCards(cards, filter, sort, selectingCommander, commander))
+        const debounced = debounce(() => {
+            setFilteredCards(filterCards(cards, filter, sort, selectingCommander, commander))
+        }, 300)
+        debounced()
+        return () => debounced.cancel()
     }, [filter, sort, cards, originalFilter, selectingCommander, commander])
 
     useEffect(() => {

@@ -9,10 +9,11 @@ export type HoverMouseComponentProps = {
     height: number
     scale: number
     imgHorizontal?: boolean
+    rotateOther?: '180' | '0'
 }
 
 export const HoverMouseComponent: FC<HoverMouseComponentProps> = (props) => {
-    const { height, img, imgHorizontal, scale: zoomScale, visible, width, otherImg } = props
+    const { height, img, imgHorizontal, scale: zoomScale, visible, width, otherImg, rotateOther } = props
     const offset = 20
     const edgeOffset = 10
 
@@ -134,7 +135,7 @@ export const HoverMouseComponent: FC<HoverMouseComponentProps> = (props) => {
                         transformOrigin: 'center center',
                     }}
                 >
-                    <img src={img} loading={'lazy'} style={{ borderRadius: '30px' }} /> {/* Render the image lazily */}
+                    <img src={img} loading={'lazy'} style={{ borderRadius: '30px' }} />
                 </Box>
             </Box>
             {otherImg && (
@@ -148,7 +149,11 @@ export const HoverMouseComponent: FC<HoverMouseComponentProps> = (props) => {
                         transformOrigin: transformOrigin, // Set the origin for the scale transformation
                     }}
                 >
-                    <img src={otherImg} loading={'lazy'} /> {/* Render the image lazily */}
+                    <img
+                        src={otherImg}
+                        loading={'lazy'}
+                        style={{ transform: `rotate(${rotateOther === '180' ? 180 : 0}deg)` }}
+                    />
                 </Box>
             )}
         </Portal>
