@@ -1,6 +1,17 @@
 import { ArrowLeft, Edit } from '@mui/icons-material'
 import MenuIcon from '@mui/icons-material/Menu'
-import { Box, Button, Collapse, Divider, IconButton, Menu, MenuItem, Pagination, Typography } from '@mui/material'
+import {
+    Box,
+    Button,
+    Collapse,
+    Divider,
+    IconButton,
+    Menu,
+    MenuItem,
+    Pagination,
+    Typography,
+    useMediaQuery,
+} from '@mui/material'
 import { ReactFlowProvider, useReactFlow } from '@xyflow/react'
 import React from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -19,7 +30,7 @@ import { MTGAFilterProvider } from '../../context/MTGA/Filter/MTGFilterProvider'
 import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
 import { MTGFunctions } from '../../graphql/MTGA/functions'
 import { MTG_UpdateDeckInput } from '../../graphql/types'
-import { PAGE_SIZE } from '../../utils/constants'
+import { PAGE_SIZE_DESKTOP, PAGE_SIZE_MOBILE } from '../../utils/constants'
 import { calculateNewDeck } from '../../utils/functions/deckFunctions'
 import { calculateCardsFromNodes, calculateZonesFromNodes } from '../../utils/functions/nodeFunctions'
 import { useLocalStoreFilter } from '../../utils/hooks/useLocalStoreFilter'
@@ -51,6 +62,9 @@ export const DeckCreator = () => {
     } = MTGFunctions
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
     const open = Boolean(anchorEl)
+
+    const isMobile = useMediaQuery('(max-width: 600px)')
+    const pageSize = isMobile ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP
 
     const handleChangeView = (newViewMode: 'catalogue' | 'board' | 'both') => {
         if (viewMode === 'board' || viewMode === 'both') {
@@ -120,8 +134,14 @@ export const DeckCreator = () => {
 
     return (
         <MTGDeckCreatorFlowProvider deck={deck}>
-            <Box display={'flex'} maxHeight={'100vh'}>
-                <Box position={'relative'} flex={1} display={'flex'} flexDirection={'column'} height={'100vh'}>
+            <Box display={'flex'} maxHeight={{ xs: '150vh', lg: '100vh' }}>
+                <Box
+                    position={'relative'}
+                    flex={1}
+                    display={'flex'}
+                    flexDirection={'column'}
+                    height={{ xs: '150vh', lg: '100vh' }}
+                >
                     <Box display={'flex'} gap={1} alignItems={'center'} paddingLeft={1}>
                         <Button variant={'contained'} color={'primary'} onClick={() => navigate(-1)}>
                             <ArrowLeft fontSize={'large'} />
@@ -145,7 +165,7 @@ export const DeckCreator = () => {
                             <CardsGrid />
                             <Box mt={'auto'} display={'flex'} justifyContent={'center'} paddingTop={1}>
                                 <Pagination
-                                    count={Math.floor(filteredCards.length / PAGE_SIZE) + 1}
+                                    count={Math.floor(filteredCards.length / pageSize) + 1}
                                     page={page + 1}
                                     onChange={(_, page) => {
                                         setPage(page - 1)
@@ -168,7 +188,7 @@ export const DeckCreator = () => {
                                 <CardsGrid />
                                 <Box mt={'auto'} display={'flex'} justifyContent={'center'} paddingTop={1}>
                                     <Pagination
-                                        count={Math.floor(filteredCards.length / PAGE_SIZE) + 1}
+                                        count={Math.floor(filteredCards.length / pageSize) + 1}
                                         page={page + 1}
                                         onChange={(_, page) => {
                                             setPage(page - 1)

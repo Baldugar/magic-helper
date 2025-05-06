@@ -1,6 +1,6 @@
 import { keyframes } from '@emotion/react'
 import { Close } from '@mui/icons-material'
-import { ButtonBase, Dialog, DialogContent, DialogTitle, Grid } from '@mui/material'
+import { ButtonBase, Dialog, DialogContent, DialogTitle, Grid, useMediaQuery } from '@mui/material'
 import { useReactFlow } from '@xyflow/react'
 import { useState } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
@@ -47,6 +47,8 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
         handleContextMenu: mainCardHandleContextMenu,
         open: mainCardOpen,
     } = useContextMenu<HTMLDivElement>()
+
+    const isMobile = useMediaQuery('(max-width: 600px)')
 
     const [showAllVersions, setShowAllVersions] = useState(false)
 
@@ -361,7 +363,7 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
     }
 
     return (
-        <Grid item xs={'auto'}>
+        <Grid item xs={12} sm={'auto'} md={'auto'} lg={'auto'}>
             <ErrorBoundary
                 fallback={
                     <div ref={mainCardAnchorRef} onContextMenu={mainCardHandleContextMenu}>
@@ -373,27 +375,30 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                     <ButtonBase
                         onClick={() => handleAddCard(card)}
                         sx={{
+                            width: isMobile ? '100%' : 'auto',
                             filter: deckCardIDs.includes(card.ID) ? 'brightness(0.5)' : 'brightness(1)',
                             transition: 'filter 0.3s ease, opacity 0.3s ease, transform 0.3s ease, outline 0.3s ease',
                             outline: 'none',
                             position: 'relative',
                             opacity: deck.ignoredCards.includes(card.ID) ? 0.5 : 1,
-                            '&:hover': {
-                                filter: 'brightness(1.2)',
-                                transform: 'scale(1.1)',
-                                position: 'relative',
-                                '&::before': {
-                                    content: '""',
-                                    position: 'absolute',
-                                    top: '0px',
-                                    left: '0px',
-                                    right: '0px',
-                                    bottom: '0px',
-                                    borderRadius: '8px',
-                                    animation: `${colorCycle} 4s linear infinite`,
-                                    zIndex: -1,
-                                },
-                            },
+                            '&:hover': !isMobile
+                                ? {
+                                      filter: 'brightness(1.2)',
+                                      transform: 'scale(1.1)',
+                                      position: 'relative',
+                                      '&::before': {
+                                          content: '""',
+                                          position: 'absolute',
+                                          top: '0px',
+                                          left: '0px',
+                                          right: '0px',
+                                          bottom: '0px',
+                                          borderRadius: '8px',
+                                          animation: `${colorCycle} 4s linear infinite`,
+                                          zIndex: -1,
+                                      },
+                                  }
+                                : {},
                             '& img': {
                                 borderRadius: '8px',
                             },

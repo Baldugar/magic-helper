@@ -43,6 +43,7 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
     const [hover, setHover] = useState(false)
     const mdVerticalScreen = useMediaQuery('(max-height: 1200px)')
     const smVerticalScreen = useMediaQuery('(max-height: 1000px)')
+    const isMobile = useMediaQuery('(max-width: 600px)')
 
     if (type === 'card') {
         const { card } = data
@@ -58,7 +59,7 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
             version = card.versions.find((v) => v.isDefault)
         }
         if (!version) return null
-        small = getCorrectCardImage(version, 'small')
+        small = getCorrectCardImage(version, isMobile ? 'large' : 'small')
         if (!small) return null
         large = getCorrectCardImage(version, 'large')
         if (!large) return null
@@ -68,7 +69,7 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
         typeLine = cardTypeLine
         version = card
         try {
-            small = getCorrectCardImage(version, 'small')
+            small = getCorrectCardImage(version, isMobile ? 'large' : 'small')
             if (!small) return null
             large = getCorrectCardImage(version, 'large')
             if (!large) return null
@@ -83,14 +84,16 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
 
     const scale = smVerticalScreen ? 0.5 : mdVerticalScreen ? 0.6 : 0.7
 
+    const aspectRatio = width / height
+
     return (
         <>
             <Box
                 display={'flex'}
                 flexDirection={'row'}
                 position={'relative'}
-                width={width}
-                height={height}
+                width={isMobile ? '100%' : width}
+                height={isMobile ? 'auto' : height}
                 onDragStart={type === 'card' ? (event) => onDragStart(event, 'cardNode', viewMode, card) : undefined}
                 onDragEnd={
                     type === 'card'
@@ -101,6 +104,9 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
                         : undefined
                 }
                 draggable
+                sx={{
+                    aspectRatio: isMobile ? aspectRatio : undefined,
+                }}
             >
                 <ImageWithSkeleton img={small} setHover={setHover} height={height} width={width} />
                 {debugValue && (
@@ -111,7 +117,7 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
                     </Box>
                 )}
             </Box>
-            {large && hover && (
+            {large && hover && !isMobile && (
                 <HoverMouseComponent
                     visible={hover && (hideHover === false || hideHover === undefined)}
                     img={large}

@@ -1,4 +1,4 @@
-import { Skeleton } from '@mui/material'
+import { Skeleton, useMediaQuery } from '@mui/material'
 import { debounce } from 'lodash'
 import { CSSProperties, FC, useState } from 'react'
 
@@ -13,10 +13,12 @@ export const ImageWithSkeleton: FC<ImageWithSkeletonProps> = (props) => {
     const { img, width, height, setHover } = props
     const [loaded, setLoaded] = useState(false)
 
+    const isMobile = useMediaQuery('(max-width: 600px)')
+
     const style: CSSProperties = {}
     style.display = loaded ? 'block' : 'hidden'
-    style.width = loaded ? `${width}px` : '0px'
-    style.height = loaded ? `${height}px` : '0px'
+    style.width = loaded ? (isMobile ? '100%' : `${width}px`) : '0px'
+    style.height = loaded ? (isMobile ? 'auto' : `${height}px`) : '0px'
 
     const onMouseLeave = debounce(() => setHover(false), 50)
 
@@ -32,7 +34,13 @@ export const ImageWithSkeleton: FC<ImageWithSkeletonProps> = (props) => {
                 onMouseLeave={() => onMouseLeave()}
                 onMouseMove={() => setHover(true)}
             />
-            {!loaded && <Skeleton variant={'rectangular'} width={width} height={height} />}
+            {!loaded && (
+                <Skeleton
+                    variant={'rectangular'}
+                    width={isMobile ? '100%' : width}
+                    height={isMobile ? 'auto' : height}
+                />
+            )}
         </>
     )
 }

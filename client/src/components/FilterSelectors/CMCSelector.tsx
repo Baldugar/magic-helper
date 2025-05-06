@@ -16,9 +16,9 @@ export const CMCSelector = (props: CMCSelectorProps): JSX.Element => {
     const order: CMCFilter[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'infinite']
 
     return (
-        <Grid container item xs={'auto'}>
+        <Grid container item xs={'auto'} wrap="wrap">
             {order.map((cmc) => (
-                <Grid item key={cmc} xs={'auto'}>
+                <Grid item key={cmc} xs={3} md={'auto'}>
                     <TernaryToggle
                         value={selected[cmc]}
                         type={'icon'}

@@ -70,7 +70,7 @@ const LegalitySelector = (props: LegalitySelectorProps): JSX.Element => {
                                     .map(([legalityValue, _]) => legalityValue)
                                     .sort((a, b) => legalitySortValues.indexOf(a) - legalitySortValues.indexOf(b))
                                     .map((legalityValue) => (
-                                        <Grid item key={legalityValue} xs={3}>
+                                        <Grid item key={legalityValue} xs={6} md={3}>
                                             <Box display={'flex'} flexDirection={'column'} alignItems={'center'}>
                                                 <Typography>{legalityValue}</Typography>
                                                 <TernaryToggle

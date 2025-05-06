@@ -1,3 +1,4 @@
+import { useMediaQuery } from '@mui/material'
 import { debounce } from 'lodash'
 import { ReactNode, useEffect, useState } from 'react'
 import { MTG_Card, MTG_DeckCardType } from '../../../graphql/types'
@@ -14,6 +15,7 @@ export const MTGDeckCreatorPaginationProvider = ({ children }: { children: React
     const [page, setPage] = useState(0)
     const [filteredCards, setFilteredCards] = useState<MTG_Card[]>(cards)
     const commander = deck?.cards.find((c) => c.deckCardType === MTG_DeckCardType.COMMANDER)
+    const isMobile = useMediaQuery('(max-width: 600px)')
 
     useEffect(() => {
         const debounced = debounce(() => {
@@ -25,7 +27,7 @@ export const MTGDeckCreatorPaginationProvider = ({ children }: { children: React
 
     useEffect(() => {
         setPage(0)
-    }, [filter, selectingCommander])
+    }, [filter, selectingCommander, isMobile])
 
     return (
         <MTGDeckCreatorPaginationContext.Provider

@@ -21,7 +21,7 @@ const ManaSelector = (props: ManaSelectorProps): JSX.Element => {
     const order = [MTG_Color.W, MTG_Color.U, MTG_Color.B, MTG_Color.R, MTG_Color.G, MTG_Color.C]
 
     return (
-        <Grid container item xs={'auto'}>
+        <Grid container item xs={'auto'} wrap="wrap">
             {order.map((color) => (
                 <Grid item key={color} xs={'auto'}>
                     <TernaryToggle
