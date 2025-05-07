@@ -32,3 +32,4 @@ arangodb/dumps
 # Server
 server/magic-helper.exe
 server/cards/**
+server/public/images/sets/**

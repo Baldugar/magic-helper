@@ -12,10 +12,11 @@ export type DeckCardProps = {
     removeOne?: (deckCard: MTG_DeckCard) => void
     removeCard: (deckCard: MTG_DeckCard) => void
     commander?: MTG_DeckCard
+    compact?: boolean
 }
 
 export const DeckCard = (props: DeckCardProps): JSX.Element | null => {
-    const { deckCard, addOne, removeCard, removeOne, commander } = props
+    const { deckCard, addOne, removeCard, removeOne, commander, compact } = props
     const { card } = deckCard
 
     const [hover, setHover] = useState(false)
@@ -32,10 +33,10 @@ export const DeckCard = (props: DeckCardProps): JSX.Element | null => {
     return (
         <>
             <Box
-                height={'100px'}
+                height={compact ? '60px' : '100px'}
                 width={1}
                 display={'flex'}
-                paddingX={2}
+                paddingX={compact ? 1 : 2}
                 alignItems={'center'}
                 sx={{
                     backgroundImage: `url(${getCorrectCardImage(selectedVersion, 'artCrop')})`,
@@ -51,13 +52,16 @@ export const DeckCard = (props: DeckCardProps): JSX.Element | null => {
                     display={'flex'}
                     justifyContent={'space-between'}
                     alignItems={'center'}
-                    padding={1}
+                    padding={compact ? 0.5 : 1}
                     bgcolor={'rgba(0,0,0,0.2)'}
                 >
-                    <Typography sx={{ color: 'white' }}>{deckCard.card.name}</Typography>
+                    <Typography sx={{ color: 'white', fontSize: compact ? '0.95rem' : undefined }}>
+                        {deckCard.card.name}
+                    </Typography>
                     <Box display={'flex'} alignItems={'center'} gap={1}>
                         {removeOne && (
                             <IconButton
+                                size={compact ? 'small' : 'medium'}
                                 onMouseEnter={() => setHover(false)}
                                 onMouseLeave={() => setHover(true)}
                                 onClick={() => removeOne(deckCard)}
@@ -66,9 +70,12 @@ export const DeckCard = (props: DeckCardProps): JSX.Element | null => {
                                 <Remove />
                             </IconButton>
                         )}
-                        <Typography sx={{ color: 'white' }}>{deckCard.count}</Typography>
+                        <Typography sx={{ color: 'white', fontSize: compact ? '0.95rem' : undefined }}>
+                            {deckCard.count}
+                        </Typography>
                         {addOne && (
                             <IconButton
+                                size={compact ? 'small' : 'medium'}
                                 onMouseEnter={() => setHover(false)}
                                 onMouseLeave={() => setHover(true)}
                                 onClick={() => addOne(deckCard)}
@@ -78,6 +85,7 @@ export const DeckCard = (props: DeckCardProps): JSX.Element | null => {
                             </IconButton>
                         )}
                         <IconButton
+                            size={compact ? 'small' : 'medium'}
                             onMouseEnter={() => setHover(false)}
                             onMouseLeave={() => setHover(true)}
                             onClick={() => removeCard(deckCard)}
