@@ -10,65 +10,18 @@ import { CardsGridButton } from './CardsGridButton'
 export const CardsGrid = () => {
     const { filteredCards, page, setPage } = useMTGDeckCreatorPagination()
     const { filter, originalFilter } = useMTGFilter()
-    const gridRef = useRef<HTMLDivElement>(null)
     const [currentCardIndex, setCurrentCardIndex] = useState<number>(0)
     const lastScrollTime = useRef<number>(0)
     const lastScrollPosition = useRef<number>(0)
+    const isScrolling = useRef<boolean>(false)
+    const gridRef = useRef<HTMLDivElement | null>(null)
+    const scrollTimeout = useRef<NodeJS.Timeout>()
 
     const isMobile = useMediaQuery('(max-width: 600px)')
     const pageSize = isMobile ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP
 
     const cardsToShow = filteredCards.slice(page * pageSize, (page + 1) * pageSize)
     const totalPages = Math.ceil(filteredCards.length / pageSize)
-
-    useEffect(() => {
-        if (gridRef.current) {
-            gridRef.current.scrollTop = 0
-        }
-        setCurrentCardIndex(0)
-    }, [page])
-
-    const scrollToCard = (index: number) => {
-        if (!gridRef.current) return
-        const cardHeight = gridRef.current.scrollHeight / cardsToShow.length
-        gridRef.current.scrollTo({
-            top: index * cardHeight,
-            behavior: 'smooth',
-        })
-        setCurrentCardIndex(index)
-    }
-
-    const handleScroll = () => {
-        if (!gridRef.current || !isMobile) return
-
-        const now = Date.now()
-        const currentScroll = gridRef.current.scrollTop
-        const cardHeight = gridRef.current.scrollHeight / cardsToShow.length
-        const currentIndex = Math.round(currentScroll / cardHeight)
-
-        // Calculate scroll speed
-        const timeDiff = now - lastScrollTime.current
-        const scrollDiff = Math.abs(currentScroll - lastScrollPosition.current)
-        const scrollSpeed = scrollDiff / timeDiff
-
-        // If scrolling is fast enough, allow skipping cards
-        const maxSkip = scrollSpeed > 0.5 ? 2 : 1
-
-        // Calculate the target index based on the current scroll position and speed
-        const scrollDirection = currentIndex > currentCardIndex ? 1 : -1
-        const targetIndex = currentCardIndex + scrollDirection * maxSkip
-
-        // Ensure we don't go out of bounds
-        const newIndex = Math.max(0, Math.min(cardsToShow.length - 1, targetIndex))
-
-        // Only update if we've moved at least one card
-        if (Math.abs(newIndex - currentCardIndex) >= 1) {
-            scrollToCard(newIndex)
-        }
-
-        lastScrollTime.current = now
-        lastScrollPosition.current = currentScroll
-    }
 
     const handleSwipe = (direction: string) => {
         if (!isMobile) return
@@ -96,11 +49,86 @@ export const CardsGrid = () => {
         touchEventOptions: { passive: false },
     })
 
+    const scrollToCard = (index: number) => {
+        if (!gridRef.current || isScrolling.current) return
+        isScrolling.current = true
+
+        const cardHeight = gridRef.current.scrollHeight / cardsToShow.length
+        const targetScroll = index * cardHeight
+
+        // Clear any existing scroll timeout
+        if (scrollTimeout.current) {
+            clearTimeout(scrollTimeout.current)
+        }
+
+        gridRef.current.scrollTo({
+            top: targetScroll,
+            behavior: 'smooth',
+        })
+        setCurrentCardIndex(index)
+
+        // Reset the scrolling flag after the animation completes
+        scrollTimeout.current = setTimeout(() => {
+            isScrolling.current = false
+            if (gridRef.current) {
+                gridRef.current.scrollTop = targetScroll // Ensure we're exactly at the target position
+            }
+        }, 300) // This should match the duration of the smooth scroll
+    }
+
+    const handleScroll = () => {
+        if (!gridRef.current || !isMobile || isScrolling.current) return
+
+        const now = Date.now()
+        const currentScroll = gridRef.current.scrollTop
+        const cardHeight = gridRef.current.scrollHeight / cardsToShow.length
+        const currentIndex = Math.round(currentScroll / cardHeight)
+
+        // Calculate scroll direction
+        const scrollDirection = currentScroll > lastScrollPosition.current ? 1 : -1
+        const targetIndex = currentIndex + scrollDirection
+
+        // Only update if we've moved significantly and the target index is valid
+        if (
+            Math.abs(currentScroll - lastScrollPosition.current) > cardHeight * 0.3 &&
+            targetIndex >= 0 &&
+            targetIndex < cardsToShow.length
+        ) {
+            scrollToCard(targetIndex)
+        }
+
+        lastScrollTime.current = now
+        lastScrollPosition.current = currentScroll
+    }
+
+    useEffect(() => {
+        if (gridRef.current) {
+            gridRef.current.scrollTop = 0
+        }
+        setCurrentCardIndex(0)
+    }, [page])
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (scrollTimeout.current) {
+                clearTimeout(scrollTimeout.current)
+            }
+        }
+    }, [])
+
+    const setRefs = (element: HTMLDivElement | null) => {
+        // Set the grid ref
+        gridRef.current = element
+        // Set the swipeable ref
+        swipeHandlers.ref(element)
+    }
+
     return (
         <Grid
             id={'cards-grid'}
             container
-            ref={swipeHandlers.ref}
+            ref={setRefs}
             onScroll={handleScroll}
             onWheel={(e: WheelEvent) => {
                 if (!isMobile) {
