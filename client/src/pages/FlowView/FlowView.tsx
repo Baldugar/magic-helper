@@ -25,6 +25,28 @@ export const FlowView = () => {
 
     const nodes = organizeNodes(deck, handleDeleteZone, handleRenameZone, handleDeletePhantom)
 
+    const handleCreateZone = () => {
+        const name = prompt('Enter the name of the zone')
+        if (name) {
+            const nodes = getNodes()
+            const newNode = {
+                id: uuidv4(),
+                type: 'groupNode',
+                position: { x: 0, y: 0 },
+                data: {
+                    label: name,
+                    childrenIDs: [],
+                    onDelete: handleDeleteZone,
+                    onNameChange: handleRenameZone,
+                },
+                width: MIN_SIZE,
+                height: MIN_SIZE,
+            } as Node<GroupNodeData>
+            const newNodes = sortNodesByNesting(nodes.concat(newNode))
+            setNodes(newNodes)
+        }
+    }
+
     return (
         <>
             <ReactFlow<NodeType>
@@ -38,35 +60,19 @@ export const FlowView = () => {
                 maxZoom={4}
             >
                 <Panel position={'bottom-left'}>
-                    <Button
-                        variant={'contained'}
-                        onClick={() => {
-                            const name = prompt('Enter the name of the zone')
-                            if (name) {
-                                const nodes = getNodes()
-                                const newNode = {
-                                    id: uuidv4(),
-                                    type: 'groupNode',
-                                    position: { x: 0, y: 0 },
-                                    data: {
-                                        label: name,
-                                        childrenIDs: [],
-                                        onDelete: handleDeleteZone,
-                                        onNameChange: handleRenameZone,
-                                    },
-                                    width: MIN_SIZE,
-                                    height: MIN_SIZE,
-                                } as Node<GroupNodeData>
-                                const newNodes = sortNodesByNesting(nodes.concat(newNode))
-                                setNodes(newNodes)
-                            }
-                        }}
-                    >
+                    <Button variant={'contained'} onClick={handleCreateZone}>
                         Create Zone
                     </Button>
                 </Panel>
                 <Background variant={BackgroundVariant.Lines} />
-                <MiniMap />
+                <MiniMap
+                    nodeColor={(node) => {
+                        if (node.type === 'groupNode') return '#1976d2' // blue
+                        if (node.type === 'cardNode') return '#43a047' // green
+                        if (node.type === 'phantomNode') return '#ff9800' // orange
+                        return '#888'
+                    }}
+                />
             </ReactFlow>
         </>
     )
