@@ -333,7 +333,6 @@ export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTG_DeckCar
 }
 
 export const calculateZonesFromNodes = (nodes: Node[]): FlowZone[] => {
-    console.log('nodes', nodes)
     const zones: FlowZone[] = []
     for (const node of nodes) {
         if (node.type === 'groupNode') {

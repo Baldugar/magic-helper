@@ -1,6 +1,17 @@
 import { Button } from '@mui/material'
-import { Background, BackgroundVariant, MiniMap, Node, NodeTypes, Panel, ReactFlow, useReactFlow } from '@xyflow/react'
+import {
+    Background,
+    BackgroundVariant,
+    MiniMap,
+    Node,
+    NodeTypes,
+    OnNodeDrag,
+    Panel,
+    ReactFlow,
+    useReactFlow,
+} from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
+import { useCallback } from 'react'
 import { useMTGDeckCreator } from '../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGDeckFlowCreator } from '../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
 import { uuidv4 } from '../../utils/functions/IDFunctions'
@@ -16,10 +27,36 @@ const nodeTypes: NodeTypes = {
 }
 
 export const FlowView = () => {
-    const { handleNodeDragStop, onDragOver, onDrop, handleDeleteZone, handleRenameZone, handleDeletePhantom } =
-        useMTGDeckFlowCreator()
+    const {
+        handleNodeDragStop,
+        onDragOver,
+        onDrop,
+        handleDeleteZone,
+        handleRenameZone,
+        handleDeletePhantom,
+        setDraggingGroupId,
+    } = useMTGDeckFlowCreator()
     const { deck } = useMTGDeckCreator()
     const { setNodes, getNodes } = useReactFlow<NodeType>()
+
+    // Handler for drag start
+    const handleNodeDragStart: OnNodeDrag<NodeType> = useCallback(
+        (_, node) => {
+            if (node.type === 'groupNode') {
+                setDraggingGroupId(node.id)
+            }
+        },
+        [setDraggingGroupId],
+    )
+
+    // Handler for drag stop
+    const handleNodeDragStopWrapper: OnNodeDrag<NodeType> = useCallback(
+        (event, node, nodes) => {
+            setDraggingGroupId(null)
+            handleNodeDragStop(event, node, nodes)
+        },
+        [handleNodeDragStop, setDraggingGroupId],
+    )
 
     if (!deck) return null
 
@@ -52,7 +89,8 @@ export const FlowView = () => {
             <ReactFlow<NodeType>
                 nodeTypes={nodeTypes}
                 defaultNodes={nodes}
-                onNodeDragStop={handleNodeDragStop}
+                onNodeDragStart={handleNodeDragStart}
+                onNodeDragStop={handleNodeDragStopWrapper}
                 onDragOver={onDragOver}
                 onDrop={onDrop}
                 fitView

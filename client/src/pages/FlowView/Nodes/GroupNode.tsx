@@ -1,6 +1,7 @@
 import { Box } from '@mui/material'
 import { Node, NodeProps, NodeResizer, NodeToolbar, Position, useReactFlow } from '@xyflow/react'
 import { useCallback, useEffect, useState } from 'react'
+import { useMTGDeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
 
 export const MIN_SIZE = 180
 
@@ -18,6 +19,7 @@ export type GroupNodeProps = NodeProps & {
 export const GroupNode = (props: GroupNodeProps) => {
     const { data, id } = props
     const { label, childrenIDs, onDelete, onNameChange } = data
+    const { draggingGroupId } = useMTGDeckFlowCreator()
     const [resizable, setResizable] = useState(false)
     const [lockedChildren, setLockedChildren] = useState(true)
     const reactFlow = useReactFlow()
@@ -124,6 +126,22 @@ export const GroupNode = (props: GroupNodeProps) => {
         },
         [id, onNameChange],
     )
+
+    // Placeholder rendering logic
+    if (draggingGroupId && id === draggingGroupId) {
+        // This is the group node being dragged, render placeholder
+        return (
+            <div
+                style={{
+                    width: '100%',
+                    height: '100%',
+                    border: '1px solid black',
+                    backgroundColor: '#f0f0f077',
+                    borderRadius: 15,
+                }}
+            />
+        )
+    }
 
     return (
         <>

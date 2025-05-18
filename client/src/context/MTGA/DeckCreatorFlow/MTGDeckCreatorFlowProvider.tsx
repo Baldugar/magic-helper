@@ -1,5 +1,5 @@
 import { Node, OnNodeDrag, useReactFlow } from '@xyflow/react'
-import { DragEventHandler, ReactNode } from 'react'
+import { DragEventHandler, ReactNode, useState } from 'react'
 import { MainOrSide, MTG_Card, MTG_Deck, MTG_DeckCard, MTG_DeckCardType, Position } from '../../../graphql/types'
 import { CardNodeData } from '../../../pages/FlowView/Nodes/CardNode'
 import { GroupNodeData, MIN_SIZE } from '../../../pages/FlowView/Nodes/GroupNode'
@@ -24,6 +24,8 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
 
     const { filter } = useMTGFilter()
     const set = singleSetSelected(filter)
+
+    const [draggingGroupId, setDraggingGroupId] = useState<string | null>(null)
 
     // Zone Functions
     const handleDeleteZone = (nodeID: string, deleteNodes: boolean) => {
@@ -265,6 +267,8 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
                 handleRenameZone,
                 handleDeletePhantom,
                 onAddCard,
+                draggingGroupId,
+                setDraggingGroupId,
             }}
         >
             {children}

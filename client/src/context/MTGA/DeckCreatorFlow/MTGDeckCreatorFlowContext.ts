@@ -11,6 +11,8 @@ type MTGDeckCreatorFlowContextType = {
     handleRenameZone: (nodeID: string, newName: string) => void
     handleDeletePhantom: (id: string) => void
     onAddCard: (card: MTG_Card, position?: Position) => MTG_DeckCard | undefined
+    draggingGroupId: string | null
+    setDraggingGroupId: (id: string | null) => void
 }
 
 export const MTGDeckCreatorFlowContext = createContext<MTGDeckCreatorFlowContextType>({
@@ -21,4 +23,6 @@ export const MTGDeckCreatorFlowContext = createContext<MTGDeckCreatorFlowContext
     onDrop: () => {},
     handleDeletePhantom: () => {},
     onAddCard: () => undefined,
+    draggingGroupId: null,
+    setDraggingGroupId: () => {},
 })
