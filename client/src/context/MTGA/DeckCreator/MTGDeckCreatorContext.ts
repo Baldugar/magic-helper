@@ -38,6 +38,9 @@ type MTGDeckCreatorContextType = {
     openImportCardPackageDialog: boolean
     setOpenImportCardPackageDialog: Dispatch<SetStateAction<boolean>>
     importCardPackage: (cardPackage: MTG_CardPackage) => void
+    // Sticky CardsGrid
+    stickyCardsGrid: boolean
+    setStickyCardsGrid: Dispatch<SetStateAction<boolean>>
 }
 
 export const MTGDeckCreatorContext = createContext<MTGDeckCreatorContextType>({
@@ -71,4 +74,7 @@ export const MTGDeckCreatorContext = createContext<MTGDeckCreatorContextType>({
     openImportCardPackageDialog: false,
     setOpenImportCardPackageDialog: () => {},
     importCardPackage: () => {},
+    // Sticky CardsGrid
+    stickyCardsGrid: true,
+    setStickyCardsGrid: () => {},
 })

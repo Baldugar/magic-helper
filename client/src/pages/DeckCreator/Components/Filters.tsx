@@ -1,4 +1,6 @@
 import { Clear, FindReplace, Search } from '@mui/icons-material'
+import PushPinIcon from '@mui/icons-material/PushPin'
+import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined'
 import {
     Box,
     Button,
@@ -10,6 +12,7 @@ import {
     Popover,
     Switch,
     TextField,
+    useMediaQuery,
 } from '@mui/material'
 import { MouseEvent, useState } from 'react'
 import { CMCSelector } from '../../../components/FilterSelectors/CMCSelector'
@@ -21,12 +24,15 @@ import RaritySelector from '../../../components/FilterSelectors/RaritySelector'
 import SetSelector from '../../../components/FilterSelectors/SetSelector'
 import { SortSelector } from '../../../components/FilterSelectors/SortSelector'
 import TypeSelector from '../../../components/FilterSelectors/TypeSelector'
+import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { initialMTGFilter } from '../../../context/MTGA/Filter/MTGFilterContext'
 import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
 import { nextTB, prevTB, TernaryBoolean } from '../../../types/ternaryBoolean'
 
 export const Filters = () => {
     const { filter, setFilter } = useMTGFilter()
+    const { stickyCardsGrid, setStickyCardsGrid } = useMTGDeckCreator()
+    const isMobile = useMediaQuery('(max-width: 600px)')
     const [searchAnchorEl, setSearchAnchorEl] = useState<null | HTMLElement>(null)
     const [search, setSearch] = useState<string>('')
     const searchOpen = Boolean(searchAnchorEl)
@@ -261,6 +267,15 @@ export const Filters = () => {
                     })
                 }
             />
+            {isMobile && (
+                <IconButton
+                    onClick={() => setStickyCardsGrid((prev) => !prev)}
+                    title={stickyCardsGrid ? 'Sticky CardsGrid enabled' : 'Sticky CardsGrid disabled'}
+                    sx={{ ml: 1 }}
+                >
+                    {stickyCardsGrid ? <PushPinIcon color="primary" /> : <PushPinOutlinedIcon />}
+                </IconButton>
+            )}
         </Grid>
     )
 }

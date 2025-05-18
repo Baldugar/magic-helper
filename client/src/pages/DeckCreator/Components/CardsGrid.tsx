@@ -2,6 +2,7 @@ import { Box, Grid, Typography, useMediaQuery } from '@mui/material'
 import { isEqual } from 'lodash'
 import { useCallback, useEffect, useRef, WheelEvent } from 'react'
 import { useSwipeable } from 'react-swipeable'
+import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGDeckCreatorPagination } from '../../../context/MTGA/DeckCreatorPagination/useMTGDeckCreatorPagination'
 import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
 import { PAGE_SIZE_DESKTOP, PAGE_SIZE_MOBILE } from '../../../utils/constants'
@@ -12,6 +13,7 @@ export const CardsGrid = () => {
     const { filter, originalFilter } = useMTGFilter()
     const gridRef = useRef<HTMLDivElement | null>(null)
     const scrollDebounceTimeout = useRef<NodeJS.Timeout | null>(null)
+    const { stickyCardsGrid } = useMTGDeckCreator()
 
     const isMobile = useMediaQuery('(max-width: 600px)')
     const pageSize = isMobile ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP
@@ -50,7 +52,7 @@ export const CardsGrid = () => {
     )
 
     const handleScroll = () => {
-        if (!gridRef.current || !isMobile) return
+        if (!gridRef.current || !isMobile || !stickyCardsGrid) return
         // Debounce scroll event
         if (scrollDebounceTimeout.current) {
             clearTimeout(scrollDebounceTimeout.current)
@@ -68,8 +70,11 @@ export const CardsGrid = () => {
     useEffect(() => {
         if (gridRef.current) {
             gridRef.current.scrollTop = 0
+        }
+        if (stickyCardsGrid && gridRef.current) {
             scrollToCard(0)
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page, scrollToCard])
 
     // Cleanup debounce timeout on unmount
@@ -117,14 +122,18 @@ export const CardsGrid = () => {
                 flex: 1,
                 padding: 2,
                 ...(isMobile
-                    ? {
-                          touchAction: 'pan-y',
-                          scrollSnapType: 'y mandatory',
-                          '& > *': {
-                              scrollSnapAlign: 'start',
-                              scrollSnapStop: 'always',
-                          },
-                      }
+                    ? stickyCardsGrid
+                        ? {
+                              touchAction: 'pan-y',
+                              scrollSnapType: 'y mandatory',
+                              '& > *': {
+                                  scrollSnapAlign: 'start',
+                                  scrollSnapStop: 'always',
+                              },
+                          }
+                        : {
+                              touchAction: 'pan-y',
+                          }
                     : {
                           touchAction: 'pan-y',
                       }),

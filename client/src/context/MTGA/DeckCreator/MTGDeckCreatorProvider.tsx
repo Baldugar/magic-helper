@@ -28,6 +28,8 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
     const [openImportDialog, setOpenImportDialog] = useState(false)
     const [openExportDialog, setOpenExportDialog] = useState(false)
     const [openImportCardPackageDialog, setOpenImportCardPackageDialog] = useState(false)
+    // Sticky CardsGrid
+    const [stickyCardsGrid, setStickyCardsGrid] = useState(true)
 
     useEffect(() => {
         if (deckID) {
@@ -245,6 +247,9 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
                 setOpenImportCardPackageDialog,
                 importCardPackage,
                 setCardVersion,
+                // Sticky CardsGrid
+                stickyCardsGrid,
+                setStickyCardsGrid,
             }}
         >
             {children}
