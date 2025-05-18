@@ -1,6 +1,7 @@
 package daemons
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -10,6 +11,7 @@ import (
 	scryfallModel "magic-helper/graph/model/scryfall/model"
 	"math"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -103,15 +105,15 @@ func fetchMTGCards(ctx context.Context) bool {
 	bulkDataUrl := "https://api.scryfall.com/bulk-data"
 
 	// Check if we should fetch cards
-	shouldFetch, err := shouldDownloadStart("MTG_cards")
-	if err != nil {
-		log.Error().Err(err).Msgf("Error checking if we should fetch cards")
-		return false
-	}
+	// shouldFetch, err := shouldDownloadStart("MTG_cards")
+	// if err != nil {
+	// 	log.Error().Err(err).Msgf("Error checking if we should fetch cards")
+	// 	return false
+	// }
 
-	if !shouldFetch {
-		return false
-	}
+	// if !shouldFetch {
+	// 	return false
+	// }
 
 	// Fetch the bulk data list
 	respList, err := fetchURLWithContext(ctx, bulkDataUrl) // Renamed resp to respList for clarity
@@ -154,92 +156,12 @@ func fetchMTGCards(ctx context.Context) bool {
 
 			log.Info().Msgf("Found 'default_cards' data. Fetching from: %s", downloadURI)
 
-			// Fetch the actual card data file
-			respData, err := fetchURLWithContext(ctx, downloadURI) // Use a new response variable: respData
+			// Fetch and process card data
+			err = fetchAndProcessCardData(ctx, downloadURI)
 			if err != nil {
-				log.Error().Err(err).Msgf("Error fetching card data file from %s", downloadURI)
-				// Consider if we should try other bulk data items or return false
+				log.Error().Err(err).Msgf("Error processing card data from %s", downloadURI)
 				return false
 			}
-			// IMPORTANT: Defer close inside the loop for *this* response body
-			defer respData.Body.Close()
-
-			// Get total size for progress reporting
-			contentLengthStr := respData.Header.Get("Content-Length")
-			totalSize, _ := strconv.ParseInt(contentLengthStr, 10, 64) // Ignore error, will default to 0 if invalid/missing
-
-			if totalSize > 0 {
-				log.Info().Msgf("Starting download of card data file (%d bytes)...", totalSize)
-			} else {
-				log.Info().Msg("Starting download of card data file (size unknown)...")
-			}
-
-			// Wrap the response body with ProgressReader
-			progressReader := NewProgressReader(respData.Body, totalSize)
-
-			// Decode the JSON array incrementally using the progress reader
-			log.Info().Msgf("Processing cards from %v", downloadURI)
-			decoder := json.NewDecoder(progressReader) // Use progressReader here
-
-			// Read the opening bracket `[`
-			_, err = decoder.Token()
-			if err != nil {
-				// Check if the error occurred because the download failed early
-				if err == io.EOF && progressReader.ReadSoFar == 0 {
-					log.Error().Msg("Download stream empty or failed immediately.")
-				} else {
-					log.Error().Err(err).Msg("Error decoding card data: expecting start of array `[`")
-				}
-				return false
-			}
-
-			batchSize := 1000 // Process 1000 cards at a time
-			var processedCount int = 0
-
-			for decoder.More() {
-				var batchRaw []json.RawMessage
-				var currentBatchCount int = 0
-				// Inner loop to accumulate a batch
-				for currentBatchCount < batchSize && decoder.More() {
-					var cardRaw json.RawMessage
-					if err := decoder.Decode(&cardRaw); err != nil {
-						// EOF is expected at the end of the stream inside the loop.
-						// Other errors during decode are problematic.
-						if err == io.EOF {
-							break // Reached end of JSON array
-						}
-						log.Error().Err(err).Msgf("Error decoding card JSON object at ~card %d", processedCount+currentBatchCount)
-						// Decide whether to continue or return false based on error tolerance
-						return false // For now, fail on decode errors
-					}
-					batchRaw = append(batchRaw, cardRaw)
-					currentBatchCount++
-				} // End of inner batch accumulation loop
-
-				// Process the accumulated batch if it's not empty
-				if len(batchRaw) > 0 {
-					parsedArr, parseErr := parseCardsFromRaw(batchRaw) // Renamed err variable
-					if parseErr != nil {
-						log.Error().Err(parseErr).Msgf("Error parsing raw cards batch starting at card %d", processedCount)
-						return false
-					}
-
-					upsertErr := upsertOriginalCards(ctx, parsedArr, arango.MTG_ORIGINAL_CARDS_COLLECTION) // Renamed err variable
-					if upsertErr != nil {
-						log.Error().Err(upsertErr).Msgf("Error upserting card batch starting at card %d", processedCount)
-						return false
-					}
-					processedCount += len(batchRaw)
-					// Log processing progress, download progress is handled by ProgressReader
-					log.Info().Msgf("Processed %d cards...", processedCount)
-				}
-			} // End of outer decoder loop (decoder.More)
-
-			// Optional: Read closing bracket `]` - decoder.More() handles EOF, so usually not needed
-			// _, err = decoder.Token()
-			// if err != nil && err != io.EOF { ... }
-
-			log.Info().Msgf("Finished processing approximately %d cards from %s.", processedCount, downloadURI)
 
 			// Only process the first "default_cards" entry found? If yes, we can break here.
 			// If multiple "default_cards" entries exist (unlikely but possible), this would only process the first.
@@ -260,6 +182,106 @@ func fetchMTGCards(ctx context.Context) bool {
 	log.Info().Msgf("Card fetching process completed.")
 
 	return true
+}
+
+// Fetch and process card data
+func fetchAndProcessCardData(ctx context.Context, downloadURI string) error {
+	// Fetch the actual card data file
+	respData, err := fetchURLWithContext(ctx, downloadURI)
+	if err != nil {
+		log.Error().Err(err).Msgf("Error fetching card data file from %s", downloadURI)
+		return err
+	}
+	defer respData.Body.Close()
+
+	// Read the response body into a buffer
+	bodyBytes, err := io.ReadAll(respData.Body)
+	if err != nil {
+		log.Error().Err(err).Msg("Error reading response body")
+		return err
+	}
+
+	// Optionally download the file to a local file
+	err = downloadFile(bytes.NewReader(bodyBytes), "cards.json")
+	if err != nil {
+		log.Error().Err(err).Msgf("Error downloading card data file from %s", downloadURI)
+		return err
+	}
+
+	// Get total size for progress reporting
+	contentLengthStr := respData.Header.Get("Content-Length")
+	totalSize, _ := strconv.ParseInt(contentLengthStr, 10, 64) // Ignore error, will default to 0 if invalid/missing
+
+	if totalSize > 0 {
+		log.Info().Msgf("Starting download of card data file (%d bytes)...", totalSize)
+	} else {
+		log.Info().Msg("Starting download of card data file (size unknown)...")
+	}
+
+	// Wrap the response body with ProgressReader
+	progressReader := NewProgressReader(bytes.NewReader(bodyBytes), totalSize)
+
+	// Decode the JSON array incrementally using the progress reader
+	log.Info().Msgf("Processing cards from %v", downloadURI)
+	decoder := json.NewDecoder(progressReader) // Use progressReader here
+
+	// Read the opening bracket `[` and process the data
+	_, err = decoder.Token()
+	if err != nil {
+		// Check if the error occurred because the download failed early
+		if err == io.EOF && progressReader.ReadSoFar == 0 {
+			log.Error().Msg("Download stream empty or failed immediately.")
+		} else {
+			log.Error().Err(err).Msg("Error decoding card data: expecting start of array `[`")
+		}
+		return err
+	}
+
+	batchSize := 1000 // Process 1000 cards at a time
+	var processedCount int = 0
+
+	for decoder.More() {
+		var batchRaw []json.RawMessage
+		var currentBatchCount int = 0
+		// Inner loop to accumulate a batch
+		for currentBatchCount < batchSize && decoder.More() {
+			var cardRaw json.RawMessage
+			if err := decoder.Decode(&cardRaw); err != nil {
+				// EOF is expected at the end of the stream inside the loop.
+				// Other errors during decode are problematic.
+				if err == io.EOF {
+					break // Reached end of JSON array
+				}
+				log.Error().Err(err).Msgf("Error decoding card JSON object at ~card %d", processedCount+currentBatchCount)
+				// Decide whether to continue or return false based on error tolerance
+				return err // For now, fail on decode errors
+			}
+			batchRaw = append(batchRaw, cardRaw)
+			currentBatchCount++
+		} // End of inner batch accumulation loop
+
+		// Process the accumulated batch if it's not empty
+		if len(batchRaw) > 0 {
+			parsedArr, parseErr := parseCardsFromRaw(batchRaw) // Renamed err variable
+			if parseErr != nil {
+				log.Error().Err(parseErr).Msgf("Error parsing raw cards batch starting at card %d", processedCount)
+				return parseErr
+			}
+
+			upsertErr := upsertOriginalCards(ctx, parsedArr, arango.MTG_ORIGINAL_CARDS_COLLECTION) // Renamed err variable
+			if upsertErr != nil {
+				log.Error().Err(upsertErr).Msgf("Error upserting card batch starting at card %d", processedCount)
+				return upsertErr
+			}
+			processedCount += len(batchRaw)
+			// Log processing progress, download progress is handled by ProgressReader
+			log.Info().Msgf("Processed %d cards...", processedCount)
+		}
+	} // End of outer decoder loop (decoder.More)
+
+	log.Info().Msgf("Finished processing approximately %d cards from %s.", processedCount, downloadURI)
+
+	return nil
 }
 
 func collectCards(ctx context.Context) {
@@ -639,4 +661,32 @@ func normalizeCardName(name string) string {
 	}
 
 	return name
+}
+
+// downloadFile saves the response body to a local file under the 'cards' directory.
+func downloadFile(body io.Reader, filename string) error {
+	// Ensure the 'cards' directory exists
+	cardsDir := "cards"
+	if _, err := os.Stat(cardsDir); os.IsNotExist(err) {
+		err = os.MkdirAll(cardsDir, 0755)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Create the file in the 'cards' directory
+	filePath := filepath.Join(cardsDir, filename)
+	out, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	// Write the body to file
+	_, err = io.Copy(out, body)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

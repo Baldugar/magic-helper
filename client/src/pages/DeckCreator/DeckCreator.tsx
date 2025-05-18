@@ -134,30 +134,38 @@ export const DeckCreator = () => {
 
     return (
         <MTGDeckCreatorFlowProvider deck={deck}>
-            <Box display={'flex'} maxHeight={{ xs: '150vh', lg: '100vh' }}>
+            <Box display={'flex'}>
                 <Box
                     position={'relative'}
                     flex={1}
                     display={'flex'}
                     flexDirection={'column'}
-                    height={{ xs: '150vh', lg: '100vh' }}
+                    height={{ xs: '160vh', lg: '100vh' }}
                 >
-                    <Box display={'flex'} gap={1} alignItems={'center'} paddingLeft={1}>
+                    <Box
+                        display={'flex'}
+                        gap={1}
+                        alignItems={isMobile ? 'flex-start' : 'center'}
+                        paddingLeft={1}
+                        flexDirection={isMobile ? 'column' : 'row'}
+                    >
                         <Button variant={'contained'} color={'primary'} onClick={() => navigate(-1)}>
                             <ArrowLeft fontSize={'large'} />
                         </Button>
-                        <h1>
-                            Deck Creator - {viewMode} - {deck.name}
-                        </h1>
-                        <IconButton
-                            onClick={() => {
-                                const prompt = window.prompt('Enter a new name for the deck')
-                                if (!prompt) return
-                                setDeck({ ...deck, name: prompt })
-                            }}
-                        >
-                            <Edit />
-                        </IconButton>
+                        <Box display={'flex'} gap={1} alignItems={'center'}>
+                            <h1>
+                                Deck Creator - {viewMode} - {deck.name}
+                            </h1>
+                            <IconButton
+                                onClick={() => {
+                                    const prompt = window.prompt('Enter a new name for the deck')
+                                    if (!prompt) return
+                                    setDeck({ ...deck, name: prompt })
+                                }}
+                            >
+                                <Edit />
+                            </IconButton>
+                        </Box>
                     </Box>
                     {viewMode === 'catalogue' && (
                         <>
