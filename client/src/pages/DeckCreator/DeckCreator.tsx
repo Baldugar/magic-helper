@@ -58,7 +58,7 @@ export const DeckCreator = () => {
     const { clearFilter } = useMTGFilter()
     const { getNodes } = useReactFlow()
     const {
-        mutations: { updateMTGDeck: updateMTGADeck },
+        mutations: { updateMTGDeck },
     } = MTGFunctions
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
     const open = Boolean(anchorEl)
@@ -77,47 +77,21 @@ export const DeckCreator = () => {
 
     const saveDeck = () => {
         if (!deck) return
-        let deckInput: MTG_UpdateDeckInput | undefined
-        if (viewMode === 'catalogue') {
-            deckInput = {
-                cards: deck.cards.map((c) => ({
-                    card: c.card.ID,
-                    count: c.count,
-                    deckCardType: c.deckCardType,
-                    mainOrSide: c.mainOrSide,
-                    ID: c.card.ID,
-                    phantoms: c.phantoms,
-                    position: c.position,
-                })),
-                deckID: deck.ID,
-                name: deck.name,
-                zones: deck.zones,
-                ignoredCards: deck.ignoredCards,
-                cardFrontImage: deck.cardFrontImage
-                    ? {
-                          cardID: deck.cardFrontImage.ID,
-                          versionID: deck.cardFrontImage.versions[0].ID,
-                      }
-                    : undefined,
-            }
-        } else {
-            const nodes = getNodes()
-            deckInput = {
-                cards: calculateCardsFromNodes(nodes, deck.cards),
-                deckID: deck.ID,
-                name: deck.name,
-                zones: calculateZonesFromNodes(nodes),
-                cardFrontImage: deck.cardFrontImage
-                    ? {
-                          cardID: deck.cardFrontImage.ID,
-                          versionID: deck.cardFrontImage.versions[0].ID,
-                      }
-                    : undefined,
-                ignoredCards: deck.ignoredCards,
-            }
+        const nodes = getNodes()
+        const deckInput: MTG_UpdateDeckInput = {
+            cards: calculateCardsFromNodes(nodes, deck.cards),
+            deckID: deck.ID,
+            name: deck.name,
+            zones: calculateZonesFromNodes(nodes),
+            cardFrontImage: deck.cardFrontImage
+                ? {
+                      cardID: deck.cardFrontImage.ID,
+                      versionID: deck.cardFrontImage.versions[0].ID,
+                  }
+                : undefined,
+            ignoredCards: deck.ignoredCards,
         }
-        if (!deckInput) return
-        updateMTGADeck(deckInput).then((deck) => {
+        updateMTGDeck(deckInput).then((deck) => {
             updateDeck(deck)
         })
     }

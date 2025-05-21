@@ -1,6 +1,6 @@
 import { Box, Grid, Typography, useMediaQuery } from '@mui/material'
 import { isEqual } from 'lodash'
-import { useCallback, useEffect, useRef, WheelEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, WheelEvent } from 'react'
 import { useSwipeable } from 'react-swipeable'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGDeckCreatorPagination } from '../../../context/MTGA/DeckCreatorPagination/useMTGDeckCreatorPagination'
@@ -14,12 +14,16 @@ export const CardsGrid = () => {
     const gridRef = useRef<HTMLDivElement | null>(null)
     const scrollDebounceTimeout = useRef<NodeJS.Timeout | null>(null)
     const { stickyCardsGrid } = useMTGDeckCreator()
+    const [lastIgnoredIndex, setLastIgnoredIndex] = useState<number | null>(null)
 
     const isMobile = useMediaQuery('(max-width: 600px)')
     const pageSize = isMobile ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP
 
     const cardsToShow = filteredCards.slice(page * pageSize, (page + 1) * pageSize)
     const totalPages = Math.ceil(filteredCards.length / pageSize)
+
+    // Spacing in px for MUI Grid (theme.spacing(2)), default is 8px * 2 = 16px
+    const spacingPx = 16
 
     const handleSwipe = (direction: string) => {
         if (!isMobile) return
@@ -44,7 +48,9 @@ export const CardsGrid = () => {
     const scrollToCard = useCallback(
         (index: number) => {
             if (!gridRef.current) return
-            const cardHeight = gridRef.current.scrollHeight / cardsToShow.length
+            // Account for spacing between cards
+            const totalSpacing = (cardsToShow.length - 1) * spacingPx
+            const cardHeight = (gridRef.current.scrollHeight - totalSpacing) / cardsToShow.length + spacingPx
             const targetScroll = index * cardHeight
             gridRef.current.scrollTop = targetScroll
         },
@@ -76,6 +82,18 @@ export const CardsGrid = () => {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page, scrollToCard])
+
+    // After cardsToShow changes (e.g., after ignore), scroll to the correct card
+    useEffect(() => {
+        if (isMobile && lastIgnoredIndex !== null && gridRef.current && cardsToShow.length > 0) {
+            // If the ignored card was the last one, scroll to the new last card
+            const targetIndex = Math.min(lastIgnoredIndex, cardsToShow.length - 1)
+            scrollToCard(targetIndex)
+            setLastIgnoredIndex(null)
+        } else if (!isMobile && lastIgnoredIndex !== null) {
+            setLastIgnoredIndex(null)
+        }
+    }, [cardsToShow, scrollToCard, lastIgnoredIndex, isMobile])
 
     // Cleanup debounce timeout on unmount
     useEffect(() => {
@@ -150,8 +168,8 @@ export const CardsGrid = () => {
                     <Typography>No cards found with the current filters</Typography>
                 </Box>
             )}
-            {cardsToShow.map((card) => (
-                <CardsGridButton card={card} key={card.ID} />
+            {cardsToShow.map((card, idx) => (
+                <CardsGridButton card={card} key={card.ID} onIgnore={() => setLastIgnoredIndex(idx)} />
             ))}
         </Grid>
     )

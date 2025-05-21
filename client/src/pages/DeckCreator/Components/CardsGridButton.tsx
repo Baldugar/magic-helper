@@ -24,10 +24,11 @@ import { VersionCard } from './VersionCard'
 
 export type CardsGridButtonProps = {
     card: MTG_Card
+    onIgnore?: () => void
 }
 
 export const CardsGridButton = (props: CardsGridButtonProps) => {
-    const { card } = props
+    const { card, onIgnore } = props
     const { decks, updateDeck } = useMTGDecks()
     const { cardPackages, updateCardPackage } = useMTGCardPackages()
 
@@ -126,6 +127,7 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                     }
                     return newDeck
                 })
+                if (onIgnore) onIgnore()
             },
         },
         {
