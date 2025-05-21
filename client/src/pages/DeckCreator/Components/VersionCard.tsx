@@ -55,6 +55,12 @@ export const VersionCard = (props: VersionCardProps) => {
                 })
             },
         },
+        {
+            label: 'Log version',
+            action: () => {
+                console.log(version)
+            },
+        },
     ]
 
     return (

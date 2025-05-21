@@ -76,6 +76,7 @@ type MTG_CardVersionDB struct {
 	SetType         string                     `json:"setType"`
 	Variation       bool                       `json:"variation"`
 	VariationOf     *string                    `json:"variationOf,omitempty"`
+	IllustrationID  *string                    `json:"illustrationID,omitempty"`
 }
 
 type MTG_CardVersionFaceDB struct {

@@ -1,18 +1,39 @@
 import { Check, ChevronRight } from '@mui/icons-material'
-import { MenuItem, Paper, Popover } from '@mui/material'
+import { MenuItem, Paper, Popover, useMediaQuery } from '@mui/material'
 import type React from 'react'
 import { useState } from 'react'
 import { NestedSubMenu } from './NestedSubMenu'
 import { ContextMenuOption, ContextMenuProps } from './types'
 
 export const ContextMenu = (props: ContextMenuProps) => {
-    const { id, open, handleClose, options, handleClick, anchorRef } = props
+    const { id, open, handleClose, options, handleClick, anchorRef, mobilePosition } = props
+    const isMobile = useMediaQuery('(max-width:600px)')
+
+    // Create a virtual anchor element for Popover if on mobile and mobilePosition is provided
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const virtualAnchor =
+        isMobile && mobilePosition
+            ? ({
+                  getBoundingClientRect: () => ({
+                      top: mobilePosition.y,
+                      left: mobilePosition.x,
+                      right: mobilePosition.x,
+                      bottom: mobilePosition.y,
+                      width: 0,
+                      height: 0,
+                      x: mobilePosition.x,
+                      y: mobilePosition.y,
+                      toJSON: () => {},
+                  }),
+                  nodeType: 1,
+              } as unknown as Element)
+            : anchorRef.current
 
     return (
         <Popover
             id={id}
             open={open}
-            anchorEl={anchorRef.current}
+            anchorEl={virtualAnchor}
             onClose={handleClose}
             anchorOrigin={{
                 vertical: 'bottom',

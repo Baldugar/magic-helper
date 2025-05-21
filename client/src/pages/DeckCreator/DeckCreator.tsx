@@ -140,7 +140,7 @@ export const DeckCreator = () => {
                     flex={1}
                     display={'flex'}
                     flexDirection={'column'}
-                    height={{ xs: '160vh', lg: '100vh' }}
+                    height={{ xs: '150vh', lg: '100vh' }}
                 >
                     <Box
                         display={'flex'}
@@ -211,7 +211,13 @@ export const DeckCreator = () => {
                             </Box>
                         </Box>
                     )}
-                    <Box position={'absolute'} top={10} right={10} display={'flex'} gap={1}>
+                    <Box
+                        position={viewMode === 'board' ? 'sticky' : 'absolute'}
+                        top={10}
+                        right={10}
+                        display={'flex'}
+                        gap={1}
+                    >
                         <IconButton
                             size="large"
                             edge="start"

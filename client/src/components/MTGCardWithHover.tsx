@@ -1,12 +1,12 @@
 import { Box, useMediaQuery } from '@mui/material'
-import { FC, useState } from 'react'
+import { FC, useMemo, useState } from 'react'
 import { useDnD } from '../context/DnD/useDnD'
 import { useMTGDeckCreator } from '../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGFilter } from '../context/MTGA/Filter/useMTGFilter'
 import { MTG_Card, MTG_CardVersion, MTG_Layout } from '../graphql/types'
 import { CARD_SIZE_VALUES } from '../utils/constants'
 import { getCorrectCardImage } from '../utils/functions/cardFunctions'
-import { singleSetSelected } from '../utils/functions/filterFunctions'
+import { getRandomVersionFromFilter } from '../utils/functions/filterFunctions'
 import { HoverMouseComponent } from './HoverMouseComponent'
 import { ImageWithSkeleton } from './ImageWithSkeleton'
 
@@ -33,7 +33,6 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
     const { viewMode } = useMTGDeckCreator()
     const { onDragStart, onDragEnd } = useDnD()
     const { filter } = useMTGFilter()
-    const set = singleSetSelected(filter)
     let small: string | undefined = undefined
     let large: string | undefined = undefined
     let otherLarge: string | undefined = undefined
@@ -45,18 +44,18 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
     const smVerticalScreen = useMediaQuery('(max-height: 1000px)')
     const isMobile = useMediaQuery('(max-width: 600px)')
 
+    const randomVersion = useMemo(() => {
+        if (type === 'card') {
+            return getRandomVersionFromFilter(filter, card)
+        }
+        return undefined
+    }, [type, filter, card])
+
     if (type === 'card') {
         const { card } = data
         typeLine = card.typeLine
-        if (set) {
-            const defaultIsOfSet = card.versions.find((v) => v.set === set && v.isDefault)
-            if (defaultIsOfSet) {
-                version = defaultIsOfSet
-            } else {
-                version = card.versions.find((v) => v.set === set)
-            }
-        } else {
-            version = card.versions.find((v) => v.isDefault)
+        if (randomVersion) {
+            version = randomVersion
         }
         if (!version) return null
         small = getCorrectCardImage(version, isMobile ? 'large' : 'small')

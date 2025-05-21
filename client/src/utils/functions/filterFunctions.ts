@@ -1,4 +1,5 @@
 import { MTGFilterType } from '../../context/MTGA/Filter/MTGFilterContext'
+import { MTG_Card } from '../../graphql/types'
 import { isPositiveTB, TernaryBoolean } from '../../types/ternaryBoolean'
 
 export const singleSetSelected = (filter: MTGFilterType) => {
@@ -12,4 +13,30 @@ export const singleSetSelected = (filter: MTGFilterType) => {
         return setEntries[0][0]
     }
     return undefined
+}
+
+export const getRandomVersionFromFilter = (filter: MTGFilterType, card: MTG_Card) => {
+    const setEntries = Object.entries(filter.sets)
+        .filter(([, value]) => isPositiveTB(value.value))
+        .map(([key]) => {
+            return key.toLowerCase()
+        })
+
+    if (setEntries.length === 0) {
+        const isDefault = card.versions.find((v) => v.isDefault)
+        if (isDefault) return isDefault
+    }
+
+    const setsInCard = card.versions.filter((v) => setEntries.includes(v.set))
+    if (setsInCard.length === 0) {
+        const isDefault = card.versions.find((v) => v.isDefault)
+        if (isDefault) return isDefault
+    }
+
+    const version = setsInCard[Math.floor(Math.random() * setsInCard.length)]
+    if (!version) {
+        const isDefault = card.versions.find((v) => v.isDefault)
+        if (isDefault) return isDefault
+    }
+    return version
 }

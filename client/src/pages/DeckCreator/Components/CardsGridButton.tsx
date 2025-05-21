@@ -52,6 +52,9 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
 
     const [showAllVersions, setShowAllVersions] = useState(false)
 
+    // Track long-press position for mobile context menu
+    const [mobilePosition, setMobilePosition] = useState<{ x: number; y: number } | undefined>(undefined)
+
     const defaultVersion = card.versions.find((v) => v.isDefault)
 
     if (!defaultVersion) return null
@@ -362,16 +365,40 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
         })
     }
 
+    // Remove long-press logic and use only onContextMenu
+    const handleContextMenu = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+        if (isMobile) {
+            // For mobile, set the position and open the menu
+            let x = 0,
+                y = 0
+            if ('touches' in e && e.touches.length > 0) {
+                x = e.touches[0].clientX
+                y = e.touches[0].clientY
+            } else if ('clientX' in e) {
+                x = e.clientX
+                y = e.clientY
+            }
+            setMobilePosition({ x, y })
+            e.preventDefault()
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            mainCardHandleContextMenu(e as any)
+        } else {
+            setMobilePosition(undefined)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            mainCardHandleContextMenu(e as any)
+        }
+    }
+
     return (
         <Grid item xs={12} sm={'auto'} md={'auto'} lg={'auto'}>
             <ErrorBoundary
                 fallback={
-                    <div ref={mainCardAnchorRef} onContextMenu={mainCardHandleContextMenu}>
+                    <div ref={mainCardAnchorRef} onContextMenu={handleContextMenu}>
                         <div>Something went wrong {card.ID}</div>
                     </div>
                 }
             >
-                <div ref={mainCardAnchorRef} onContextMenu={mainCardHandleContextMenu}>
+                <div ref={mainCardAnchorRef} onContextMenu={handleContextMenu}>
                     <ButtonBase
                         onClick={() => handleAddCard(card)}
                         sx={{
@@ -445,8 +472,12 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                 anchorRef={mainCardAnchorRef}
                 options={mainCardOptions}
                 open={mainCardOpen}
-                handleClose={mainCardHandleClose}
+                handleClose={() => {
+                    setMobilePosition(undefined)
+                    mainCardHandleClose()
+                }}
                 handleClick={mainCardHandleClick}
+                mobilePosition={mobilePosition}
             />
             <Dialog
                 open={showAllVersions}
@@ -455,19 +486,61 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
             >
                 <DialogTitle>All versions of {card.name}</DialogTitle>
                 <DialogContent>
-                    <Grid container spacing={2}>
-                        {card.versions
-                            .sort((a, b) => new Date(a.releasedAt).getTime() - new Date(b.releasedAt).getTime())
-                            .map((v) => (
-                                <Grid item key={v.ID}>
-                                    <VersionCard
-                                        card={card}
-                                        version={v}
-                                        closeDialog={() => setShowAllVersions(false)}
-                                    />
-                                </Grid>
-                            ))}
-                    </Grid>
+                    {/* Group versions by set */}
+                    {(() => {
+                        // Group versions by set
+                        const versionsBySet: { [set: string]: MTG_CardVersion[] } = {}
+                        card.versions.forEach((v) => {
+                            if (!versionsBySet[v.set]) versionsBySet[v.set] = []
+                            versionsBySet[v.set].push(v)
+                        })
+                        // Get set names and sort by earliest release date in each set
+                        const setOrder = Object.keys(versionsBySet).sort((setA, setB) => {
+                            const aEarliest = versionsBySet[setA].reduce((min, v) =>
+                                new Date(v.releasedAt) < new Date(min.releasedAt) ? v : min,
+                            )
+                            const bEarliest = versionsBySet[setB].reduce((min, v) =>
+                                new Date(v.releasedAt) < new Date(min.releasedAt) ? v : min,
+                            )
+                            return new Date(aEarliest.releasedAt).getTime() - new Date(bEarliest.releasedAt).getTime()
+                        })
+                        // Helper to format date as DD/MM/YYYY
+                        const formatDate = (dateStr: string) => {
+                            const d = new Date(dateStr)
+                            return d.toLocaleDateString('en-GB')
+                        }
+                        return setOrder.map((set) => {
+                            // Get earliest release date in this set
+                            const earliest = versionsBySet[set].reduce((min, v) =>
+                                new Date(v.releasedAt) < new Date(min.releasedAt) ? v : min,
+                            )
+                            // Use setName from the earliest version in the set
+                            const setName = earliest.setName || set
+                            return (
+                                <div key={set} style={{ marginBottom: 24 }}>
+                                    <div style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 8 }}>
+                                        {formatDate(earliest.releasedAt)} - {setName}
+                                    </div>
+                                    <Grid container spacing={2}>
+                                        {versionsBySet[set]
+                                            .sort(
+                                                (a, b) =>
+                                                    new Date(a.releasedAt).getTime() - new Date(b.releasedAt).getTime(),
+                                            )
+                                            .map((v) => (
+                                                <Grid item key={v.ID}>
+                                                    <VersionCard
+                                                        card={card}
+                                                        version={v}
+                                                        closeDialog={() => setShowAllVersions(false)}
+                                                    />
+                                                </Grid>
+                                            ))}
+                                    </Grid>
+                                </div>
+                            )
+                        })
+                    })()}
                 </DialogContent>
             </Dialog>
         </Grid>

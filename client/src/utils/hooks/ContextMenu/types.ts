@@ -7,6 +7,7 @@ export type ContextMenuProps = {
     options: ContextMenuOption[]
     handleClick: (callback: () => void, shouldKeepOpen?: boolean) => void
     anchorRef: MutableRefObject<HTMLElement | null>
+    mobilePosition?: { x: number; y: number }
 }
 
 export type ContextMenuOption = {

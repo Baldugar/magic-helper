@@ -468,6 +468,7 @@ func collectCards(ctx context.Context) {
 				FullArt:         card.FullArt,
 				PromoTypes:      card.PromoTypes,
 				CollectorNumber: card.CollectorNumber,
+				IllustrationID:  card.IllustrationID,
 			}
 
 			var cardFacesDB []scryfall.MTG_CardVersionFaceDB
@@ -546,6 +547,29 @@ func collectCards(ctx context.Context) {
 			cardForGroup.ID = normalizeCardName(cardForGroup.Name)
 		}
 		// --- End: Logic to determine the single default version ---
+
+		// Find versions that are from the same set, for each of them, if they have the same illustration_id, log them in groups in the console
+		// Group by set, then by illustration_id
+		setIllustrationGroups := make(map[string]map[string][]scryfall.MTG_CardVersionDB)
+		for _, v := range cardForGroup.Versions {
+			if v.IllustrationID == nil || *v.IllustrationID == "" {
+				continue // skip if no illustration_id
+			}
+			if _, ok := setIllustrationGroups[v.Set]; !ok {
+				setIllustrationGroups[v.Set] = make(map[string][]scryfall.MTG_CardVersionDB)
+			}
+			setIllustrationGroups[v.Set][*v.IllustrationID] = append(setIllustrationGroups[v.Set][*v.IllustrationID], v)
+		}
+		for set, illusMap := range setIllustrationGroups {
+			for illusID, versions := range illusMap {
+				if len(versions) > 1 {
+					log.Info().Str("group", groupName).Str("set", set).Str("illustration_id", illusID).Msgf("Found %d versions with same set and illustration_id", len(versions))
+					for _, v := range versions {
+						log.Info().Str("group", groupName).Str("set", set).Str("illustration_id", illusID).Str("collector_number", v.CollectorNumber).Str("id", v.ID).Msg("Version details")
+					}
+				}
+			}
+		}
 
 		allCardsToSave = append(allCardsToSave, cardForGroup)
 
