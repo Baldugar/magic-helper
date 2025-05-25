@@ -13,7 +13,7 @@ import {
     TextField,
     Typography,
 } from '@mui/material'
-import { MouseEvent, useMemo, useState } from 'react'
+import { MouseEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
 import { MTG_Game } from '../../graphql/types'
 import { isNegativeTB, isPositiveTB, nextTB, prevTB, TernaryBoolean } from '../../types/ternaryBoolean'
@@ -46,12 +46,34 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
     const { onNext, onPrev, selected, setValue, iconSize } = props
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
     const [search, setSearch] = useState('')
+    const [accordionOpenState, setAccordionOpenState] = useState<Record<string, boolean>>({})
+    const [scrollPosition, setScrollPosition] = useState(0)
+    const paperRef = useRef<HTMLDivElement>(null)
 
     const handleClick = (event: MouseEvent<HTMLElement>) => {
         setAnchorEl(anchorEl ? null : event.currentTarget)
     }
 
+    console.log('scrollPosition', scrollPosition)
+
     const open = Boolean(anchorEl)
+
+    useEffect(() => {
+        if (open && scrollPosition > 0) {
+            console.log(
+                'useEffect for scroll - open is true. scrollPos:',
+                scrollPosition,
+                'paperRef.current (before timeout):',
+                paperRef.current,
+            )
+            setTimeout(() => {
+                if (paperRef.current) {
+                    console.log('useEffect (in timeout) - Setting scroll. paperRef.current:', paperRef.current)
+                    paperRef.current.scrollTop = scrollPosition
+                }
+            }, 0)
+        }
+    }, [open, scrollPosition])
 
     const { filter } = useMTGFilter()
     const { sets, games } = filter
@@ -98,6 +120,21 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
 
     const yearsSorted = useMemo(() => Object.keys(grouped).sort((a, b) => Number(b) - Number(a)), [grouped])
 
+    const handleToggleAccordion = (yearKey: string) => {
+        setAccordionOpenState((prev) => {
+            const isCurrentlyExplicitlySet = yearKey in prev
+            let currentActualState: boolean
+
+            if (isCurrentlyExplicitlySet) {
+                currentActualState = prev[yearKey]!
+            } else {
+                // Default for the first year is open, others are closed
+                currentActualState = yearsSorted.length > 0 && yearKey === yearsSorted[0]
+            }
+            return { ...prev, [yearKey]: !currentActualState }
+        })
+    }
+
     return (
         <Grid container item xs={'auto'} direction="column">
             <Badge
@@ -114,8 +151,19 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
                 </Badge>
             </Badge>
             <Popper open={open} anchorEl={anchorEl}>
-                <ClickAwayListener onClickAway={() => setAnchorEl(null)}>
-                    <Paper sx={{ maxHeight: '70vh', maxWidth: '50vw', overflow: 'auto' }}>
+                <ClickAwayListener
+                    onClickAway={
+                        open
+                            ? () => {
+                                  if (paperRef.current) {
+                                      setScrollPosition(paperRef.current.scrollTop)
+                                  }
+                                  setAnchorEl(null)
+                              }
+                            : () => {}
+                    }
+                >
+                    <Paper ref={paperRef} sx={{ maxHeight: '70vh', maxWidth: '50vw', overflow: 'auto' }}>
                         <TextField
                             label="Search"
                             variant={'filled'}
@@ -130,19 +178,24 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
                         <Typography variant="body2" sx={{ pl: 1, pt: 1 }}>
                             Legend: 🎴 Paper, 💻 MTGO, 🎮 Arena
                         </Typography>
-                        {yearsSorted.map((year) => (
-                            <YearItem
-                                key={year}
-                                grouped={grouped}
-                                iconSize={iconSize}
-                                onNext={onNext}
-                                onPrev={onPrev}
-                                selected={selected}
-                                setValue={setValue}
-                                year={year}
-                                yearsSorted={yearsSorted}
-                            />
-                        ))}
+                        {yearsSorted.map((year) => {
+                            const isAccordionOpen =
+                                accordionOpenState[year] ?? (yearsSorted.length > 0 && year === yearsSorted[0])
+                            return (
+                                <YearItem
+                                    key={year}
+                                    grouped={grouped}
+                                    iconSize={iconSize}
+                                    onNext={onNext}
+                                    onPrev={onPrev}
+                                    selected={selected}
+                                    setValue={setValue}
+                                    year={year}
+                                    isAccordionOpen={isAccordionOpen}
+                                    onToggleAccordion={() => handleToggleAccordion(year)}
+                                />
+                            )
+                        })}
                     </Paper>
                 </ClickAwayListener>
             </Popper>
@@ -193,31 +246,37 @@ const aggregateTernaryBoolean = (values: TernaryBoolean[]): TernaryBoolean => {
     return TernaryBoolean.UNSET
 }
 
-const YearItem: React.FC<{
+interface YearItemProps {
     year: string
     onNext: (filterOption: string) => void
     onPrev: (filterOption: string) => void
     setValue: (filterOption: string, value: TernaryBoolean) => void
     grouped: Record<string, Record<string, FilterSet[]>>
     selected: Record<string, TernaryBoolean>
-    yearsSorted: string[]
     iconSize: number | string | undefined
-}> = ({ year, onNext, onPrev, setValue, grouped, selected, yearsSorted, iconSize }) => {
+    isAccordionOpen: boolean
+    onToggleAccordion: () => void
+}
+
+const YearItem: React.FC<YearItemProps> = ({
+    year,
+    onNext,
+    onPrev,
+    setValue,
+    grouped,
+    selected,
+    iconSize,
+    isAccordionOpen,
+    onToggleAccordion,
+}) => {
     const categories = grouped[year]
     const allStates: TernaryBoolean[] = []
     Object.values(categories).forEach((arr) =>
         arr.forEach((s) => allStates.push(selected[s.code] ?? TernaryBoolean.UNSET)),
     )
     const yearState = aggregateTernaryBoolean(allStates)
-    const [open, setOpen] = useState(year === yearsSorted[0])
     return (
-        <Accordion
-            key={year}
-            defaultExpanded={open}
-            expanded={open}
-            onChange={(_, expanded) => setOpen(expanded)}
-            disableGutters
-        >
+        <Accordion key={year} expanded={isAccordionOpen} onChange={onToggleAccordion} disableGutters>
             <AccordionSummary expandIcon={<ExpandMore />} sx={{ backgroundColor: 'secondary.main' }}>
                 <Grid container alignItems="center" spacing={1} wrap="nowrap">
                     <Grid item>

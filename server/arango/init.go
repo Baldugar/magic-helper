@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"magic-helper/settings"
+	"time"
 
 	arangoDriver "github.com/arangodb/go-driver"
 	arangoHttp "github.com/arangodb/go-driver/http"
@@ -34,17 +35,39 @@ func Init(settings settings.ArangoDBConfig) {
 	}
 	log.Info().Msgf("ArangoDB client created")
 	log.Info().Msgf("Ensuring database %s", settings.Name)
-	DB, err = arangoClient.Database(ctx, settings.Name)
-	if err != nil && err.Error() == "database not found" {
-		log.Info().Msgf("Database %s not found, creating", settings.Name)
-		DB, err = arangoClient.CreateDatabase(ctx, settings.Name, nil)
+
+	var dbExists bool
+	for i := 0; i < 5; i++ {
+		DB, err = arangoClient.Database(ctx, settings.Name)
 		if err != nil {
-			log.Fatal().Err(err).Msg("Failed to create database")
+			if arangoDriver.IsNotFoundGeneral(err) {
+				log.Info().Msgf("Database %s not found, creating (attempt %d/5)", settings.Name, i+1)
+				DB, err = arangoClient.CreateDatabase(ctx, settings.Name, nil)
+				if err != nil {
+					log.Error().Err(err).Msgf("Failed to create database %s (attempt %d/5)", settings.Name, i+1)
+				} else {
+					log.Info().Msgf("Database %s created successfully", settings.Name)
+					dbExists = true
+					break
+				}
+			} else {
+				log.Error().Err(err).Msgf("Failed to get database %s (attempt %d/5)", settings.Name, i+1)
+			}
+		} else {
+			log.Info().Msgf("Database %s found successfully", settings.Name)
+			dbExists = true
+			break
 		}
-		log.Info().Msgf("Database %s created", settings.Name)
-	} else if err != nil {
-		log.Fatal().Err(err).Msg("Failed to get database")
+
+		if i < 4 {
+			log.Info().Msgf("Retrying in 10 seconds...")
+			time.Sleep(10 * time.Second)
+		}
 	}
-	log.Info().Msgf("Database %s found", settings.Name)
+
+	if !dbExists {
+		log.Fatal().Msgf("Failed to connect to or create database %s after 5 attempts", settings.Name)
+	}
+
 	EnsureDatabaseIntegrity(ctx)
 }
