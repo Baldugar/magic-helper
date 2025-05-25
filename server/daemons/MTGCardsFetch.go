@@ -631,7 +631,7 @@ func score(v *scryfall.MTG_CardVersionDB) int {
 		s += 10000
 	}
 	if !v.IsAlchemy {
-		s += 5000
+		s += 20000
 	}
 	if strSliceContains(v.Finishes, "nonfoil") {
 		s += 1000
