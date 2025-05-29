@@ -1,6 +1,6 @@
 import { ButtonBase } from '@mui/material'
 import { useReactFlow } from '@xyflow/react'
-import { MTGACardWithHover } from '../../../components/MTGCardWithHover'
+import { MTGCardWithHover } from '../../../components/MTGCardWithHover'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGDeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
 import { MTG_Card, MTG_CardVersion } from '../../../graphql/types'
@@ -79,7 +79,7 @@ export const VersionCard = (props: VersionCardProps) => {
                               }
                     }
                 >
-                    <MTGACardWithHover
+                    <MTGCardWithHover
                         data={{
                             card: version,
                             type: 'cardVersion',

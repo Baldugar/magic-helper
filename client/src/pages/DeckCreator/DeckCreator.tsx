@@ -292,7 +292,7 @@ export const DeckCreator = () => {
                         </Button>
                     </Box>
                 </Box>
-                <Collapse in={openDrawer} orientation={'horizontal'}>
+                <Collapse in={openDrawer} orientation={'horizontal'} mountOnEnter unmountOnExit>
                     <Drawer />
                 </Collapse>
                 <ImportDialog />

@@ -10,7 +10,7 @@ import { getRandomVersionFromFilter } from '../utils/functions/filterFunctions'
 import { HoverMouseComponent } from './HoverMouseComponent'
 import { ImageWithSkeleton } from './ImageWithSkeleton'
 
-export type MTGACardWithHoverProps = {
+export type MTGCardWithHoverProps = {
     data:
         | {
               type: 'card'
@@ -27,7 +27,7 @@ export type MTGACardWithHoverProps = {
     hideHover?: boolean
 }
 
-export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
+export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
     const { data, hideHover } = props
     const { card, type, debugValue } = data
     const { viewMode } = useMTGDeckCreator()
@@ -46,10 +46,11 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
 
     const randomVersion = useMemo(() => {
         if (type === 'card') {
-            return getRandomVersionFromFilter(filter, card)
+            return getRandomVersionFromFilter(filter.sets, card)
         }
         return undefined
-    }, [type, filter, card])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filter.sets])
 
     if (type === 'card') {
         const { card } = data
@@ -133,7 +134,9 @@ export const MTGACardWithHover: FC<MTGACardWithHoverProps> = (props) => {
                         typeLine.includes('Room') ||
                         (otherLarge === large &&
                             (data.type === 'card'
-                                ? !data.card.keywords.includes('Aftermath') && data.card.layout !== MTG_Layout.flip
+                                ? !data.card.keywords.includes('Aftermath') &&
+                                  data.card.layout !== MTG_Layout.flip &&
+                                  data.card.layout !== MTG_Layout.adventure
                                 : false))
                     }
                     rotateOther={

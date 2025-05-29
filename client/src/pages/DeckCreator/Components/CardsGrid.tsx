@@ -1,7 +1,7 @@
 import { Box, Grid, Typography, useMediaQuery } from '@mui/material'
 import { isEqual } from 'lodash'
 import { useCallback, useEffect, useRef, useState, WheelEvent } from 'react'
-import { useSwipeable } from 'react-swipeable'
+import { SwipeEventData, useSwipeable } from 'react-swipeable'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGDeckCreatorPagination } from '../../../context/MTGA/DeckCreatorPagination/useMTGDeckCreatorPagination'
 import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
@@ -15,6 +15,7 @@ export const CardsGrid = () => {
     const scrollDebounceTimeout = useRef<NodeJS.Timeout | null>(null)
     const { stickyCardsGrid } = useMTGDeckCreator()
     const [lastIgnoredIndex, setLastIgnoredIndex] = useState<number | null>(null)
+    const lastPageChangeInteractionRef = useRef<'swipeUp' | 'swipeDown' | 'other'>('other')
 
     const isMobile = useMediaQuery('(max-width: 600px)')
     const pageSize = isMobile ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP
@@ -25,19 +26,78 @@ export const CardsGrid = () => {
     // Spacing in px for MUI Grid (theme.spacing(2)), default is 8px * 2 = 16px
     const spacingPx = 16
 
-    const handleSwipe = (direction: string) => {
+    const handleHorizontalSwipe = (direction: 'left' | 'right') => {
         if (!isMobile) return
 
         if (direction === 'left' && page < totalPages - 1) {
+            lastPageChangeInteractionRef.current = 'other'
             setPage(page + 1)
         } else if (direction === 'right' && page > 0) {
+            lastPageChangeInteractionRef.current = 'other'
+            setPage(page - 1)
+        }
+    }
+
+    const handleVerticalSwipe = (direction: 'up' | 'down') => {
+        console.log('[CardsGrid] handleVerticalSwipe called with direction:', direction)
+        if (!isMobile || !gridRef.current) {
+            console.log('[CardsGrid] handleVerticalSwipe: Pre-conditions not met', {
+                isMobile,
+                stickyCardsGrid,
+                gridRefCurrent: !!gridRef.current,
+            })
+            return
+        }
+
+        const { scrollTop, scrollHeight, clientHeight } = gridRef.current
+        const tolerance = 1 // 1 pixel tolerance for scroll position checks
+
+        const atTop = scrollTop <= tolerance
+        const atBottom = scrollTop >= scrollHeight - clientHeight - tolerance
+
+        console.log('[CardsGrid] handleVerticalSwipe: Scroll check', {
+            scrollTop,
+            scrollHeight,
+            clientHeight,
+            atTop,
+            atBottom,
+            page,
+            totalPages,
+        })
+
+        if (direction === 'down' && atBottom && page < totalPages - 1) {
+            // Finger swipe UP, go NEXT
+            console.log('[CardsGrid] handleVerticalSwipe: Attempting to go to next page')
+            lastPageChangeInteractionRef.current = 'swipeUp'
+            setPage(page + 1)
+        } else if (direction === 'up' && atTop && page > 0) {
+            // Finger swipe DOWN, go PREVIOUS
+            console.log('[CardsGrid] handleVerticalSwipe: Attempting to go to previous page')
+            lastPageChangeInteractionRef.current = 'swipeDown'
             setPage(page - 1)
         }
     }
 
     const swipeHandlers = useSwipeable({
-        onSwipedLeft: () => handleSwipe('left'),
-        onSwipedRight: () => handleSwipe('right'),
+        onSwipedLeft: () => handleHorizontalSwipe('left'),
+        onSwipedRight: () => handleHorizontalSwipe('right'),
+        onSwiped: (eventData: SwipeEventData) => {
+            console.log('[CardsGrid] onSwiped event:', eventData)
+            if (!isMobile) {
+                console.log('[CardsGrid] onSwiped: Not mobile or not sticky, ignoring vertical swipe logic.', {
+                    isMobile,
+                    stickyCardsGrid,
+                })
+                return
+            }
+            if (eventData.dir === 'Up') {
+                console.log('[CardsGrid] onSwiped: Detected Finger Swipe UP (intended scroll down/next page)')
+                handleVerticalSwipe('down')
+            } else if (eventData.dir === 'Down') {
+                console.log('[CardsGrid] onSwiped: Detected Finger Swipe DOWN (intended scroll up/previous page)')
+                handleVerticalSwipe('up')
+            }
+        },
         preventScrollOnSwipe: false,
         trackMouse: false,
         delta: 10,
@@ -54,11 +114,14 @@ export const CardsGrid = () => {
             const targetScroll = index * cardHeight
             gridRef.current.scrollTop = targetScroll
         },
-        [cardsToShow.length],
+        [cardsToShow.length, spacingPx],
     )
 
-    const handleScroll = () => {
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
         if (!gridRef.current || !isMobile || !stickyCardsGrid) return
+        e.preventDefault()
+        e.stopPropagation()
+
         // Debounce scroll event
         if (scrollDebounceTimeout.current) {
             clearTimeout(scrollDebounceTimeout.current)
@@ -74,14 +137,56 @@ export const CardsGrid = () => {
     }
 
     useEffect(() => {
-        if (gridRef.current) {
-            gridRef.current.scrollTop = 0
+        if (!gridRef.current) {
+            console.log('[CardsGrid] Page/Interaction Effect: gridRef is null, skipping.')
+            return
         }
-        if (stickyCardsGrid && gridRef.current) {
-            scrollToCard(0)
+
+        const interactionType = lastPageChangeInteractionRef.current
+        // Reset the ref immediately for subsequent interactions or unrelated re-renders.
+        // This ensures the special scroll logic is only applied once per causal interaction.
+        lastPageChangeInteractionRef.current = 'other'
+
+        let scrolledToBottomForSwipeDown = false
+
+        // Condition: User swiped finger DOWN (interactionType === 'swipeDown'),
+        // navigating to the PREVIOUS page, on mobile with sticky grid.
+        if (isMobile && interactionType === 'swipeDown') {
+            if (cardsToShow.length > 0) {
+                console.log(
+                    `[CardsGrid] Page Change (to P${page}): Caused by FINGER SWIPE DOWN. Mobile sticky. Scrolling to END of new page (card index ${
+                        cardsToShow.length - 1
+                    }). Interaction: ${interactionType}`,
+                )
+                setTimeout(() => scrollToCard(cardsToShow.length - 1), 100)
+                scrolledToBottomForSwipeDown = true
+            } else {
+                console.log(
+                    `[CardsGrid] Page Change (to P${page}): Caused by FINGER SWIPE DOWN. Mobile sticky. No cards on new page, scrolling to absolute bottom. Interaction: ${interactionType}`,
+                )
+                setTimeout(() => {
+                    if (gridRef.current) {
+                        gridRef.current.scrollTop = gridRef.current.scrollHeight
+                    }
+                }, 100)
+                scrolledToBottomForSwipeDown = true
+            }
         }
+
+        if (!scrolledToBottomForSwipeDown) {
+            // Default behavior: scroll to top for all other page changes or conditions.
+            console.log(
+                `[CardsGrid] Page Change (to P${page}): Default scroll to TOP. Interaction: ${interactionType}, isMobile: ${isMobile}, sticky: ${stickyCardsGrid}`,
+            )
+            if (stickyCardsGrid) {
+                scrollToCard(0)
+            } else {
+                gridRef.current.scrollTop = 0
+            }
+        }
+
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [page, scrollToCard])
+    }, [page, scrollToCard, isMobile, stickyCardsGrid, cardsToShow.length]) // Removed lastPageChangeInteraction from dependencies
 
     // After cardsToShow changes (e.g., after ignore), scroll to the correct card
     useEffect(() => {
@@ -127,9 +232,11 @@ export const CardsGrid = () => {
                     const hasVerticalScrollbar = e.currentTarget.scrollHeight > e.currentTarget.clientHeight
                     if (hasVerticalScrollbar && !e.shiftKey) return
                     if (e.deltaY > 0 && page < totalPages - 1) {
+                        lastPageChangeInteractionRef.current = 'other'
                         setPage(page + 1)
                     }
                     if (e.deltaY < 0 && page > 0) {
+                        lastPageChangeInteractionRef.current = 'other'
                         setPage(page - 1)
                     }
                 }

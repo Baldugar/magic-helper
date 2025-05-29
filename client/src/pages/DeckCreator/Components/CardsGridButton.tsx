@@ -4,7 +4,7 @@ import { ButtonBase, Dialog, DialogContent, DialogTitle, Grid, useMediaQuery } f
 import { useReactFlow } from '@xyflow/react'
 import { useState } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { MTGACardWithHover } from '../../../components/MTGCardWithHover'
+import { MTGCardWithHover } from '../../../components/MTGCardWithHover'
 import { useDnD } from '../../../context/DnD/useDnD'
 import { useMTGCardPackages } from '../../../context/MTGA/CardPackages/useCardPackages'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
@@ -435,7 +435,7 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                         id={`card-${card.ID}`}
                     >
                         {selectedVersion ? (
-                            <MTGACardWithHover
+                            <MTGCardWithHover
                                 data={{
                                     card: selectedVersion,
                                     type: 'cardVersion',
@@ -445,7 +445,7 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                                 hideHover={draggedCard !== null}
                             />
                         ) : (
-                            <MTGACardWithHover
+                            <MTGCardWithHover
                                 data={{
                                     card,
                                     type: 'card',
