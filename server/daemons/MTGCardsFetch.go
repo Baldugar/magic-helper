@@ -452,7 +452,8 @@ func collectCards(ctx context.Context) {
 				FlavorText: card.FlavorText,
 				// ImageUris will be converted below
 				Legalities:      card.Legalities,
-				Games:           card.Games,                        // Direct assignment, conversion done below
+				Games:           card.Games,
+				Name:            card.Name,
 				Rarity:          scryfallModel.Rarity(card.Rarity), // Direct cast for enum
 				ReleasedAt:      card.ReleasedAt,
 				Reprint:         card.Reprint,
@@ -544,7 +545,8 @@ func collectCards(ctx context.Context) {
 			for i := range cardForGroup.Versions {
 				cardForGroup.Versions[i].IsDefault = (i == bestIdx)
 			}
-			cardForGroup.ID = normalizeCardName(cardForGroup.Name)
+			defaultVersion := cardForGroup.Versions[bestIdx]
+			cardForGroup.ID = normalizeCardName(defaultVersion.Name)
 		}
 		// --- End: Logic to determine the single default version ---
 
@@ -621,17 +623,14 @@ func hasAny(sl []string, targets []string) bool {
 func onlyFoil(v *scryfall.MTG_CardVersionDB) bool {
 	return len(v.Finishes) == 1 && v.Finishes[0] == "foil"
 }
-func collectorNum(v *scryfall.MTG_CardVersionDB) int {
-	n, _ := strconv.Atoi(v.CollectorNumber)
-	return n
-}
+
 func score(v *scryfall.MTG_CardVersionDB) int {
 	s := 0
 	if v.Booster {
 		s += 10000
 	}
 	if !v.IsAlchemy {
-		s += 20000
+		s += 200000
 	}
 	if strSliceContains(v.Finishes, "nonfoil") {
 		s += 1000
@@ -649,13 +648,6 @@ func score(v *scryfall.MTG_CardVersionDB) int {
 		s -= 200
 	}
 
-	s += 100 - collectorNum(v) // cuanto más bajo mejor
-	s += len(v.Games)          // mini-bonus original
-
-	// penaliza las alchemy con una fecha más nueva → queremos la más vieja
-	if t, err := time.Parse("2006-01-02", v.ReleasedAt); err == nil {
-		s -= int(t.Unix() / 86400) // días desde epoch (más viejo = menos resta)
-	}
 	return s
 }
 

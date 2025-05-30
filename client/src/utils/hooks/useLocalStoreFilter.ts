@@ -1,5 +1,6 @@
 import { useMTGDeckCreatorPagination } from '../../context/MTGA/DeckCreatorPagination/useMTGDeckCreatorPagination'
 import {
+    CMCFilter,
     initialMTGFilter,
     MTGFilterType,
     SetFilter,
@@ -7,6 +8,7 @@ import {
     SortEnum,
 } from '../../context/MTGA/Filter/MTGFilterContext'
 import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
+import { MTG_Color, MTG_Game, MTG_Layout, MTG_Rarity } from '../../graphql/types'
 import { TernaryBoolean } from '../../types/ternaryBoolean'
 
 export type LocalStoreFilter = {
@@ -69,14 +71,99 @@ export const useLocalStoreFilter = () => {
     const loadLocalStoreFilter = () => {
         const localStoreFilter = localStorage.getItem('localStoreFilter')
         if (localStoreFilter) {
-            const { filter, page, hash, sort } = JSON.parse(localStoreFilter) as LocalStoreFilter
+            const { filter: newFilter, page, hash, sort } = JSON.parse(localStoreFilter) as LocalStoreFilter
             if (hash === calculateHash(filter)) {
-                setFilter(filter)
+                setFilter(newFilter)
                 setSort(sort)
                 setTimeout(() => setPage(page), 50)
             } else {
-                // localStorage.removeItem('localStoreFilter')
-                alert('Local store filter is outdated')
+                alert('Local store filter is outdated, trying to load it anyway')
+
+                const filterToSet = { ...filter }
+
+                // filterToSet.cardTypes
+                Object.keys(filterToSet.cardTypes).forEach((key) => {
+                    if (newFilter.cardTypes[key]) {
+                        filterToSet.cardTypes[key] = newFilter.cardTypes[key]
+                    }
+                })
+
+                // filterToSet.color
+                Object.keys(filterToSet.color).forEach((key) => {
+                    const k = key as MTG_Color
+                    if (newFilter.color[k]) {
+                        filterToSet.color[k] = newFilter.color[k]
+                    }
+                })
+
+                // filterToSet.rarity
+                Object.keys(filterToSet.rarity).forEach((key) => {
+                    const k = key as MTG_Rarity
+                    if (newFilter.rarity[k]) {
+                        filterToSet.rarity[k] = newFilter.rarity[k]
+                    }
+                })
+
+                // filterToSet.sets
+                Object.keys(filterToSet.sets).forEach((key) => {
+                    const k = key as string
+                    if (newFilter.sets[k]) {
+                        filterToSet.sets[k].value = newFilter.sets[k].value
+                    }
+                })
+
+                // filterToSet.games
+                Object.keys(filterToSet.games).forEach((key) => {
+                    const k = key as MTG_Game
+                    if (newFilter.games[k]) {
+                        filterToSet.games[k] = newFilter.games[k]
+                    }
+                })
+
+                // filterToSet.layouts
+                Object.keys(filterToSet.layouts).forEach((key) => {
+                    const k = key as MTG_Layout
+                    if (newFilter.layouts[k]) {
+                        filterToSet.layouts[k] = newFilter.layouts[k]
+                    }
+                })
+
+                // filterToSet.legalities
+                Object.keys(filterToSet.legalities).forEach((key) => {
+                    const k = key as string
+                    if (newFilter.legalities[k]) {
+                        filterToSet.legalities[k] = newFilter.legalities[k]
+                    }
+                })
+
+                // filterToSet.manaCosts
+                Object.keys(filterToSet.manaCosts).forEach((key) => {
+                    const k = key as CMCFilter
+                    if (newFilter.manaCosts[k]) {
+                        filterToSet.manaCosts[k] = newFilter.manaCosts[k]
+                    }
+                })
+
+                // filterToSet.subtypes
+                Object.keys(filterToSet.subtypes).forEach((key) => {
+                    const k = key as string
+                    if (newFilter.subtypes[k]) {
+                        filterToSet.subtypes[k] = newFilter.subtypes[k]
+                    }
+                })
+
+                // filterToSet.multiColor
+                filterToSet.multiColor = newFilter.multiColor
+
+                // filterToSet.hideIgnored
+                filterToSet.hideIgnored = newFilter.hideIgnored
+
+                // filterToSet.searchString
+                filterToSet.searchString = newFilter.searchString
+
+                setFilter(filterToSet)
+                setSort(sort)
+                setTimeout(() => setPage(page), 50)
             }
         }
     }

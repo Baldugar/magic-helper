@@ -66,6 +66,7 @@ type MTG_CardVersionDB struct {
 	IsDefault       bool                       `json:"isDefault"`
 	Lang            scryfallModel.CardLanguage `json:"lang"`
 	Legalities      map[string]string          `json:"legalities"`
+	Name            string                     `json:"name"`
 	PromoTypes      *[]string                  `json:"promoTypes,omitempty"`
 	Rarity          scryfallModel.Rarity       `json:"rarity"`
 	ReleasedAt      string                     `json:"releasedAt"`

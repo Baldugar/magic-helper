@@ -161,22 +161,23 @@ func GetMTGFilters(ctx context.Context) (*model.MtgFilterEntries, error) {
 func GetMTGExpansions(ctx context.Context) ([]*model.MtgFilterExpansion, error) {
 	log.Info().Msg("GetMTGExpansions: Started")
 
-	// AQL query to fetch distinct sets and setNames
+	// AQL query to fetch distinct sets and setNames, aggregating games
 	aq := arango.NewQuery( /* aql */ `
         FOR card IN @@collection
-			LET setRecord = DOCUMENT(@@setsCollection, card.set)
-			// FILTER DATE_ADD(DATE_NOW(), 1, "week") >= DATE_TIMESTAMP(setRecord.releasedAt)
-			FOR cv IN card.versions
-				COLLECT set = cv.set, setName = cv.setName, games = cv.games
-			LET setRecord = DOCUMENT(@@setsCollection, set)
-            RETURN {
-                set: UPPER(set),
-                setName: setName,
-                games: games,
-				releasedAt: DATE_TIMESTAMP(setRecord.releasedAt),
-				imageURL: setRecord.iconSVGURI,
-				setType: setRecord.setType
-            }
+            FOR cv IN card.versions
+                COLLECT setCode = cv.set, setNameVal = cv.setName INTO versionGroup
+                LET mergedGames = UNIQUE(FLATTEN(
+                    FOR item IN versionGroup RETURN item.cv.games
+                ))
+                LET setDetails = DOCUMENT(@@setsCollection, setCode)
+                RETURN {
+                    set: UPPER(setCode),
+                    setName: setNameVal,
+                    games: mergedGames,
+                    releasedAt: DATE_TIMESTAMP(setDetails.releasedAt),
+                    imageURL: setDetails.iconSVGURI,
+                    setType: setDetails.setType
+                }
     `)
 
 	col := arango.MTG_CARDS_COLLECTION
