@@ -18,7 +18,7 @@ import { useMTGFilter } from '../Filter/useMTGFilter'
 import { MTGDeckCreatorFlowContext } from './MTGDeckCreatorFlowContext'
 
 export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: ReactNode; deck: MTG_Deck }) => {
-    const { card, type } = useDnD()
+    const { item, type } = useDnD()
     const { selectingCommander, setSelectingCommander, deckTab, setDeck, removeCard } = useMTGDeckCreator()
     const { screenToFlowPosition, getIntersectingNodes, setNodes, getNodes } = useReactFlow<NodeType>()
 
@@ -185,8 +185,9 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
     // This function is called when a card is dropped on the flow view and should add a new node to the flow, then call the onAddCard function to add the card to the deck
     const onDrop: DragEventHandler<HTMLDivElement> = (event) => {
         event.preventDefault()
+        console.log('onDrop', type, item)
         // check if the dropped element is valid
-        if (!type || !card) {
+        if (!type || !item) {
             return
         }
 
@@ -216,9 +217,13 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
             return
         }
 
-        const deckCard = onAddCard(card, position)
+        if (item.__typename !== 'MTG_Card') {
+            return
+        }
 
-        const cardID = card.ID
+        const deckCard = onAddCard(item, position)
+
+        const cardID = item.ID
         const nodes = getNodes()
         const idx = nodes.findIndex((n) => n.id === cardID)
         // If the card is already in the deck, add a phantom

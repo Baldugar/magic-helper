@@ -1,30 +1,29 @@
 import { DragEvent, ReactNode, useState } from 'react'
-import { MTG_Card } from '../../graphql/types'
 import { DeckCreatorView } from '../../types/deckCreatorView'
-import { DnDContext } from './DnDContext'
+import { DnDContext, DraggableItem } from './DnDContext'
 
 export const DndProvider = ({ children }: { children: ReactNode }) => {
     const [type, setType] = useState<string | null>(null)
-    const [card, setCard] = useState<MTG_Card | null>(null)
+    const [item, setItem] = useState<DraggableItem | null>(null)
 
     const onDragStart = (
         event: DragEvent<HTMLDivElement>,
         nodeType: string,
         viewMode: DeckCreatorView,
-        card?: MTG_Card,
+        item?: DraggableItem,
     ) => {
         if (viewMode === 'CATALOGUE') return
         setType(nodeType)
-        if (card) {
-            setCard(card)
+        if (item) {
+            setItem(item)
         }
         event.dataTransfer.effectAllowed = 'move'
     }
 
     const onDragEnd = () => {
         setType(null)
-        setCard(null)
+        setItem(null)
     }
 
-    return <DnDContext.Provider value={{ type, card, onDragStart, onDragEnd }}>{children}</DnDContext.Provider>
+    return <DnDContext.Provider value={{ type, item, onDragStart, onDragEnd }}>{children}</DnDContext.Provider>
 }

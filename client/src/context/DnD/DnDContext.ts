@@ -1,22 +1,24 @@
 import { createContext, DragEvent } from 'react'
-import { MTG_Card } from '../../graphql/types'
+import { FlowZone, MTG_Card, MTG_DeckCard } from '../../graphql/types'
 import { DeckCreatorView } from '../../types/deckCreatorView'
+
+export type DraggableItem = MTG_Card | MTG_DeckCard | FlowZone
 
 type DnDContextType = {
     type: string | null
-    card: MTG_Card | null
+    item: DraggableItem | null
     onDragStart: (
         event: DragEvent<HTMLDivElement>,
         nodeType: string,
         viewMode: DeckCreatorView,
-        card?: MTG_Card,
+        item?: DraggableItem,
     ) => void
     onDragEnd: () => void
 }
 
 export const DnDContext = createContext<DnDContextType>({
     type: null,
-    card: null,
+    item: null,
     onDragStart: () => {},
     onDragEnd: () => {},
 })

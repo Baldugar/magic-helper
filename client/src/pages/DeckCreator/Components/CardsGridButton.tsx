@@ -39,7 +39,7 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
     const { onAddCard, deck, removeCard, setDeck } = useMTGDeckCreator()
     const { handleDeleteZone, handleRenameZone, handleDeletePhantom } = useMTGDeckFlowCreator()
     const { setNodes } = useReactFlow<NodeType>()
-    const { card: draggedCard } = useDnD()
+    const { item } = useDnD()
     const { filter } = useMTGFilter()
     const {
         anchorRef: mainCardAnchorRef,
@@ -442,7 +442,7 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                                     cardTypeLine: card.typeLine,
                                     layout: card.layout,
                                 }}
-                                hideHover={draggedCard !== null}
+                                hideHover={item !== null}
                             />
                         ) : (
                             <MTGCardWithHover
@@ -450,7 +450,7 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                                     card,
                                     type: 'card',
                                 }}
-                                hideHover={draggedCard !== null}
+                                hideHover={item !== null}
                             />
                         )}
                         {deck.ignoredCards.includes(card.ID) && (

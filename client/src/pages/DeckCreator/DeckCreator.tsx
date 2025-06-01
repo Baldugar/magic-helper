@@ -38,6 +38,7 @@ import { calculateCardsFromNodes, calculateZonesFromNodes } from '../../utils/fu
 import { useLocalStoreFilter } from '../../utils/hooks/useLocalStoreFilter'
 import { FlowView } from '../FlowView/FlowView'
 import { CardsGrid } from './Components/CardsGrid'
+import { DeckCreatorPiles } from './Components/DeckCreatorPiles'
 import { Drawer } from './Components/Drawer'
 import { Filters } from './Components/Filters'
 
@@ -187,7 +188,11 @@ export const DeckCreator = () => {
                             </Box>
                         </Box>
                     )}
-                    {viewMode === 'PILES' && <Box flex={1} height={'100%'} width={'100%'} overflow={'hidden'}></Box>}
+                    {viewMode === 'PILES' && (
+                        <Box flex={1} height={'100%'} width={'100%'} overflow={'hidden'}>
+                            <DeckCreatorPiles />
+                        </Box>
+                    )}
                     {viewMode === 'CATALOGUE_PILES' && (
                         <Box flex={1} height={'100%'} display={'flex'} overflow={'hidden'} width={'100%'}>
                             <Box

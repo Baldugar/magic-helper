@@ -94,7 +94,11 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
                 position={'relative'}
                 width={isMobile ? '100%' : width}
                 height={isMobile ? 'auto' : height}
-                onDragStart={type === 'card' ? (event) => onDragStart(event, 'cardNode', viewMode, card) : undefined}
+                onDragStart={
+                    type === 'card'
+                        ? (event) => onDragStart(event, 'cardNode', viewMode, { ...card, __typename: 'MTG_Card' })
+                        : undefined
+                }
                 onDragEnd={
                     type === 'card'
                         ? () => {
