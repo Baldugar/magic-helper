@@ -1,5 +1,6 @@
 import { createContext, DragEvent } from 'react'
 import { MTG_Card } from '../../graphql/types'
+import { DeckCreatorView } from '../../types/deckCreatorView'
 
 type DnDContextType = {
     type: string | null
@@ -7,7 +8,7 @@ type DnDContextType = {
     onDragStart: (
         event: DragEvent<HTMLDivElement>,
         nodeType: string,
-        viewMode: 'catalogue' | 'board' | 'both',
+        viewMode: DeckCreatorView,
         card?: MTG_Card,
     ) => void
     onDragEnd: () => void

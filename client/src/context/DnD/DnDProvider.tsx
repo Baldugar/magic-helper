@@ -1,5 +1,6 @@
 import { DragEvent, ReactNode, useState } from 'react'
 import { MTG_Card } from '../../graphql/types'
+import { DeckCreatorView } from '../../types/deckCreatorView'
 import { DnDContext } from './DnDContext'
 
 export const DndProvider = ({ children }: { children: ReactNode }) => {
@@ -9,10 +10,10 @@ export const DndProvider = ({ children }: { children: ReactNode }) => {
     const onDragStart = (
         event: DragEvent<HTMLDivElement>,
         nodeType: string,
-        viewMode: 'catalogue' | 'board' | 'both',
+        viewMode: DeckCreatorView,
         card?: MTG_Card,
     ) => {
-        if (viewMode === 'catalogue') return
+        if (viewMode === 'CATALOGUE') return
         setType(nodeType)
         if (card) {
             setCard(card)
