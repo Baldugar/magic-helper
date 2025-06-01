@@ -1,10 +1,11 @@
-import { ArrowLeft, Edit } from '@mui/icons-material'
+import { ArrowLeft, BarChart, DashboardCustomize, Edit, VerticalSplit, ViewCompact } from '@mui/icons-material'
 import MenuIcon from '@mui/icons-material/Menu'
 import {
     Box,
     Button,
     Collapse,
     Divider,
+    Grid,
     IconButton,
     Menu,
     MenuItem,
@@ -30,6 +31,7 @@ import { MTGAFilterProvider } from '../../context/MTGA/Filter/MTGFilterProvider'
 import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
 import { MTGFunctions } from '../../graphql/MTGA/functions'
 import { MTG_UpdateDeckInput } from '../../graphql/types'
+import { DeckCreatorView } from '../../types/deckCreatorView'
 import { PAGE_SIZE_DESKTOP, PAGE_SIZE_MOBILE } from '../../utils/constants'
 import { calculateNewDeck } from '../../utils/functions/deckFunctions'
 import { calculateCardsFromNodes, calculateZonesFromNodes } from '../../utils/functions/nodeFunctions'
@@ -66,8 +68,8 @@ export const DeckCreator = () => {
     const isMobile = useMediaQuery('(max-width: 600px)')
     const pageSize = isMobile ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP
 
-    const handleChangeView = (newViewMode: 'catalogue' | 'board' | 'both') => {
-        if (viewMode === 'board' || viewMode === 'both') {
+    const handleChangeView = (newViewMode: DeckCreatorView) => {
+        if (viewMode === 'BOARD' || viewMode === 'CATALOGUE_BOARD') {
             calculateNewDeck(cards, deck, getNodes, setDeck)
         }
         setViewMode(newViewMode)
@@ -114,7 +116,7 @@ export const DeckCreator = () => {
                     flex={1}
                     display={'flex'}
                     flexDirection={'column'}
-                    height={viewMode === 'board' ? '100vh' : { xs: '150vh', lg: '100vh' }}
+                    height={viewMode === 'BOARD' ? '100vh' : { xs: '150vh', lg: '100vh' }}
                 >
                     <Box
                         display={'flex'}
@@ -141,7 +143,7 @@ export const DeckCreator = () => {
                             </IconButton>
                         </Box>
                     </Box>
-                    {viewMode === 'catalogue' && (
+                    {viewMode === 'CATALOGUE' && (
                         <>
                             <Filters />
                             <CardsGrid />
@@ -158,12 +160,12 @@ export const DeckCreator = () => {
                             </Box>
                         </>
                     )}
-                    {viewMode === 'board' && (
+                    {viewMode === 'BOARD' && (
                         <Box flex={1} height={'100%'}>
                             <FlowView />
                         </Box>
                     )}
-                    {viewMode === 'both' && (
+                    {viewMode === 'CATALOGUE_BOARD' && (
                         <Box flex={1} height={'100%'} display={'flex'} overflow={'hidden'}>
                             <Box flex={1} display={'flex'} flexDirection={'column'} height={'100%'}>
                                 <Filters />
@@ -183,6 +185,33 @@ export const DeckCreator = () => {
                             <Box flex={1} height={'100%'}>
                                 <FlowView />
                             </Box>
+                        </Box>
+                    )}
+                    {viewMode === 'PILES' && <Box flex={1} height={'100%'} width={'100%'} overflow={'hidden'}></Box>}
+                    {viewMode === 'CATALOGUE_PILES' && (
+                        <Box flex={1} height={'100%'} display={'flex'} overflow={'hidden'} width={'100%'}>
+                            <Box
+                                flex={0.4}
+                                display={'flex'}
+                                flexDirection={'column'}
+                                height={'100%'}
+                                sx={{ borderRight: '1px solid lightgray' }}
+                            >
+                                <Filters />
+                                <CardsGrid />
+                                <Box mt={'auto'} display={'flex'} justifyContent={'center'} paddingTop={1}>
+                                    <Pagination
+                                        count={Math.floor(filteredCards.length / pageSize) + 1}
+                                        page={page + 1}
+                                        onChange={(_, page) => {
+                                            setPage(page - 1)
+                                        }}
+                                        showFirstButton
+                                        showLastButton
+                                    />
+                                </Box>
+                            </Box>
+                            <Box flex={0.6} height={'100%'} overflow={'hidden'}></Box>
                         </Box>
                     )}
                     <Box position={'absolute'} top={10} right={10} display={'flex'} gap={1}>
@@ -270,9 +299,46 @@ export const DeckCreator = () => {
                             <Typography variant="caption" display="block" gutterBottom>
                                 View Options
                             </Typography>
+                            <Grid container spacing={1}>
+                                <Grid item xs={6} md={'auto'}>
+                                    <Box display={'flex'} justifyContent={'center'}>
+                                        <IconButton onClick={() => handleChangeView('CATALOGUE')}>
+                                            <ViewCompact />
+                                        </IconButton>
+                                    </Box>
+                                </Grid>
+                                <Grid item xs={6} md={'auto'}>
+                                    <Box display={'flex'} justifyContent={'center'}>
+                                        <IconButton onClick={() => handleChangeView('CATALOGUE_BOARD')}>
+                                            <VerticalSplit />
+                                        </IconButton>
+                                    </Box>
+                                </Grid>
+                                <Grid item xs={6} md={'auto'}>
+                                    <Box display={'flex'} justifyContent={'center'}>
+                                        <IconButton onClick={() => handleChangeView('BOARD')}>
+                                            <DashboardCustomize />
+                                        </IconButton>
+                                    </Box>
+                                </Grid>
+                                <Grid item xs={6} md={'auto'}>
+                                    <Box display={'flex'} justifyContent={'center'}>
+                                        <IconButton onClick={() => handleChangeView('CATALOGUE_PILES')}>
+                                            <VerticalSplit />
+                                        </IconButton>
+                                    </Box>
+                                </Grid>
+                                <Grid item xs={6} md={'auto'}>
+                                    <Box display={'flex'} justifyContent={'center'}>
+                                        <IconButton onClick={() => handleChangeView('PILES')}>
+                                            <BarChart />
+                                        </IconButton>
+                                    </Box>
+                                </Grid>
+                            </Grid>
                             <MenuItem
                                 onClick={() => {
-                                    handleChangeView(viewMode === 'catalogue' ? 'board' : 'catalogue')
+                                    handleChangeView(viewMode === 'CATALOGUE' ? 'BOARD' : 'CATALOGUE')
                                     handleMenuClose()
                                 }}
                             >
@@ -280,7 +346,7 @@ export const DeckCreator = () => {
                             </MenuItem>
                             <MenuItem
                                 onClick={() => {
-                                    handleChangeView('both')
+                                    handleChangeView('CATALOGUE_BOARD')
                                     handleMenuClose()
                                 }}
                             >

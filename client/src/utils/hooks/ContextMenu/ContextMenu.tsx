@@ -10,7 +10,6 @@ export const ContextMenu = (props: ContextMenuProps) => {
     const isMobile = useMediaQuery('(max-width:600px)')
 
     // Create a virtual anchor element for Popover if on mobile and mobilePosition is provided
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const virtualAnchor =
         isMobile && mobilePosition
             ? ({

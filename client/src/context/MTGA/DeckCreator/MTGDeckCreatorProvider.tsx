@@ -8,6 +8,7 @@ import {
     MTG_DeckCardType,
     Position,
 } from '../../../graphql/types'
+import { DeckCreatorView } from '../../../types/deckCreatorView'
 import { singleSetSelected } from '../../../utils/functions/filterFunctions'
 import { uuidv4 } from '../../../utils/functions/IDFunctions'
 import { findNextAvailablePosition } from '../../../utils/functions/nodeFunctions'
@@ -23,7 +24,7 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
     const [deck, setDeck] = useState<MTG_Deck>()
     const [openDrawer, setOpenDrawer] = useState(false)
     const [selectingCommander, setSelectingCommander] = useState(false)
-    const [viewMode, setViewMode] = useState<'catalogue' | 'board' | 'both'>('catalogue')
+    const [viewMode, setViewMode] = useState<DeckCreatorView>('CATALOGUE')
     const [deckTab, setDeckTab] = useState<MainOrSide>(MainOrSide.MAIN)
     const [openImportDialog, setOpenImportDialog] = useState(false)
     const [openExportDialog, setOpenExportDialog] = useState(false)

@@ -1,5 +1,6 @@
 import { createContext, Dispatch, SetStateAction } from 'react'
 import { MainOrSide, MTG_Card, MTG_CardPackage, MTG_Deck, MTG_DeckCard, Position } from '../../../graphql/types'
+import { DeckCreatorView } from '../../../types/deckCreatorView'
 
 type MTGDeckCreatorContextType = {
     // Deck & Cards
@@ -23,8 +24,8 @@ type MTGDeckCreatorContextType = {
     setOpenDrawer: Dispatch<SetStateAction<boolean>>
     selectingCommander: boolean
     setSelectingCommander: Dispatch<SetStateAction<boolean>>
-    viewMode: 'catalogue' | 'board' | 'both'
-    setViewMode: Dispatch<SetStateAction<'catalogue' | 'board' | 'both'>>
+    viewMode: DeckCreatorView
+    setViewMode: Dispatch<SetStateAction<DeckCreatorView>>
 
     // Import Dialog
     openImportDialog: boolean
@@ -59,7 +60,7 @@ export const MTGDeckCreatorContext = createContext<MTGDeckCreatorContextType>({
     setOpenDrawer: () => {},
     selectingCommander: false,
     setSelectingCommander: () => {},
-    viewMode: 'catalogue',
+    viewMode: 'CATALOGUE',
     setViewMode: () => {},
 
     // Import Dialog

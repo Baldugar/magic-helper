@@ -54,21 +54,12 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
         setAnchorEl(anchorEl ? null : event.currentTarget)
     }
 
-    console.log('scrollPosition', scrollPosition)
-
     const open = Boolean(anchorEl)
 
     useEffect(() => {
         if (open && scrollPosition > 0) {
-            console.log(
-                'useEffect for scroll - open is true. scrollPos:',
-                scrollPosition,
-                'paperRef.current (before timeout):',
-                paperRef.current,
-            )
             setTimeout(() => {
                 if (paperRef.current) {
-                    console.log('useEffect (in timeout) - Setting scroll. paperRef.current:', paperRef.current)
                     paperRef.current.scrollTop = scrollPosition
                 }
             }, 0)
