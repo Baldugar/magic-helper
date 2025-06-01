@@ -7,6 +7,7 @@ import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckC
 import { useMTGDecks } from '../../../context/MTGA/Decks/useMTGDecks'
 import { MTGFunctions } from '../../../graphql/MTGA/functions'
 import { MainOrSide, MTG_DeckCard, MTG_DeckCardType, MTG_UpdateDeckInput } from '../../../graphql/types'
+import { DRAWER_WIDTH_DESKTOP, DRAWER_WIDTH_MOBILE } from '../../../utils/constants'
 import { calculateCardsFromNodes, calculateZonesFromNodes, NodeType } from '../../../utils/functions/nodeFunctions'
 import { PhantomNodeData } from '../../FlowView/Nodes/PhantomNode'
 import { DeckCard } from './DeckCard'
@@ -102,7 +103,7 @@ export const Drawer = () => {
 
     return (
         <Box
-            width={isMobile ? '100vw' : 500}
+            width={isMobile ? DRAWER_WIDTH_MOBILE : DRAWER_WIDTH_DESKTOP}
             display={'flex'}
             flexDirection={'column'}
             maxHeight={'100vh'}

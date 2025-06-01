@@ -25,24 +25,26 @@ export type MTGCardWithHoverProps = {
               debugValue?: keyof MTG_CardVersion
           }
     hideHover?: boolean
+    forceSize?: 'small' | 'large'
 }
 
 export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
-    const { data, hideHover } = props
+    const { data, hideHover, forceSize } = props
     const { card, type, debugValue } = data
     const { viewMode } = useMTGDeckCreator()
     const { onDragStart, onDragEnd } = useDnD()
     const { filter } = useMTGFilter()
-    let small: string | undefined = undefined
-    let large: string | undefined = undefined
-    let otherLarge: string | undefined = undefined
+    let smallImageUrl: string | undefined = undefined
+    let largeImageUrl: string | undefined = undefined
+    let otherLargeImageUrl: string | undefined = undefined
     let version: MTG_CardVersion | undefined = undefined
     let typeLine: string | undefined = undefined
 
     const [hover, setHover] = useState(false)
     const mdVerticalScreen = useMediaQuery('(max-height: 1200px)')
     const smVerticalScreen = useMediaQuery('(max-height: 1000px)')
-    const isMobile = useMediaQuery('(max-width: 600px)')
+    const isMobileQuery = useMediaQuery('(max-width: 600px)')
+    const isMobileEffective = !forceSize && isMobileQuery
 
     const randomVersion = useMemo(() => {
         if (type === 'card') {
@@ -52,6 +54,8 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filter.sets])
 
+    const imageSizeFingerprint: 'small' | 'large' = forceSize ? forceSize : isMobileEffective ? 'large' : 'small'
+
     if (type === 'card') {
         const { card } = data
         typeLine = card.typeLine
@@ -59,32 +63,32 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
             version = randomVersion
         }
         if (!version) return null
-        small = getCorrectCardImage(version, isMobile ? 'large' : 'small')
-        if (!small) return null
-        large = getCorrectCardImage(version, 'large')
-        if (!large) return null
-        otherLarge = getCorrectCardImage(version, 'large', true)
+        smallImageUrl = getCorrectCardImage(version, imageSizeFingerprint)
+        if (!smallImageUrl) return null
+        largeImageUrl = getCorrectCardImage(version, 'large')
+        if (!largeImageUrl) return null
+        otherLargeImageUrl = getCorrectCardImage(version, 'large', true)
     } else {
         const { card, cardTypeLine } = data
         typeLine = cardTypeLine
         version = card
         try {
-            small = getCorrectCardImage(version, isMobile ? 'large' : 'small')
-            if (!small) return null
-            large = getCorrectCardImage(version, 'large')
-            if (!large) return null
-            otherLarge = getCorrectCardImage(version, 'large', true)
+            smallImageUrl = getCorrectCardImage(version, imageSizeFingerprint)
+            if (!smallImageUrl) return null
+            largeImageUrl = getCorrectCardImage(version, 'large')
+            if (!largeImageUrl) return null
+            otherLargeImageUrl = getCorrectCardImage(version, 'large', true)
         } catch (error) {
             console.error('error', error)
             return <div>Error in version: {version.ID}</div>
         }
     }
 
-    const { height, width } = CARD_SIZE_VALUES['small']
+    const { height: displayHeight, width: displayWidth } = CARD_SIZE_VALUES[imageSizeFingerprint]
 
     const scale = smVerticalScreen ? 0.5 : mdVerticalScreen ? 0.6 : 0.7
 
-    const aspectRatio = width / height
+    const aspectRatio = displayWidth / displayHeight
 
     return (
         <>
@@ -92,8 +96,8 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
                 display={'flex'}
                 flexDirection={'row'}
                 position={'relative'}
-                width={isMobile ? '100%' : width}
-                height={isMobile ? 'auto' : height}
+                width={displayWidth}
+                height={displayHeight}
                 onDragStart={
                     type === 'card'
                         ? (event) => onDragStart(event, 'cardNode', viewMode, { ...card, __typename: 'MTG_Card' })
@@ -109,10 +113,15 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
                 }
                 draggable
                 sx={{
-                    aspectRatio: isMobile ? aspectRatio : undefined,
+                    aspectRatio: imageSizeFingerprint === 'large' && isMobileEffective ? aspectRatio : undefined,
                 }}
             >
-                <ImageWithSkeleton img={small} setHover={setHover} height={height} width={width} />
+                <ImageWithSkeleton
+                    img={smallImageUrl}
+                    setHover={setHover}
+                    height={displayHeight}
+                    width={displayWidth}
+                />
                 {debugValue && (
                     <Box position={'absolute'} bottom={0} right={0} bgcolor={'white'}>
                         {type === 'card'
@@ -121,22 +130,23 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
                     </Box>
                 )}
             </Box>
-            {large && hover && !isMobile && (
+            {largeImageUrl && hover && !isMobileEffective && (
                 <HoverMouseComponent
                     visible={hover && (hideHover === false || hideHover === undefined)}
-                    img={large}
+                    img={largeImageUrl}
                     height={CARD_SIZE_VALUES['large'].height}
                     scale={scale}
                     width={CARD_SIZE_VALUES['large'].width}
                     otherImg={
-                        otherLarge !== large || (data.type === 'card' && data.card.layout === MTG_Layout.flip)
-                            ? otherLarge
+                        otherLargeImageUrl !== largeImageUrl ||
+                        (data.type === 'card' && data.card.layout === MTG_Layout.flip)
+                            ? otherLargeImageUrl
                             : undefined
                     }
                     imgHorizontal={
                         typeLine.startsWith('Battle') ||
                         typeLine.includes('Room') ||
-                        (otherLarge === large &&
+                        (otherLargeImageUrl === largeImageUrl &&
                             (data.type === 'card'
                                 ? !data.card.keywords.includes('Aftermath') &&
                                   data.card.layout !== MTG_Layout.flip &&
@@ -144,7 +154,9 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
                                 : false))
                     }
                     rotateOther={
-                        otherLarge === large && data.type === 'card' && data.card.layout === MTG_Layout.flip
+                        otherLargeImageUrl === largeImageUrl &&
+                        data.type === 'card' &&
+                        data.card.layout === MTG_Layout.flip
                             ? '180'
                             : '0'
                     }

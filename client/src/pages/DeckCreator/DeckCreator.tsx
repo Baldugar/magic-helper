@@ -32,7 +32,7 @@ import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
 import { MTGFunctions } from '../../graphql/MTGA/functions'
 import { MTG_UpdateDeckInput } from '../../graphql/types'
 import { DeckCreatorView } from '../../types/deckCreatorView'
-import { PAGE_SIZE_DESKTOP, PAGE_SIZE_MOBILE } from '../../utils/constants'
+import { DRAWER_WIDTH_DESKTOP, DRAWER_WIDTH_MOBILE, PAGE_SIZE_DESKTOP, PAGE_SIZE_MOBILE } from '../../utils/constants'
 import { calculateNewDeck } from '../../utils/functions/deckFunctions'
 import { calculateCardsFromNodes, calculateZonesFromNodes } from '../../utils/functions/nodeFunctions'
 import { useLocalStoreFilter } from '../../utils/hooks/useLocalStoreFilter'
@@ -118,6 +118,7 @@ export const DeckCreator = () => {
                     display={'flex'}
                     flexDirection={'column'}
                     height={viewMode === 'BOARD' ? '100vh' : { xs: '150vh', lg: '100vh' }}
+                    width={isMobile ? DRAWER_WIDTH_MOBILE : `calc(100vw - ${DRAWER_WIDTH_DESKTOP}px)`}
                 >
                     <Box
                         display={'flex'}
@@ -189,7 +190,7 @@ export const DeckCreator = () => {
                         </Box>
                     )}
                     {viewMode === 'PILES' && (
-                        <Box flex={1} height={'100%'} width={'100%'} overflow={'hidden'}>
+                        <Box flex={1} height={'100%'} maxWidth={'100vw'} overflow={'hidden'}>
                             <DeckCreatorPiles />
                         </Box>
                     )}
@@ -216,7 +217,9 @@ export const DeckCreator = () => {
                                     />
                                 </Box>
                             </Box>
-                            <Box flex={0.6} height={'100%'} overflow={'hidden'}></Box>
+                            <Box flex={0.6} height={'100%'} width={'100%'}>
+                                <DeckCreatorPiles />
+                            </Box>
                         </Box>
                     )}
                     <Box position={'absolute'} top={10} right={10} display={'flex'} gap={1}>

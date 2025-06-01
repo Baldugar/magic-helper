@@ -23,3 +23,6 @@ export const DEFAULT_ZONE: FlowZone = {
     name: 'Default',
     childrenIDs: [],
 }
+
+export const DRAWER_WIDTH_DESKTOP = 500
+export const DRAWER_WIDTH_MOBILE = '100vw'
