@@ -562,16 +562,6 @@ func collectCards(ctx context.Context) {
 			}
 			setIllustrationGroups[v.Set][*v.IllustrationID] = append(setIllustrationGroups[v.Set][*v.IllustrationID], v)
 		}
-		for set, illusMap := range setIllustrationGroups {
-			for illusID, versions := range illusMap {
-				if len(versions) > 1 {
-					log.Info().Str("group", groupName).Str("set", set).Str("illustration_id", illusID).Msgf("Found %d versions with same set and illustration_id", len(versions))
-					for _, v := range versions {
-						log.Info().Str("group", groupName).Str("set", set).Str("illustration_id", illusID).Str("collector_number", v.CollectorNumber).Str("id", v.ID).Msg("Version details")
-					}
-				}
-			}
-		}
 
 		allCardsToSave = append(allCardsToSave, cardForGroup)
 

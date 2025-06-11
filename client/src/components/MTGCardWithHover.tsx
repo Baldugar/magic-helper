@@ -3,7 +3,7 @@ import { FC, useMemo, useState } from 'react'
 import { useDnD } from '../context/DnD/useDnD'
 import { useMTGDeckCreator } from '../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGFilter } from '../context/MTGA/Filter/useMTGFilter'
-import { MTG_Card, MTG_CardVersion, MTG_Layout } from '../graphql/types'
+import { MTG_Card, MTG_CardVersion, MTG_Image, MTG_Layout } from '../graphql/types'
 import { CARD_SIZE_VALUES } from '../utils/constants'
 import { getCorrectCardImage } from '../utils/functions/cardFunctions'
 import { getRandomVersionFromFilter } from '../utils/functions/filterFunctions'
@@ -25,7 +25,7 @@ export type MTGCardWithHoverProps = {
               debugValue?: keyof MTG_CardVersion
           }
     hideHover?: boolean
-    forceSize?: 'small' | 'large'
+    forceSize?: keyof Omit<MTG_Image, '__typename'>
 }
 
 export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
@@ -54,7 +54,7 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filter.sets])
 
-    const imageSizeFingerprint: 'small' | 'large' = forceSize ? forceSize : isMobileEffective ? 'large' : 'small'
+    const imageSizeFingerprint = forceSize ? forceSize : isMobileEffective ? 'large' : 'small'
 
     if (type === 'card') {
         const { card } = data

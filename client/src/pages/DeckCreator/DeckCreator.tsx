@@ -34,7 +34,6 @@ import { MTG_UpdateDeckInput } from '../../graphql/types'
 import { DeckCreatorView } from '../../types/deckCreatorView'
 import { DRAWER_WIDTH_DESKTOP, DRAWER_WIDTH_MOBILE, PAGE_SIZE_DESKTOP, PAGE_SIZE_MOBILE } from '../../utils/constants'
 import { calculateNewDeck } from '../../utils/functions/deckFunctions'
-import { calculateCardsFromNodes, calculateZonesFromNodes } from '../../utils/functions/nodeFunctions'
 import { useLocalStoreFilter } from '../../utils/hooks/useLocalStoreFilter'
 import { FlowView } from '../FlowView/FlowView'
 import { CardsGrid } from './Components/CardsGrid'
@@ -80,19 +79,44 @@ export const DeckCreator = () => {
 
     const saveDeck = () => {
         if (!deck) return
-        const nodes = getNodes()
+        // const nodes = getNodes()
+        // const deckInput: MTG_UpdateDeckInput = {
+        //     cards: calculateCardsFromNodes(nodes, deck.cards),
+        //     deckID: deck.ID,
+        //     name: deck.name,
+        //     zones: calculateZonesFromNodes(nodes),
+        //     cardFrontImage: deck.cardFrontImage
+        //         ? {
+        //               cardID: deck.cardFrontImage.ID,
+        //               versionID: deck.cardFrontImage.versions[0].ID,
+        //           }
+        //         : undefined,
+        //     ignoredCards: deck.ignoredCards,
+        // }
+        // updateMTGDeck(deckInput).then((deck) => {
+        //     updateDeck(deck)
+        // })
+        // TODO: FIX THIS TO WORK BOTH WITH BOARD AND PILES
         const deckInput: MTG_UpdateDeckInput = {
-            cards: calculateCardsFromNodes(nodes, deck.cards),
+            cards: deck.cards.map((c) => ({
+                card: c.card.ID,
+                count: c.count,
+                deckCardType: c.deckCardType,
+                mainOrSide: c.mainOrSide,
+                phantoms: c.phantoms,
+                position: c.position,
+                ID: c.card.ID,
+            })),
             deckID: deck.ID,
+            ignoredCards: deck.ignoredCards,
             name: deck.name,
-            zones: calculateZonesFromNodes(nodes),
+            zones: deck.zones,
             cardFrontImage: deck.cardFrontImage
                 ? {
                       cardID: deck.cardFrontImage.ID,
                       versionID: deck.cardFrontImage.versions[0].ID,
                   }
                 : undefined,
-            ignoredCards: deck.ignoredCards,
         }
         updateMTGDeck(deckInput).then((deck) => {
             updateDeck(deck)
@@ -239,14 +263,46 @@ export const DeckCreator = () => {
                             anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
                             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                         >
-                            <MenuItem
-                                onClick={() => {
-                                    setOpenImportCardPackageDialog(true)
-                                    handleMenuClose()
-                                }}
-                            >
-                                Import Card Package
-                            </MenuItem>
+                            <Typography variant="caption" display="block" gutterBottom>
+                                View Options
+                            </Typography>
+                            <Grid container spacing={1}>
+                                <Grid item xs={6} md={'auto'}>
+                                    <Box display={'flex'} justifyContent={'center'}>
+                                        <IconButton onClick={() => handleChangeView('CATALOGUE')}>
+                                            <ViewCompact />
+                                        </IconButton>
+                                    </Box>
+                                </Grid>
+                                <Grid item xs={6} md={'auto'}>
+                                    <Box display={'flex'} justifyContent={'center'}>
+                                        <IconButton onClick={() => handleChangeView('CATALOGUE_BOARD')}>
+                                            <VerticalSplit />
+                                        </IconButton>
+                                    </Box>
+                                </Grid>
+                                <Grid item xs={6} md={'auto'}>
+                                    <Box display={'flex'} justifyContent={'center'}>
+                                        <IconButton onClick={() => handleChangeView('BOARD')}>
+                                            <DashboardCustomize />
+                                        </IconButton>
+                                    </Box>
+                                </Grid>
+                                <Grid item xs={6} md={'auto'}>
+                                    <Box display={'flex'} justifyContent={'center'}>
+                                        <IconButton onClick={() => handleChangeView('CATALOGUE_PILES')}>
+                                            <VerticalSplit />
+                                        </IconButton>
+                                    </Box>
+                                </Grid>
+                                <Grid item xs={6} md={'auto'}>
+                                    <Box display={'flex'} justifyContent={'center'}>
+                                        <IconButton onClick={() => handleChangeView('PILES')}>
+                                            <BarChart />
+                                        </IconButton>
+                                    </Box>
+                                </Grid>
+                            </Grid>
                             <Divider />
                             <Typography variant="caption" display="block" gutterBottom>
                                 Deck Operations
@@ -304,61 +360,13 @@ export const DeckCreator = () => {
                                 Load filter
                             </MenuItem>
                             <Divider />
-                            <Typography variant="caption" display="block" gutterBottom>
-                                View Options
-                            </Typography>
-                            <Grid container spacing={1}>
-                                <Grid item xs={6} md={'auto'}>
-                                    <Box display={'flex'} justifyContent={'center'}>
-                                        <IconButton onClick={() => handleChangeView('CATALOGUE')}>
-                                            <ViewCompact />
-                                        </IconButton>
-                                    </Box>
-                                </Grid>
-                                <Grid item xs={6} md={'auto'}>
-                                    <Box display={'flex'} justifyContent={'center'}>
-                                        <IconButton onClick={() => handleChangeView('CATALOGUE_BOARD')}>
-                                            <VerticalSplit />
-                                        </IconButton>
-                                    </Box>
-                                </Grid>
-                                <Grid item xs={6} md={'auto'}>
-                                    <Box display={'flex'} justifyContent={'center'}>
-                                        <IconButton onClick={() => handleChangeView('BOARD')}>
-                                            <DashboardCustomize />
-                                        </IconButton>
-                                    </Box>
-                                </Grid>
-                                <Grid item xs={6} md={'auto'}>
-                                    <Box display={'flex'} justifyContent={'center'}>
-                                        <IconButton onClick={() => handleChangeView('CATALOGUE_PILES')}>
-                                            <VerticalSplit />
-                                        </IconButton>
-                                    </Box>
-                                </Grid>
-                                <Grid item xs={6} md={'auto'}>
-                                    <Box display={'flex'} justifyContent={'center'}>
-                                        <IconButton onClick={() => handleChangeView('PILES')}>
-                                            <BarChart />
-                                        </IconButton>
-                                    </Box>
-                                </Grid>
-                            </Grid>
                             <MenuItem
                                 onClick={() => {
-                                    handleChangeView(viewMode === 'CATALOGUE' ? 'BOARD' : 'CATALOGUE')
+                                    setOpenImportCardPackageDialog(true)
                                     handleMenuClose()
                                 }}
                             >
-                                Change View
-                            </MenuItem>
-                            <MenuItem
-                                onClick={() => {
-                                    handleChangeView('CATALOGUE_BOARD')
-                                    handleMenuClose()
-                                }}
-                            >
-                                Both View
+                                Import Card Package
                             </MenuItem>
                         </Menu>
                         <Button variant={'contained'} color={'primary'} onClick={() => setOpenDrawer(!openDrawer)}>

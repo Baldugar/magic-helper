@@ -34,7 +34,8 @@ export const HoverMouseComponent: FC<HoverMouseComponentProps> = (props) => {
 
     const { xMod, yMod, transformOrigin, scale } = transformations
 
-    const totalWidth = ((imgHorizontal ? height : width) + (otherImg ? width : 0)) * zoomScale
+    const effectiveWidth = imgHorizontal ? height : width
+    const totalWidth = (effectiveWidth + (otherImg ? width : 0)) * zoomScale
     const totalHeight = height * zoomScale
 
     const handleMouseMove = useCallback(
@@ -142,7 +143,7 @@ export const HoverMouseComponent: FC<HoverMouseComponentProps> = (props) => {
                 <Box
                     position={'absolute'} // Position it absolutely on the screen
                     top={y + yMod} // Y position based on the mouse location
-                    left={x + (imgHorizontal ? height : width) * scale + xMod} // X position based on the mouse location
+                    left={x + xMod + effectiveWidth * scale} // X position based on the mouse location
                     zIndex={10000} // Ensure it's rendered above other elements
                     style={{
                         transform: `scale(${scale})`, // Apply scaling for zoom effect

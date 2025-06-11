@@ -8,7 +8,8 @@ import {
     DroppableProvided,
     DroppableStateSnapshot,
 } from '@hello-pangea/dnd'
-import { Box, Button, Typography } from '@mui/material'
+import { Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material'
+import { Box, Button, IconButton, Typography, useMediaQuery } from '@mui/material'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { FixedSizeList, ListChildComponentProps } from 'react-window'
 import { MTGCardWithHover } from '../../../components/MTGCardWithHover'
@@ -21,15 +22,23 @@ interface DeckCreatorPilesProps {}
 // Assuming a margin of 0.5 for sx={{my: 0.5}} translates to 4px top + 4px bottom = 8px total vertical space per item
 // Adjust this if your theme's spacing unit is different or MTGCardWithHover has internal margins/paddings affecting its full rendered height.
 const CARD_ITEM_VERTICAL_SPACE = CARD_SIZE_VALUES['small'].height + 8
+const DESKTOP_COLUMN_WIDTH = '220px'
+const MOBILE_COLUMN_WIDTH = '180px' // Or adjust as needed
+
+// Update CardRowData interface
+interface CardRowData {
+    cards: MTG_Card[]
+    zoneId: string
+}
 
 // Define CardRow component outside or memoized if it doesn't depend on DeckCreatorPiles's direct state/props often
 // For simplicity here, keeping it inside, but for optimization, it could be moved or memoized.
-const CardRow = ({ index, style, data }: ListChildComponentProps<{ cards: MTG_Card[]; zoneId: string }>) => {
+const CardRow = ({ index, style, data }: ListChildComponentProps<CardRowData>) => {
     const cardInPile = data.cards[index]
     if (!cardInPile) return null
 
     return (
-        <Draggable draggableId={cardInPile.ID} index={index} key={cardInPile.ID}>
+        <Draggable draggableId={cardInPile.ID} index={index} key={cardInPile.ID} shouldRespectForcePress={true}>
             {(providedDraggable: DraggableProvided, snapshotDraggable: DraggableStateSnapshot) => (
                 <div
                     ref={providedDraggable.innerRef}
@@ -48,6 +57,7 @@ const CardRow = ({ index, style, data }: ListChildComponentProps<{ cards: MTG_Ca
                     <MTGCardWithHover
                         data={{ type: 'card', card: cardInPile }}
                         hideHover={snapshotDraggable.isDragging}
+                        forceSize="small"
                     />
                 </div>
             )}
@@ -57,13 +67,46 @@ const CardRow = ({ index, style, data }: ListChildComponentProps<{ cards: MTG_Ca
 
 export const DeckCreatorPiles: React.FC<DeckCreatorPilesProps> = () => {
     const { deck, setDeck } = useMTGDeckCreator()
-    const scrollableZonesContainerRef = useRef<HTMLDivElement | null>(null)
+    const isMobile = useMediaQuery('(max-width: 600px)')
+    const pilesAreaRef = useRef<HTMLDivElement | null>(null)
     const [listHeight, setListHeight] = useState(300)
+    const [sessionUncategorizedCardIds, setSessionUncategorizedCardIds] = useState<string[]>([])
+
+    // Effect to initialize and reconcile sessionUncategorizedCardIds
+    useEffect(() => {
+        if (!deck) return
+        const { cards: deckCardEntries, zones: actualZones } = deck
+
+        const allCategorizedIdsInEffect = new Set<string>()
+        actualZones.forEach((zone) => {
+            zone.childrenIDs.forEach((id) => allCategorizedIdsInEffect.add(id))
+        })
+        const currentActualUncategorizedCards = deckCardEntries
+            .map((dc) => dc.card)
+            .filter((card) => !allCategorizedIdsInEffect.has(card.ID))
+        const currentActualUncategorizedIds = currentActualUncategorizedCards.map((c) => c.ID)
+
+        setSessionUncategorizedCardIds((prevOrder) => {
+            const newOrderSet = new Set(currentActualUncategorizedIds)
+
+            // 1. Filter prevOrder to keep only IDs that are still genuinely uncategorized, preserving their order.
+            const stillUncategorizedAndOrdered = prevOrder.filter((id) => newOrderSet.has(id))
+
+            // 2. Find IDs that are in currentActualUncategorizedIds but not yet in stillUncategorizedAndOrdered.
+            // These are newly uncategorized cards or those whose status needs re-confirmation.
+            const newlyConfirmedUncategorized = currentActualUncategorizedIds.filter(
+                (id) => !stillUncategorizedAndOrdered.includes(id),
+            )
+
+            // 3. Concatenate: ordered and still uncategorized first, then new ones.
+            return [...stillUncategorizedAndOrdered, ...newlyConfirmedUncategorized]
+        })
+    }, [deck, setSessionUncategorizedCardIds]) // Simplified dependencies, as deckCardEntries and actualZones are derived from deck
 
     const updateHeight = useCallback(() => {
-        if (scrollableZonesContainerRef.current) {
-            const newHeight = scrollableZonesContainerRef.current.clientHeight
-            // Ensure a minimum height for FixedSizeList, adjust 50 based on your layout needs (e.g., header height)
+        if (pilesAreaRef.current) {
+            const newHeight = pilesAreaRef.current.clientHeight
+            // Subtract approx title height for each column from the available space for the list
             setListHeight(newHeight > 50 ? newHeight - 48 : 250) // Subtract approx. header height, ensure min
         } else {
             setListHeight(250) // Default if ref not available early
@@ -77,7 +120,7 @@ export const DeckCreatorPiles: React.FC<DeckCreatorPilesProps> = () => {
             updateHeight()
         })
 
-        const currentRef = scrollableZonesContainerRef.current
+        const currentRef = pilesAreaRef.current
         if (currentRef) {
             resizeObserver.observe(currentRef)
         }
@@ -105,20 +148,16 @@ export const DeckCreatorPiles: React.FC<DeckCreatorPilesProps> = () => {
 
     const allDeckCardsMap = new Map(deckCardEntries.map((dc) => [dc.card.ID, dc.card]))
 
-    const allCategorizedCardIds = new Set<string>()
-    actualZones.forEach((zone) => {
-        zone.childrenIDs.forEach((id) => allCategorizedCardIds.add(id))
-    })
-
-    const finalUncategorizedCards = deckCardEntries
-        .map((dc) => dc.card)
-        .filter((card) => !allCategorizedCardIds.has(card.ID))
-
     const uncategorizedZoneDisplayData = {
         ID: 'uncategorized',
         name: 'Uncategorized',
-        childrenIDs: finalUncategorizedCards.map((c) => c.ID),
-        cards: finalUncategorizedCards, // Pass the direct card objects for rendering
+        childrenIDs: sessionUncategorizedCardIds, // Use state here
+        get cards() {
+            // Use a getter to derive cards based on current sessionUncategorizedCardIds
+            return this.childrenIDs
+                .map((id) => allDeckCardsMap.get(id))
+                .filter((card): card is MTG_Card => card !== undefined)
+        },
     }
 
     const handleAddZone = () => {
@@ -139,6 +178,34 @@ export const DeckCreatorPiles: React.FC<DeckCreatorPilesProps> = () => {
                     zones: [...prevDeck.zones, newZoneToAdd],
                 }
             })
+        }
+    }
+
+    const handleRenameZone = (zoneId: string) => {
+        const currentZone = actualZones.find((z) => z.ID === zoneId)
+        const newName = prompt('Enter new name for the zone:', currentZone?.name || '')
+        if (newName && newName.trim() !== '' && deck) {
+            setDeck((prevDeck) => {
+                if (!prevDeck) return prevDeck
+                return {
+                    ...prevDeck,
+                    zones: prevDeck.zones.map((zone) => (zone.ID === zoneId ? { ...zone, name: newName } : zone)),
+                }
+            })
+        }
+    }
+
+    const handleDeleteZone = (zoneId: string) => {
+        if (window.confirm('Are you sure you want to delete this zone? Cards will become uncategorized.')) {
+            if (deck) {
+                setDeck((prevDeck) => {
+                    if (!prevDeck) return prevDeck
+                    return {
+                        ...prevDeck,
+                        zones: prevDeck.zones.filter((zone) => zone.ID !== zoneId),
+                    }
+                })
+            }
         }
     }
 
@@ -167,16 +234,33 @@ export const DeckCreatorPiles: React.FC<DeckCreatorPilesProps> = () => {
                 return
             }
 
+            // Optimistic updates to sessionUncategorizedCardIds before setDeck
+            if (source.droppableId === 'uncategorized' && destination.droppableId === 'uncategorized') {
+                setSessionUncategorizedCardIds((prevOrder) => {
+                    const newOrder = Array.from(prevOrder)
+                    const [movedId] = newOrder.splice(source.index, 1)
+                    newOrder.splice(destination.index, 0, movedId)
+                    return newOrder
+                })
+            } else if (destination.droppableId === 'uncategorized') {
+                // Moving TO Uncategorized
+                setSessionUncategorizedCardIds((prevOrder) => {
+                    const newOrder = prevOrder.filter((id) => id !== draggableId) // Remove if already present (e.g. from quick back-and-forth)
+                    newOrder.splice(destination.index, 0, draggableId)
+                    return newOrder
+                })
+            } else if (source.droppableId === 'uncategorized') {
+                // Moving FROM Uncategorized
+                setSessionUncategorizedCardIds((prevOrder) => prevOrder.filter((id) => id !== draggableId))
+            }
+
+            // Update deck state (actual zones)
             setDeck((prevDeck) => {
                 if (!prevDeck) return prevDeck
-
                 const newActualZones = [...prevDeck.zones]
 
-                const sourceIsUncategorized = source.droppableId === 'uncategorized'
-                const destinationIsUncategorized = destination.droppableId === 'uncategorized'
-
-                // Card Removal from Source
-                if (!sourceIsUncategorized) {
+                // Card Removal from Source Zone (if not uncategorized initially)
+                if (source.droppableId !== 'uncategorized') {
                     const sourceZoneIndex = newActualZones.findIndex((z) => z.ID === source.droppableId)
                     if (sourceZoneIndex !== -1) {
                         const sourceChildren = [...newActualZones[sourceZoneIndex].childrenIDs]
@@ -187,13 +271,12 @@ export const DeckCreatorPiles: React.FC<DeckCreatorPilesProps> = () => {
                         }
                     } else {
                         console.error('RBD: Source zone not found in actual zones', source.droppableId)
-                        return prevDeck
+                        return prevDeck // Should not happen if optimistic update for uncategorized worked
                     }
                 }
-                // If source is uncategorized, removal is implicit if it moves to an actual zone.
 
-                // Card Addition to Destination
-                if (!destinationIsUncategorized) {
+                // Card Addition to Destination Zone (if not uncategorized finally)
+                if (destination.droppableId !== 'uncategorized') {
                     const destZoneIndex = newActualZones.findIndex((z) => z.ID === destination.droppableId)
                     if (destZoneIndex !== -1) {
                         const destChildren = [...newActualZones[destZoneIndex].childrenIDs]
@@ -201,24 +284,9 @@ export const DeckCreatorPiles: React.FC<DeckCreatorPilesProps> = () => {
                         newActualZones[destZoneIndex] = { ...newActualZones[destZoneIndex], childrenIDs: destChildren }
                     } else {
                         console.error('RBD: Destination zone not found in actual zones', destination.droppableId)
-                        return prevDeck
+                        return prevDeck // Should not happen if optimistic update for uncategorized worked
                     }
                 }
-                // If destination is uncategorized, addition is implicit: it was removed from an actual zone (if applicable)
-                // and will now be part of the derived uncategorized list.
-
-                // Reordering within Uncategorized: Current model doesn't persist this specific ordering
-                // as 'finalUncategorizedCards' is derived based on presence in actualZones.
-                // A visual reorder might happen temporarily, but data won't reflect it unless 'deckCardEntries' order changes.
-                if (sourceIsUncategorized && destinationIsUncategorized) {
-                    console.log(
-                        "Attempted to reorder cards within Uncategorized. This view doesn't persist such specific ordering.",
-                    )
-                    // To support this, one might need to manage an explicit order for uncategorized items
-                    // or modify how finalUncategorizedCards are derived/sorted.
-                    // For now, no change to newActualZones is made for this specific sub-case.
-                }
-
                 return { ...prevDeck, zones: newActualZones }
             })
         }
@@ -227,26 +295,26 @@ export const DeckCreatorPiles: React.FC<DeckCreatorPilesProps> = () => {
     console.log('[DeckCreatorPiles] About to render. List height:', listHeight)
 
     const renderZoneColumn = (
-        zoneData: { ID: string; name: string; childrenIDs: string[]; cards?: MTG_Card[] },
+        zoneData: { ID: string; name: string; childrenIDs: string[]; cards?: MTG_Card[] | (() => MTG_Card[]) },
         isUncategorized: boolean,
-        draggableProvided?: DraggableProvided, // For making the column itself draggable
+        draggableProvided?: DraggableProvided,
     ) => {
         const cardsToRenderInZone =
-            isUncategorized && zoneData.cards
-                ? zoneData.cards // Use pre-calculated for uncategorized
+            isUncategorized && typeof zoneData.cards === 'function'
+                ? zoneData.cards()
                 : zoneData.childrenIDs
                       .map((id) => allDeckCardsMap.get(id))
                       .filter((card): card is MTG_Card => card !== undefined)
 
-        // console.log(`[DeckCreatorPiles] Rendering column ${zoneData.name}, cards: ${cardsToRenderInZone.length}, list height: ${listHeight}`);
+        const columnWidth = isMobile ? MOBILE_COLUMN_WIDTH : DESKTOP_COLUMN_WIDTH
 
         return (
             <Box
                 ref={draggableProvided?.innerRef} // Ref for the draggable column itself
                 {...draggableProvided?.draggableProps} // Props for the draggable column
                 sx={{
-                    minWidth: '220px', // Slightly wider to accommodate scrollbar + padding
-                    width: '220px',
+                    minWidth: columnWidth, // Use responsive width
+                    width: columnWidth, // Use responsive width
                     height: '100%', // Column takes full available height
                     display: 'flex',
                     flexDirection: 'column',
@@ -256,19 +324,41 @@ export const DeckCreatorPiles: React.FC<DeckCreatorPilesProps> = () => {
                     flexShrink: 0, // Important for items in a flex container, esp. uncategorized
                 }}
             >
-                <Typography
-                    variant="h6"
+                <Box
                     sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between', // To space out title and icons
                         p: 1,
                         backgroundColor: 'grey.200',
-                        textAlign: 'center',
-                        cursor: draggableProvided ? 'grab' : 'default', // Visual cue for draggability
                         borderBottom: '1px solid lightgray',
                     }}
-                    {...draggableProvided?.dragHandleProps} // Drag handle for the column
+                    {...draggableProvided?.dragHandleProps} // Apply drag handle to the whole header Box
                 >
-                    {zoneData.name}
-                </Typography>
+                    <Typography
+                        variant="h6"
+                        sx={{
+                            textAlign: 'center',
+                            flexGrow: 1, // Allow title to take space
+                            cursor: draggableProvided ? 'grab' : 'default',
+                            fontSize: isMobile ? '0.9rem' : '1.25rem', // Slightly smaller title on mobile
+                        }}
+                    >
+                        {zoneData.name}
+                    </Typography>
+                    {!isUncategorized && (
+                        <Box sx={{ display: 'flex' }}>
+                            {' '}
+                            {/* Container for icons */}
+                            <IconButton size="small" onClick={() => handleRenameZone(zoneData.ID)}>
+                                <EditIcon fontSize={isMobile ? 'small' : 'inherit'} />
+                            </IconButton>
+                            <IconButton size="small" onClick={() => handleDeleteZone(zoneData.ID)}>
+                                <DeleteIcon fontSize={isMobile ? 'small' : 'inherit'} />
+                            </IconButton>
+                        </Box>
+                    )}
+                </Box>
                 <Droppable
                     droppableId={zoneData.ID}
                     key={zoneData.ID} // Keep key here for the Droppable list context
@@ -284,7 +374,9 @@ export const DeckCreatorPiles: React.FC<DeckCreatorPilesProps> = () => {
                                 {...provided.dragHandleProps}
                                 sx={{
                                     backgroundColor: 'transparent',
-                                    width: 200,
+                                    width: isMobile
+                                        ? parseInt(MOBILE_COLUMN_WIDTH) - 20
+                                        : parseInt(DESKTOP_COLUMN_WIDTH) - 20, // Adjust clone width based on column
                                     height: CARD_SIZE_VALUES['small'].height,
                                     userSelect: 'none',
                                     display: 'flex',
@@ -321,7 +413,10 @@ export const DeckCreatorPiles: React.FC<DeckCreatorPilesProps> = () => {
                                     itemSize={CARD_ITEM_VERTICAL_SPACE}
                                     width="100%"
                                     outerRef={providedList.innerRef} // Connects Droppable to FixedSizeList scroll parent
-                                    itemData={{ cards: cardsToRenderInZone, zoneId: zoneData.ID }}
+                                    itemData={{
+                                        cards: cardsToRenderInZone,
+                                        zoneId: zoneData.ID,
+                                    }}
                                 >
                                     {CardRow}
                                 </FixedSizeList>
@@ -353,62 +448,66 @@ export const DeckCreatorPiles: React.FC<DeckCreatorPilesProps> = () => {
 
     return (
         <DragDropContext onDragEnd={onDragEnd}>
-            <Box sx={{ display: 'flex', height: '100%', p: 1, gap: 2, overflow: 'hidden' }}>
-                {' '}
-                {/* Parent flex container, controls overall height and prevents its own scroll */}
-                {/* Uncategorized Column (Fixed) */}
-                {renderZoneColumn(uncategorizedZoneDisplayData, true, undefined)}
-                {/* Scrollable Container for Actual Zones */}
-                <Droppable droppableId="all-deck-zones" type="COLUMN" direction="horizontal">
-                    {(providedDrop: DroppableProvided, _snapshotDrop: DroppableStateSnapshot) => (
-                        <Box
-                            ref={(el: HTMLDivElement | null) => {
-                                providedDrop.innerRef(el)
-                                scrollableZonesContainerRef.current = el
-                            }}
-                            {...providedDrop.droppableProps}
-                            sx={{
-                                display: 'flex',
-                                flexGrow: 1, // Allows this container to take available space
-                                overflowX: 'auto', // Horizontal scroll for zones
-                                minWidth: 0, // Important for flex item that needs to scroll
-                                overflowY: 'hidden', // Prevent vertical scroll on this container itself
-                                height: '100%', // Fill parent's height
-                                gap: 2, // Gap between draggable zone columns
-                                // backgroundColor: snapshotDrop.isDraggingOver ? 'lightgreen' : 'transparent', // Optional: visual feedback for column drop area
-                            }}
-                        >
-                            {actualZones.map((zone, index) => (
-                                <Draggable key={zone.ID} draggableId={zone.ID} index={index}>
-                                    {(
-                                        providedDraggable: DraggableProvided,
-                                        _snapshotDraggable: DraggableStateSnapshot,
-                                    ) =>
-                                        // Pass actual zone data, isUncategorized=false, and draggable props
-                                        renderZoneColumn(zone, false, providedDraggable)
-                                    }
-                                </Draggable>
-                            ))}
-                            {providedDrop.placeholder}
-                        </Box>
-                    )}
-                </Droppable>
-                {/* Add Zone Button (Fixed part of the main flex layout) */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', p: 1, gap: 1, overflow: 'hidden' }}>
+                {/* Add Zone Button Area */}
                 <Box
                     sx={{
-                        minWidth: '150px',
-                        width: '150px',
+                        py: 1, // Padding top and bottom
                         display: 'flex',
+                        justifyContent: isMobile ? 'stretch' : 'center', // Stretch on mobile, center on desktop
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        height: '100%',
-                        p: 1,
-                        flexShrink: 0, // Prevent shrinking
+                        flexShrink: 0, // Prevent this box from shrinking
                     }}
                 >
-                    <Button variant="outlined" onClick={handleAddZone} fullWidth>
+                    <Button
+                        variant="outlined"
+                        onClick={handleAddZone}
+                        fullWidth={isMobile} // Full width on mobile
+                        sx={{ maxWidth: isMobile ? '100%' : '300px' }} // Max width for desktop to prevent overstretching
+                    >
                         + Add Zone
                     </Button>
+                </Box>
+
+                {/* Piles Area (Uncategorized and Actual Zones) */}
+                <Box
+                    ref={pilesAreaRef} // Assign ref here to the container of all piles
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        flexGrow: 1, // Takes remaining vertical space
+                        gap: isMobile ? 1 : 2,
+                        overflow: 'hidden', // Parent for horizontal scroll area needs this
+                    }}
+                >
+                    {renderZoneColumn(uncategorizedZoneDisplayData, true, undefined)}
+                    <Droppable droppableId="all-deck-zones" type="COLUMN" direction="horizontal">
+                        {(providedDrop: DroppableProvided, _snapshotDrop: DroppableStateSnapshot) => (
+                            <Box
+                                ref={providedDrop.innerRef} // scrollableZonesContainerRef removed, this is the direct droppable now
+                                {...providedDrop.droppableProps}
+                                sx={{
+                                    display: 'flex',
+                                    flexGrow: 1,
+                                    overflowX: 'auto',
+                                    minWidth: 0,
+                                    overflowY: 'hidden',
+                                    height: '100%',
+                                    gap: isMobile ? 1 : 2,
+                                }}
+                            >
+                                {actualZones.map((zone, index) => (
+                                    <Draggable key={zone.ID} draggableId={zone.ID} index={index}>
+                                        {(
+                                            providedDraggable: DraggableProvided,
+                                            _snapshotDraggable: DraggableStateSnapshot,
+                                        ) => renderZoneColumn(zone, false, providedDraggable)}
+                                    </Draggable>
+                                ))}
+                                {providedDrop.placeholder}
+                            </Box>
+                        )}
+                    </Droppable>
                 </Box>
             </Box>
         </DragDropContext>
