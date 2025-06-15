@@ -76,6 +76,66 @@ export const MTG_CardFragments = gql`
         keywords
         loyalty
         manaCost
+        aggregatedRating {
+            ...AggregatedRatingFragment
+        }
+        myRating {
+            ...UserRatingFragment
+        }
+        cardTags {
+            ...CardTagFragment
+        }
+        deckTags {
+            ...DeckTagFragment
+        }
+        ratings {
+            ...UserRatingFragment
+        }
+    }
+`
+
+export const MTG_TagFragments = gql`
+    fragment AggregatedRatingFragment on AggregatedRating {
+        average
+        count
+    }
+
+    fragment UserRatingFragment on UserRating {
+        user {
+            ID
+        }
+        value
+    }
+
+    fragment CardTagFragment on CardTag {
+        ID
+        name
+        description
+        aggregatedRating {
+            ...AggregatedRatingFragment
+        }
+        myRating {
+            ...UserRatingFragment
+        }
+        ratings {
+            ...UserRatingFragment
+        }
+    }
+
+    fragment DeckTagFragment on DeckTag {
+        ID
+        name
+        description
+        colors
+        aggregatedRating {
+            ...AggregatedRatingFragment
+        }
+        myRating {
+            ...UserRatingFragment
+        }
+        ratings {
+            ...UserRatingFragment
+        }
     }
 `
 

@@ -31,6 +31,26 @@ func (r *queryResolver) GetMTGCardPackages(ctx context.Context, cardPackageID *s
 	return mtg.GetMTGCardPackages(ctx, cardPackageID)
 }
 
+// Tags is the resolver for the tags field.
+func (r *queryResolver) Tags(ctx context.Context) ([]model.Tag, error) {
+	return mtg.GetTags(ctx)
+}
+
+// CardTags is the resolver for the cardTags field.
+func (r *queryResolver) CardTags(ctx context.Context) ([]*model.CardTag, error) {
+	return mtg.GetCardTags(ctx)
+}
+
+// DeckTags is the resolver for the deckTags field.
+func (r *queryResolver) DeckTags(ctx context.Context) ([]*model.DeckTag, error) {
+	return mtg.GetDeckTags(ctx)
+}
+
+// Tag is the resolver for the tag field.
+func (r *queryResolver) Tag(ctx context.Context, id string) (model.Tag, error) {
+	return mtg.GetTag(ctx, id)
+}
+
 // Query returns gentypes.QueryResolver implementation.
 func (r *Resolver) Query() gentypes.QueryResolver { return &queryResolver{r} }
 

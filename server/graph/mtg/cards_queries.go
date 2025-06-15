@@ -5,6 +5,7 @@ import (
 	"magic-helper/arango"
 	"magic-helper/graph/model"
 	"magic-helper/util"
+	"magic-helper/util/ctxkeys"
 
 	"github.com/rs/zerolog/log"
 )
@@ -12,15 +13,106 @@ import (
 func GetMTGCards(ctx context.Context) ([]*model.MtgCard, error) {
 	log.Info().Msg("GetMTGCards: Started")
 
+	// Debug logging for context
+	log.Debug().
+		Interface("context_keys", ctx.Value(ctxkeys.UserIDKey)).
+		Msg("GetMTGCards: Context debug")
+
 	aq := arango.NewQuery( /* aql */ `
 		FOR doc IN @@collection
 			FILTER (doc.manaCost == "" AND doc.layout != "meld") OR doc.manaCost != ""
-		RETURN doc
+			LET ratings = (
+				FOR user, rating IN 1..1 INBOUND doc @@userRatingEdge
+				RETURN {
+					user: user,
+					value: rating.value
+				}
+			)
+			LET cardTags = (
+				FOR tag, tagEdge IN 1..1 INBOUND doc @@tagCardEdge
+				FILTER tag.type == "CardTag"
+				LET cardTagRatings = (
+					FOR user, rating IN 1..1 INBOUND tag @@userRatingEdge
+					RETURN {
+						user: user,
+						value: rating.value
+					}
+				)
+				RETURN MERGE(tag, {
+					aggregatedRating: {
+						average: AVERAGE(cardTagRatings[*].value),
+						count: LENGTH(cardTagRatings)
+					},
+					ratings: cardTagRatings,
+					myRating: @userID != "" ? FIRST(
+						FOR rating IN cardTagRatings
+							FILTER rating.user._key == @userID
+							RETURN rating
+					) : {}
+				})
+			)
+			LET deckTags = (
+				FOR tag, tagEdge IN 1..1 INBOUND doc @@tagCardEdge
+				FILTER tag.type == "DeckTag"
+				LET cardTagRatings = (
+					FOR user, rating IN 1..1 INBOUND tag @@userRatingEdge
+					RETURN {
+						user: user,
+						value: rating.value
+					}
+				)
+				RETURN MERGE(tag, {
+					aggregatedRating: {
+						average: AVERAGE(cardTagRatings[*].value),
+						count: LENGTH(cardTagRatings)
+					},
+					ratings: cardTagRatings,
+					myRating: @userID != "" ? FIRST(
+						FOR rating IN cardTagRatings
+							FILTER rating.user._key == @userID
+							RETURN rating
+					) : {}
+				})
+			)
+			RETURN MERGE(doc, {
+				aggregatedRating: {
+					average: AVERAGE(ratings[*].value),
+					count: LENGTH(ratings)
+				},
+				ratings: ratings,
+				myRating: @userID != "" ? FIRST(
+					FOR rating IN ratings
+						FILTER rating.user._key == @userID
+						RETURN rating
+				) : {},
+				cardTags: cardTags,
+				deckTags: deckTags
+			})
 	`)
 
 	col := arango.MTG_CARDS_COLLECTION
 
 	aq.AddBindVar("@collection", col)
+	aq.AddBindVar("@userRatingEdge", arango.MTG_USER_RATING_EDGE_COLLECTION)
+	aq.AddBindVar("@tagCardEdge", arango.MTG_TAG_EDGE_COLLECTION)
+
+	// Safely get user ID from context with logging
+	userID, ok := ctx.Value(ctxkeys.UserIDKey).(string)
+	if !ok {
+		log.Warn().
+			Interface("user_id_value", ctx.Value(ctxkeys.UserIDKey)).
+			Bool("type_assertion_ok", ok).
+			Msg("GetMTGCards: Failed to get user ID from context")
+		// Use the default user ID if not present
+		userID = util.USER_ID
+	}
+	log.Debug().
+		Str("user_id", userID).
+		Interface("bind_vars", aq.BindVars).
+		Msg("GetMTGCards: Setting user ID bind variable")
+
+	// Set the user ID bind variable
+	aq = aq.AddBindVar("userID", userID)
 
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {
@@ -161,19 +253,20 @@ func GetMTGFilters(ctx context.Context) (*model.MtgFilterEntries, error) {
 func GetMTGExpansions(ctx context.Context) ([]*model.MtgFilterExpansion, error) {
 	log.Info().Msg("GetMTGExpansions: Started")
 
-	// AQL query to fetch distinct sets and setNames, aggregating games
+	// AQL query to fetch distinct sets and setNames, with optimized memory usage
 	aq := arango.NewQuery( /* aql */ `
         FOR card IN @@collection
             FOR cv IN card.versions
-                COLLECT setCode = cv.set, setNameVal = cv.setName INTO versionGroup
-                LET mergedGames = UNIQUE(FLATTEN(
-                    FOR item IN versionGroup RETURN item.cv.games
-                ))
+                COLLECT setCode = cv.set, setNameVal = cv.setName, games = cv.games INTO versionGroup
                 LET setDetails = DOCUMENT(@@setsCollection, setCode)
+                LET uniqueGames = UNIQUE(FLATTEN(
+                    FOR group IN versionGroup
+                        RETURN group.games
+                ))
                 RETURN {
                     set: UPPER(setCode),
                     setName: setNameVal,
-                    games: mergedGames,
+                    games: uniqueGames,
                     releasedAt: DATE_TIMESTAMP(setDetails.releasedAt),
                     imageURL: setDetails.iconSVGURI,
                     setType: setDetails.setType

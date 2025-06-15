@@ -21,8 +21,10 @@ import LayoutSelector from '../../../components/FilterSelectors/LayoutSelector'
 import LegalitySelector from '../../../components/FilterSelectors/LegalitySelector'
 import ManaSelector from '../../../components/FilterSelectors/ManaSelector'
 import RaritySelector from '../../../components/FilterSelectors/RaritySelector'
+import RatingSelector from '../../../components/FilterSelectors/RatingSelector'
 import SetSelector from '../../../components/FilterSelectors/SetSelector'
 import { SortSelector } from '../../../components/FilterSelectors/SortSelector'
+import { TagSelector } from '../../../components/FilterSelectors/TagSelector'
 import TypeSelector from '../../../components/FilterSelectors/TypeSelector'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { initialMTGFilter } from '../../../context/MTGA/Filter/MTGFilterContext'
@@ -255,6 +257,53 @@ export const Filters = () => {
             />
             <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
             <SortSelector />
+            <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
+            <RatingSelector
+                onSetMax={(max) => {
+                    setFilter((prev) => ({
+                        ...prev,
+                        rating: {
+                            ...prev.rating,
+                            max,
+                        },
+                    }))
+                }}
+                onSetMin={(min) => {
+                    setFilter((prev) => ({
+                        ...prev,
+                        rating: {
+                            ...prev.rating,
+                            min,
+                        },
+                    }))
+                }}
+                selected={{
+                    min: filter.rating.min ?? 0,
+                    max: filter.rating.max ?? 0,
+                }}
+            />
+            <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
+            <TagSelector
+                selected={filter.tags}
+                onNext={(tag) => {
+                    setFilter((prev) => ({
+                        ...prev,
+                        tags: {
+                            ...prev.tags,
+                            [tag]: nextTB(prev.tags[tag]),
+                        },
+                    }))
+                }}
+                onPrev={(tag) => {
+                    setFilter((prev) => ({
+                        ...prev,
+                        tags: {
+                            ...prev.tags,
+                            [tag]: prevTB(prev.tags[tag]),
+                        },
+                    }))
+                }}
+            />
             <FormControlLabel
                 value={filter.hideIgnored}
                 control={<Switch color="primary" />}

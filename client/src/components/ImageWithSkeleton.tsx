@@ -6,11 +6,11 @@ export type ImageWithSkeletonProps = {
     img: string
     width: number
     height: number
-    setHover: (hover: boolean) => void
+    setHover?: (hover: boolean) => void
 }
 
 export const ImageWithSkeleton: FC<ImageWithSkeletonProps> = (props) => {
-    const { img, width, height, setHover } = props
+    const { img, width, height, setHover = () => {} } = props
     const [loaded, setLoaded] = useState(false)
 
     const isMobile = useMediaQuery('(max-width: 600px)')
@@ -20,7 +20,7 @@ export const ImageWithSkeleton: FC<ImageWithSkeletonProps> = (props) => {
     style.width = loaded ? (isMobile ? '100%' : `${width}px`) : '0px'
     style.height = loaded ? (isMobile ? 'auto' : `${height}px`) : '0px'
 
-    const onMouseLeave = debounce(() => setHover(false), 50)
+    const onMouseLeave = debounce(() => setHover?.(false), 50)
 
     return (
         <>
@@ -30,9 +30,9 @@ export const ImageWithSkeleton: FC<ImageWithSkeletonProps> = (props) => {
                 style={style}
                 loading={'lazy'}
                 onLoad={() => setLoaded(true)}
-                onMouseEnter={() => setHover(true)}
+                onMouseEnter={() => setHover?.(true)}
                 onMouseLeave={() => onMouseLeave()}
-                onMouseMove={() => setHover(true)}
+                onMouseMove={() => setHover?.(true)}
             />
             {!loaded && (
                 <Skeleton

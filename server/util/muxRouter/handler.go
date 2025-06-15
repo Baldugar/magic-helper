@@ -1,9 +1,12 @@
 package muxRouter
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"magic-helper/settings"
+	"magic-helper/util"
+	"magic-helper/util/ctxkeys"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -15,6 +18,10 @@ type ConfigSettings struct {
 	Domain string `json:"domain"`
 	Port   int    `json:"port"`
 }
+
+type contextKey string
+
+const userIDKey contextKey = "userID"
 
 func configHandler(w http.ResponseWriter, r *http.Request) {
 	s := settings.Current
@@ -41,7 +48,10 @@ func configHandler(w http.ResponseWriter, r *http.Request) {
 
 func Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Do stuff here
+		// Add the constant USER_ID to the context TODO: Get from session
+		ctx := context.WithValue(r.Context(), ctxkeys.UserIDKey, util.USER_ID)
+		r = r.WithContext(ctx)
+
 		next.ServeHTTP(w, r)
 	})
 }

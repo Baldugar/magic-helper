@@ -25,6 +25,11 @@ export interface MTGFilterType {
     layouts: Partial<Record<MTG_Layout, TernaryBoolean>>
     games: Record<MTG_Game, TernaryBoolean>
     hideIgnored: boolean
+    tags: Record<string, TernaryBoolean>
+    rating: {
+        min: number | null
+        max: number | null
+    }
 }
 
 export enum SortEnum {
@@ -107,6 +112,11 @@ export const initialMTGFilter: MTGFilterType = {
         paper: TernaryBoolean.UNSET,
     },
     hideIgnored: false,
+    tags: {},
+    rating: {
+        min: null,
+        max: null,
+    },
 }
 
 export const MTGFilterContext = createContext<MTGFilterContextType>({

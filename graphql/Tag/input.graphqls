@@ -1,0 +1,24 @@
+input CreateTagInput {
+    type: TagType!
+    name: String!
+    description: String
+    colors: [MTG_Color!]
+    cardID: ID
+}
+
+input UpdateTagInput {
+    ID: ID!
+    name: String
+    description: String
+    colors: [MTG_Color!]
+}
+
+input AssignTagInput {
+    tagID: ID!
+    cardID: ID!
+}
+
+input UnassignTagInput {
+    tagID: ID!
+    cardID: ID!
+}

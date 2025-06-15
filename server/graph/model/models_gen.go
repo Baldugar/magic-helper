@@ -8,6 +8,87 @@ import (
 	"strconv"
 )
 
+type Tag interface {
+	IsTag()
+	GetID() string
+	GetName() string
+	GetDescription() *string
+	GetAggregatedRating() *AggregatedRating
+	GetRatings() []*UserRating
+	GetMyRating() *UserRating
+}
+
+type AggregatedRating struct {
+	Average float64 `json:"average"`
+	Count   int     `json:"count"`
+}
+
+type AssignTagInput struct {
+	TagID  string `json:"tagID"`
+	CardID string `json:"cardID"`
+}
+
+type CardTag struct {
+	ID               string            `json:"_key"`
+	Name             string            `json:"name"`
+	Description      *string           `json:"description,omitempty"`
+	AggregatedRating *AggregatedRating `json:"aggregatedRating"`
+	Ratings          []*UserRating     `json:"ratings"`
+	MyRating         *UserRating       `json:"myRating,omitempty"`
+}
+
+func (CardTag) IsTag()                                      {}
+func (this CardTag) GetID() string                          { return this.ID }
+func (this CardTag) GetName() string                        { return this.Name }
+func (this CardTag) GetDescription() *string                { return this.Description }
+func (this CardTag) GetAggregatedRating() *AggregatedRating { return this.AggregatedRating }
+func (this CardTag) GetRatings() []*UserRating {
+	if this.Ratings == nil {
+		return nil
+	}
+	interfaceSlice := make([]*UserRating, 0, len(this.Ratings))
+	for _, concrete := range this.Ratings {
+		interfaceSlice = append(interfaceSlice, concrete)
+	}
+	return interfaceSlice
+}
+func (this CardTag) GetMyRating() *UserRating { return this.MyRating }
+
+type CreateTagInput struct {
+	Type        TagType    `json:"type"`
+	Name        string     `json:"name"`
+	Description *string    `json:"description,omitempty"`
+	Colors      []MtgColor `json:"colors,omitempty"`
+	CardID      *string    `json:"cardID,omitempty"`
+}
+
+type DeckTag struct {
+	ID               string            `json:"_key"`
+	Name             string            `json:"name"`
+	Description      *string           `json:"description,omitempty"`
+	AggregatedRating *AggregatedRating `json:"aggregatedRating"`
+	Ratings          []*UserRating     `json:"ratings"`
+	MyRating         *UserRating       `json:"myRating,omitempty"`
+	Colors           []MtgColor        `json:"colors"`
+}
+
+func (DeckTag) IsTag()                                      {}
+func (this DeckTag) GetID() string                          { return this.ID }
+func (this DeckTag) GetName() string                        { return this.Name }
+func (this DeckTag) GetDescription() *string                { return this.Description }
+func (this DeckTag) GetAggregatedRating() *AggregatedRating { return this.AggregatedRating }
+func (this DeckTag) GetRatings() []*UserRating {
+	if this.Ratings == nil {
+		return nil
+	}
+	interfaceSlice := make([]*UserRating, 0, len(this.Ratings))
+	for _, concrete := range this.Ratings {
+		interfaceSlice = append(interfaceSlice, concrete)
+	}
+	return interfaceSlice
+}
+func (this DeckTag) GetMyRating() *UserRating { return this.MyRating }
+
 type FlowZone struct {
 	ID          string    `json:"ID"`
 	Name        string    `json:"name"`
@@ -33,23 +114,28 @@ type MtgAddCardToCardPackageInput struct {
 }
 
 type MtgCard struct {
-	ID             string            `json:"_key"`
-	Layout         MtgLayout         `json:"layout"`
-	Cmc            float64           `json:"CMC"`
-	ColorIdentity  []MtgColor        `json:"colorIdentity"`
-	ColorIndicator []string          `json:"colorIndicator,omitempty"`
-	Colors         []MtgColor        `json:"colors,omitempty"`
-	EDHRecRank     *int              `json:"EDHRecRank,omitempty"`
-	Keywords       []string          `json:"keywords"`
-	Loyalty        *string           `json:"loyalty,omitempty"`
-	ManaCost       *string           `json:"manaCost,omitempty"`
-	Name           string            `json:"name"`
-	OracleText     *string           `json:"oracleText,omitempty"`
-	Power          *string           `json:"power,omitempty"`
-	ProducedMana   []MtgColor        `json:"producedMana,omitempty"`
-	Toughness      *string           `json:"toughness,omitempty"`
-	TypeLine       string            `json:"typeLine"`
-	Versions       []*MtgCardVersion `json:"versions"`
+	ID               string            `json:"_key"`
+	Layout           MtgLayout         `json:"layout"`
+	Cmc              float64           `json:"CMC"`
+	ColorIdentity    []MtgColor        `json:"colorIdentity"`
+	ColorIndicator   []string          `json:"colorIndicator,omitempty"`
+	Colors           []MtgColor        `json:"colors,omitempty"`
+	EDHRecRank       *int              `json:"EDHRecRank,omitempty"`
+	Keywords         []string          `json:"keywords"`
+	Loyalty          *string           `json:"loyalty,omitempty"`
+	ManaCost         *string           `json:"manaCost,omitempty"`
+	Name             string            `json:"name"`
+	OracleText       *string           `json:"oracleText,omitempty"`
+	Power            *string           `json:"power,omitempty"`
+	ProducedMana     []MtgColor        `json:"producedMana,omitempty"`
+	Toughness        *string           `json:"toughness,omitempty"`
+	TypeLine         string            `json:"typeLine"`
+	Versions         []*MtgCardVersion `json:"versions"`
+	AggregatedRating *AggregatedRating `json:"aggregatedRating"`
+	Ratings          []*UserRating     `json:"ratings"`
+	MyRating         *UserRating       `json:"myRating,omitempty"`
+	CardTags         []*CardTag        `json:"cardTags"`
+	DeckTags         []*DeckTag        `json:"deckTags"`
 }
 
 type MtgCardFace struct {
@@ -238,9 +324,37 @@ type PositionInput struct {
 type Query struct {
 }
 
+type RateInput struct {
+	UserID     string            `json:"userID"`
+	EntityID   string            `json:"entityID"`
+	EntityType RatableEntityType `json:"entityType"`
+	Value      int               `json:"value"`
+}
+
 type Response struct {
 	Status  bool    `json:"status"`
 	Message *string `json:"message,omitempty"`
+}
+
+type UnassignTagInput struct {
+	TagID  string `json:"tagID"`
+	CardID string `json:"cardID"`
+}
+
+type UpdateTagInput struct {
+	ID          string     `json:"ID"`
+	Name        *string    `json:"name,omitempty"`
+	Description *string    `json:"description,omitempty"`
+	Colors      []MtgColor `json:"colors,omitempty"`
+}
+
+type User struct {
+	ID string `json:"_key"`
+}
+
+type UserRating struct {
+	User  *User `json:"user"`
+	Value int   `json:"value"`
 }
 
 type DeckType string
@@ -585,5 +699,87 @@ func (e *MainOrSide) UnmarshalGQL(v any) error {
 }
 
 func (e MainOrSide) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type RatableEntityType string
+
+const (
+	RatableEntityTypeCard RatableEntityType = "CARD"
+	RatableEntityTypeTag  RatableEntityType = "TAG"
+)
+
+var AllRatableEntityType = []RatableEntityType{
+	RatableEntityTypeCard,
+	RatableEntityTypeTag,
+}
+
+func (e RatableEntityType) IsValid() bool {
+	switch e {
+	case RatableEntityTypeCard, RatableEntityTypeTag:
+		return true
+	}
+	return false
+}
+
+func (e RatableEntityType) String() string {
+	return string(e)
+}
+
+func (e *RatableEntityType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = RatableEntityType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid RatableEntityType", str)
+	}
+	return nil
+}
+
+func (e RatableEntityType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type TagType string
+
+const (
+	TagTypeCardTag TagType = "CardTag"
+	TagTypeDeckTag TagType = "DeckTag"
+)
+
+var AllTagType = []TagType{
+	TagTypeCardTag,
+	TagTypeDeckTag,
+}
+
+func (e TagType) IsValid() bool {
+	switch e {
+	case TagTypeCardTag, TagTypeDeckTag:
+		return true
+	}
+	return false
+}
+
+func (e TagType) String() string {
+	return string(e)
+}
+
+func (e *TagType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TagType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TagType", str)
+	}
+	return nil
+}
+
+func (e TagType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

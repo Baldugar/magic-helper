@@ -9,4 +9,12 @@ type Mutation {
     deleteMTGCardPackage(input: MTG_DeleteCardPackageInput!): Boolean!
     addMTGCardToCardPackage(input: MTG_AddCardToCardPackageInput!): MTG_CardPackage!
     removeMTGCardFromCardPackage(input: MTG_RemoveCardFromCardPackageInput!): MTG_CardPackage!
+    # Tags
+    createTag(input: CreateTagInput!): ID!
+    updateTag(input: UpdateTagInput!): ID!
+    deleteTag(tagID: ID!): ID!
+    assignTag(input: AssignTagInput!): Boolean!
+    unassignTag(input: UnassignTagInput!): Boolean!
+    # Ratings
+    rate(input: RateInput!): ID!
 }

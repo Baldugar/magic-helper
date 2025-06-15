@@ -51,6 +51,36 @@ func (r *mutationResolver) RemoveMTGCardFromCardPackage(ctx context.Context, inp
 	return mtg.RemoveMTGCardFromCardPackage(ctx, input)
 }
 
+// CreateTag is the resolver for the createTag field.
+func (r *mutationResolver) CreateTag(ctx context.Context, input model.CreateTagInput) (string, error) {
+	return mtg.CreateTag(ctx, input)
+}
+
+// UpdateTag is the resolver for the updateTag field.
+func (r *mutationResolver) UpdateTag(ctx context.Context, input model.UpdateTagInput) (string, error) {
+	return mtg.UpdateTag(ctx, input)
+}
+
+// DeleteTag is the resolver for the deleteTag field.
+func (r *mutationResolver) DeleteTag(ctx context.Context, tagID string) (string, error) {
+	return mtg.DeleteTag(ctx, tagID)
+}
+
+// AssignTag is the resolver for the assignTag field.
+func (r *mutationResolver) AssignTag(ctx context.Context, input model.AssignTagInput) (bool, error) {
+	return mtg.AssignTag(ctx, input)
+}
+
+// UnassignTag is the resolver for the unassignTag field.
+func (r *mutationResolver) UnassignTag(ctx context.Context, input model.UnassignTagInput) (bool, error) {
+	return mtg.UnassignTag(ctx, input)
+}
+
+// Rate is the resolver for the rate field.
+func (r *mutationResolver) Rate(ctx context.Context, input model.RateInput) (string, error) {
+	return mtg.Rate(ctx, input)
+}
+
 // Mutation returns gentypes.MutationResolver implementation.
 func (r *Resolver) Mutation() gentypes.MutationResolver { return &mutationResolver{r} }
 

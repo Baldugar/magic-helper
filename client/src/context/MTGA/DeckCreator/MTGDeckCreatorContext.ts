@@ -42,6 +42,10 @@ type MTGDeckCreatorContextType = {
     // Sticky CardsGrid
     stickyCardsGrid: boolean
     setStickyCardsGrid: Dispatch<SetStateAction<boolean>>
+
+    // Opened Card Dialog
+    openedCardDialog: string | null
+    setOpenedCardDialog: Dispatch<SetStateAction<string | null>>
 }
 
 export const MTGDeckCreatorContext = createContext<MTGDeckCreatorContextType>({
@@ -78,4 +82,8 @@ export const MTGDeckCreatorContext = createContext<MTGDeckCreatorContextType>({
     // Sticky CardsGrid
     stickyCardsGrid: true,
     setStickyCardsGrid: () => {},
+
+    // Opened Card Dialog
+    openedCardDialog: null,
+    setOpenedCardDialog: () => {},
 })

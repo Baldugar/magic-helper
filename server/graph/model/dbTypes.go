@@ -28,3 +28,25 @@ type MTGCardDeckDB struct {
 	Phantoms          []Phantom       `json:"phantoms"`
 	SelectedVersionID *string         `json:"selectedVersionID"`
 }
+
+type TagDB struct {
+	ID          string      `json:"_key,omitempty"`
+	Type        TagType     `json:"type"`
+	Name        string      `json:"name"`
+	Description *string     `json:"description,omitempty"`
+	Colors      []*MtgColor `json:"colors,omitempty"`
+}
+
+type UserRatingDB struct {
+	From  string `json:"_from"` // User
+	To    string `json:"_to"`   // Card or Tag
+	Value int    `json:"value"`
+}
+
+func ConvertMtgColorSlice(colors []*MtgColor) []MtgColor {
+	result := make([]MtgColor, len(colors))
+	for i, c := range colors {
+		result[i] = *c
+	}
+	return result
+}

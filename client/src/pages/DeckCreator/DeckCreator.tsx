@@ -36,6 +36,7 @@ import { DRAWER_WIDTH_DESKTOP, DRAWER_WIDTH_MOBILE, PAGE_SIZE_DESKTOP, PAGE_SIZE
 import { calculateNewDeck } from '../../utils/functions/deckFunctions'
 import { useLocalStoreFilter } from '../../utils/hooks/useLocalStoreFilter'
 import { FlowView } from '../FlowView/FlowView'
+import { CardDialog } from './Components/CardDialog'
 import { CardsGrid } from './Components/CardsGrid'
 import { DeckCreatorPiles } from './Components/DeckCreatorPiles'
 import { Drawer } from './Components/Drawer'
@@ -380,6 +381,7 @@ export const DeckCreator = () => {
                 <ImportDialog />
                 <ExportDialog />
                 <CardPackageImportDialog />
+                <CardDialog />
             </Box>
         </MTGDeckCreatorFlowProvider>
     )

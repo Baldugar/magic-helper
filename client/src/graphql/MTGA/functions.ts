@@ -1,5 +1,7 @@
 import { fetchData } from '../../utils/functions/fetchData'
 import {
+    AssignTagInput,
+    CreateTagInput,
     MTG_AddCardToCardPackageInput,
     MTG_Card,
     MTG_CardPackage,
@@ -10,27 +12,44 @@ import {
     MTG_UpdateDeckInput,
     Mutation,
     MutationaddMTGCardToCardPackageArgs,
+    MutationassignTagArgs,
     MutationcreateMTGCardPackageArgs,
     MutationcreateMTGDeckArgs,
+    MutationcreateTagArgs,
     MutationdeleteMTGCardPackageArgs,
     MutationdeleteMTGDeckArgs,
+    MutationdeleteTagArgs,
+    MutationrateArgs,
     MutationremoveMTGCardFromCardPackageArgs,
+    MutationunassignTagArgs,
     MutationupdateMTGDeckArgs,
+    MutationupdateTagArgs,
     Query,
     QuerygetMTGCardPackagesArgs,
     QuerygetMTGDecksArgs,
+    RateInput,
+    Tag,
+    UnassignTagInput,
+    UpdateTagInput,
 } from '../types'
 import addMTGCardToCardPackage from './mutations/addMTGCardToCardPackage'
+import { assignTag } from './mutations/assignTag'
 import createMTGCardPackage from './mutations/createMTGCardPackage'
 import createMTGDeck from './mutations/createMTGDeck'
+import { createTag } from './mutations/createTag'
 import deleteMTGCardPackage from './mutations/deleteMTGCardPackage'
 import deleteMTGADeck from './mutations/deleteMTGDeck'
+import { deleteTag } from './mutations/deleteTag'
+import { rate } from './mutations/rate'
 import removeMTGCardFromCardPackage from './mutations/removeMTGCardFromCardPackage'
 import saveMTGDeckAsCopy from './mutations/saveMTGDeckAsCopy'
+import { unassignTag } from './mutations/unassignTag'
 import updateMTGDeck from './mutations/updateMTGDeck'
+import { updateTag } from './mutations/updateTag'
 import getMTGCardPackages from './queries/getMTGCardPackages'
 import getMTGCards from './queries/getMTGCards'
 import getMTGDecks from './queries/getMTGDecks'
+import { getTagsQuery } from './queries/getTags'
 
 // ----- QUERIES -----
 
@@ -63,6 +82,17 @@ const getMTGCardPackagesQuery = async (ID?: string): Promise<MTG_CardPackage[]> 
                 resolve(response.data.getMTGCardPackages)
             } else {
                 reject('Failed to fetch MTG card packages')
+            }
+        })
+    })
+
+const getMTGTagsQuery = async (): Promise<Tag[]> =>
+    new Promise((resolve, reject) => {
+        fetchData<Query>(getTagsQuery).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.tags)
+            } else {
+                reject('Failed to fetch MTG tags')
             }
         })
     })
@@ -165,11 +195,78 @@ const removeMTGCardFromCardPackageMutation = async (
         )
     })
 
+const createTagMutation = async (input: CreateTagInput): Promise<string> =>
+    new Promise((resolve, reject) => {
+        fetchData<Mutation, MutationcreateTagArgs>(createTag, { input }).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.createTag)
+            } else {
+                reject('Failed to fetch MTG cards')
+            }
+        })
+    })
+
+const updateTagMutation = async (input: UpdateTagInput): Promise<string> =>
+    new Promise((resolve, reject) => {
+        fetchData<Mutation, MutationupdateTagArgs>(updateTag, { input }).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.updateTag)
+            } else {
+                reject('Failed to fetch MTG cards')
+            }
+        })
+    })
+
+const deleteTagMutation = async (ID: string): Promise<string> =>
+    new Promise((resolve, reject) => {
+        fetchData<Mutation, MutationdeleteTagArgs>(deleteTag, { tagID: ID }).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.deleteTag)
+            } else {
+                reject('Failed to fetch MTG cards')
+            }
+        })
+    })
+
+const assignTagMutation = async (input: AssignTagInput): Promise<boolean> =>
+    new Promise((resolve, reject) => {
+        fetchData<Mutation, MutationassignTagArgs>(assignTag, { input }).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.assignTag)
+            } else {
+                reject('Failed to fetch MTG cards')
+            }
+        })
+    })
+
+const unassignTagMutation = async (input: UnassignTagInput): Promise<boolean> =>
+    new Promise((resolve, reject) => {
+        fetchData<Mutation, MutationunassignTagArgs>(unassignTag, { input }).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.unassignTag)
+            } else {
+                reject('Failed to fetch MTG cards')
+            }
+        })
+    })
+
+const rateMutation = async (input: RateInput): Promise<string> =>
+    new Promise((resolve, reject) => {
+        fetchData<Mutation, MutationrateArgs>(rate, { input }).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.rate)
+            } else {
+                reject('Failed to fetch MTG cards')
+            }
+        })
+    })
+
 export const MTGFunctions = {
     queries: {
         getMTGCards: getMTGCardsQuery,
         getMTGDecks: getMTGDecksQuery,
         getMTGCardPackages: getMTGCardPackagesQuery,
+        getMTGTags: getMTGTagsQuery,
     },
     mutations: {
         createMTGDeck: createMTGDeckMutation,
@@ -180,5 +277,11 @@ export const MTGFunctions = {
         deleteMTGCardPackage: deleteMTGCardPackageMutation,
         addMTGCardToCardPackage: addMTGCardToCardPackageMutation,
         removeMTGCardFromCardPackage: removeMTGCardFromCardPackageMutation,
+        createTag: createTagMutation,
+        updateTag: updateTagMutation,
+        deleteTag: deleteTagMutation,
+        assignTag: assignTagMutation,
+        unassignTag: unassignTagMutation,
+        rate: rateMutation,
     },
 }

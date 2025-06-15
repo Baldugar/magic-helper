@@ -1,0 +1,9 @@
+type AggregatedRating {
+    average: Float!
+    count: Int!
+}
+
+type UserRating {
+    user: User!
+    value: Int!
+}

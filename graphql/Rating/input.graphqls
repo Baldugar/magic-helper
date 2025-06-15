@@ -1,0 +1,6 @@
+input RateInput {
+    userID: ID!
+    entityID: ID!
+    entityType: RatableEntityType!
+    value: Int!
+}

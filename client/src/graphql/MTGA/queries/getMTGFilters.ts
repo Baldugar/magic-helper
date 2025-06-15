@@ -1,4 +1,5 @@
 import gql from 'graphql-tag'
+import { MTG_TagFragments } from '../fragments'
 
 export default gql`
     query getMTGFilters {
@@ -21,5 +22,12 @@ export default gql`
             }
             layouts
         }
+        cardTags {
+            ...CardTagFragment
+        }
+        deckTags {
+            ...DeckTagFragment
+        }
     }
+    ${MTG_TagFragments}
 `

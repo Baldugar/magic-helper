@@ -1,5 +1,5 @@
 {
-    "schema": "./graphql/unified.graphqls",
+    "schema": "./graphql/**/*.graphqls",
     "extensions": {
         "endpoints": {
             "default": {

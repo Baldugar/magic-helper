@@ -6,4 +6,9 @@ type Query {
     getMTGDecks(deckID: ID): [MTG_Deck!]!
     # Card Packages
     getMTGCardPackages(cardPackageID: ID): [MTG_CardPackage!]!
+    # Tags
+    tags: [Tag!]!
+    cardTags: [CardTag!]!
+    deckTags: [DeckTag!]!
+    tag(id: ID!): Tag
 }

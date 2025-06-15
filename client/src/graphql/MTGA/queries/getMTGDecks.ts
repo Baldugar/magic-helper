@@ -1,5 +1,5 @@
 import gql from 'graphql-tag'
-import { MTG_DeckFragments } from '../fragments'
+import { MTG_DeckFragments, MTG_TagFragments } from '../fragments'
 
 export default gql`
     query getMTGDecks($deckID: ID) {
@@ -8,4 +8,5 @@ export default gql`
         }
     }
     ${MTG_DeckFragments}
+    ${MTG_TagFragments}
 `

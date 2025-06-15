@@ -36,7 +36,7 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
         mutations: { addMTGCardToCardPackage, removeMTGCardFromCardPackage, createMTGCardPackage },
     } = MTGFunctions
 
-    const { onAddCard, deck, removeCard, setDeck } = useMTGDeckCreator()
+    const { onAddCard, deck, removeCard, setDeck, setOpenedCardDialog } = useMTGDeckCreator()
     const { handleDeleteZone, handleRenameZone, handleDeletePhantom } = useMTGDeckFlowCreator()
     const { setNodes } = useReactFlow<NodeType>()
     const { item } = useDnD()
@@ -338,6 +338,12 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                         },
                     }
                 })
+            },
+        },
+        {
+            label: 'Open card details',
+            action: () => {
+                setOpenedCardDialog(card.ID)
             },
         },
         {

@@ -16,6 +16,11 @@ type MTG_Card {
     toughness: String
     typeLine: String!
     versions: [MTG_CardVersion!]!
+    aggregatedRating: AggregatedRating!
+    ratings: [UserRating!]!
+    myRating: UserRating
+    cardTags: [CardTag!]!
+    deckTags: [DeckTag!]!
 }
 
 type MTG_CardVersion {

@@ -24,13 +24,15 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
     const [deck, setDeck] = useState<MTG_Deck>()
     const [openDrawer, setOpenDrawer] = useState(false)
     const [selectingCommander, setSelectingCommander] = useState(false)
-    const [viewMode, setViewMode] = useState<DeckCreatorView>('PILES')
+    const [viewMode, setViewMode] = useState<DeckCreatorView>('CATALOGUE')
     const [deckTab, setDeckTab] = useState<MainOrSide>(MainOrSide.MAIN)
     const [openImportDialog, setOpenImportDialog] = useState(false)
     const [openExportDialog, setOpenExportDialog] = useState(false)
     const [openImportCardPackageDialog, setOpenImportCardPackageDialog] = useState(false)
     // Sticky CardsGrid
     const [stickyCardsGrid, setStickyCardsGrid] = useState(true)
+
+    const [openedCardDialog, setOpenedCardDialog] = useState<string | null>(null)
 
     useEffect(() => {
         if (deckID) {
@@ -251,6 +253,9 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
                 // Sticky CardsGrid
                 stickyCardsGrid,
                 setStickyCardsGrid,
+                // Opened Card Dialog
+                openedCardDialog,
+                setOpenedCardDialog,
             }}
         >
             {children}

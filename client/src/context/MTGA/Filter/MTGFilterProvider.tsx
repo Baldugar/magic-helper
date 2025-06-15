@@ -39,6 +39,8 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
         fetchData<Query>(getMTGAFilters).then((data) => {
             if (!data) throw new Error('No data from getMTGFilters')
             const result = data.data.getMTGFilters
+            const cardTags = data.data.cardTags
+            const deckTags = data.data.deckTags
             setFilter((prev) => {
                 prev = cloneDeep(initialMTGFilter)
                 for (const key of result.types) {
@@ -66,6 +68,12 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
                 }
                 for (const layout of result.layouts) {
                     prev.layouts[layout] = TernaryBoolean.UNSET
+                }
+                for (const tag of cardTags || []) {
+                    prev.tags[tag.name] = TernaryBoolean.UNSET
+                }
+                for (const tag of deckTags || []) {
+                    prev.tags[tag.name] = TernaryBoolean.UNSET
                 }
                 setOriginalFilter({ ...prev })
                 return { ...prev }
