@@ -15,8 +15,8 @@ import {
 } from '@mui/material'
 import { MouseEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
-import { MTG_Game } from '../../graphql/types'
-import { isNegativeTB, isPositiveTB, nextTB, prevTB, TernaryBoolean } from '../../types/ternaryBoolean'
+import { MTG_Game, TernaryBoolean } from '../../graphql/types'
+import { isNegativeTB, isPositiveTB, nextTB, prevTB } from '../../types/ternaryBoolean'
 import { TernaryToggle } from './TernaryToggle'
 
 export interface SetSelectorProps {

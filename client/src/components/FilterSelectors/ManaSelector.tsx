@@ -1,6 +1,5 @@
 import { Grid } from '@mui/material'
-import { MTG_Color } from '../../graphql/types'
-import { TernaryBoolean } from '../../types/ternaryBoolean'
+import { MTG_Color, TernaryBoolean } from '../../graphql/types'
 import { TernaryToggle } from './TernaryToggle'
 
 export type ManaSelectorProps = {

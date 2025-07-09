@@ -1,6 +1,11 @@
 type Query {
     # Cards
     getMTGCards: [MTG_Card!]!
+    getMTGCardsFiltered(
+        filter: MTG_Filter_SearchInput!
+        pagination: MTG_Filter_PaginationInput!
+        sort: [MTG_Filter_SortInput!]!
+    ): MTG_Filter_Search!
     getMTGFilters: MTG_Filter_Entries!
     # Decks
     getMTGDecks(deckID: ID): [MTG_Deck!]!

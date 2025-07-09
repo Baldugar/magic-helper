@@ -29,7 +29,8 @@ import TypeSelector from '../../../components/FilterSelectors/TypeSelector'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { initialMTGFilter } from '../../../context/MTGA/Filter/MTGFilterContext'
 import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
-import { nextTB, prevTB, TernaryBoolean } from '../../../types/ternaryBoolean'
+import { TernaryBoolean } from '../../../graphql/types'
+import { nextTB, prevTB } from '../../../types/ternaryBoolean'
 
 export const Filters = () => {
     const { filter, setFilter } = useMTGFilter()

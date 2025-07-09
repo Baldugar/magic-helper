@@ -3,8 +3,7 @@ import { Box, Button, Checkbox, ClickAwayListener, FormControl, Grid, Paper, Pop
 import { MouseEvent, useState } from 'react'
 import { VList } from 'virtua'
 import { useMTGTags } from '../../context/MTGA/Tags/useMTGTags'
-import { CardTag, DeckTag } from '../../graphql/types'
-import { TernaryBoolean } from '../../types/ternaryBoolean'
+import { CardTag, DeckTag, TernaryBoolean } from '../../graphql/types'
 import TagPill from '../TagPill'
 
 export interface TagSelectorProps {

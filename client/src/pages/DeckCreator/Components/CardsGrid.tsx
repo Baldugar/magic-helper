@@ -2,14 +2,15 @@ import { Box, Grid, Typography, useMediaQuery } from '@mui/material'
 import { isEqual } from 'lodash'
 import { useCallback, useEffect, useRef, useState, WheelEvent } from 'react'
 import { SwipeEventData, useSwipeable } from 'react-swipeable'
+import { useMTGCards } from '../../../context/MTGA/Cards/useMTGCards'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
-import { useMTGDeckCreatorPagination } from '../../../context/MTGA/DeckCreatorPagination/useMTGDeckCreatorPagination'
 import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
 import { PAGE_SIZE_DESKTOP, PAGE_SIZE_MOBILE } from '../../../utils/constants'
 import { CardsGridButton } from './CardsGridButton'
 
 export const CardsGrid = () => {
-    const { filteredCards, page, setPage } = useMTGDeckCreatorPagination()
+    const { cards: filteredCards, totalCount } = useMTGCards()
+    const { page, setPage } = useMTGFilter()
     const { filter, originalFilter } = useMTGFilter()
     const gridRef = useRef<HTMLDivElement | null>(null)
     const scrollDebounceTimeout = useRef<NodeJS.Timeout | null>(null)
@@ -20,8 +21,8 @@ export const CardsGrid = () => {
     const isMobile = useMediaQuery('(max-width: 600px)')
     const pageSize = isMobile ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP
 
-    const cardsToShow = filteredCards.slice(page * pageSize, (page + 1) * pageSize)
-    const totalPages = Math.ceil(filteredCards.length / pageSize)
+    const cardsToShow = filteredCards
+    const totalPages = Math.ceil(totalCount / pageSize)
 
     // Spacing in px for MUI Grid (theme.spacing(2)), default is 8px * 2 = 16px
     const spacingPx = 16

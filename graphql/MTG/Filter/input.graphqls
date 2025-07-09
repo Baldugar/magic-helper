@@ -1,0 +1,87 @@
+input MTG_Filter_SearchInput {
+    searchString: String
+    rarity: [MTG_Filter_RarityInput!]!
+    color: [MTG_Filter_ColorInput!]!
+    multiColor: TernaryBoolean!
+    manaCosts: [MTG_Filter_ManaCostInput!]!
+    cardTypes: [MTG_Filter_CardTypeInput!]!
+    subtypes: [MTG_Filter_SubtypeInput!]!
+    sets: [MTG_Filter_SetInput!]!
+    legalities: [MTG_Filter_LegalityInput!]!
+    layouts: [MTG_Filter_LayoutInput!]!
+    games: [MTG_Filter_GameInput!]!
+    hideIgnored: TernaryBoolean!
+    tags: [MTG_Filter_TagInput!]!
+    rating: MTG_Filter_RatingInput!
+}
+
+input MTG_Filter_RarityInput {
+    rarity: MTG_Rarity!
+    value: TernaryBoolean!
+}
+
+input MTG_Filter_ColorInput {
+    color: MTG_Color!
+    value: TernaryBoolean!
+}
+
+input MTG_Filter_ManaCostInput {
+    manaCost: String!
+    value: TernaryBoolean!
+}
+
+input MTG_Filter_CardTypeInput {
+    cardType: String!
+    value: TernaryBoolean!
+}
+
+input MTG_Filter_SubtypeInput {
+    subtype: String!
+    value: TernaryBoolean!
+}
+
+input MTG_Filter_SetInput {
+    set: String!
+    value: TernaryBoolean!
+}
+
+input MTG_Filter_LegalityEntryInput {
+    legalityValue: String!
+    value: TernaryBoolean!
+}
+
+input MTG_Filter_LegalityInput {
+    format: String!
+    legalityEntries: [MTG_Filter_LegalityEntryInput!]!
+}
+
+input MTG_Filter_LayoutInput {
+    layout: MTG_Layout!
+    value: TernaryBoolean!
+}
+
+input MTG_Filter_GameInput {
+    game: MTG_Game!
+    value: TernaryBoolean!
+}
+
+input MTG_Filter_TagInput {
+    tag: String!
+    value: TernaryBoolean!
+}
+
+input MTG_Filter_RatingInput {
+    min: Int
+    max: Int
+}
+
+input MTG_Filter_PaginationInput {
+    page: Int!
+    pageSize: Int!
+}
+
+input MTG_Filter_SortInput {
+    sortBy: MTG_Filter_SortBy!
+    sortDirection: MTG_Filter_SortDirection!
+    enabled: Boolean!
+}

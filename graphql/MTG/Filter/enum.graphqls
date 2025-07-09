@@ -1,0 +1,20 @@
+enum TernaryBoolean {
+    TRUE
+    FALSE
+    UNSET
+}
+
+enum MTG_Filter_SortBy {
+    NAME
+    CMC
+    RARITY
+    COLOR
+    TYPE
+    SET
+    RELEASED_AT
+}
+
+enum MTG_Filter_SortDirection {
+    ASC
+    DESC
+}

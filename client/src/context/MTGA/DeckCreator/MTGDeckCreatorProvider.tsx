@@ -18,12 +18,11 @@ import { MTGDeckCreatorContext } from './MTGDeckCreatorContext'
 
 export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNode; deckID: string | undefined }) => {
     const { decks } = useMTGDecks()
-    const { filter } = useMTGFilter()
+    const { filter, isSelectingCommander, setIsSelectingCommander } = useMTGFilter()
     const set = singleSetSelected(filter)
 
     const [deck, setDeck] = useState<MTG_Deck>()
     const [openDrawer, setOpenDrawer] = useState(false)
-    const [selectingCommander, setSelectingCommander] = useState(false)
     const [viewMode, setViewMode] = useState<DeckCreatorView>('CATALOGUE')
     const [deckTab, setDeckTab] = useState<MainOrSide>(MainOrSide.MAIN)
     const [openImportDialog, setOpenImportDialog] = useState(false)
@@ -52,7 +51,7 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
     ): MTG_Deck | undefined => {
         const newDeck = structuredClone(whatDeck ?? deck)
         if (newDeck) {
-            if (selectingCommander) {
+            if (isSelectingCommander) {
                 // Remove the previous commander
                 newDeck.cards = newDeck.cards.filter((c) => c.deckCardType !== MTG_DeckCardType.COMMANDER)
                 // Add the new commander
@@ -67,7 +66,7 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
                     selectedVersionID: setVersion?.ID,
                 }
                 newDeck.cards.push(cardToReturn)
-                setSelectingCommander(false)
+                setIsSelectingCommander(false)
             } else {
                 const ID = card.ID
                 const index = newDeck.cards.findIndex((c) => c.card.ID === ID && c.mainOrSide === deckTab)
@@ -236,10 +235,8 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
                 openDrawer,
                 removeCard,
                 removeOne,
-                selectingCommander,
                 setDeckTab,
                 setOpenDrawer,
-                setSelectingCommander,
                 setViewMode,
                 viewMode,
                 openImportDialog,

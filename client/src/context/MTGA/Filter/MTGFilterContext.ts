@@ -1,6 +1,15 @@
 import { createContext, Dispatch, SetStateAction } from 'react'
-import { MTG_Color, MTG_Game, MTG_Layout, MTG_Rarity } from '../../../graphql/types'
-import { TernaryBoolean } from '../../../types/ternaryBoolean'
+import {
+    MTG_Color,
+    MTG_Filter_SortBy,
+    MTG_Filter_SortDirection,
+    MTG_Game,
+    MTG_Layout,
+    MTG_Rarity,
+    QuerygetMTGCardsFilteredArgs,
+    TernaryBoolean,
+} from '../../../graphql/types'
+import { PAGE_SIZE_DESKTOP } from '../../../utils/constants'
 
 export type CMCFilter = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 'infinite'
 
@@ -16,9 +25,9 @@ export interface MTGFilterType {
     searchString: string
     rarity: Record<MTG_Rarity, TernaryBoolean>
     color: Record<MTG_Color, TernaryBoolean>
+    multiColor: TernaryBoolean
     manaCosts: Record<CMCFilter, TernaryBoolean>
     cardTypes: Record<string, TernaryBoolean>
-    multiColor: TernaryBoolean
     subtypes: Record<string, Record<string, TernaryBoolean>>
     sets: Record<string, SetFilter>
     legalities: Record<string, Record<string, TernaryBoolean>>
@@ -32,21 +41,6 @@ export interface MTGFilterType {
     }
 }
 
-export enum SortEnum {
-    NAME = 'name',
-    CMC = 'cmc',
-    RARITY = 'rarity',
-    COLOR = 'color',
-    TYPE = 'type',
-    SET = 'set',
-    RELEASED_AT = 'releasedAt',
-}
-
-export enum SortDirection {
-    ASC = 'asc',
-    DESC = 'desc',
-}
-
 export interface MTGFilterContextType {
     filter: MTGFilterType
     originalFilter: MTGFilterType
@@ -54,21 +48,30 @@ export interface MTGFilterContextType {
     setFilter: Dispatch<SetStateAction<MTGFilterType>>
     setOriginalFilter: Dispatch<SetStateAction<MTGFilterType>>
     sort: {
-        sortBy: SortEnum
-        sortDirection: SortDirection
+        sortBy: MTG_Filter_SortBy
+        sortDirection: MTG_Filter_SortDirection
         enabled: boolean
     }[]
     setSort: Dispatch<
         SetStateAction<
             {
-                sortBy: SortEnum
-                sortDirection: SortDirection
+                sortBy: MTG_Filter_SortBy
+                sortDirection: MTG_Filter_SortDirection
                 enabled: boolean
             }[]
         >
     >
+
+    isSelectingCommander: boolean
+    setIsSelectingCommander: Dispatch<SetStateAction<boolean>>
+
     zoom: 'IN' | 'OUT'
     setZoom: Dispatch<SetStateAction<'IN' | 'OUT'>>
+
+    page: number
+    setPage: Dispatch<SetStateAction<number>>
+
+    convertFilters: () => QuerygetMTGCardsFilteredArgs
 }
 
 export const initialMTGFilter: MTGFilterType = {
@@ -119,18 +122,50 @@ export const initialMTGFilter: MTGFilterType = {
     },
 }
 
+export const initialConvertedFilter: QuerygetMTGCardsFilteredArgs = {
+    filter: {
+        cardTypes: [],
+        color: [],
+        manaCosts: [],
+        games: [],
+        hideIgnored: TernaryBoolean.UNSET,
+        layouts: [],
+        legalities: [],
+        multiColor: TernaryBoolean.UNSET,
+        rarity: [],
+        rating: {
+            min: null,
+            max: null,
+        },
+        sets: [],
+        subtypes: [],
+        tags: [],
+        searchString: '',
+    },
+    pagination: {
+        page: 0,
+        pageSize: PAGE_SIZE_DESKTOP,
+    },
+    sort: [],
+}
+
 export const MTGFilterContext = createContext<MTGFilterContextType>({
     filter: initialMTGFilter,
     setFilter: () => {},
     clearFilter: () => {},
     originalFilter: initialMTGFilter,
     setOriginalFilter: () => {},
-    sort: Object.values(SortEnum).map((sortBy) => ({
+    sort: Object.values(MTG_Filter_SortBy).map((sortBy) => ({
         enabled: true,
         sortBy,
-        sortDirection: SortDirection.ASC,
+        sortDirection: MTG_Filter_SortDirection.ASC,
     })),
     setSort: () => {},
     zoom: 'OUT',
     setZoom: () => {},
+    page: 0,
+    setPage: () => {},
+    isSelectingCommander: false,
+    setIsSelectingCommander: () => {},
+    convertFilters: () => initialConvertedFilter,
 })

@@ -8,6 +8,7 @@ import {
     MTG_CreateCardPackageInput,
     MTG_CreateDeckInput,
     MTG_Deck,
+    MTG_Filter_Search,
     MTG_RemoveCardFromCardPackageInput,
     MTG_UpdateDeckInput,
     Mutation,
@@ -26,6 +27,7 @@ import {
     MutationupdateTagArgs,
     Query,
     QuerygetMTGCardPackagesArgs,
+    QuerygetMTGCardsFilteredArgs,
     QuerygetMTGDecksArgs,
     RateInput,
     Tag,
@@ -48,6 +50,7 @@ import updateMTGDeck from './mutations/updateMTGDeck'
 import { updateTag } from './mutations/updateTag'
 import getMTGCardPackages from './queries/getMTGCardPackages'
 import getMTGCards from './queries/getMTGCards'
+import getMTGCardsFiltered from './queries/getMTGCardsFiltered'
 import getMTGDecks from './queries/getMTGDecks'
 import { getTagsQuery } from './queries/getTags'
 
@@ -58,6 +61,17 @@ const getMTGCardsQuery = async (): Promise<MTG_Card[]> =>
         fetchData<Query>(getMTGCards).then((response) => {
             if (response && response.data && !response.errors) {
                 resolve(response.data.getMTGCards)
+            } else {
+                reject('Failed to fetch MTG cards')
+            }
+        })
+    })
+
+const getMTGCardsFilteredQuery = async (filter: QuerygetMTGCardsFilteredArgs): Promise<MTG_Filter_Search> =>
+    new Promise((resolve, reject) => {
+        fetchData<Query, QuerygetMTGCardsFilteredArgs>(getMTGCardsFiltered, filter).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.getMTGCardsFiltered)
             } else {
                 reject('Failed to fetch MTG cards')
             }
@@ -264,6 +278,7 @@ const rateMutation = async (input: RateInput): Promise<string> =>
 export const MTGFunctions = {
     queries: {
         getMTGCards: getMTGCardsQuery,
+        getMTGCardsFiltered: getMTGCardsFilteredQuery,
         getMTGDecks: getMTGDecksQuery,
         getMTGCardPackages: getMTGCardPackagesQuery,
         getMTGTags: getMTGTagsQuery,

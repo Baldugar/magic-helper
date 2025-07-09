@@ -36,7 +36,7 @@
                     "panel": "shared"
                 },
                 "runOptions": {
-                    "runOn": "folderOpen"
+                    "runOn": "default"
                 }
             }
         ]

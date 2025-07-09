@@ -47,10 +47,8 @@ export const FlipCard = (props: FlipCardProps): JSX.Element => {
     const [totalRotation, setTotalRotation] = useState<number>(0)
 
     useEffect(() => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         document.getElementById('flipCard')!.classList.remove('flipped')
         setTotalRotation(0)
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         applyRotate(0, document.getElementById('flipCard'))
     }, [card])
 
@@ -86,7 +84,6 @@ export const FlipCard = (props: FlipCardProps): JSX.Element => {
                     {backFace && (
                         <ButtonBase
                             onClick={() => {
-                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                                 document.getElementById('flipCard')!.classList.toggle('flipped')
                             }}
                             style={{
@@ -144,7 +141,6 @@ export const FlipCard = (props: FlipCardProps): JSX.Element => {
                         />
                         <ButtonBase
                             onClick={() => {
-                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                                 document.getElementById('flipCard')!.classList.toggle('flipped')
                             }}
                             style={{

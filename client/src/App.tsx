@@ -2,7 +2,6 @@ import { Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import './App.css'
 import { MTGCardPackagesProvider } from './context/MTGA/CardPackages/CardPackagesProvider'
-import { MTGCardsProvider } from './context/MTGA/Cards/MTGCardsProvider'
 import { MTGDecksProvider } from './context/MTGA/Decks/MTGDecksProvider'
 import Dashboard from './pages/Dashboard/Dashboard'
 import { DeckCreatorWrapper } from './pages/DeckCreator/DeckCreator'
@@ -27,13 +26,11 @@ function WrappedApp() {
 
 function App() {
     return (
-        <MTGCardsProvider>
-            <MTGDecksProvider>
-                <MTGCardPackagesProvider>
-                    <WrappedApp />
-                </MTGCardPackagesProvider>
-            </MTGDecksProvider>
-        </MTGCardsProvider>
+        <MTGDecksProvider>
+            <MTGCardPackagesProvider>
+                <WrappedApp />
+            </MTGCardPackagesProvider>
+        </MTGDecksProvider>
     )
 }
 

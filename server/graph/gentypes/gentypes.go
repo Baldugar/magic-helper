@@ -202,6 +202,11 @@ type ComplexityRoot struct {
 		LegalityValues func(childComplexity int) int
 	}
 
+	MTG_Filter_Search struct {
+		PagedCards func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
 	MTG_Image struct {
 		ArtCrop    func(childComplexity int) int
 		BorderCrop func(childComplexity int) int
@@ -239,14 +244,15 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		CardTags           func(childComplexity int) int
-		DeckTags           func(childComplexity int) int
-		GetMTGCardPackages func(childComplexity int, cardPackageID *string) int
-		GetMTGCards        func(childComplexity int) int
-		GetMTGDecks        func(childComplexity int, deckID *string) int
-		GetMTGFilters      func(childComplexity int) int
-		Tag                func(childComplexity int, id string) int
-		Tags               func(childComplexity int) int
+		CardTags            func(childComplexity int) int
+		DeckTags            func(childComplexity int) int
+		GetMTGCardPackages  func(childComplexity int, cardPackageID *string) int
+		GetMTGCards         func(childComplexity int) int
+		GetMTGCardsFiltered func(childComplexity int, filter model.MtgFilterSearchInput, pagination model.MtgFilterPaginationInput, sort []*model.MtgFilterSortInput) int
+		GetMTGDecks         func(childComplexity int, deckID *string) int
+		GetMTGFilters       func(childComplexity int) int
+		Tag                 func(childComplexity int, id string) int
+		Tags                func(childComplexity int) int
 	}
 
 	Response struct {
@@ -282,6 +288,7 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	GetMTGCards(ctx context.Context) ([]*model.MtgCard, error)
+	GetMTGCardsFiltered(ctx context.Context, filter model.MtgFilterSearchInput, pagination model.MtgFilterPaginationInput, sort []*model.MtgFilterSortInput) (*model.MtgFilterSearch, error)
 	GetMTGFilters(ctx context.Context) (*model.MtgFilterEntries, error)
 	GetMTGDecks(ctx context.Context, deckID *string) ([]*model.MtgDeck, error)
 	GetMTGCardPackages(ctx context.Context, cardPackageID *string) ([]*model.MtgCardPackage, error)
@@ -1087,6 +1094,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MTG_Filter_Legality.LegalityValues(childComplexity), true
 
+	case "MTG_Filter_Search.pagedCards":
+		if e.complexity.MTG_Filter_Search.PagedCards == nil {
+			break
+		}
+
+		return e.complexity.MTG_Filter_Search.PagedCards(childComplexity), true
+
+	case "MTG_Filter_Search.totalCount":
+		if e.complexity.MTG_Filter_Search.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.MTG_Filter_Search.TotalCount(childComplexity), true
+
 	case "MTG_Image.artCrop":
 		if e.complexity.MTG_Image.ArtCrop == nil {
 			break
@@ -1358,6 +1379,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetMTGCards(childComplexity), true
 
+	case "Query.getMTGCardsFiltered":
+		if e.complexity.Query.GetMTGCardsFiltered == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getMTGCardsFiltered_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetMTGCardsFiltered(childComplexity, args["filter"].(model.MtgFilterSearchInput), args["pagination"].(model.MtgFilterPaginationInput), args["sort"].([]*model.MtgFilterSortInput)), true
+
 	case "Query.getMTGDecks":
 		if e.complexity.Query.GetMTGDecks == nil {
 			break
@@ -1450,6 +1483,21 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputMTG_DeckCardInput,
 		ec.unmarshalInputMTG_DeleteCardPackageInput,
 		ec.unmarshalInputMTG_DeleteDeckInput,
+		ec.unmarshalInputMTG_Filter_CardTypeInput,
+		ec.unmarshalInputMTG_Filter_ColorInput,
+		ec.unmarshalInputMTG_Filter_GameInput,
+		ec.unmarshalInputMTG_Filter_LayoutInput,
+		ec.unmarshalInputMTG_Filter_LegalityEntryInput,
+		ec.unmarshalInputMTG_Filter_LegalityInput,
+		ec.unmarshalInputMTG_Filter_ManaCostInput,
+		ec.unmarshalInputMTG_Filter_PaginationInput,
+		ec.unmarshalInputMTG_Filter_RarityInput,
+		ec.unmarshalInputMTG_Filter_RatingInput,
+		ec.unmarshalInputMTG_Filter_SearchInput,
+		ec.unmarshalInputMTG_Filter_SetInput,
+		ec.unmarshalInputMTG_Filter_SortInput,
+		ec.unmarshalInputMTG_Filter_SubtypeInput,
+		ec.unmarshalInputMTG_Filter_TagInput,
 		ec.unmarshalInputMTG_RemoveCardFromCardPackageInput,
 		ec.unmarshalInputMTG_UpdateDeckInput,
 		ec.unmarshalInputPhantomInput,
@@ -1823,6 +1871,115 @@ type Phantom {
     ID: ID!
 }
 `, BuiltIn: false},
+	{Name: "../../../graphql/MTG/Filter/enum.graphqls", Input: `enum TernaryBoolean {
+    TRUE
+    FALSE
+    UNSET
+}
+
+enum MTG_Filter_SortBy {
+    NAME
+    CMC
+    RARITY
+    COLOR
+    TYPE
+    SET
+    RELEASED_AT
+}
+
+enum MTG_Filter_SortDirection {
+    ASC
+    DESC
+}
+`, BuiltIn: false},
+	{Name: "../../../graphql/MTG/Filter/input.graphqls", Input: `input MTG_Filter_SearchInput {
+    searchString: String
+    rarity: [MTG_Filter_RarityInput!]!
+    color: [MTG_Filter_ColorInput!]!
+    multiColor: TernaryBoolean!
+    manaCosts: [MTG_Filter_ManaCostInput!]!
+    cardTypes: [MTG_Filter_CardTypeInput!]!
+    subtypes: [MTG_Filter_SubtypeInput!]!
+    sets: [MTG_Filter_SetInput!]!
+    legalities: [MTG_Filter_LegalityInput!]!
+    layouts: [MTG_Filter_LayoutInput!]!
+    games: [MTG_Filter_GameInput!]!
+    hideIgnored: TernaryBoolean!
+    tags: [MTG_Filter_TagInput!]!
+    rating: MTG_Filter_RatingInput!
+}
+
+input MTG_Filter_RarityInput {
+    rarity: MTG_Rarity!
+    value: TernaryBoolean!
+}
+
+input MTG_Filter_ColorInput {
+    color: MTG_Color!
+    value: TernaryBoolean!
+}
+
+input MTG_Filter_ManaCostInput {
+    manaCost: String!
+    value: TernaryBoolean!
+}
+
+input MTG_Filter_CardTypeInput {
+    cardType: String!
+    value: TernaryBoolean!
+}
+
+input MTG_Filter_SubtypeInput {
+    subtype: String!
+    value: TernaryBoolean!
+}
+
+input MTG_Filter_SetInput {
+    set: String!
+    value: TernaryBoolean!
+}
+
+input MTG_Filter_LegalityEntryInput {
+    legalityValue: String!
+    value: TernaryBoolean!
+}
+
+input MTG_Filter_LegalityInput {
+    format: String!
+    legalityEntries: [MTG_Filter_LegalityEntryInput!]!
+}
+
+input MTG_Filter_LayoutInput {
+    layout: MTG_Layout!
+    value: TernaryBoolean!
+}
+
+input MTG_Filter_GameInput {
+    game: MTG_Game!
+    value: TernaryBoolean!
+}
+
+input MTG_Filter_TagInput {
+    tag: String!
+    value: TernaryBoolean!
+}
+
+input MTG_Filter_RatingInput {
+    min: Int
+    max: Int
+}
+
+input MTG_Filter_PaginationInput {
+    page: Int!
+    pageSize: Int!
+}
+
+input MTG_Filter_SortInput {
+    sortBy: MTG_Filter_SortBy!
+    sortDirection: MTG_Filter_SortDirection!
+    enabled: Boolean!
+}
+`, BuiltIn: false},
 	{Name: "../../../graphql/MTG/Filter/type.graphqls", Input: `type MTG_Filter_Entries {
     types: [MTG_Filter_CardTypes!]!
     expansions: [MTG_Filter_Expansion!]!
@@ -1847,6 +2004,21 @@ type MTG_Filter_Expansion {
     imageURL: String!
     setType: String!
     games: [MTG_Game!]!
+}
+
+type MTG_Filter_Search {
+    pagedCards: [MTG_Card!]!
+    totalCount: Int!
+}
+`, BuiltIn: false},
+	{Name: "../../../graphql/MTG/Tag/type.graphqls", Input: `type DeckTag implements Tag {
+    ID: ID! @goTag(key: "json", value: "_key")
+    name: String!
+    description: String
+    aggregatedRating: AggregatedRating!
+    ratings: [UserRating!]!
+    myRating: UserRating
+    colors: [MTG_Color!]!
 }
 `, BuiltIn: false},
 	{Name: "../../../graphql/mutation.graphqls", Input: `type Mutation {
@@ -1873,6 +2045,11 @@ type MTG_Filter_Expansion {
 	{Name: "../../../graphql/query.graphqls", Input: `type Query {
     # Cards
     getMTGCards: [MTG_Card!]!
+    getMTGCardsFiltered(
+        filter: MTG_Filter_SearchInput!
+        pagination: MTG_Filter_PaginationInput!
+        sort: [MTG_Filter_SortInput!]!
+    ): MTG_Filter_Search!
     getMTGFilters: MTG_Filter_Entries!
     # Decks
     getMTGDecks(deckID: ID): [MTG_Deck!]!
@@ -1953,16 +2130,6 @@ type CardTag implements Tag {
     aggregatedRating: AggregatedRating!
     ratings: [UserRating!]!
     myRating: UserRating
-}
-
-type DeckTag implements Tag {
-    ID: ID! @goTag(key: "json", value: "_key")
-    name: String!
-    description: String
-    aggregatedRating: AggregatedRating!
-    ratings: [UserRating!]!
-    myRating: UserRating
-    colors: [MTG_Color!]!
 }
 `, BuiltIn: false},
 	{Name: "../../../graphql/type.base.graphqls", Input: `directive @goTag(key: String!, value: String) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
@@ -2429,6 +2596,80 @@ func (ec *executionContext) field_Query_getMTGCardPackages_argsCardPackageID(
 	}
 
 	var zeroVal *string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_getMTGCardsFiltered_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_getMTGCardsFiltered_argsFilter(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["filter"] = arg0
+	arg1, err := ec.field_Query_getMTGCardsFiltered_argsPagination(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["pagination"] = arg1
+	arg2, err := ec.field_Query_getMTGCardsFiltered_argsSort(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["sort"] = arg2
+	return args, nil
+}
+func (ec *executionContext) field_Query_getMTGCardsFiltered_argsFilter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (model.MtgFilterSearchInput, error) {
+	if _, ok := rawArgs["filter"]; !ok {
+		var zeroVal model.MtgFilterSearchInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+	if tmp, ok := rawArgs["filter"]; ok {
+		return ec.unmarshalNMTG_Filter_SearchInput2magicᚑhelperᚋgraphᚋmodelᚐMtgFilterSearchInput(ctx, tmp)
+	}
+
+	var zeroVal model.MtgFilterSearchInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_getMTGCardsFiltered_argsPagination(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (model.MtgFilterPaginationInput, error) {
+	if _, ok := rawArgs["pagination"]; !ok {
+		var zeroVal model.MtgFilterPaginationInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+	if tmp, ok := rawArgs["pagination"]; ok {
+		return ec.unmarshalNMTG_Filter_PaginationInput2magicᚑhelperᚋgraphᚋmodelᚐMtgFilterPaginationInput(ctx, tmp)
+	}
+
+	var zeroVal model.MtgFilterPaginationInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_getMTGCardsFiltered_argsSort(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]*model.MtgFilterSortInput, error) {
+	if _, ok := rawArgs["sort"]; !ok {
+		var zeroVal []*model.MtgFilterSortInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("sort"))
+	if tmp, ok := rawArgs["sort"]; ok {
+		return ec.unmarshalNMTG_Filter_SortInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortInputᚄ(ctx, tmp)
+	}
+
+	var zeroVal []*model.MtgFilterSortInput
 	return zeroVal, nil
 }
 
@@ -7793,6 +8034,140 @@ func (ec *executionContext) fieldContext_MTG_Filter_Legality_legalityValues(_ co
 	return fc, nil
 }
 
+func (ec *executionContext) _MTG_Filter_Search_pagedCards(ctx context.Context, field graphql.CollectedField, obj *model.MtgFilterSearch) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_Filter_Search_pagedCards(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PagedCards, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.MtgCard)
+	fc.Result = res
+	return ec.marshalNMTG_Card2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgCardᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_Filter_Search_pagedCards(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_Filter_Search",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ID":
+				return ec.fieldContext_MTG_Card_ID(ctx, field)
+			case "layout":
+				return ec.fieldContext_MTG_Card_layout(ctx, field)
+			case "CMC":
+				return ec.fieldContext_MTG_Card_CMC(ctx, field)
+			case "colorIdentity":
+				return ec.fieldContext_MTG_Card_colorIdentity(ctx, field)
+			case "colorIndicator":
+				return ec.fieldContext_MTG_Card_colorIndicator(ctx, field)
+			case "colors":
+				return ec.fieldContext_MTG_Card_colors(ctx, field)
+			case "EDHRecRank":
+				return ec.fieldContext_MTG_Card_EDHRecRank(ctx, field)
+			case "keywords":
+				return ec.fieldContext_MTG_Card_keywords(ctx, field)
+			case "loyalty":
+				return ec.fieldContext_MTG_Card_loyalty(ctx, field)
+			case "manaCost":
+				return ec.fieldContext_MTG_Card_manaCost(ctx, field)
+			case "name":
+				return ec.fieldContext_MTG_Card_name(ctx, field)
+			case "oracleText":
+				return ec.fieldContext_MTG_Card_oracleText(ctx, field)
+			case "power":
+				return ec.fieldContext_MTG_Card_power(ctx, field)
+			case "producedMana":
+				return ec.fieldContext_MTG_Card_producedMana(ctx, field)
+			case "toughness":
+				return ec.fieldContext_MTG_Card_toughness(ctx, field)
+			case "typeLine":
+				return ec.fieldContext_MTG_Card_typeLine(ctx, field)
+			case "versions":
+				return ec.fieldContext_MTG_Card_versions(ctx, field)
+			case "aggregatedRating":
+				return ec.fieldContext_MTG_Card_aggregatedRating(ctx, field)
+			case "ratings":
+				return ec.fieldContext_MTG_Card_ratings(ctx, field)
+			case "myRating":
+				return ec.fieldContext_MTG_Card_myRating(ctx, field)
+			case "cardTags":
+				return ec.fieldContext_MTG_Card_cardTags(ctx, field)
+			case "deckTags":
+				return ec.fieldContext_MTG_Card_deckTags(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTG_Card", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_Filter_Search_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.MtgFilterSearch) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_Filter_Search_totalCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_Filter_Search_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_Filter_Search",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MTG_Image_artCrop(ctx context.Context, field graphql.CollectedField, obj *model.MtgImage) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MTG_Image_artCrop(ctx, field)
 	if err != nil {
@@ -9161,6 +9536,67 @@ func (ec *executionContext) fieldContext_Query_getMTGCards(_ context.Context, fi
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTG_Card", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getMTGCardsFiltered(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getMTGCardsFiltered(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetMTGCardsFiltered(rctx, fc.Args["filter"].(model.MtgFilterSearchInput), fc.Args["pagination"].(model.MtgFilterPaginationInput), fc.Args["sort"].([]*model.MtgFilterSortInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.MtgFilterSearch)
+	fc.Result = res
+	return ec.marshalNMTG_Filter_Search2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSearch(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getMTGCardsFiltered(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "pagedCards":
+				return ec.fieldContext_MTG_Filter_Search_pagedCards(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_MTG_Filter_Search_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTG_Filter_Search", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getMTGCardsFiltered_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -12326,6 +12762,607 @@ func (ec *executionContext) unmarshalInputMTG_DeleteDeckInput(ctx context.Contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputMTG_Filter_CardTypeInput(ctx context.Context, obj any) (model.MtgFilterCardTypeInput, error) {
+	var it model.MtgFilterCardTypeInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"cardType", "value"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "cardType":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cardType"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CardType = data
+		case "value":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
+			data, err := ec.unmarshalNTernaryBoolean2magicᚑhelperᚋgraphᚋmodelᚐTernaryBoolean(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Value = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTG_Filter_ColorInput(ctx context.Context, obj any) (model.MtgFilterColorInput, error) {
+	var it model.MtgFilterColorInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"color", "value"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "color":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("color"))
+			data, err := ec.unmarshalNMTG_Color2magicᚑhelperᚋgraphᚋmodelᚐMtgColor(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Color = data
+		case "value":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
+			data, err := ec.unmarshalNTernaryBoolean2magicᚑhelperᚋgraphᚋmodelᚐTernaryBoolean(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Value = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTG_Filter_GameInput(ctx context.Context, obj any) (model.MtgFilterGameInput, error) {
+	var it model.MtgFilterGameInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"game", "value"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "game":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("game"))
+			data, err := ec.unmarshalNMTG_Game2magicᚑhelperᚋgraphᚋmodelᚐMtgGame(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Game = data
+		case "value":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
+			data, err := ec.unmarshalNTernaryBoolean2magicᚑhelperᚋgraphᚋmodelᚐTernaryBoolean(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Value = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTG_Filter_LayoutInput(ctx context.Context, obj any) (model.MtgFilterLayoutInput, error) {
+	var it model.MtgFilterLayoutInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"layout", "value"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "layout":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("layout"))
+			data, err := ec.unmarshalNMTG_Layout2magicᚑhelperᚋgraphᚋmodelᚐMtgLayout(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Layout = data
+		case "value":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
+			data, err := ec.unmarshalNTernaryBoolean2magicᚑhelperᚋgraphᚋmodelᚐTernaryBoolean(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Value = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTG_Filter_LegalityEntryInput(ctx context.Context, obj any) (model.MtgFilterLegalityEntryInput, error) {
+	var it model.MtgFilterLegalityEntryInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"legalityValue", "value"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "legalityValue":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("legalityValue"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LegalityValue = data
+		case "value":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
+			data, err := ec.unmarshalNTernaryBoolean2magicᚑhelperᚋgraphᚋmodelᚐTernaryBoolean(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Value = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTG_Filter_LegalityInput(ctx context.Context, obj any) (model.MtgFilterLegalityInput, error) {
+	var it model.MtgFilterLegalityInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"format", "legalityEntries"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "format":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("format"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Format = data
+		case "legalityEntries":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("legalityEntries"))
+			data, err := ec.unmarshalNMTG_Filter_LegalityEntryInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterLegalityEntryInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LegalityEntries = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTG_Filter_ManaCostInput(ctx context.Context, obj any) (model.MtgFilterManaCostInput, error) {
+	var it model.MtgFilterManaCostInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"manaCost", "value"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "manaCost":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("manaCost"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ManaCost = data
+		case "value":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
+			data, err := ec.unmarshalNTernaryBoolean2magicᚑhelperᚋgraphᚋmodelᚐTernaryBoolean(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Value = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTG_Filter_PaginationInput(ctx context.Context, obj any) (model.MtgFilterPaginationInput, error) {
+	var it model.MtgFilterPaginationInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"page", "pageSize"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "page":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Page = data
+		case "pageSize":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageSize"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PageSize = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTG_Filter_RarityInput(ctx context.Context, obj any) (model.MtgFilterRarityInput, error) {
+	var it model.MtgFilterRarityInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"rarity", "value"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "rarity":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rarity"))
+			data, err := ec.unmarshalNMTG_Rarity2magicᚑhelperᚋgraphᚋmodelᚐMtgRarity(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Rarity = data
+		case "value":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
+			data, err := ec.unmarshalNTernaryBoolean2magicᚑhelperᚋgraphᚋmodelᚐTernaryBoolean(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Value = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTG_Filter_RatingInput(ctx context.Context, obj any) (model.MtgFilterRatingInput, error) {
+	var it model.MtgFilterRatingInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"min", "max"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "min":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("min"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Min = data
+		case "max":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("max"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Max = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTG_Filter_SearchInput(ctx context.Context, obj any) (model.MtgFilterSearchInput, error) {
+	var it model.MtgFilterSearchInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"searchString", "rarity", "color", "multiColor", "manaCosts", "cardTypes", "subtypes", "sets", "legalities", "layouts", "games", "hideIgnored", "tags", "rating"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "searchString":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("searchString"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SearchString = data
+		case "rarity":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rarity"))
+			data, err := ec.unmarshalNMTG_Filter_RarityInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterRarityInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Rarity = data
+		case "color":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("color"))
+			data, err := ec.unmarshalNMTG_Filter_ColorInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterColorInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Color = data
+		case "multiColor":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("multiColor"))
+			data, err := ec.unmarshalNTernaryBoolean2magicᚑhelperᚋgraphᚋmodelᚐTernaryBoolean(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MultiColor = data
+		case "manaCosts":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("manaCosts"))
+			data, err := ec.unmarshalNMTG_Filter_ManaCostInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterManaCostInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ManaCosts = data
+		case "cardTypes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cardTypes"))
+			data, err := ec.unmarshalNMTG_Filter_CardTypeInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterCardTypeInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CardTypes = data
+		case "subtypes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subtypes"))
+			data, err := ec.unmarshalNMTG_Filter_SubtypeInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSubtypeInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Subtypes = data
+		case "sets":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sets"))
+			data, err := ec.unmarshalNMTG_Filter_SetInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSetInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Sets = data
+		case "legalities":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("legalities"))
+			data, err := ec.unmarshalNMTG_Filter_LegalityInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterLegalityInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Legalities = data
+		case "layouts":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("layouts"))
+			data, err := ec.unmarshalNMTG_Filter_LayoutInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterLayoutInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Layouts = data
+		case "games":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("games"))
+			data, err := ec.unmarshalNMTG_Filter_GameInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterGameInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Games = data
+		case "hideIgnored":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hideIgnored"))
+			data, err := ec.unmarshalNTernaryBoolean2magicᚑhelperᚋgraphᚋmodelᚐTernaryBoolean(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HideIgnored = data
+		case "tags":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
+			data, err := ec.unmarshalNMTG_Filter_TagInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterTagInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Tags = data
+		case "rating":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rating"))
+			data, err := ec.unmarshalNMTG_Filter_RatingInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterRatingInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Rating = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTG_Filter_SetInput(ctx context.Context, obj any) (model.MtgFilterSetInput, error) {
+	var it model.MtgFilterSetInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"set", "value"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "set":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("set"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Set = data
+		case "value":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
+			data, err := ec.unmarshalNTernaryBoolean2magicᚑhelperᚋgraphᚋmodelᚐTernaryBoolean(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Value = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTG_Filter_SortInput(ctx context.Context, obj any) (model.MtgFilterSortInput, error) {
+	var it model.MtgFilterSortInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"sortBy", "sortDirection", "enabled"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "sortBy":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sortBy"))
+			data, err := ec.unmarshalNMTG_Filter_SortBy2magicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortBy(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SortBy = data
+		case "sortDirection":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sortDirection"))
+			data, err := ec.unmarshalNMTG_Filter_SortDirection2magicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortDirection(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SortDirection = data
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTG_Filter_SubtypeInput(ctx context.Context, obj any) (model.MtgFilterSubtypeInput, error) {
+	var it model.MtgFilterSubtypeInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"subtype", "value"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "subtype":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subtype"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Subtype = data
+		case "value":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
+			data, err := ec.unmarshalNTernaryBoolean2magicᚑhelperᚋgraphᚋmodelᚐTernaryBoolean(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Value = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTG_Filter_TagInput(ctx context.Context, obj any) (model.MtgFilterTagInput, error) {
+	var it model.MtgFilterTagInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"tag", "value"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "tag":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tag"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Tag = data
+		case "value":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
+			data, err := ec.unmarshalNTernaryBoolean2magicᚑhelperᚋgraphᚋmodelᚐTernaryBoolean(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Value = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputMTG_RemoveCardFromCardPackageInput(ctx context.Context, obj any) (model.MtgRemoveCardFromCardPackageInput, error) {
 	var it model.MtgRemoveCardFromCardPackageInput
 	asMap := map[string]any{}
@@ -12628,13 +13665,6 @@ func (ec *executionContext) _Tag(ctx context.Context, sel ast.SelectionSet, obj 
 	switch obj := (obj).(type) {
 	case nil:
 		return graphql.Null
-	case model.CardTag:
-		return ec._CardTag(ctx, sel, &obj)
-	case *model.CardTag:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._CardTag(ctx, sel, obj)
 	case model.DeckTag:
 		return ec._DeckTag(ctx, sel, &obj)
 	case *model.DeckTag:
@@ -12642,6 +13672,13 @@ func (ec *executionContext) _Tag(ctx context.Context, sel ast.SelectionSet, obj 
 			return graphql.Null
 		}
 		return ec._DeckTag(ctx, sel, obj)
+	case model.CardTag:
+		return ec._CardTag(ctx, sel, &obj)
+	case *model.CardTag:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._CardTag(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -13611,6 +14648,50 @@ func (ec *executionContext) _MTG_Filter_Legality(ctx context.Context, sel ast.Se
 	return out
 }
 
+var mTG_Filter_SearchImplementors = []string{"MTG_Filter_Search"}
+
+func (ec *executionContext) _MTG_Filter_Search(ctx context.Context, sel ast.SelectionSet, obj *model.MtgFilterSearch) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mTG_Filter_SearchImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MTG_Filter_Search")
+		case "pagedCards":
+			out.Values[i] = ec._MTG_Filter_Search_pagedCards(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._MTG_Filter_Search_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var mTG_ImageImplementors = []string{"MTG_Image"}
 
 func (ec *executionContext) _MTG_Image(ctx context.Context, sel ast.SelectionSet, obj *model.MtgImage) graphql.Marshaler {
@@ -13932,6 +15013,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_getMTGCards(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getMTGCardsFiltered":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getMTGCardsFiltered(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -15351,6 +16454,28 @@ func (ec *executionContext) unmarshalNMTG_DeleteDeckInput2magicᚑhelperᚋgraph
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNMTG_Filter_CardTypeInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterCardTypeInputᚄ(ctx context.Context, v any) ([]*model.MtgFilterCardTypeInput, error) {
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.MtgFilterCardTypeInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNMTG_Filter_CardTypeInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterCardTypeInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_CardTypeInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterCardTypeInput(ctx context.Context, v any) (*model.MtgFilterCardTypeInput, error) {
+	res, err := ec.unmarshalInputMTG_Filter_CardTypeInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNMTG_Filter_CardTypes2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterCardTypesᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MtgFilterCardTypes) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -15403,6 +16528,28 @@ func (ec *executionContext) marshalNMTG_Filter_CardTypes2ᚖmagicᚑhelperᚋgra
 		return graphql.Null
 	}
 	return ec._MTG_Filter_CardTypes(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_ColorInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterColorInputᚄ(ctx context.Context, v any) ([]*model.MtgFilterColorInput, error) {
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.MtgFilterColorInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNMTG_Filter_ColorInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterColorInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_ColorInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterColorInput(ctx context.Context, v any) (*model.MtgFilterColorInput, error) {
+	res, err := ec.unmarshalInputMTG_Filter_ColorInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNMTG_Filter_Entries2magicᚑhelperᚋgraphᚋmodelᚐMtgFilterEntries(ctx context.Context, sel ast.SelectionSet, v model.MtgFilterEntries) graphql.Marshaler {
@@ -15473,6 +16620,50 @@ func (ec *executionContext) marshalNMTG_Filter_Expansion2ᚖmagicᚑhelperᚋgra
 	return ec._MTG_Filter_Expansion(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNMTG_Filter_GameInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterGameInputᚄ(ctx context.Context, v any) ([]*model.MtgFilterGameInput, error) {
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.MtgFilterGameInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNMTG_Filter_GameInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterGameInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_GameInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterGameInput(ctx context.Context, v any) (*model.MtgFilterGameInput, error) {
+	res, err := ec.unmarshalInputMTG_Filter_GameInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_LayoutInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterLayoutInputᚄ(ctx context.Context, v any) ([]*model.MtgFilterLayoutInput, error) {
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.MtgFilterLayoutInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNMTG_Filter_LayoutInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterLayoutInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_LayoutInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterLayoutInput(ctx context.Context, v any) (*model.MtgFilterLayoutInput, error) {
+	res, err := ec.unmarshalInputMTG_Filter_LayoutInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNMTG_Filter_Legality2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterLegality(ctx context.Context, sel ast.SelectionSet, v *model.MtgFilterLegality) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -15481,6 +16672,231 @@ func (ec *executionContext) marshalNMTG_Filter_Legality2ᚖmagicᚑhelperᚋgrap
 		return graphql.Null
 	}
 	return ec._MTG_Filter_Legality(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_LegalityEntryInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterLegalityEntryInputᚄ(ctx context.Context, v any) ([]*model.MtgFilterLegalityEntryInput, error) {
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.MtgFilterLegalityEntryInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNMTG_Filter_LegalityEntryInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterLegalityEntryInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_LegalityEntryInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterLegalityEntryInput(ctx context.Context, v any) (*model.MtgFilterLegalityEntryInput, error) {
+	res, err := ec.unmarshalInputMTG_Filter_LegalityEntryInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_LegalityInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterLegalityInputᚄ(ctx context.Context, v any) ([]*model.MtgFilterLegalityInput, error) {
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.MtgFilterLegalityInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNMTG_Filter_LegalityInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterLegalityInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_LegalityInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterLegalityInput(ctx context.Context, v any) (*model.MtgFilterLegalityInput, error) {
+	res, err := ec.unmarshalInputMTG_Filter_LegalityInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_ManaCostInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterManaCostInputᚄ(ctx context.Context, v any) ([]*model.MtgFilterManaCostInput, error) {
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.MtgFilterManaCostInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNMTG_Filter_ManaCostInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterManaCostInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_ManaCostInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterManaCostInput(ctx context.Context, v any) (*model.MtgFilterManaCostInput, error) {
+	res, err := ec.unmarshalInputMTG_Filter_ManaCostInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_PaginationInput2magicᚑhelperᚋgraphᚋmodelᚐMtgFilterPaginationInput(ctx context.Context, v any) (model.MtgFilterPaginationInput, error) {
+	res, err := ec.unmarshalInputMTG_Filter_PaginationInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_RarityInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterRarityInputᚄ(ctx context.Context, v any) ([]*model.MtgFilterRarityInput, error) {
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.MtgFilterRarityInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNMTG_Filter_RarityInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterRarityInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_RarityInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterRarityInput(ctx context.Context, v any) (*model.MtgFilterRarityInput, error) {
+	res, err := ec.unmarshalInputMTG_Filter_RarityInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_RatingInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterRatingInput(ctx context.Context, v any) (*model.MtgFilterRatingInput, error) {
+	res, err := ec.unmarshalInputMTG_Filter_RatingInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMTG_Filter_Search2magicᚑhelperᚋgraphᚋmodelᚐMtgFilterSearch(ctx context.Context, sel ast.SelectionSet, v model.MtgFilterSearch) graphql.Marshaler {
+	return ec._MTG_Filter_Search(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMTG_Filter_Search2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSearch(ctx context.Context, sel ast.SelectionSet, v *model.MtgFilterSearch) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MTG_Filter_Search(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_SearchInput2magicᚑhelperᚋgraphᚋmodelᚐMtgFilterSearchInput(ctx context.Context, v any) (model.MtgFilterSearchInput, error) {
+	res, err := ec.unmarshalInputMTG_Filter_SearchInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_SetInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSetInputᚄ(ctx context.Context, v any) ([]*model.MtgFilterSetInput, error) {
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.MtgFilterSetInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNMTG_Filter_SetInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSetInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_SetInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSetInput(ctx context.Context, v any) (*model.MtgFilterSetInput, error) {
+	res, err := ec.unmarshalInputMTG_Filter_SetInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_SortBy2magicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortBy(ctx context.Context, v any) (model.MtgFilterSortBy, error) {
+	var res model.MtgFilterSortBy
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMTG_Filter_SortBy2magicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortBy(ctx context.Context, sel ast.SelectionSet, v model.MtgFilterSortBy) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_SortDirection2magicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortDirection(ctx context.Context, v any) (model.MtgFilterSortDirection, error) {
+	var res model.MtgFilterSortDirection
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMTG_Filter_SortDirection2magicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortDirection(ctx context.Context, sel ast.SelectionSet, v model.MtgFilterSortDirection) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_SortInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortInputᚄ(ctx context.Context, v any) ([]*model.MtgFilterSortInput, error) {
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.MtgFilterSortInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNMTG_Filter_SortInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_SortInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortInput(ctx context.Context, v any) (*model.MtgFilterSortInput, error) {
+	res, err := ec.unmarshalInputMTG_Filter_SortInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_SubtypeInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSubtypeInputᚄ(ctx context.Context, v any) ([]*model.MtgFilterSubtypeInput, error) {
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.MtgFilterSubtypeInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNMTG_Filter_SubtypeInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSubtypeInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_SubtypeInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSubtypeInput(ctx context.Context, v any) (*model.MtgFilterSubtypeInput, error) {
+	res, err := ec.unmarshalInputMTG_Filter_SubtypeInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_TagInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterTagInputᚄ(ctx context.Context, v any) ([]*model.MtgFilterTagInput, error) {
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.MtgFilterTagInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNMTG_Filter_TagInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterTagInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNMTG_Filter_TagInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterTagInput(ctx context.Context, v any) (*model.MtgFilterTagInput, error) {
+	res, err := ec.unmarshalInputMTG_Filter_TagInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNMTG_Game2magicᚑhelperᚋgraphᚋmodelᚐMtgGame(ctx context.Context, v any) (model.MtgGame, error) {
@@ -15890,6 +17306,16 @@ func (ec *executionContext) unmarshalNTagType2magicᚑhelperᚋgraphᚋmodelᚐT
 }
 
 func (ec *executionContext) marshalNTagType2magicᚑhelperᚋgraphᚋmodelᚐTagType(ctx context.Context, sel ast.SelectionSet, v model.TagType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNTernaryBoolean2magicᚑhelperᚋgraphᚋmodelᚐTernaryBoolean(ctx context.Context, v any) (model.TernaryBoolean, error) {
+	var res model.TernaryBoolean
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNTernaryBoolean2magicᚑhelperᚋgraphᚋmodelᚐTernaryBoolean(ctx context.Context, sel ast.SelectionSet, v model.TernaryBoolean) graphql.Marshaler {
 	return v
 }
 

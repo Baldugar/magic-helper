@@ -1,23 +1,22 @@
-import { useMTGDeckCreatorPagination } from '../../context/MTGA/DeckCreatorPagination/useMTGDeckCreatorPagination'
-import {
-    CMCFilter,
-    initialMTGFilter,
-    MTGFilterType,
-    SetFilter,
-    SortDirection,
-    SortEnum,
-} from '../../context/MTGA/Filter/MTGFilterContext'
+import { CMCFilter, initialMTGFilter, MTGFilterType, SetFilter } from '../../context/MTGA/Filter/MTGFilterContext'
 import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
-import { MTG_Color, MTG_Game, MTG_Layout, MTG_Rarity } from '../../graphql/types'
-import { TernaryBoolean } from '../../types/ternaryBoolean'
+import {
+    MTG_Color,
+    MTG_Filter_SortBy,
+    MTG_Filter_SortDirection,
+    MTG_Game,
+    MTG_Layout,
+    MTG_Rarity,
+    TernaryBoolean,
+} from '../../graphql/types'
 
 export type LocalStoreFilter = {
     filter: MTGFilterType
     page: number
     hash: number
     sort: {
-        sortBy: SortEnum
-        sortDirection: SortDirection
+        sortBy: MTG_Filter_SortBy
+        sortDirection: MTG_Filter_SortDirection
         enabled: boolean
     }[]
 }
@@ -59,8 +58,7 @@ export const calculateHash = (filter: MTGFilterType) => {
 }
 
 export const useLocalStoreFilter = () => {
-    const { page, setPage } = useMTGDeckCreatorPagination()
-    const { filter, setFilter, sort, setSort } = useMTGFilter()
+    const { filter, setFilter, sort, setSort, page, setPage } = useMTGFilter()
 
     const saveLocalStoreFilter = () => {
         const hash = calculateHash(filter)

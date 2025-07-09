@@ -5,6 +5,7 @@ import { sortBy } from 'lodash'
 import { useMemo } from 'react'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGDecks } from '../../../context/MTGA/Decks/useMTGDecks'
+import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
 import { MTGFunctions } from '../../../graphql/MTGA/functions'
 import { MainOrSide, MTG_DeckCard, MTG_DeckCardType, MTG_UpdateDeckInput } from '../../../graphql/types'
 import { DRAWER_WIDTH_DESKTOP, DRAWER_WIDTH_MOBILE } from '../../../utils/constants'
@@ -13,17 +14,8 @@ import { PhantomNodeData } from '../../FlowView/Nodes/PhantomNode'
 import { DeckCard } from './DeckCard'
 
 export const Drawer = () => {
-    const {
-        deckTab,
-        setDeckTab,
-        deck,
-        selectingCommander,
-        setSelectingCommander,
-        removeCard,
-        addOne,
-        removeOne,
-        setOpenDrawer,
-    } = useMTGDeckCreator()
+    const { deckTab, setDeckTab, deck, removeCard, addOne, removeOne, setOpenDrawer } = useMTGDeckCreator()
+    const { isSelectingCommander, setIsSelectingCommander } = useMTGFilter()
     const { getNodes, setNodes } = useReactFlow<NodeType>()
     const { updateDeck } = useMTGDecks()
     const isMobile = useMediaQuery('(max-width: 600px)')
@@ -208,7 +200,7 @@ export const Drawer = () => {
                 <Button
                     fullWidth
                     variant={'contained'}
-                    onClick={() => setSelectingCommander((prev) => !prev)}
+                    onClick={() => setIsSelectingCommander((prev) => !prev)}
                     sx={{
                         mb: isMobile ? 0.25 : 1,
                         py: isMobile ? 0.4 : undefined,
@@ -216,7 +208,7 @@ export const Drawer = () => {
                     }}
                 >
                     <Typography sx={{ fontSize: isMobile ? '0.93rem' : undefined }}>
-                        {selectingCommander
+                        {isSelectingCommander
                             ? 'Selecting a commander'
                             : `Click to ${commander ? 'change the' : 'select a'} commander`}
                     </Typography>

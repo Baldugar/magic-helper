@@ -22,8 +22,6 @@ type MTGDeckCreatorContextType = {
     setDeckTab: Dispatch<SetStateAction<MainOrSide>>
     openDrawer: boolean
     setOpenDrawer: Dispatch<SetStateAction<boolean>>
-    selectingCommander: boolean
-    setSelectingCommander: Dispatch<SetStateAction<boolean>>
     viewMode: DeckCreatorView
     setViewMode: Dispatch<SetStateAction<DeckCreatorView>>
 
@@ -62,8 +60,6 @@ export const MTGDeckCreatorContext = createContext<MTGDeckCreatorContextType>({
     setDeckTab: () => {},
     openDrawer: false,
     setOpenDrawer: () => {},
-    selectingCommander: false,
-    setSelectingCommander: () => {},
     viewMode: 'CATALOGUE',
     setViewMode: () => {},
 

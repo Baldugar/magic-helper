@@ -20,12 +20,11 @@ import { CardPackageImportDialog } from '../../components/CardPackageImportDialo
 import { ExportDialog } from '../../components/ExportDialog'
 import { ImportDialog } from '../../components/ImportDialog'
 import { DndProvider } from '../../context/DnD/DnDProvider'
+import { MTGCardsProvider } from '../../context/MTGA/Cards/MTGCardsProvider'
 import { useMTGCards } from '../../context/MTGA/Cards/useMTGCards'
 import { MTGDeckCreatorProvider } from '../../context/MTGA/DeckCreator/MTGDeckCreatorProvider'
 import { useMTGDeckCreator } from '../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { MTGDeckCreatorFlowProvider } from '../../context/MTGA/DeckCreatorFlow/MTGDeckCreatorFlowProvider'
-import { MTGDeckCreatorPaginationProvider } from '../../context/MTGA/DeckCreatorPagination/MTGDeckCreatorPaginationProvider'
-import { useMTGDeckCreatorPagination } from '../../context/MTGA/DeckCreatorPagination/useMTGDeckCreatorPagination'
 import { useMTGDecks } from '../../context/MTGA/Decks/useMTGDecks'
 import { MTGAFilterProvider } from '../../context/MTGA/Filter/MTGFilterProvider'
 import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
@@ -43,7 +42,7 @@ import { Drawer } from './Components/Drawer'
 import { Filters } from './Components/Filters'
 
 export const DeckCreator = () => {
-    const { cards } = useMTGCards()
+    const { cards, totalCount } = useMTGCards()
     const {
         deck,
         openDrawer,
@@ -56,7 +55,10 @@ export const DeckCreator = () => {
         setOpenImportCardPackageDialog,
     } = useMTGDeckCreator()
     const { updateDeck } = useMTGDecks()
-    const { filteredCards, page, setPage } = useMTGDeckCreatorPagination()
+    const { page, setPage } = useMTGFilter()
+
+    console.log('cards', cards)
+
     const { loadLocalStoreFilter, saveLocalStoreFilter } = useLocalStoreFilter()
     const { clearFilter } = useMTGFilter()
     const { getNodes } = useReactFlow()
@@ -176,7 +178,7 @@ export const DeckCreator = () => {
                             <CardsGrid />
                             <Box mt={'auto'} display={'flex'} justifyContent={'center'} paddingTop={1}>
                                 <Pagination
-                                    count={Math.floor(filteredCards.length / pageSize) + 1}
+                                    count={Math.floor(totalCount / pageSize) + 1}
                                     page={page + 1}
                                     onChange={(_, page) => {
                                         setPage(page - 1)
@@ -199,7 +201,7 @@ export const DeckCreator = () => {
                                 <CardsGrid />
                                 <Box mt={'auto'} display={'flex'} justifyContent={'center'} paddingTop={1}>
                                     <Pagination
-                                        count={Math.floor(filteredCards.length / pageSize) + 1}
+                                        count={Math.floor(totalCount / pageSize) + 1}
                                         page={page + 1}
                                         onChange={(_, page) => {
                                             setPage(page - 1)
@@ -232,7 +234,7 @@ export const DeckCreator = () => {
                                 <CardsGrid />
                                 <Box mt={'auto'} display={'flex'} justifyContent={'center'} paddingTop={1}>
                                     <Pagination
-                                        count={Math.floor(filteredCards.length / pageSize) + 1}
+                                        count={Math.floor(totalCount / pageSize) + 1}
                                         page={page + 1}
                                         onChange={(_, page) => {
                                             setPage(page - 1)
@@ -391,16 +393,16 @@ export const DeckCreatorWrapper = () => {
     const { deckID } = useParams()
 
     return (
-        <ReactFlowProvider>
-            <MTGAFilterProvider>
-                <MTGDeckCreatorProvider deckID={deckID}>
-                    <DndProvider>
-                        <MTGDeckCreatorPaginationProvider>
+        <MTGAFilterProvider>
+            <MTGCardsProvider>
+                <ReactFlowProvider>
+                    <MTGDeckCreatorProvider deckID={deckID}>
+                        <DndProvider>
                             <DeckCreator />
-                        </MTGDeckCreatorPaginationProvider>
-                    </DndProvider>
-                </MTGDeckCreatorProvider>
-            </MTGAFilterProvider>
-        </ReactFlowProvider>
+                        </DndProvider>
+                    </MTGDeckCreatorProvider>
+                </ReactFlowProvider>
+            </MTGCardsProvider>
+        </MTGAFilterProvider>
     )
 }

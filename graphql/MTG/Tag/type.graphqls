@@ -1,0 +1,9 @@
+type DeckTag implements Tag {
+    ID: ID! @goTag(key: "json", value: "_key")
+    name: String!
+    description: String
+    aggregatedRating: AggregatedRating!
+    ratings: [UserRating!]!
+    myRating: UserRating
+    colors: [MTG_Color!]!
+}

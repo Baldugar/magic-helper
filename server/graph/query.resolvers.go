@@ -16,6 +16,11 @@ func (r *queryResolver) GetMTGCards(ctx context.Context) ([]*model.MtgCard, erro
 	return mtg.GetMTGCards(ctx)
 }
 
+// GetMTGCardsFiltered is the resolver for the getMTGCardsFiltered field.
+func (r *queryResolver) GetMTGCardsFiltered(ctx context.Context, filter model.MtgFilterSearchInput, pagination model.MtgFilterPaginationInput, sort []*model.MtgFilterSortInput) (*model.MtgFilterSearch, error) {
+	return mtg.GetMTGCardsFiltered(ctx, filter, pagination, sort)
+}
+
 // GetMTGFilters is the resolver for the getMTGFilters field.
 func (r *queryResolver) GetMTGFilters(ctx context.Context) (*model.MtgFilterEntries, error) {
 	return mtg.GetMTGFilters(ctx)

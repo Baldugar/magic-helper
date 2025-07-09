@@ -249,9 +249,19 @@ type MtgDeleteDeckInput struct {
 	DeckID string `json:"deckID"`
 }
 
+type MtgFilterCardTypeInput struct {
+	CardType string         `json:"cardType"`
+	Value    TernaryBoolean `json:"value"`
+}
+
 type MtgFilterCardTypes struct {
 	CardType string   `json:"cardType"`
 	Subtypes []string `json:"subtypes"`
+}
+
+type MtgFilterColorInput struct {
+	Color MtgColor       `json:"color"`
+	Value TernaryBoolean `json:"value"`
 }
 
 type MtgFilterEntries struct {
@@ -270,9 +280,92 @@ type MtgFilterExpansion struct {
 	Games      []MtgGame `json:"games"`
 }
 
+type MtgFilterGameInput struct {
+	Game  MtgGame        `json:"game"`
+	Value TernaryBoolean `json:"value"`
+}
+
+type MtgFilterLayoutInput struct {
+	Layout MtgLayout      `json:"layout"`
+	Value  TernaryBoolean `json:"value"`
+}
+
 type MtgFilterLegality struct {
 	Formats        []string `json:"formats"`
 	LegalityValues []string `json:"legalityValues"`
+}
+
+type MtgFilterLegalityEntryInput struct {
+	LegalityValue string         `json:"legalityValue"`
+	Value         TernaryBoolean `json:"value"`
+}
+
+type MtgFilterLegalityInput struct {
+	Format          string                         `json:"format"`
+	LegalityEntries []*MtgFilterLegalityEntryInput `json:"legalityEntries"`
+}
+
+type MtgFilterManaCostInput struct {
+	ManaCost string         `json:"manaCost"`
+	Value    TernaryBoolean `json:"value"`
+}
+
+type MtgFilterPaginationInput struct {
+	Page     int `json:"page"`
+	PageSize int `json:"pageSize"`
+}
+
+type MtgFilterRarityInput struct {
+	Rarity MtgRarity      `json:"rarity"`
+	Value  TernaryBoolean `json:"value"`
+}
+
+type MtgFilterRatingInput struct {
+	Min *int `json:"min,omitempty"`
+	Max *int `json:"max,omitempty"`
+}
+
+type MtgFilterSearch struct {
+	PagedCards []*MtgCard `json:"pagedCards"`
+	TotalCount int        `json:"totalCount"`
+}
+
+type MtgFilterSearchInput struct {
+	SearchString *string                   `json:"searchString,omitempty"`
+	Rarity       []*MtgFilterRarityInput   `json:"rarity"`
+	Color        []*MtgFilterColorInput    `json:"color"`
+	MultiColor   TernaryBoolean            `json:"multiColor"`
+	ManaCosts    []*MtgFilterManaCostInput `json:"manaCosts"`
+	CardTypes    []*MtgFilterCardTypeInput `json:"cardTypes"`
+	Subtypes     []*MtgFilterSubtypeInput  `json:"subtypes"`
+	Sets         []*MtgFilterSetInput      `json:"sets"`
+	Legalities   []*MtgFilterLegalityInput `json:"legalities"`
+	Layouts      []*MtgFilterLayoutInput   `json:"layouts"`
+	Games        []*MtgFilterGameInput     `json:"games"`
+	HideIgnored  TernaryBoolean            `json:"hideIgnored"`
+	Tags         []*MtgFilterTagInput      `json:"tags"`
+	Rating       *MtgFilterRatingInput     `json:"rating"`
+}
+
+type MtgFilterSetInput struct {
+	Set   string         `json:"set"`
+	Value TernaryBoolean `json:"value"`
+}
+
+type MtgFilterSortInput struct {
+	SortBy        MtgFilterSortBy        `json:"sortBy"`
+	SortDirection MtgFilterSortDirection `json:"sortDirection"`
+	Enabled       bool                   `json:"enabled"`
+}
+
+type MtgFilterSubtypeInput struct {
+	Subtype string         `json:"subtype"`
+	Value   TernaryBoolean `json:"value"`
+}
+
+type MtgFilterTagInput struct {
+	Tag   string         `json:"tag"`
+	Value TernaryBoolean `json:"value"`
 }
 
 type MtgImage struct {
@@ -485,6 +578,98 @@ func (e *MtgDeckCardType) UnmarshalGQL(v any) error {
 }
 
 func (e MtgDeckCardType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type MtgFilterSortBy string
+
+const (
+	MtgFilterSortByName       MtgFilterSortBy = "NAME"
+	MtgFilterSortByCmc        MtgFilterSortBy = "CMC"
+	MtgFilterSortByRarity     MtgFilterSortBy = "RARITY"
+	MtgFilterSortByColor      MtgFilterSortBy = "COLOR"
+	MtgFilterSortByType       MtgFilterSortBy = "TYPE"
+	MtgFilterSortBySet        MtgFilterSortBy = "SET"
+	MtgFilterSortByReleasedAt MtgFilterSortBy = "RELEASED_AT"
+)
+
+var AllMtgFilterSortBy = []MtgFilterSortBy{
+	MtgFilterSortByName,
+	MtgFilterSortByCmc,
+	MtgFilterSortByRarity,
+	MtgFilterSortByColor,
+	MtgFilterSortByType,
+	MtgFilterSortBySet,
+	MtgFilterSortByReleasedAt,
+}
+
+func (e MtgFilterSortBy) IsValid() bool {
+	switch e {
+	case MtgFilterSortByName, MtgFilterSortByCmc, MtgFilterSortByRarity, MtgFilterSortByColor, MtgFilterSortByType, MtgFilterSortBySet, MtgFilterSortByReleasedAt:
+		return true
+	}
+	return false
+}
+
+func (e MtgFilterSortBy) String() string {
+	return string(e)
+}
+
+func (e *MtgFilterSortBy) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MtgFilterSortBy(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MTG_Filter_SortBy", str)
+	}
+	return nil
+}
+
+func (e MtgFilterSortBy) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type MtgFilterSortDirection string
+
+const (
+	MtgFilterSortDirectionAsc  MtgFilterSortDirection = "ASC"
+	MtgFilterSortDirectionDesc MtgFilterSortDirection = "DESC"
+)
+
+var AllMtgFilterSortDirection = []MtgFilterSortDirection{
+	MtgFilterSortDirectionAsc,
+	MtgFilterSortDirectionDesc,
+}
+
+func (e MtgFilterSortDirection) IsValid() bool {
+	switch e {
+	case MtgFilterSortDirectionAsc, MtgFilterSortDirectionDesc:
+		return true
+	}
+	return false
+}
+
+func (e MtgFilterSortDirection) String() string {
+	return string(e)
+}
+
+func (e *MtgFilterSortDirection) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MtgFilterSortDirection(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MTG_Filter_SortDirection", str)
+	}
+	return nil
+}
+
+func (e MtgFilterSortDirection) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -781,5 +966,48 @@ func (e *TagType) UnmarshalGQL(v any) error {
 }
 
 func (e TagType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type TernaryBoolean string
+
+const (
+	TernaryBooleanTrue  TernaryBoolean = "TRUE"
+	TernaryBooleanFalse TernaryBoolean = "FALSE"
+	TernaryBooleanUnset TernaryBoolean = "UNSET"
+)
+
+var AllTernaryBoolean = []TernaryBoolean{
+	TernaryBooleanTrue,
+	TernaryBooleanFalse,
+	TernaryBooleanUnset,
+}
+
+func (e TernaryBoolean) IsValid() bool {
+	switch e {
+	case TernaryBooleanTrue, TernaryBooleanFalse, TernaryBooleanUnset:
+		return true
+	}
+	return false
+}
+
+func (e TernaryBoolean) String() string {
+	return string(e)
+}
+
+func (e *TernaryBoolean) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TernaryBoolean(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TernaryBoolean", str)
+	}
+	return nil
+}
+
+func (e TernaryBoolean) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

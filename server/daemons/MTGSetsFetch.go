@@ -132,6 +132,7 @@ func fetchSets() bool {
 		if err != nil {
 			log.Error().Err(err).Msgf("Error downloading set icon for %s", set.Code)
 		}
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	// Update the last time we fetched sets

@@ -1,15 +1,23 @@
-export enum TernaryBoolean {
-    UNSET = 0,
-    TRUE = 1,
-    FALSE = 2,
-}
+import { TernaryBoolean } from '../graphql/types'
 
 export const nextTB = (current: TernaryBoolean | undefined): TernaryBoolean => {
-    return current ? (current + 1) % 3 : TernaryBoolean.TRUE
+    return current
+        ? current === TernaryBoolean.TRUE
+            ? TernaryBoolean.FALSE
+            : current === TernaryBoolean.FALSE
+            ? TernaryBoolean.UNSET
+            : TernaryBoolean.TRUE
+        : TernaryBoolean.TRUE
 }
 
 export const prevTB = (current: TernaryBoolean | undefined): TernaryBoolean => {
-    return current ? (current + 2) % 3 : TernaryBoolean.FALSE
+    return current
+        ? current === TernaryBoolean.TRUE
+            ? TernaryBoolean.UNSET
+            : current === TernaryBoolean.FALSE
+            ? TernaryBoolean.TRUE
+            : TernaryBoolean.FALSE
+        : TernaryBoolean.FALSE
 }
 
 export const isUnsetTB = (value: TernaryBoolean): boolean => value === TernaryBoolean.UNSET

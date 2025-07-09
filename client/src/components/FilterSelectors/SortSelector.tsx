@@ -3,8 +3,8 @@ import { ArrowDownward, ArrowUpward } from '@mui/icons-material'
 import { Box, Button, Checkbox, ClickAwayListener, Grid, IconButton, Paper, Popper, Typography } from '@mui/material'
 import { MouseEvent, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { SortDirection } from '../../context/MTGA/Filter/MTGFilterContext'
 import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
+import { MTG_Filter_SortDirection } from '../../graphql/types'
 
 function DraggablePortalWrapper({ children, isDragging }: { children: React.ReactNode; isDragging: boolean }) {
     return isDragging
@@ -32,7 +32,7 @@ export const SortSelector = () => {
         setSort(newSort)
     }
 
-    const handleChangeSortDirection = (index: number, direction: SortDirection) => {
+    const handleChangeSortDirection = (index: number, direction: MTG_Filter_SortDirection) => {
         setSort((prevSort) => {
             return prevSort.map((sortOption, i) => {
                 if (i === index) {
@@ -96,13 +96,16 @@ export const SortSelector = () => {
                                                                 <IconButton
                                                                     size={'small'}
                                                                     onClick={() =>
-                                                                        handleChangeSortDirection(i, SortDirection.ASC)
+                                                                        handleChangeSortDirection(
+                                                                            i,
+                                                                            MTG_Filter_SortDirection.ASC,
+                                                                        )
                                                                     }
                                                                 >
                                                                     <ArrowUpward
                                                                         color={
                                                                             sortOption.sortDirection ===
-                                                                            SortDirection.ASC
+                                                                            MTG_Filter_SortDirection.ASC
                                                                                 ? 'primary'
                                                                                 : 'secondary'
                                                                         }
@@ -111,13 +114,16 @@ export const SortSelector = () => {
                                                                 <IconButton
                                                                     size={'small'}
                                                                     onClick={() =>
-                                                                        handleChangeSortDirection(i, SortDirection.DESC)
+                                                                        handleChangeSortDirection(
+                                                                            i,
+                                                                            MTG_Filter_SortDirection.DESC,
+                                                                        )
                                                                     }
                                                                 >
                                                                     <ArrowDownward
                                                                         color={
                                                                             sortOption.sortDirection ===
-                                                                            SortDirection.DESC
+                                                                            MTG_Filter_SortDirection.DESC
                                                                                 ? 'primary'
                                                                                 : 'secondary'
                                                                         }

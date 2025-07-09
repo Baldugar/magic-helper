@@ -1,29 +1,29 @@
 import { ReactNode, useEffect, useState } from 'react'
 import { MTGFunctions } from '../../../graphql/MTGA/functions'
-import { MTG_Card, MTG_Color, RatableEntityType } from '../../../graphql/types'
+import { MTG_Card, RatableEntityType } from '../../../graphql/types'
+import { useMTGFilter } from '../Filter/useMTGFilter'
 import { MTGCardsContext } from './MTGCardsContext'
 
 export const MTGCardsProvider = ({ children }: { children: ReactNode }) => {
     const [cards, setCards] = useState<Array<MTG_Card>>([])
+    const [totalCount, setTotalCount] = useState(0)
     const [loading, setLoading] = useState(true)
 
+    const { convertFilters, filter, page, sort } = useMTGFilter()
+
     const {
-        queries: { getMTGCards },
+        queries: { getMTGCardsFiltered },
         mutations: { rate },
     } = MTGFunctions
 
     useEffect(() => {
         setLoading(true)
-        getMTGCards().then((cards) => {
-            setCards(
-                cards.map((c) => ({
-                    ...c,
-                    colorIdentity: c.colorIdentity.length === 0 ? [MTG_Color.C] : c.colorIdentity,
-                })),
-            )
+        getMTGCardsFiltered(convertFilters()).then((cards) => {
+            setCards(cards.pagedCards)
+            setTotalCount(cards.totalCount)
             setLoading(false)
         })
-    }, [getMTGCards])
+    }, [getMTGCardsFiltered, convertFilters, filter, page, sort])
 
     const setRatingForCard = (cardID: string, rating: number) => {
         const newCards = structuredClone(cards)
@@ -57,5 +57,9 @@ export const MTGCardsProvider = ({ children }: { children: ReactNode }) => {
         rate({ entityID: cardID, entityType: RatableEntityType.CARD, userID: '1', value: rating })
     }
 
-    return <MTGCardsContext.Provider value={{ cards, loading, setRatingForCard }}>{children}</MTGCardsContext.Provider>
+    return (
+        <MTGCardsContext.Provider value={{ cards, loading, setRatingForCard, totalCount }}>
+            {children}
+        </MTGCardsContext.Provider>
+    )
 }

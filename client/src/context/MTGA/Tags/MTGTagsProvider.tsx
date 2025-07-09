@@ -13,8 +13,8 @@ export const MTGTagsProvider = ({ children }: { children: ReactNode }) => {
             if (!data) throw new Error('No data from getTags')
             const result = data.data.tags
             if (!result) throw new Error('No result from getTags')
-            const deckTags = result.filter((tag) => Object.keys(tag).includes('colors'))
-            const cardTags = result.filter((tag) => !Object.keys(tag).includes('colors'))
+            const deckTags = result.filter((tag) => Object.keys(tag).includes('colors')) as DeckTag[]
+            const cardTags = result.filter((tag) => !Object.keys(tag).includes('colors')) as CardTag[]
             setCardTags(cardTags)
             setDeckTags(deckTags)
         })

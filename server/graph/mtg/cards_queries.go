@@ -6,6 +6,8 @@ import (
 	"magic-helper/graph/model"
 	"magic-helper/util"
 	"magic-helper/util/ctxkeys"
+	"magic-helper/util/mtgCardSearch"
+	"time"
 
 	"github.com/rs/zerolog/log"
 )
@@ -18,6 +20,8 @@ func GetMTGCards(ctx context.Context) ([]*model.MtgCard, error) {
 		Interface("context_keys", ctx.Value(ctxkeys.UserIDKey)).
 		Msg("GetMTGCards: Context debug")
 
+	// Build the query
+	queryBuildStart := time.Now()
 	aq := arango.NewQuery( /* aql */ `
 		FOR doc IN @@collection
 			FILTER (doc.manaCost == "" AND doc.layout != "meld") OR doc.manaCost != ""
@@ -113,13 +117,19 @@ func GetMTGCards(ctx context.Context) ([]*model.MtgCard, error) {
 
 	// Set the user ID bind variable
 	aq = aq.AddBindVar("userID", userID)
+	queryBuildDuration := time.Since(queryBuildStart)
 
+	// Execute the query
+	queryExecStart := time.Now()
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {
 		log.Error().Err(err).Msgf("GetMTGCards: Error querying database")
 		return nil, err
 	}
+	queryExecDuration := time.Since(queryExecStart)
 
+	// Process results
+	processStart := time.Now()
 	var cards []*model.MtgCard
 	defer cursor.Close()
 	for cursor.HasMore() {
@@ -131,8 +141,17 @@ func GetMTGCards(ctx context.Context) ([]*model.MtgCard, error) {
 		}
 		cards = append(cards, &card)
 	}
+	processDuration := time.Since(processStart)
 
-	log.Info().Msg("GetMTGCards: Finished")
+	totalDuration := queryBuildDuration + queryExecDuration + processDuration
+	log.Info().
+		Int("cards_count", len(cards)).
+		Dur("totalDuration", totalDuration).
+		Dur("queryBuildDuration", queryBuildDuration).
+		Dur("queryExecDuration", queryExecDuration).
+		Dur("processDuration", processDuration).
+		Msg("GetMTGCards: Finished")
+
 	return cards, nil
 }
 
@@ -366,4 +385,279 @@ func GetMTGLegalities(ctx context.Context) (*model.MtgFilterLegality, error) {
 
 	log.Info().Msg("GetMTGLegalities: Finished")
 	return legality, nil
+}
+
+// GetMTGCardsBasic fetches cards without ratings and tags for fast filtering
+func GetMTGCardsBasic(ctx context.Context) ([]*model.MtgCard, error) {
+	log.Info().Msg("GetMTGCardsBasic: Started")
+
+	// Build the basic query without ratings and tags
+	queryBuildStart := time.Now()
+	aq := arango.NewQuery( /* aql */ `
+		FOR doc IN @@collection
+			FILTER (doc.manaCost == "" AND doc.layout != "meld") OR doc.manaCost != ""
+			RETURN doc
+	`)
+
+	col := arango.MTG_CARDS_COLLECTION
+	aq.AddBindVar("@collection", col)
+	queryBuildDuration := time.Since(queryBuildStart)
+
+	// Execute the query
+	queryExecStart := time.Now()
+	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
+	if err != nil {
+		log.Error().Err(err).Msgf("GetMTGCardsBasic: Error querying database")
+		return nil, err
+	}
+	queryExecDuration := time.Since(queryExecStart)
+
+	// Process results
+	processStart := time.Now()
+	var cards []*model.MtgCard
+	defer cursor.Close()
+	for cursor.HasMore() {
+		var card model.MtgCard
+		_, err := cursor.ReadDocument(ctx, &card)
+		if err != nil {
+			log.Error().Err(err).Msgf("GetMTGCardsBasic: Error reading document")
+			return nil, err
+		}
+		cards = append(cards, &card)
+	}
+	processDuration := time.Since(processStart)
+
+	totalDuration := queryBuildDuration + queryExecDuration + processDuration
+	log.Info().
+		Int("cards_count", len(cards)).
+		Dur("totalDuration", totalDuration).
+		Dur("queryBuildDuration", queryBuildDuration).
+		Dur("queryExecDuration", queryExecDuration).
+		Dur("processDuration", processDuration).
+		Msg("GetMTGCardsBasic: Finished")
+
+	return cards, nil
+}
+
+// GetMTGCardsByIDs fetches specific cards by their IDs with full ratings and tags
+func GetMTGCardsByIDs(ctx context.Context, cardIDs []string) ([]*model.MtgCard, error) {
+	if len(cardIDs) == 0 {
+		return []*model.MtgCard{}, nil
+	}
+
+	log.Info().Int("card_ids", len(cardIDs)).Msg("GetMTGCardsByIDs: Started")
+
+	// Build the query to fetch specific cards with ratings and tags
+	queryBuildStart := time.Now()
+	aq := arango.NewQuery( /* aql */ `
+		FOR doc IN @@collection
+			FILTER doc._key IN @cardIDs
+			LET ratings = (
+				FOR user, rating IN 1..1 INBOUND doc @@userRatingEdge
+				RETURN {
+					user: user,
+					value: rating.value
+				}
+			)
+			LET cardTags = (
+				FOR tag, tagEdge IN 1..1 INBOUND doc @@tagCardEdge
+				FILTER tag.type == "CardTag"
+				LET cardTagRatings = (
+					FOR user, rating IN 1..1 INBOUND tag @@userRatingEdge
+					RETURN {
+						user: user,
+						value: rating.value
+					}
+				)
+				RETURN MERGE(tag, {
+					aggregatedRating: {
+						average: AVERAGE(cardTagRatings[*].value),
+						count: LENGTH(cardTagRatings)
+					},
+					ratings: cardTagRatings,
+					myRating: @userID != "" ? FIRST(
+						FOR rating IN cardTagRatings
+							FILTER rating.user._key == @userID
+							RETURN rating
+					) : {}
+				})
+			)
+			LET deckTags = (
+				FOR tag, tagEdge IN 1..1 INBOUND doc @@tagCardEdge
+				FILTER tag.type == "DeckTag"
+				LET cardTagRatings = (
+					FOR user, rating IN 1..1 INBOUND tag @@userRatingEdge
+					RETURN {
+						user: user,
+						value: rating.value
+					}
+				)
+				RETURN MERGE(tag, {
+					aggregatedRating: {
+						average: AVERAGE(cardTagRatings[*].value),
+						count: LENGTH(cardTagRatings)
+					},
+					ratings: cardTagRatings,
+					myRating: @userID != "" ? FIRST(
+						FOR rating IN cardTagRatings
+							FILTER rating.user._key == @userID
+							RETURN rating
+					) : {}
+				})
+			)
+			RETURN MERGE(doc, {
+				aggregatedRating: {
+					average: AVERAGE(ratings[*].value),
+					count: LENGTH(ratings)
+				},
+				ratings: ratings,
+				myRating: @userID != "" ? FIRST(
+					FOR rating IN ratings
+						FILTER rating.user._key == @userID
+						RETURN rating
+				) : {},
+				cardTags: cardTags,
+				deckTags: deckTags
+			})
+	`)
+
+	col := arango.MTG_CARDS_COLLECTION
+	aq.AddBindVar("@collection", col)
+	aq.AddBindVar("@userRatingEdge", arango.MTG_USER_RATING_EDGE_COLLECTION)
+	aq.AddBindVar("@tagCardEdge", arango.MTG_TAG_EDGE_COLLECTION)
+	aq.AddBindVar("cardIDs", cardIDs)
+
+	// Safely get user ID from context
+	userID, ok := ctx.Value(ctxkeys.UserIDKey).(string)
+	if !ok {
+		userID = util.USER_ID
+	}
+	aq = aq.AddBindVar("userID", userID)
+	queryBuildDuration := time.Since(queryBuildStart)
+
+	// Execute the query
+	queryExecStart := time.Now()
+	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
+	if err != nil {
+		log.Error().Err(err).Msgf("GetMTGCardsByIDs: Error querying database")
+		return nil, err
+	}
+	queryExecDuration := time.Since(queryExecStart)
+
+	// Process results
+	processStart := time.Now()
+	var cards []*model.MtgCard
+	defer cursor.Close()
+	for cursor.HasMore() {
+		var card model.MtgCard
+		_, err := cursor.ReadDocument(ctx, &card)
+		if err != nil {
+			log.Error().Err(err).Msgf("GetMTGCardsByIDs: Error reading document")
+			return nil, err
+		}
+		cards = append(cards, &card)
+	}
+	processDuration := time.Since(processStart)
+
+	totalDuration := queryBuildDuration + queryExecDuration + processDuration
+	log.Info().
+		Int("cards_count", len(cards)).
+		Dur("totalDuration", totalDuration).
+		Dur("queryBuildDuration", queryBuildDuration).
+		Dur("queryExecDuration", queryExecDuration).
+		Dur("processDuration", processDuration).
+		Msg("GetMTGCardsByIDs: Finished")
+
+	return cards, nil
+}
+
+func GetMTGCardsFiltered(ctx context.Context, filter model.MtgFilterSearchInput, pagination model.MtgFilterPaginationInput, sort []*model.MtgFilterSortInput) (*model.MtgFilterSearch, error) {
+	log.Info().Msg("GetMTGCardsFiltered: Started")
+
+	// Step 1: Get basic cards for filtering (without ratings/tags)
+	step1Start := time.Now()
+	var basicCards []*model.MtgCard
+	var err error
+
+	// Try to use cached cards from index if available
+	if mtgCardSearch.IsIndexReady() {
+		log.Info().Msg("GetMTGCardsFiltered: Using cached cards from index")
+		basicCards = mtgCardSearch.GetAllCardsFromIndex()
+	} else {
+		log.Info().Msg("GetMTGCardsFiltered: Index not ready, fetching basic cards from database")
+		basicCards, err = GetMTGCardsBasic(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+	step1Duration := time.Since(step1Start)
+	log.Info().
+		Int("basic_cards", len(basicCards)).
+		Dur("duration", step1Duration).
+		Msg("GetMTGCardsFiltered: Basic cards fetched")
+
+	// Step 2: Filter and sort cards using basic data
+	step2Start := time.Now()
+	filteredCards := mtgCardSearch.FilterCards(basicCards, filter, sort)
+	step2Duration := time.Since(step2Start)
+	log.Info().
+		Int("filteredCards", len(filteredCards)).
+		Dur("duration", step2Duration).
+		Msg("GetMTGCardsFiltered: Cards filtered")
+
+	// Step 3: Paginate the filtered results
+	step3Start := time.Now()
+	pagedCards := mtgCardSearch.PaginateCards(filteredCards, pagination)
+	step3Duration := time.Since(step3Start)
+	log.Info().
+		Int("pagedCards", len(pagedCards)).
+		Dur("duration", step3Duration).
+		Msg("GetMTGCardsFiltered: Cards paginated")
+
+	// Step 4: Fetch full enriched data (with ratings/tags) only for paginated results
+	step4Start := time.Now()
+	var enrichedCards []*model.MtgCard
+	if len(pagedCards) > 0 {
+		// Extract card IDs from paginated results
+		cardIDs := make([]string, len(pagedCards))
+		for i, card := range pagedCards {
+			cardIDs[i] = card.ID
+		}
+
+		// Fetch full enriched data for these specific cards
+		enrichedCards, err = GetMTGCardsByIDs(ctx, cardIDs)
+		if err != nil {
+			return nil, err
+		}
+
+		// Create a map for quick lookup to preserve order
+		enrichedMap := make(map[string]*model.MtgCard)
+		for _, card := range enrichedCards {
+			enrichedMap[card.ID] = card
+		}
+
+		// Rebuild the slice in the correct order
+		enrichedCards = make([]*model.MtgCard, 0, len(pagedCards))
+		for _, pagedCard := range pagedCards {
+			if enrichedCard, exists := enrichedMap[pagedCard.ID]; exists {
+				enrichedCards = append(enrichedCards, enrichedCard)
+			}
+		}
+	}
+	step4Duration := time.Since(step4Start)
+	log.Info().
+		Int("enrichedCards", len(enrichedCards)).
+		Dur("duration", step4Duration).
+		Msg("GetMTGCardsFiltered: Cards enriched")
+
+	totalDuration := step1Duration + step2Duration + step3Duration + step4Duration
+	log.Info().
+		Dur("totalDuration", totalDuration).
+		Dur("step1Duration", step1Duration).
+		Dur("step2Duration", step2Duration).
+		Dur("step3Duration", step3Duration).
+		Dur("step4Duration", step4Duration).
+		Msg("GetMTGCardsFiltered: Finished")
+
+	return &model.MtgFilterSearch{PagedCards: enrichedCards, TotalCount: len(filteredCards)}, nil
 }

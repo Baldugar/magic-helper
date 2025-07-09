@@ -9,6 +9,8 @@ import (
 	"magic-helper/graph/model"
 	"magic-helper/graph/model/scryfall"
 	scryfallModel "magic-helper/graph/model/scryfall/model"
+	"magic-helper/graph/mtg"
+	"magic-helper/util/mtgCardSearch"
 	"math"
 	"os"
 	"path/filepath"
@@ -93,11 +95,13 @@ func PeriodicFetchMTGCards() {
 		fetched := fetchMTGCards(ctx) // Pass context
 		if fetched {
 			collectCards(ctx)
+		} else {
+			// Build card index for faster filtering even if no new cards were fetched
+			buildCardIndex(ctx)
 		}
 
 		time.Sleep(24 * time.Hour)
 	}
-
 }
 
 func fetchMTGCards(ctx context.Context) bool {
@@ -440,6 +444,10 @@ func collectCards(ctx context.Context) {
 			TypeLine:       filteredGroupCards[0].TypeLine,
 		}
 
+		if len(cardForGroup.ColorIdentity) == 0 {
+			cardForGroup.ColorIdentity = []string{"C"}
+		}
+
 		for _, card := range filteredGroupCards {
 			// Create the DB version structure first (as done previously)
 			cardVersionDB := scryfall.MTG_CardVersionDB{
@@ -592,6 +600,9 @@ func collectCards(ctx context.Context) {
 	}
 
 	log.Info().Msgf("Finished processing %d groups. JSON saved to '%s' directory.", len(allGroups), cardsDir)
+
+	// Rebuild the card index after updating cards
+	buildCardIndex(ctx)
 }
 
 func strSliceContains(sl []string, s string) bool {
@@ -667,6 +678,27 @@ func normalizeCardName(name string) string {
 	}
 
 	return name
+}
+
+// buildCardIndex builds the card index for faster filtering
+func buildCardIndex(ctx context.Context) {
+	log.Info().Msg("Building card index...")
+
+	// Get basic cards from database (without ratings and tags for faster indexing)
+	cards, err := mtg.GetMTGCardsBasic(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get basic cards for index building")
+		return
+	}
+
+	// Build the index using the utility function
+	err = mtgCardSearch.BuildCardIndexWithCards(cards)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to build card index")
+		return
+	}
+
+	log.Info().Msg("Card index built successfully")
 }
 
 // downloadFile saves the response body to a local file under the 'cards' directory.

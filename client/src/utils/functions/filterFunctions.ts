@@ -1,6 +1,6 @@
 import { MTGFilterType, SetFilter } from '../../context/MTGA/Filter/MTGFilterContext'
-import { MTG_Card } from '../../graphql/types'
-import { isPositiveTB, TernaryBoolean } from '../../types/ternaryBoolean'
+import { MTG_Card, TernaryBoolean } from '../../graphql/types'
+import { isPositiveTB } from '../../types/ternaryBoolean'
 
 export const singleSetSelected = (filter: MTGFilterType) => {
     const setEntries = Object.entries(filter.sets)

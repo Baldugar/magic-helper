@@ -19,10 +19,10 @@ import { MTGDeckCreatorFlowContext } from './MTGDeckCreatorFlowContext'
 
 export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: ReactNode; deck: MTG_Deck }) => {
     const { item, type } = useDnD()
-    const { selectingCommander, setSelectingCommander, deckTab, setDeck, removeCard } = useMTGDeckCreator()
+    const { deckTab, setDeck, removeCard } = useMTGDeckCreator()
     const { screenToFlowPosition, getIntersectingNodes, setNodes, getNodes } = useReactFlow<NodeType>()
 
-    const { filter } = useMTGFilter()
+    const { filter, isSelectingCommander, setIsSelectingCommander } = useMTGFilter()
     const set = singleSetSelected(filter)
 
     const [draggingGroupId, setDraggingGroupId] = useState<string | null>(null)
@@ -126,7 +126,7 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
         let cardToReturn: MTG_DeckCard | undefined
         if (deck) {
             const newDeck = structuredClone(deck)
-            if (selectingCommander) {
+            if (isSelectingCommander) {
                 // Remove the previous commander
                 const previousCommander = newDeck.cards.find((c) => c.deckCardType === MTG_DeckCardType.COMMANDER)
                 if (previousCommander) {
@@ -144,7 +144,7 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
                     selectedVersionID: setVersion?.ID,
                 }
                 newDeck.cards.push(cardToReturn)
-                setSelectingCommander(false)
+                setIsSelectingCommander(false)
             } else {
                 const ID = card.ID
                 const index = newDeck.cards.findIndex((c) => c.card.ID === ID && c.mainOrSide === deckTab)

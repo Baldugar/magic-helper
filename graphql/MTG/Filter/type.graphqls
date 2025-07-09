@@ -23,3 +23,8 @@ type MTG_Filter_Expansion {
     setType: String!
     games: [MTG_Game!]!
 }
+
+type MTG_Filter_Search {
+    pagedCards: [MTG_Card!]!
+    totalCount: Int!
+}

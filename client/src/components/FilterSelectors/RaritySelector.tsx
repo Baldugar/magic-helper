@@ -1,6 +1,5 @@
 import { Grid } from '@mui/material'
-import { MTG_Rarity } from '../../graphql/types'
-import { TernaryBoolean } from '../../types/ternaryBoolean'
+import { MTG_Rarity, TernaryBoolean } from '../../graphql/types'
 import { TernaryToggle } from './TernaryToggle'
 
 export interface RaritySelectorProps {

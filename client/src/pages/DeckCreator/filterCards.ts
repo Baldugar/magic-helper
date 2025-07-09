@@ -1,18 +1,22 @@
 import { cloneDeep, intersection, orderBy } from 'lodash'
+import { CMCFilter, MTGFilterType, SetFilter } from '../../context/MTGA/Filter/MTGFilterContext'
 import {
-    CMCFilter,
-    MTGFilterType,
-    SetFilter,
-    SortDirection,
-    SortEnum,
-} from '../../context/MTGA/Filter/MTGFilterContext'
-import { MTG_Card, MTG_Color, MTG_DeckCard, MTG_Game, MTG_Layout, MTG_Rarity } from '../../graphql/types'
-import { isNegativeTB, isNotUnsetTB, isPositiveTB, TernaryBoolean } from '../../types/ternaryBoolean'
+    MTG_Card,
+    MTG_Color,
+    MTG_DeckCard,
+    MTG_Filter_SortBy,
+    MTG_Filter_SortDirection,
+    MTG_Game,
+    MTG_Layout,
+    MTG_Rarity,
+    TernaryBoolean,
+} from '../../graphql/types'
+import { isNegativeTB, isNotUnsetTB, isPositiveTB } from '../../types/ternaryBoolean'
 
 export const filterCards = <T extends MTG_Card>(
     cards: T[],
     filter: MTGFilterType,
-    sort: { sortBy: SortEnum; sortDirection: SortDirection; enabled: boolean }[],
+    sort: { sortBy: MTG_Filter_SortBy; sortDirection: MTG_Filter_SortDirection; enabled: boolean }[],
     selectingCommander?: boolean,
     commander?: MTG_DeckCard,
 ): MTG_Card[] => {
@@ -620,11 +624,11 @@ export const filterCards = <T extends MTG_Card>(
             .filter((s) => s.enabled)
             .map((s) => {
                 switch (s.sortBy) {
-                    case SortEnum.NAME:
+                    case MTG_Filter_SortBy.NAME:
                         return (c: MTG_Card) => (c.name.startsWith('A-') ? c.name.slice(2) + '2' : c.name)
-                    case SortEnum.CMC:
+                    case MTG_Filter_SortBy.CMC:
                         return (c: MTG_Card) => c.CMC
-                    case SortEnum.COLOR:
+                    case MTG_Filter_SortBy.COLOR:
                         return [
                             (c: MTG_Card) => (c.typeLine.includes('Land') && !c.typeLine.includes('//') ? 1 : -1),
                             'colorIdentity.length',
@@ -634,10 +638,10 @@ export const filterCards = <T extends MTG_Card>(
                                 return isBasicLand ? 0 : 1
                             },
                         ]
-                    case SortEnum.RARITY:
+                    case MTG_Filter_SortBy.RARITY:
                         return (c: MTG_Card) =>
                             rarityToValue(c.versions.find((v) => v.isDefault)?.rarity ?? MTG_Rarity.common)
-                    case SortEnum.TYPE:
+                    case MTG_Filter_SortBy.TYPE:
                         return (c: MTG_Card) => {
                             const types: Record<string, boolean> = {}
                             c.typeLine.split(' ').forEach((t) => (types[t] = true))
@@ -648,21 +652,21 @@ export const filterCards = <T extends MTG_Card>(
                                 return acc
                             }, 0)
                         }
-                    case SortEnum.SET:
+                    case MTG_Filter_SortBy.SET:
                         return (c: MTG_Card) =>
                             expansions.find((e) => c.versions.some((v) => v.set.toLowerCase() === e.set.toLowerCase()))
                                 ?.releasedAt
-                    case SortEnum.RELEASED_AT:
+                    case MTG_Filter_SortBy.RELEASED_AT:
                         // If sort direction is asc, return the earliest release date
                         // If sort direction is desc, return the latest release date
                         return (c: MTG_Card) =>
-                            s.sortDirection === SortDirection.ASC
+                            s.sortDirection === MTG_Filter_SortDirection.ASC
                                 ? Math.min(...c.versions.map((v) => new Date(v.releasedAt).getTime()))
                                 : Math.max(...c.versions.map((v) => new Date(v.releasedAt).getTime()))
                 }
             })
             .flat(),
-        sort.filter((s) => s.enabled).map((s) => (s.sortDirection === SortDirection.DESC ? 'desc' : 'asc')),
+        sort.filter((s) => s.enabled).map((s) => (s.sortDirection === MTG_Filter_SortDirection.DESC ? 'desc' : 'asc')),
     )
 
     return remainingCards

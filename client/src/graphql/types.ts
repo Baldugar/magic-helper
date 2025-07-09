@@ -242,10 +242,20 @@ export type MTG_DeleteDeckInput = {
   deckID: Scalars['ID']['input'];
 };
 
+export type MTG_Filter_CardTypeInput = {
+  cardType: Scalars['String']['input'];
+  value: TernaryBoolean;
+};
+
 export type MTG_Filter_CardTypes = {
   __typename?: 'MTG_Filter_CardTypes';
   cardType: Scalars['String']['output'];
   subtypes: Array<Scalars['String']['output']>;
+};
+
+export type MTG_Filter_ColorInput = {
+  color: MTG_Color;
+  value: TernaryBoolean;
 };
 
 export type MTG_Filter_Entries = {
@@ -266,10 +276,109 @@ export type MTG_Filter_Expansion = {
   setType: Scalars['String']['output'];
 };
 
+export type MTG_Filter_GameInput = {
+  game: MTG_Game;
+  value: TernaryBoolean;
+};
+
+export type MTG_Filter_LayoutInput = {
+  layout: MTG_Layout;
+  value: TernaryBoolean;
+};
+
 export type MTG_Filter_Legality = {
   __typename?: 'MTG_Filter_Legality';
   formats: Array<Scalars['String']['output']>;
   legalityValues: Array<Scalars['String']['output']>;
+};
+
+export type MTG_Filter_LegalityEntryInput = {
+  legalityValue: Scalars['String']['input'];
+  value: TernaryBoolean;
+};
+
+export type MTG_Filter_LegalityInput = {
+  format: Scalars['String']['input'];
+  legalityEntries: Array<MTG_Filter_LegalityEntryInput>;
+};
+
+export type MTG_Filter_ManaCostInput = {
+  manaCost: Scalars['String']['input'];
+  value: TernaryBoolean;
+};
+
+export type MTG_Filter_PaginationInput = {
+  page: Scalars['Int']['input'];
+  pageSize: Scalars['Int']['input'];
+};
+
+export type MTG_Filter_RarityInput = {
+  rarity: MTG_Rarity;
+  value: TernaryBoolean;
+};
+
+export type MTG_Filter_RatingInput = {
+  max?: InputMaybe<Scalars['Int']['input']>;
+  min?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type MTG_Filter_Search = {
+  __typename?: 'MTG_Filter_Search';
+  pagedCards: Array<MTG_Card>;
+  totalCount: Scalars['Int']['output'];
+};
+
+export type MTG_Filter_SearchInput = {
+  cardTypes: Array<MTG_Filter_CardTypeInput>;
+  color: Array<MTG_Filter_ColorInput>;
+  games: Array<MTG_Filter_GameInput>;
+  hideIgnored: TernaryBoolean;
+  layouts: Array<MTG_Filter_LayoutInput>;
+  legalities: Array<MTG_Filter_LegalityInput>;
+  manaCosts: Array<MTG_Filter_ManaCostInput>;
+  multiColor: TernaryBoolean;
+  rarity: Array<MTG_Filter_RarityInput>;
+  rating: MTG_Filter_RatingInput;
+  searchString?: InputMaybe<Scalars['String']['input']>;
+  sets: Array<MTG_Filter_SetInput>;
+  subtypes: Array<MTG_Filter_SubtypeInput>;
+  tags: Array<MTG_Filter_TagInput>;
+};
+
+export type MTG_Filter_SetInput = {
+  set: Scalars['String']['input'];
+  value: TernaryBoolean;
+};
+
+export enum MTG_Filter_SortBy {
+  CMC = 'CMC',
+  COLOR = 'COLOR',
+  NAME = 'NAME',
+  RARITY = 'RARITY',
+  RELEASED_AT = 'RELEASED_AT',
+  SET = 'SET',
+  TYPE = 'TYPE'
+}
+
+export enum MTG_Filter_SortDirection {
+  ASC = 'ASC',
+  DESC = 'DESC'
+}
+
+export type MTG_Filter_SortInput = {
+  enabled: Scalars['Boolean']['input'];
+  sortBy: MTG_Filter_SortBy;
+  sortDirection: MTG_Filter_SortDirection;
+};
+
+export type MTG_Filter_SubtypeInput = {
+  subtype: Scalars['String']['input'];
+  value: TernaryBoolean;
+};
+
+export type MTG_Filter_TagInput = {
+  tag: Scalars['String']['input'];
+  value: TernaryBoolean;
 };
 
 export enum MTG_Game {
@@ -457,6 +566,7 @@ export type Query = {
   deckTags: Array<DeckTag>;
   getMTGCardPackages: Array<MTG_CardPackage>;
   getMTGCards: Array<MTG_Card>;
+  getMTGCardsFiltered: MTG_Filter_Search;
   getMTGDecks: Array<MTG_Deck>;
   getMTGFilters: MTG_Filter_Entries;
   tag?: Maybe<Tag>;
@@ -466,6 +576,13 @@ export type Query = {
 
 export type QuerygetMTGCardPackagesArgs = {
   cardPackageID?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
+export type QuerygetMTGCardsFilteredArgs = {
+  filter: MTG_Filter_SearchInput;
+  pagination: MTG_Filter_PaginationInput;
+  sort: Array<MTG_Filter_SortInput>;
 };
 
 
@@ -508,6 +625,12 @@ export type Tag = {
 export enum TagType {
   CardTag = 'CardTag',
   DeckTag = 'DeckTag'
+}
+
+export enum TernaryBoolean {
+  FALSE = 'FALSE',
+  TRUE = 'TRUE',
+  UNSET = 'UNSET'
 }
 
 export type UnassignTagInput = {
