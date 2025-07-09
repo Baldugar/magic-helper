@@ -117,7 +117,13 @@ const createMTGDeckMutation = async (input: MTG_CreateDeckInput): Promise<MTG_De
     new Promise((resolve, reject) => {
         fetchData<Mutation, MutationcreateMTGDeckArgs>(createMTGDeck, { input }).then((response) => {
             if (response && response.data && !response.errors) {
-                resolve(response.data.createMTGDeck)
+                resolve({
+                    ...response.data.createMTGDeck,
+                    cards: [],
+                    ignoredCards: [],
+                    zones: [],
+                    cardFrontImage: undefined,
+                })
             } else {
                 reject('Failed to fetch MTG cards')
             }
