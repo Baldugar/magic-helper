@@ -1,5 +1,5 @@
 import gql from 'graphql-tag'
-import { MTG_CardPackageFragments } from '../fragments'
+import { MTG_CardPackageFragments, MTG_TagFragments } from '../fragments'
 
 export default gql`
     mutation createMTGCardPackage($input: MTG_CreateCardPackageInput!) {
@@ -8,4 +8,5 @@ export default gql`
         }
     }
     ${MTG_CardPackageFragments}
+    ${MTG_TagFragments}
 `
