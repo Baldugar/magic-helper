@@ -24,7 +24,7 @@ func FilterCards(cards []*model.MtgCard, filter model.MtgFilterSearchInput, sort
 	} else if len(cards) > 0 {
 		cardsToFilter = cards
 	} else {
-		log.Warn().Msg("No cards provided and index is not ready")
+		log.Warn().Msg("No cards provided and index is not ready, returning empty cards")
 		return []*model.MtgCard{}
 	}
 

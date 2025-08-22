@@ -44,19 +44,19 @@ func EnsureDocumentCollection(ctx context.Context, collection ArangoDocument) (a
 	}
 	log.Info().Msgf("Document collection %s already exists", c.Name())
 	if collection == USERS_COLLECTION {
-		// Check if we have user with ID = 1, if not create it
-		exists, err := c.DocumentExists(ctx, "1")
+		// Check if we have user with ID = USER_ID, if not create it
+		exists, err := c.DocumentExists(ctx, "USER_ID")
 		if err != nil {
 			log.Fatal().Err(err).Msg("Failed to check if user exists")
 			return nil, err
 		}
 		if !exists {
-			_, err := c.CreateDocument(ctx, map[string]interface{}{"_key": "1"})
+			_, err := c.CreateDocument(ctx, map[string]interface{}{"_key": "USER_ID"})
 			if err != nil {
 				log.Fatal().Err(err).Msg("Failed to create user")
 				return nil, err
 			}
-			log.Info().Msgf("Created user with ID 1")
+			log.Info().Msgf("Created user with ID USER_ID")
 		}
 	}
 	return c, nil
