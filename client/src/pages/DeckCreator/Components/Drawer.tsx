@@ -32,7 +32,12 @@ export const Drawer = () => {
             deckID: deck.ID,
             name: deck.name,
             zones: calculateZonesFromNodes(nodes),
-            cardFrontImage: deck.cardFrontImage,
+            cardFrontImage: deck.cardFrontImage
+                ? {
+                      cardID: deck.cardFrontImage.cardID,
+                      versionID: deck.cardFrontImage.versionID,
+                  }
+                : undefined,
         }
         updateMTGDeck(deckInput).then((resp) => {
             if (resp.status) {
@@ -49,7 +54,12 @@ export const Drawer = () => {
             deckID: deck.ID,
             name: deck.name,
             zones: calculateZonesFromNodes(nodes),
-            cardFrontImage: deck.cardFrontImage,
+            cardFrontImage: deck.cardFrontImage
+                ? {
+                      cardID: deck.cardFrontImage.cardID,
+                      versionID: deck.cardFrontImage.versionID,
+                  }
+                : undefined,
         }
         saveMTGDeckAsCopy(deckInput)
     }
