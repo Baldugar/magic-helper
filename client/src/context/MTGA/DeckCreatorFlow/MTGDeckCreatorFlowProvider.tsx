@@ -1,9 +1,9 @@
 import { Node, OnNodeDrag, useReactFlow } from '@xyflow/react'
 import { DragEventHandler, ReactNode, useState } from 'react'
 import { MainOrSide, MTG_Card, MTG_Deck, MTG_DeckCard, MTG_DeckCardType, Position } from '../../../graphql/types'
-import { CardNodeData } from '../../../pages/FlowView/Nodes/CardNode'
-import { GroupNodeData, MIN_SIZE } from '../../../pages/FlowView/Nodes/GroupNode'
-import { PhantomNodeData } from '../../../pages/FlowView/Nodes/PhantomNode'
+import { CardNodeData } from '../../../pages/DeckCreator/Components/FlowView/Nodes/CardNode'
+import { GroupNodeData, MIN_SIZE } from '../../../pages/DeckCreator/Components/FlowView/Nodes/GroupNode'
+import { PhantomNodeData } from '../../../pages/DeckCreator/Components/FlowView/Nodes/PhantomNode'
 import { singleSetSelected } from '../../../utils/functions/filterFunctions'
 import { uuidv4 } from '../../../utils/functions/IDFunctions'
 import {
@@ -22,7 +22,7 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
     const { deckTab, setDeck, removeCard } = useMTGDeckCreator()
     const { screenToFlowPosition, getIntersectingNodes, setNodes, getNodes } = useReactFlow<NodeType>()
 
-    const { filter, isSelectingCommander, setIsSelectingCommander } = useMTGFilter()
+    const { filter, setFilter } = useMTGFilter()
     const set = singleSetSelected(filter)
 
     const [draggingGroupId, setDraggingGroupId] = useState<string | null>(null)
@@ -32,7 +32,7 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
         setNodes((nodes) => {
             const node = nodes.find((n) => n.id === nodeID)
             if (!node) return nodes
-            const childrenIDs = (node.data as GroupNodeData).childrenIDs
+            const childrenIDs = (node.data as GroupNodeData).cardChildren
             if (deleteNodes) {
                 const { nodesToDelete, newNodes } = nodes.reduce(
                     (acc, n) => {
@@ -126,7 +126,7 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
         let cardToReturn: MTG_DeckCard | undefined
         if (deck) {
             const newDeck = structuredClone(deck)
-            if (isSelectingCommander) {
+            if (filter.isSelectingCommander) {
                 // Remove the previous commander
                 const previousCommander = newDeck.cards.find((c) => c.deckCardType === MTG_DeckCardType.COMMANDER)
                 if (previousCommander) {
@@ -144,7 +144,12 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
                     selectedVersionID: setVersion?.ID,
                 }
                 newDeck.cards.push(cardToReturn)
-                setIsSelectingCommander(false)
+                setFilter((prevFilter) => ({
+                    ...prevFilter,
+                    page: 0,
+                    commander: card.ID,
+                    isSelectingCommander: false,
+                }))
             } else {
                 const ID = card.ID
                 const index = newDeck.cards.findIndex((c) => c.card.ID === ID && c.mainOrSide === deckTab)
@@ -202,7 +207,8 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
         if (type === 'groupNode') {
             const groupData: GroupNodeData = {
                 label: `${type} node`,
-                childrenIDs: [],
+                cardChildren: [],
+                zoneChildren: [],
                 onDelete: handleDeleteZone,
                 onNameChange: handleRenameZone,
             }

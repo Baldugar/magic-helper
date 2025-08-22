@@ -4,8 +4,8 @@ import Box from '@mui/material/Box'
 import Slider from '@mui/material/Slider'
 import Typography from '@mui/material/Typography'
 import { CSSProperties, useState } from 'react'
-import { MTG_Deck } from '../graphql/types'
-import { getCorrectCardImage, getCorrectVersionImage } from '../utils/functions/cardFunctions'
+import { MTG_DeckDashboard } from '../graphql/types'
+import { getCorrectCardImage } from '../utils/functions/cardFunctions'
 import { getUniqueRandomIntegers } from '../utils/functions/deckFunctions'
 
 interface HDeckBoxProps {
@@ -17,7 +17,7 @@ interface HDeckBoxProps {
         hoverLidRotation?: number
         hovered?: boolean
     }
-    deck: MTG_Deck
+    deck: MTG_DeckDashboard
     onDelete?: () => void
 }
 
@@ -114,7 +114,7 @@ const HDeckBox = ({
                 >
                     {deck.cardFrontImage && (
                         <img
-                            src={getCorrectVersionImage(deck.cardFrontImage.versions[0], 'artCrop')}
+                            src={deck.cardFrontImage.image}
                             alt={deck.name}
                             width={width}
                             height={height}
@@ -242,10 +242,7 @@ const HDeckBox = ({
                                 transformStyle: 'preserve-3d',
                                 backfaceVisibility: 'hidden',
                                 background: deck.cardFrontImage
-                                    ? `url(${getCorrectVersionImage(
-                                          deck.cardFrontImage.versions[0],
-                                          'artCrop',
-                                      )}) center/cover no-repeat`
+                                    ? `url(${deck.cardFrontImage.image}) center/cover no-repeat`
                                     : commonFaceStyle.background,
                                 backgroundPosition: 'center right',
                                 backgroundSize: `${width}px ${height}px`,
@@ -338,7 +335,7 @@ const HDeckBox = ({
                     >
                         <img
                             src={getCorrectCardImage(defaultFirstCardVersion, 'artCrop')}
-                            alt={defaultFirstCard?.card.name}
+                            alt={defaultFirstCard?.card.ID}
                             width={'100%'}
                             height={'100%'}
                             style={{ borderRadius: 5 }}
@@ -362,7 +359,7 @@ const HDeckBox = ({
                     >
                         <img
                             src={getCorrectCardImage(defaultSecondCardVersion, 'artCrop')}
-                            alt={defaultSecondCard?.card.name}
+                            alt={defaultSecondCard?.card.ID}
                             width={'100%'}
                             height={'100%'}
                             style={{ borderRadius: 5 }}
@@ -386,7 +383,7 @@ const HDeckBox = ({
                     >
                         <img
                             src={getCorrectCardImage(defaultThirdCardVersion, 'artCrop')}
-                            alt={defaultThirdCard?.card.name}
+                            alt={defaultThirdCard?.card.ID}
                             width={'100%'}
                             height={'100%'}
                             style={{ borderRadius: 5 }}
@@ -414,8 +411,8 @@ const RotatingHDeckBox = ({
     onDelete,
 }: {
     debug?: boolean
-    deck: MTG_Deck
-    onClick: (deck: MTG_Deck) => void
+    deck: MTG_DeckDashboard
+    onClick: (deck: MTG_DeckDashboard) => void
     onDelete?: () => void
 }) => {
     const width = 313

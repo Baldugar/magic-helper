@@ -13,9 +13,10 @@ type MTGDeckDB struct {
 }
 
 type MTGDeckFrontCardImageDB struct {
-	ID   string `json:"_id"`
-	From string `json:"_from"`
-	To   string `json:"_to"`
+	ID        string `json:"_id"`
+	From      string `json:"_from"`
+	To        string `json:"_to"`
+	VersionID string `json:"versionID"`
 }
 
 type MTGCardDeckDB struct {

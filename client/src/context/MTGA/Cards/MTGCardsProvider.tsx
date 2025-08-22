@@ -9,7 +9,7 @@ export const MTGCardsProvider = ({ children }: { children: ReactNode }) => {
     const [totalCount, setTotalCount] = useState(0)
     const [loading, setLoading] = useState(true)
 
-    const { convertFilters, filter, page, sort } = useMTGFilter()
+    const { convertedFilters } = useMTGFilter()
 
     const {
         queries: { getMTGCardsFiltered },
@@ -18,12 +18,12 @@ export const MTGCardsProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         setLoading(true)
-        getMTGCardsFiltered(convertFilters()).then((cards) => {
+        getMTGCardsFiltered(convertedFilters).then((cards) => {
             setCards(cards.pagedCards)
             setTotalCount(cards.totalCount)
             setLoading(false)
         })
-    }, [getMTGCardsFiltered, convertFilters, filter, page, sort])
+    }, [getMTGCardsFiltered, convertedFilters])
 
     const setRatingForCard = (cardID: string, rating: number) => {
         const newCards = structuredClone(cards)
@@ -31,30 +31,13 @@ export const MTGCardsProvider = ({ children }: { children: ReactNode }) => {
         if (cardIndex !== -1) {
             newCards[cardIndex].myRating = {
                 user: {
-                    ID: '1',
+                    ID: 'USER_ID',
                 },
                 value: rating,
             }
-            const myRating = newCards[cardIndex].ratings.find((r) => r.user.ID === '1')
-            if (myRating) {
-                myRating.value = rating
-            } else {
-                newCards[cardIndex].ratings.push({
-                    user: {
-                        ID: '1',
-                    },
-                    value: rating,
-                })
-            }
-            newCards[cardIndex].aggregatedRating = {
-                average:
-                    newCards[cardIndex].ratings.reduce((acc, r) => acc + r.value, 0) /
-                    newCards[cardIndex].ratings.length,
-                count: newCards[cardIndex].ratings.length,
-            }
             setCards((prev) => prev.map((c) => (c.ID === cardID ? newCards[cardIndex] : c)))
         }
-        rate({ entityID: cardID, entityType: RatableEntityType.CARD, userID: '1', value: rating })
+        rate({ entityID: cardID, entityType: RatableEntityType.CARD, value: rating })
     }
 
     return (

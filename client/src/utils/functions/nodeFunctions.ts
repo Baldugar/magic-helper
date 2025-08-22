@@ -2,9 +2,9 @@ import { Node, Rect, XYPosition } from '@xyflow/react'
 import { cloneDeep } from 'lodash'
 import { SetStateAction } from 'react'
 import { FlowZone, MTG_Deck, MTG_DeckCard, MTG_DeckCardInput, Position } from '../../graphql/types'
-import { CardNodeData } from '../../pages/FlowView/Nodes/CardNode'
-import { GroupNodeData } from '../../pages/FlowView/Nodes/GroupNode'
-import { PhantomNodeData } from '../../pages/FlowView/Nodes/PhantomNode'
+import { CardNodeData } from '../../pages/DeckCreator/Components/FlowView/Nodes/CardNode'
+import { GroupNodeData } from '../../pages/DeckCreator/Components/FlowView/Nodes/GroupNode'
+import { PhantomNodeData } from '../../pages/DeckCreator/Components/FlowView/Nodes/PhantomNode'
 
 export type NodeType = Node<CardNodeData | GroupNodeData | PhantomNodeData>
 
@@ -221,7 +221,8 @@ export const organizeNodes = (
     for (const zone of deck.zones) {
         const data: GroupNodeData = {
             label: zone.name,
-            childrenIDs: zone.childrenIDs,
+            cardChildren: zone.cardChildren,
+            zoneChildren: zone.zoneChildren,
             onDelete: onDeleteZone,
             onNameChange,
         }
@@ -243,7 +244,7 @@ export const organizeNodes = (
             position: card.position,
             data: cardData,
             type: 'cardNode',
-            parentId: deck.zones.find((z) => z.childrenIDs.includes(card.card.ID))?.ID,
+            parentId: deck.zones.find((z) => z.cardChildren.includes(card.card.ID))?.ID,
         } as Node<CardNodeData>)
         for (const p of card.phantoms) {
             const phantomNodeData: PhantomNodeData = {
@@ -257,7 +258,7 @@ export const organizeNodes = (
                 position: p.position,
                 data: phantomNodeData,
                 type: 'phantomNode',
-                parentId: deck.zones.find((z) => z.childrenIDs.includes(p.ID))?.ID,
+                parentId: deck.zones.find((z) => z.cardChildren.includes(p.ID))?.ID,
             } as Node<PhantomNodeData>)
         }
     }
@@ -343,7 +344,8 @@ export const calculateZonesFromNodes = (nodes: Node[]): FlowZone[] => {
                 position: groupNode.position,
                 width: groupNode.width || 0,
                 height: groupNode.height || 0,
-                childrenIDs: groupNode.data.childrenIDs,
+                cardChildren: groupNode.data.cardChildren,
+                zoneChildren: groupNode.data.zoneChildren,
             })
         }
     }

@@ -1,7 +1,10 @@
 package mtgCardSearch
 
 import (
+	"context"
+	"magic-helper/arango"
 	"magic-helper/graph/model"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -27,8 +30,31 @@ func FilterCards(cards []*model.MtgCard, filter model.MtgFilterSearchInput, sort
 
 	filteredCards := make([]*model.MtgCard, 0, len(cardsToFilter))
 
+	ignoredCardIDs := make([]string, 0)
+	if filter.DeckID != nil && filter.HideIgnored {
+		ctx := context.Background()
+		aq := arango.NewQuery( /* aql */ `
+			FOR card, edge IN 1..1 INBOUND doc MTG_Deck_Ignore_Card
+			RETURN card.ID
+		`)
+		cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
+		if err != nil {
+			log.Error().Err(err).Msg("Error querying database")
+			return []*model.MtgCard{}
+		}
+		for cursor.HasMore() {
+			var ignoredCard string
+			_, err := cursor.ReadDocument(ctx, &ignoredCard)
+			if err != nil {
+				log.Error().Err(err).Msg("Error reading document")
+				return []*model.MtgCard{}
+			}
+			ignoredCardIDs = append(ignoredCardIDs, ignoredCard)
+		}
+	}
+
 	for _, card := range cardsToFilter {
-		if passesFilter(card, filter) {
+		if passesFilter(card, filter, cardsToFilter, ignoredCardIDs) {
 			filteredCards = append(filteredCards, card)
 		}
 	}
@@ -67,7 +93,42 @@ func PaginateCards(cards []*model.MtgCard, pagination model.MtgFilterPaginationI
 }
 
 // passesFilter checks if a card passes all the filter criteria
-func passesFilter(card *model.MtgCard, filter model.MtgFilterSearchInput) bool {
+func passesFilter(card *model.MtgCard, filter model.MtgFilterSearchInput, cards []*model.MtgCard, ignoredCardIDs []string) bool {
+	if slices.Contains(ignoredCardIDs, card.ID) {
+		return false
+	}
+
+	var commanderCard *model.MtgCard
+	if filter.Commander != nil {
+		for _, card := range cards {
+			if card.ID == *filter.Commander {
+				commanderCard = card
+				break
+			}
+		}
+	}
+
+	if commanderCard != nil {
+		// Commander color identity restriction: card must only contain colors from commander's color identity
+		// or be colorless
+
+		if len(card.ColorIdentity) > 0 {
+			// Check if the card has any colors outside the commander's color identity
+			for _, cardColor := range card.ColorIdentity {
+				colorAllowed := slices.Contains(commanderCard.ColorIdentity, cardColor)
+				if !colorAllowed {
+					return false // Card has a color not in commander's color identity
+				}
+			}
+		}
+	}
+
+	if filter.IsSelectingCommander {
+		if !(strings.Contains(card.TypeLine, "Legendary") && (strings.Contains(card.TypeLine, "Creature") || strings.Contains(card.TypeLine, "Planeswalker"))) {
+			return false
+		}
+	}
+
 	// Search string filtering
 	if filter.SearchString != nil && *filter.SearchString != "" {
 		if !passesSearchString(card, *filter.SearchString) {
@@ -703,13 +764,13 @@ func passesRatingFilter(card *model.MtgCard, ratingFilter *model.MtgFilterRating
 		return true
 	}
 
-	// Get the card's aggregated rating
-	if card.AggregatedRating == nil {
+	// Get the card's rating
+	if card.MyRating == nil {
 		// If no rating exists, only pass if no minimum is set
 		return ratingFilter.Min == nil
 	}
 
-	rating := int(card.AggregatedRating.Average)
+	rating := card.MyRating.Value
 
 	// Check minimum rating
 	if ratingFilter.Min != nil && rating < *ratingFilter.Min {

@@ -27,8 +27,13 @@ func (r *queryResolver) GetMTGFilters(ctx context.Context) (*model.MtgFilterEntr
 }
 
 // GetMTGDecks is the resolver for the getMTGDecks field.
-func (r *queryResolver) GetMTGDecks(ctx context.Context, deckID *string) ([]*model.MtgDeck, error) {
-	return mtg.GetMTGDecks(ctx, deckID)
+func (r *queryResolver) GetMTGDecks(ctx context.Context) ([]*model.MtgDeckDashboard, error) {
+	return mtg.GetMTGDecks(ctx)
+}
+
+// GetMTGDeck is the resolver for the getMTGDeck field.
+func (r *queryResolver) GetMTGDeck(ctx context.Context, deckID string) (*model.MtgDeck, error) {
+	return mtg.GetMTGDeck(ctx, deckID)
 }
 
 // GetMTGCardPackages is the resolver for the getMTGCardPackages field.

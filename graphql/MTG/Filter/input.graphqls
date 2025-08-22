@@ -10,9 +10,12 @@ input MTG_Filter_SearchInput {
     legalities: [MTG_Filter_LegalityInput!]!
     layouts: [MTG_Filter_LayoutInput!]!
     games: [MTG_Filter_GameInput!]!
-    hideIgnored: TernaryBoolean!
+    hideIgnored: Boolean!
     tags: [MTG_Filter_TagInput!]!
     rating: MTG_Filter_RatingInput!
+    commander: ID
+    deckID: ID
+    isSelectingCommander: Boolean!
 }
 
 input MTG_Filter_RarityInput {

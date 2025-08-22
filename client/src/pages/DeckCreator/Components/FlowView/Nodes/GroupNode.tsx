@@ -1,13 +1,14 @@
 import { Box } from '@mui/material'
 import { Node, NodeProps, NodeResizer, NodeToolbar, Position, useReactFlow } from '@xyflow/react'
 import { useCallback, useEffect, useState } from 'react'
-import { useMTGDeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
+import { useMTGDeckFlowCreator } from '../../../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
 
 export const MIN_SIZE = 180
 
 export type GroupNodeData = {
     label: string
-    childrenIDs: string[]
+    cardChildren: string[]
+    zoneChildren: string[]
     onDelete: (nodeID: string, deleteNodes: boolean) => void
     onNameChange: (nodeID: string, newName: string) => void
 }
@@ -18,7 +19,7 @@ export type GroupNodeProps = NodeProps & {
 
 export const GroupNode = (props: GroupNodeProps) => {
     const { data, id } = props
-    const { label, childrenIDs, onDelete, onNameChange } = data
+    const { label, cardChildren, onDelete, onNameChange } = data
     const { draggingGroupId } = useMTGDeckFlowCreator()
     const [resizable, setResizable] = useState(false)
     const [lockedChildren, setLockedChildren] = useState(true)
@@ -35,19 +36,19 @@ export const GroupNode = (props: GroupNodeProps) => {
         }
         reactFlow.setNodes((nodes) => {
             return nodes.map((node) => {
-                if (childrenIDs.includes(node.id)) {
+                if (cardChildren.includes(node.id)) {
                     return { ...node, ...constraints }
                 }
                 return node
             })
         })
-    }, [lockedChildren, childrenIDs, reactFlow])
+    }, [lockedChildren, cardChildren, reactFlow])
 
     const handleAutosort = () => {
         const allNodes = reactFlow.getNodes() as Node[]
         // Get all child nodes (cards and phantoms)
         const childNodes = allNodes.filter(
-            (node) => childrenIDs.includes(node.id) && (node.type === 'cardNode' || node.type === 'phantomNode'),
+            (node) => cardChildren.includes(node.id) && (node.type === 'cardNode' || node.type === 'phantomNode'),
         )
         // Sort by name
         childNodes.sort((a, b) => {
@@ -113,12 +114,12 @@ export const GroupNode = (props: GroupNodeProps) => {
         const respZone = confirm(`Are you sure you want to delete the zone "${label}"?`)
         if (respZone) {
             let respNodes = false
-            if (childrenIDs.length > 0) {
+            if (cardChildren.length > 0) {
                 respNodes = confirm('Do you want to delete the nodes inside the zone?')
             }
             onDelete(id, respNodes)
         }
-    }, [label, childrenIDs, id, onDelete])
+    }, [label, cardChildren, id, onDelete])
 
     const handleNameChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {

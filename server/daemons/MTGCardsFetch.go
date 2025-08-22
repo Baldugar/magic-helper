@@ -97,7 +97,16 @@ func PeriodicFetchMTGCards() {
 			collectCards(ctx)
 		} else {
 			// Build card index for faster filtering even if no new cards were fetched
-			buildCardIndex(ctx)
+			cards, err := mtg.GetMTGCards(ctx)
+			if err != nil {
+				log.Error().Err(err).Msg("Error fetching cards")
+				continue
+			}
+			err = mtgCardSearch.BuildCardIndexWithCards(cards)
+			if err != nil {
+				log.Error().Err(err).Msg("Error building card index")
+				continue
+			}
 		}
 
 		time.Sleep(24 * time.Hour)
@@ -272,7 +281,7 @@ func fetchAndProcessCardData(ctx context.Context, downloadURI string) error {
 				return parseErr
 			}
 
-			upsertErr := upsertOriginalCards(ctx, parsedArr, arango.MTG_ORIGINAL_CARDS_COLLECTION) // Renamed err variable
+			upsertErr := upsertOriginalCards(ctx, parsedArr) // Renamed err variable
 			if upsertErr != nil {
 				log.Error().Err(upsertErr).Msgf("Error upserting card batch starting at card %d", processedCount)
 				return upsertErr
@@ -293,10 +302,9 @@ func collectCards(ctx context.Context) {
 
 	// Clear the collection
 	aq := arango.NewQuery( /* aql */ `
-		FOR c IN @@collection
-			REMOVE c IN @@collection
+		FOR c IN MTG_Cards
+			REMOVE c IN MTG_Cards
 	`)
-	aq.AddBindVar("@collection", arango.MTG_CARDS_COLLECTION)
 
 	_, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {
@@ -588,11 +596,10 @@ func collectCards(ctx context.Context) {
 			UPSERT { _key: c._key }
 			INSERT MERGE({ _key: c._key }, c)
 			UPDATE c
-			IN @@collection
+			IN MTG_Cards
 		`)
 
 	aq.AddBindVar("cards", allCardsToSave)
-	aq.AddBindVar("@collection", arango.MTG_CARDS_COLLECTION)
 
 	_, err = arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {
@@ -602,7 +609,16 @@ func collectCards(ctx context.Context) {
 	log.Info().Msgf("Finished processing %d groups. JSON saved to '%s' directory.", len(allGroups), cardsDir)
 
 	// Rebuild the card index after updating cards
-	buildCardIndex(ctx)
+	cards, err := mtg.GetMTGCards(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("Error fetching cards")
+		return
+	}
+	err = mtgCardSearch.BuildCardIndexWithCards(cards)
+	if err != nil {
+		log.Error().Err(err).Msg("Error building card index")
+		return
+	}
 }
 
 func strSliceContains(sl []string, s string) bool {
@@ -678,27 +694,6 @@ func normalizeCardName(name string) string {
 	}
 
 	return name
-}
-
-// buildCardIndex builds the card index for faster filtering
-func buildCardIndex(ctx context.Context) {
-	log.Info().Msg("Building card index...")
-
-	// Get basic cards from database (without ratings and tags for faster indexing)
-	cards, err := mtg.GetMTGCardsBasic(ctx)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to get basic cards for index building")
-		return
-	}
-
-	// Build the index using the utility function
-	err = mtgCardSearch.BuildCardIndexWithCards(cards)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to build card index")
-		return
-	}
-
-	log.Info().Msg("Card index built successfully")
 }
 
 // downloadFile saves the response body to a local file under the 'cards' directory.

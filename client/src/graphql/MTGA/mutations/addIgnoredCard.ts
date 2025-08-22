@@ -1,8 +1,8 @@
 import gql from 'graphql-tag'
 
 export default gql`
-    mutation updateMTGDeck($input: MTG_UpdateDeckInput!) {
-        updateMTGDeck(input: $input) {
+    mutation addIgnoredCard($input: AddIgnoredCardInput!) {
+        addIgnoredCard(input: $input) {
             status
             message
         }

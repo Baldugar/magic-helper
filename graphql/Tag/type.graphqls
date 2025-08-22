@@ -2,8 +2,6 @@ interface Tag {
     ID: ID! @goTag(key: "json", value: "_key")
     name: String!
     description: String
-    aggregatedRating: AggregatedRating!
-    ratings: [UserRating!]!
     myRating: UserRating
 }
 
@@ -11,7 +9,5 @@ type CardTag implements Tag {
     ID: ID! @goTag(key: "json", value: "_key")
     name: String!
     description: String
-    aggregatedRating: AggregatedRating!
-    ratings: [UserRating!]!
     myRating: UserRating
 }

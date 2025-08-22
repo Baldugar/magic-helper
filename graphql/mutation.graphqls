@@ -1,20 +1,23 @@
 type Mutation {
     # Decks
-    createMTGDeck(input: MTG_CreateDeckInput!): MTG_Deck!
-    deleteMTGDeck(input: MTG_DeleteDeckInput!): Boolean!
-    updateMTGDeck(input: MTG_UpdateDeckInput!): MTG_Deck!
-    saveMTGDeckAsCopy(input: MTG_UpdateDeckInput!): MTG_Deck!
+    createMTGDeck(input: MTG_CreateDeckInput!): Response!
+    deleteMTGDeck(input: MTG_DeleteDeckInput!): Response!
+    updateMTGDeck(input: MTG_UpdateDeckInput!): Response!
+    saveMTGDeckAsCopy(input: MTG_UpdateDeckInput!): Response!
     # Card Packages
-    createMTGCardPackage(input: MTG_CreateCardPackageInput!): MTG_CardPackage!
-    deleteMTGCardPackage(input: MTG_DeleteCardPackageInput!): Boolean!
-    addMTGCardToCardPackage(input: MTG_AddCardToCardPackageInput!): MTG_CardPackage!
-    removeMTGCardFromCardPackage(input: MTG_RemoveCardFromCardPackageInput!): MTG_CardPackage!
+    createMTGCardPackage(input: MTG_CreateCardPackageInput!): Response!
+    deleteMTGCardPackage(input: MTG_DeleteCardPackageInput!): Response!
+    addMTGCardToCardPackage(input: MTG_AddCardToCardPackageInput!): Response!
+    removeMTGCardFromCardPackage(input: MTG_RemoveCardFromCardPackageInput!): Response!
     # Tags
-    createTag(input: CreateTagInput!): ID!
-    updateTag(input: UpdateTagInput!): ID!
-    deleteTag(tagID: ID!): ID!
-    assignTag(input: AssignTagInput!): Boolean!
-    unassignTag(input: UnassignTagInput!): Boolean!
+    createTag(input: CreateTagInput!): Response!
+    updateTag(input: UpdateTagInput!): Response!
+    deleteTag(tagID: ID!): Response!
+    assignTag(input: AssignTagInput!): Response!
+    unassignTag(input: UnassignTagInput!): Response!
     # Ratings
-    rate(input: RateInput!): ID!
+    rate(input: RateInput!): Response!
+    # Ignored Cards
+    addIgnoredCard(input: AddIgnoredCardInput!): Response!
+    removeIgnoredCard(input: RemoveIgnoredCardInput!): Response!
 }

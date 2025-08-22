@@ -86,7 +86,7 @@ export const Filters = () => {
                             }
                             onKeyUp={(e) => {
                                 if (e.key === 'Enter') {
-                                    setFilter({ ...filter, searchString: search })
+                                    setFilter((prev) => ({ ...prev, searchString: search, page: 0 }))
                                     closeSearchMenu()
                                 }
                             }}
@@ -95,7 +95,7 @@ export const Filters = () => {
                             <Button
                                 variant={'contained'}
                                 onClick={() => {
-                                    setFilter({ ...filter, searchString: search })
+                                    setFilter((prev) => ({ ...prev, searchString: search, page: 0 }))
                                     closeSearchMenu()
                                 }}
                             >
@@ -105,7 +105,7 @@ export const Filters = () => {
                                 variant={'contained'}
                                 onClick={() => {
                                     setSearch('')
-                                    setFilter({ ...filter, searchString: '' })
+                                    setFilter((prev) => ({ ...prev, searchString: '', page: 0 }))
                                     closeSearchMenu()
                                 }}
                             >
@@ -117,19 +117,19 @@ export const Filters = () => {
             </Grid>
             <ManaSelector
                 next={(c) => {
-                    setFilter({ ...filter, color: { ...filter.color, [c]: nextTB(filter.color[c]) } })
+                    setFilter((prev) => ({ ...prev, color: { ...prev.color, [c]: nextTB(prev.color[c]) }, page: 0 }))
                 }}
                 prev={(c) => {
-                    setFilter({ ...filter, color: { ...filter.color, [c]: prevTB(filter.color[c]) } })
+                    setFilter((prev) => ({ ...prev, color: { ...prev.color, [c]: prevTB(prev.color[c]) }, page: 0 }))
                 }}
                 selected={filter.color}
                 iconSize={30}
                 multi={{
                     next: () => {
-                        setFilter({ ...filter, multiColor: nextTB(filter.multiColor) })
+                        setFilter((prev) => ({ ...prev, multiColor: nextTB(prev.multiColor), page: 0 }))
                     },
                     prev: () => {
-                        setFilter({ ...filter, multiColor: prevTB(filter.multiColor) })
+                        setFilter((prev) => ({ ...prev, multiColor: prevTB(prev.multiColor), page: 0 }))
                     },
                     value: filter.multiColor,
                 }}
@@ -137,16 +137,18 @@ export const Filters = () => {
             <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
             <RaritySelector
                 onNext={(r) => {
-                    setFilter({
-                        ...filter,
-                        rarity: { ...filter.rarity, [r]: nextTB(filter.rarity[r]) },
-                    })
+                    setFilter((prev) => ({
+                        ...prev,
+                        rarity: { ...prev.rarity, [r]: nextTB(prev.rarity[r]) },
+                        page: 0,
+                    }))
                 }}
                 onPrev={(r) => {
-                    setFilter({
-                        ...filter,
-                        rarity: { ...filter.rarity, [r]: prevTB(filter.rarity[r]) },
-                    })
+                    setFilter((prev) => ({
+                        ...prev,
+                        rarity: { ...prev.rarity, [r]: prevTB(prev.rarity[r]) },
+                        page: 0,
+                    }))
                 }}
                 selected={filter.rarity}
                 iconSize={30}
@@ -154,16 +156,18 @@ export const Filters = () => {
             <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
             <CMCSelector
                 onNext={(cmc) => {
-                    setFilter({
-                        ...filter,
-                        manaCosts: { ...filter.manaCosts, [cmc]: nextTB(filter.manaCosts[cmc]) },
-                    })
+                    setFilter((prev) => ({
+                        ...prev,
+                        manaCosts: { ...prev.manaCosts, [cmc]: nextTB(prev.manaCosts[cmc]) },
+                        page: 0,
+                    }))
                 }}
                 onPrev={(cmc) => {
-                    setFilter({
-                        ...filter,
-                        manaCosts: { ...filter.manaCosts, [cmc]: prevTB(filter.manaCosts[cmc]) },
-                    })
+                    setFilter((prev) => ({
+                        ...prev,
+                        manaCosts: { ...prev.manaCosts, [cmc]: prevTB(prev.manaCosts[cmc]) },
+                        page: 0,
+                    }))
                 }}
                 selected={filter.manaCosts}
                 iconSize={30}
@@ -171,16 +175,18 @@ export const Filters = () => {
             <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
             <TypeSelector
                 onNext={(type) => {
-                    setFilter({
-                        ...filter,
-                        cardTypes: { ...filter.cardTypes, [type]: nextTB(filter.cardTypes[type]) },
-                    })
+                    setFilter((prev) => ({
+                        ...prev,
+                        cardTypes: { ...prev.cardTypes, [type]: nextTB(prev.cardTypes[type]) },
+                        page: 0,
+                    }))
                 }}
                 onPrev={(type) => {
-                    setFilter({
-                        ...filter,
-                        cardTypes: { ...filter.cardTypes, [type]: prevTB(filter.cardTypes[type]) },
-                    })
+                    setFilter((prev) => ({
+                        ...prev,
+                        cardTypes: { ...prev.cardTypes, [type]: prevTB(prev.cardTypes[type]) },
+                        page: 0,
+                    }))
                 }}
                 selected={filter.cardTypes}
                 iconSize={30}
@@ -188,27 +194,30 @@ export const Filters = () => {
             <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
             <SetSelector
                 onNext={(setName) => {
-                    setFilter((filter) => ({
-                        ...filter,
+                    setFilter((prev) => ({
+                        ...prev,
                         sets: {
-                            ...filter.sets,
-                            [setName]: { ...filter.sets[setName], value: nextTB(filter.sets[setName].value) },
+                            ...prev.sets,
+                            [setName]: { ...prev.sets[setName], value: nextTB(prev.sets[setName].value) },
                         },
+                        page: 0,
                     }))
                 }}
                 onPrev={(setName) => {
-                    setFilter((filter) => ({
-                        ...filter,
+                    setFilter((prev) => ({
+                        ...prev,
                         sets: {
-                            ...filter.sets,
-                            [setName]: { ...filter.sets[setName], value: prevTB(filter.sets[setName].value) },
+                            ...prev.sets,
+                            [setName]: { ...prev.sets[setName], value: prevTB(prev.sets[setName].value) },
                         },
+                        page: 0,
                     }))
                 }}
                 setValue={(setName, value) => {
-                    setFilter((filter) => ({
-                        ...filter,
-                        sets: { ...filter.sets, [setName]: { ...filter.sets[setName], value: value } },
+                    setFilter((prev) => ({
+                        ...prev,
+                        page: 0,
+                        sets: { ...prev.sets, [setName]: { ...prev.sets[setName], value: value } },
                     }))
                 }}
                 selected={Object.entries(filter.sets).reduce((acc, [key, value]) => {
@@ -221,39 +230,53 @@ export const Filters = () => {
             <LegalitySelector
                 selected={filter.legalities}
                 onSelect={(format, legalityValue, value) => {
-                    setFilter({
-                        ...filter,
+                    setFilter((prev) => ({
+                        ...prev,
                         legalities: {
-                            ...filter.legalities,
+                            ...prev.legalities,
                             [format]: {
-                                ...filter.legalities[format],
+                                ...prev.legalities[format],
                                 [legalityValue]: value,
                             },
                         },
-                    })
+                        page: 0,
+                    }))
                 }}
             />
             <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
             <LayoutSelector
                 selected={filter.layouts}
                 onNext={(layout) => {
-                    setFilter({ ...filter, layouts: { ...filter.layouts, [layout]: nextTB(filter.layouts[layout]) } })
+                    setFilter((prev) => ({
+                        ...prev,
+                        layouts: { ...prev.layouts, [layout]: nextTB(prev.layouts[layout]) },
+                        page: 0,
+                    }))
                 }}
                 onPrev={(layout) => {
-                    setFilter({
-                        ...filter,
-                        layouts: { ...filter.layouts, [layout]: prevTB(filter.layouts[layout]) },
-                    })
+                    setFilter((prev) => ({
+                        ...prev,
+                        layouts: { ...prev.layouts, [layout]: prevTB(prev.layouts[layout]) },
+                        page: 0,
+                    }))
                 }}
             />
             <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
             <GameSelector
                 selected={filter.games}
                 onNext={(game) => {
-                    setFilter({ ...filter, games: { ...filter.games, [game]: nextTB(filter.games[game]) } })
+                    setFilter((prev) => ({
+                        ...prev,
+                        games: { ...prev.games, [game]: nextTB(prev.games[game]) },
+                        page: 0,
+                    }))
                 }}
                 onPrev={(game) => {
-                    setFilter({ ...filter, games: { ...filter.games, [game]: prevTB(filter.games[game]) } })
+                    setFilter((prev) => ({
+                        ...prev,
+                        games: { ...prev.games, [game]: prevTB(prev.games[game]) },
+                        page: 0,
+                    }))
                 }}
             />
             <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
@@ -267,6 +290,7 @@ export const Filters = () => {
                             ...prev.rating,
                             max,
                         },
+                        page: 0,
                     }))
                 }}
                 onSetMin={(min) => {
@@ -276,6 +300,7 @@ export const Filters = () => {
                             ...prev.rating,
                             min,
                         },
+                        page: 0,
                     }))
                 }}
                 selected={{
@@ -293,6 +318,7 @@ export const Filters = () => {
                             ...prev.tags,
                             [tag]: nextTB(prev.tags[tag]),
                         },
+                        page: 0,
                     }))
                 }}
                 onPrev={(tag) => {
@@ -302,6 +328,7 @@ export const Filters = () => {
                             ...prev.tags,
                             [tag]: prevTB(prev.tags[tag]),
                         },
+                        page: 0,
                     }))
                 }}
             />
@@ -311,10 +338,10 @@ export const Filters = () => {
                 label="Hide Ignored"
                 labelPlacement="bottom"
                 onChange={(_, c) =>
-                    setFilter({
-                        ...filter,
+                    setFilter((prev) => ({
+                        ...prev,
                         hideIgnored: c,
-                    })
+                    }))
                 }
             />
             {isMobile && (

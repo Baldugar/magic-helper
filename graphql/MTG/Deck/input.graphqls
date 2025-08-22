@@ -12,7 +12,6 @@ input MTG_UpdateDeckInput {
     cardFrontImage: MTG_DeckCardFrontImageInput
     cards: [MTG_DeckCardInput!]!
     zones: [FlowZoneInput!]!
-    ignoredCards: [String!]!
 }
 
 input MTG_DeckCardFrontImageInput {

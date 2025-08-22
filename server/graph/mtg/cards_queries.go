@@ -5,8 +5,8 @@ import (
 	"magic-helper/arango"
 	"magic-helper/graph/model"
 	"magic-helper/util"
-	"magic-helper/util/ctxkeys"
 	"magic-helper/util/mtgCardSearch"
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -15,108 +15,57 @@ import (
 func GetMTGCards(ctx context.Context) ([]*model.MtgCard, error) {
 	log.Info().Msg("GetMTGCards: Started")
 
-	// Debug logging for context
-	log.Debug().
-		Interface("context_keys", ctx.Value(ctxkeys.UserIDKey)).
-		Msg("GetMTGCards: Context debug")
-
 	// Build the query
 	queryBuildStart := time.Now()
 	aq := arango.NewQuery( /* aql */ `
-		FOR doc IN @@collection
+		FOR doc IN MTG_Cards 
+			OPTIONS {
+				indexHint: "MTG_Cards_Buildup"
+			}
 			FILTER (doc.manaCost == "" AND doc.layout != "meld") OR doc.manaCost != ""
-			LET ratings = (
-				FOR user, rating IN 1..1 INBOUND doc @@userRatingEdge
+			LET rating = FIRST( // Remove FIRST when we get multiaccount
+				FOR node, ratingEdge IN 1..1 INBOUND doc MTG_User_Rating
 				RETURN {
-					user: user,
-					value: rating.value
+					user: node,
+					value: ratingEdge.value
 				}
 			)
 			LET cardTags = (
-				FOR tag, tagEdge IN 1..1 INBOUND doc @@tagCardEdge
+				FOR tag, tagEdge IN 1..1 INBOUND doc MTG_Tag_CardDeck
 				FILTER tag.type == "CardTag"
-				LET cardTagRatings = (
-					FOR user, rating IN 1..1 INBOUND tag @@userRatingEdge
+				LET cardTagRating = FIRST( // Remove FIRST when we get multiaccount
+					FOR node, ratingEdge IN 1..1 INBOUND tag MTG_User_Rating
 					RETURN {
-						user: user,
-						value: rating.value
+						user: node,
+						value: ratingEdge.value
 					}
 				)
 				RETURN MERGE(tag, {
-					aggregatedRating: {
-						average: AVERAGE(cardTagRatings[*].value),
-						count: LENGTH(cardTagRatings)
-					},
-					ratings: cardTagRatings,
-					myRating: @userID != "" ? FIRST(
-						FOR rating IN cardTagRatings
-							FILTER rating.user._key == @userID
-							RETURN rating
-					) : {}
+					myRating: cardTagRating
 				})
 			)
 			LET deckTags = (
-				FOR tag, tagEdge IN 1..1 INBOUND doc @@tagCardEdge
+				FOR tag, tagEdge IN 1..1 INBOUND doc MTG_Tag_CardDeck
 				FILTER tag.type == "DeckTag"
-				LET cardTagRatings = (
-					FOR user, rating IN 1..1 INBOUND tag @@userRatingEdge
+				LET cardTagRating = FIRST( // Remove FIRST when we get multiaccount
+					FOR node, ratingEdge IN 1..1 INBOUND tag MTG_User_Rating
 					RETURN {
-						user: user,
-						value: rating.value
+						user: node,
+						value: ratingEdge.value
 					}
 				)
 				RETURN MERGE(tag, {
-					aggregatedRating: {
-						average: AVERAGE(cardTagRatings[*].value),
-						count: LENGTH(cardTagRatings)
-					},
-					ratings: cardTagRatings,
-					myRating: @userID != "" ? FIRST(
-						FOR rating IN cardTagRatings
-							FILTER rating.user._key == @userID
-							RETURN rating
-					) : {}
+					myRating: cardTagRating
 				})
 			)
 			RETURN MERGE(doc, {
-				aggregatedRating: {
-					average: AVERAGE(ratings[*].value),
-					count: LENGTH(ratings)
-				},
-				ratings: ratings,
-				myRating: @userID != "" ? FIRST(
-					FOR rating IN ratings
-						FILTER rating.user._key == @userID
-						RETURN rating
-				) : {},
+				myRating: rating,
 				cardTags: cardTags,
 				deckTags: deckTags
 			})
 	`)
 
-	col := arango.MTG_CARDS_COLLECTION
-
-	aq.AddBindVar("@collection", col)
-	aq.AddBindVar("@userRatingEdge", arango.MTG_USER_RATING_EDGE_COLLECTION)
-	aq.AddBindVar("@tagCardEdge", arango.MTG_TAG_EDGE_COLLECTION)
-
-	// Safely get user ID from context with logging
-	userID, ok := ctx.Value(ctxkeys.UserIDKey).(string)
-	if !ok {
-		log.Warn().
-			Interface("user_id_value", ctx.Value(ctxkeys.UserIDKey)).
-			Bool("type_assertion_ok", ok).
-			Msg("GetMTGCards: Failed to get user ID from context")
-		// Use the default user ID if not present
-		userID = util.USER_ID
-	}
-	log.Debug().
-		Str("user_id", userID).
-		Interface("bind_vars", aq.BindVars).
-		Msg("GetMTGCards: Setting user ID bind variable")
-
-	// Set the user ID bind variable
-	aq = aq.AddBindVar("userID", userID)
+	// Build the query
 	queryBuildDuration := time.Since(queryBuildStart)
 
 	// Execute the query
@@ -158,43 +107,49 @@ func GetMTGCards(ctx context.Context) ([]*model.MtgCard, error) {
 func GetMTGFilters(ctx context.Context) (*model.MtgFilterEntries, error) {
 	log.Info().Msg("GetMTGFilters: Started")
 
-	// Query ArangoDB to get all typeLines
-	aq := arango.NewQuery( /* aql */ `
-        FOR card IN @@collection
-        RETURN {
-            name: card.name,
-            typeLine: card.typeLine,
-			layout: card.layout
-        }
-    `)
+	var cards []*model.MtgCard
+	var err error
 
-	col := arango.MTG_CARDS_COLLECTION
+	// Try to use cached cards from index if available
+	if mtgCardSearch.IsIndexReady() {
+		log.Info().Msg("GetMTGFilters: Using cached cards from index")
+		cards = mtgCardSearch.GetAllCardsFromIndex()
+	} else {
+		log.Info().Msg("GetMTGFilters: Index not ready, fetching cards from database")
+		// Query ArangoDB to get all typeLines
+		aq := arango.NewQuery( /* aql */ `
+			FOR card IN MTG_Cards
+			RETURN {
+				name: card.name,
+				typeLine: card.typeLine,
+				layout: card.layout
+			}
+		`)
 
-	aq.AddBindVar("@collection", col)
+		cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
+		if err != nil {
+			log.Error().Err(err).Msgf("GetMTGFilters: Error querying database")
+			return nil, err
+		}
+		defer cursor.Close()
 
-	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
-	if err != nil {
-		log.Error().Err(err).Msgf("GetMTGFilters: Error querying database")
-		return nil, err
+		for cursor.HasMore() {
+			var card model.MtgCard
+			_, err := cursor.ReadDocument(ctx, &card)
+			if err != nil {
+				log.Error().Err(err).Msgf("GetMTGFilters: Error reading document")
+				return nil, err
+			}
+			cards = append(cards, &card)
+		}
 	}
-	defer cursor.Close()
 
 	var typeMap = make(map[string]map[string]struct{}) // Map to store types and their subtypes
 	var gatheredTypes = make(map[string]struct{})      // Set to store all types
 	var layouts = make(map[string]struct{})            // Set to store all layouts
 
-	for cursor.HasMore() {
-		var card struct {
-			Name     string `json:"name"`
-			TypeLine string `json:"typeLine"`
-			Layout   string `json:"layout"`
-		}
-		_, err := cursor.ReadDocument(ctx, &card)
-		if err != nil {
-			log.Error().Err(err).Msgf("GetMTGFilters: Error reading document")
-			return nil, err
-		}
-
+	// Process cards from either index or database
+	for _, card := range cards {
 		// Process the typeLine into types and subtypes
 		types, subtypes := util.SplitTypeLine(card.TypeLine)
 
@@ -219,7 +174,7 @@ func GetMTGFilters(ctx context.Context) (*model.MtgFilterEntries, error) {
 		}
 
 		// Add the layout to the layouts set
-		layouts[card.Layout] = struct{}{}
+		layouts[string(card.Layout)] = struct{}{}
 	}
 
 	// Now perform the final cleaning to remove subtypes that exist in the gathered types
@@ -272,51 +227,194 @@ func GetMTGFilters(ctx context.Context) (*model.MtgFilterEntries, error) {
 func GetMTGExpansions(ctx context.Context) ([]*model.MtgFilterExpansion, error) {
 	log.Info().Msg("GetMTGExpansions: Started")
 
-	// AQL query to fetch distinct sets and setNames, with optimized memory usage
+	var cards []*model.MtgCard
+	var err error
+
+	// Try to use cached cards from index if available
+	if mtgCardSearch.IsIndexReady() {
+		log.Info().Msg("GetMTGExpansions: Using cached cards from index")
+		cards = mtgCardSearch.GetAllCardsFromIndex()
+	} else {
+		log.Info().Msg("GetMTGExpansions: Index not ready, fetching basic cards from database")
+		// Fetch only the versions data we need, not full cards
+		aq := arango.NewQuery( /* aql */ `
+			FOR card IN MTG_Cards
+				RETURN {
+					versions: card.versions
+				}
+		`)
+
+		cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
+		if err != nil {
+			log.Error().Err(err).Msgf("GetMTGExpansions: Error querying database")
+			return nil, err
+		}
+		defer cursor.Close()
+
+		for cursor.HasMore() {
+			var card model.MtgCard
+			_, err := cursor.ReadDocument(ctx, &card)
+			if err != nil {
+				log.Error().Err(err).Msgf("GetMTGExpansions: Error reading document")
+				return nil, err
+			}
+			cards = append(cards, &card)
+		}
+	}
+
+	// Process expansion data in Go for memory efficiency
+	log.Info().Msg("GetMTGExpansions: Processing expansions in Go")
+	expansionMap := make(map[string]*model.MtgFilterExpansion)
+
+	// First pass: collect unique expansions and aggregate games
+	for _, card := range cards {
+		if card.Versions == nil {
+			continue
+		}
+		for _, version := range card.Versions {
+
+			setCode := strings.ToUpper(version.Set)
+			key := setCode + "|" + version.SetName
+
+			if expansion, exists := expansionMap[key]; exists {
+				// Merge games arrays
+				if version.Games != nil {
+					expansion.Games = mergeGameArrays(expansion.Games, version.Games)
+				}
+			} else {
+				// Create new expansion entry
+				games := []model.MtgGame{}
+				if version.Games != nil {
+					games = append(games, version.Games...)
+				}
+
+				expansionMap[key] = &model.MtgFilterExpansion{
+					Set:     setCode,
+					SetName: version.SetName,
+					Games:   games,
+				}
+			}
+		}
+	}
+
+	// Second pass: fetch set details in batch for memory efficiency
+	log.Info().Int("unique_sets", len(expansionMap)).Msg("GetMTGExpansions: Fetching set details")
+	var setCodes []string
+	for _, expansion := range expansionMap {
+		setCodes = append(setCodes, expansion.Set)
+	}
+
+	// Batch fetch set details
+	setDetailsMap, err := fetchSetDetailsBatch(ctx, setCodes)
+	if err != nil {
+		log.Error().Err(err).Msg("GetMTGExpansions: Error fetching set details")
+		return nil, err
+	}
+
+	// Final pass: merge set details and build result
+	var expansions []*model.MtgFilterExpansion
+	for _, expansion := range expansionMap {
+		if setDetails, exists := setDetailsMap[expansion.Set]; exists {
+			expansion.ReleasedAt = int(*setDetails.ReleasedAt)
+			expansion.ImageURL = *setDetails.ImageURL
+			expansion.SetType = *setDetails.SetType
+		}
+		expansions = append(expansions, expansion)
+	}
+
+	log.Info().Int("expansions_count", len(expansions)).Msg("GetMTGExpansions: Finished")
+	return expansions, nil
+}
+
+// Helper function to merge game arrays and remove duplicates
+func mergeGameArrays(games1, games2 []model.MtgGame) []model.MtgGame {
+	gameSet := make(map[model.MtgGame]struct{})
+
+	// Add all games from first array
+	for _, game := range games1 {
+		gameSet[game] = struct{}{}
+	}
+
+	// Add all games from second array
+	for _, game := range games2 {
+		gameSet[game] = struct{}{}
+	}
+
+	// Convert back to slice
+	var result []model.MtgGame
+	for game := range gameSet {
+		result = append(result, game)
+	}
+
+	return result
+}
+
+// Helper function to batch fetch set details
+func fetchSetDetailsBatch(ctx context.Context, setCodes []string) (map[string]struct {
+	ReleasedAt *int64
+	ImageURL   *string
+	SetType    *string
+}, error) {
+	if len(setCodes) == 0 {
+		return make(map[string]struct {
+			ReleasedAt *int64
+			ImageURL   *string
+			SetType    *string
+		}), nil
+	}
+
+	log.Info().Msgf("Fetching set details for %v sets. %v", len(setCodes), setCodes)
+
 	aq := arango.NewQuery( /* aql */ `
-        FOR card IN @@collection
-            FOR cv IN card.versions
-                COLLECT setCode = cv.set, setNameVal = cv.setName, games = cv.games INTO versionGroup
-                LET setDetails = DOCUMENT(@@setsCollection, setCode)
-                LET uniqueGames = UNIQUE(FLATTEN(
-                    FOR group IN versionGroup
-                        RETURN group.games
-                ))
-                RETURN {
-                    set: UPPER(setCode),
-                    setName: setNameVal,
-                    games: uniqueGames,
-                    releasedAt: DATE_TIMESTAMP(setDetails.releasedAt),
-                    imageURL: setDetails.iconSVGURI,
-                    setType: setDetails.setType
-                }
-    `)
+		FOR setCode IN @setCodes
+			LET setDetails = DOCUMENT("MTG_Sets", LOWER(setCode))
+			FILTER setDetails != null
+			RETURN {
+				setCode: setCode,
+				releasedAt: DATE_TIMESTAMP(setDetails.releasedAt),
+				imageURL: setDetails.iconSVGURI,
+				setType: setDetails.setType
+			}
+	`)
 
-	col := arango.MTG_CARDS_COLLECTION
-
-	aq.AddBindVar("@collection", col)
-	aq.AddBindVar("@setsCollection", arango.MTG_SETS_COLLECTION)
+	aq.AddBindVar("setCodes", setCodes)
 
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {
-		log.Error().Err(err).Msgf("GetMTGExpansions: Error querying database")
 		return nil, err
 	}
 	defer cursor.Close()
 
-	var expansions []*model.MtgFilterExpansion
+	result := make(map[string]struct {
+		ReleasedAt *int64
+		ImageURL   *string
+		SetType    *string
+	})
+
 	for cursor.HasMore() {
-		var expansion model.MtgFilterExpansion
-		_, err := cursor.ReadDocument(ctx, &expansion)
+		var setDetail struct {
+			SetCode    string  `json:"setCode"`
+			ReleasedAt *int64  `json:"releasedAt"`
+			ImageURL   *string `json:"imageURL"`
+			SetType    *string `json:"setType"`
+		}
+		_, err := cursor.ReadDocument(ctx, &setDetail)
 		if err != nil {
-			log.Error().Err(err).Msgf("GetMTGExpansions: Error reading document")
 			return nil, err
 		}
-		expansions = append(expansions, &expansion)
+
+		result[setDetail.SetCode] = struct {
+			ReleasedAt *int64
+			ImageURL   *string
+			SetType    *string
+		}{
+			ReleasedAt: setDetail.ReleasedAt,
+			ImageURL:   setDetail.ImageURL,
+			SetType:    setDetail.SetType,
+		}
 	}
 
-	log.Info().Msg("GetMTGExpansions: Finished")
-	return expansions, nil
+	return result, nil
 }
 
 // GetMTGLegalities fetches all legality formats and statuses, then performs aggregation in Go
@@ -325,7 +423,7 @@ func GetMTGLegalities(ctx context.Context) (*model.MtgFilterLegality, error) {
 
 	// AQL query to fetch legality formats and statuses for all cards
 	aq := arango.NewQuery( /* aql */ `
-        FOR card IN @@collection
+        FOR card IN MTG_Cards
             LET legalities = FIRST(card.versions).legalities
             FOR legalityFormat IN ATTRIBUTES(legalities)
                 LET legalityStatus = legalities[legalityFormat]
@@ -334,10 +432,6 @@ func GetMTGLegalities(ctx context.Context) (*model.MtgFilterLegality, error) {
                     status: legalityStatus
                 }
     `)
-
-	col := arango.MTG_CARDS_COLLECTION
-
-	aq.AddBindVar("@collection", col)
 
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {
@@ -387,218 +481,34 @@ func GetMTGLegalities(ctx context.Context) (*model.MtgFilterLegality, error) {
 	return legality, nil
 }
 
-// GetMTGCardsBasic fetches cards without ratings and tags for fast filtering
-func GetMTGCardsBasic(ctx context.Context) ([]*model.MtgCard, error) {
-	log.Info().Msg("GetMTGCardsBasic: Started")
-
-	// Build the basic query without ratings and tags
-	queryBuildStart := time.Now()
-	aq := arango.NewQuery( /* aql */ `
-		FOR doc IN @@collection
-			FILTER (doc.manaCost == "" AND doc.layout != "meld") OR doc.manaCost != ""
-			RETURN doc
-	`)
-
-	col := arango.MTG_CARDS_COLLECTION
-	aq.AddBindVar("@collection", col)
-	queryBuildDuration := time.Since(queryBuildStart)
-
-	// Execute the query
-	queryExecStart := time.Now()
-	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
-	if err != nil {
-		log.Error().Err(err).Msgf("GetMTGCardsBasic: Error querying database")
-		return nil, err
-	}
-	queryExecDuration := time.Since(queryExecStart)
-
-	// Process results
-	processStart := time.Now()
-	var cards []*model.MtgCard
-	defer cursor.Close()
-	for cursor.HasMore() {
-		var card model.MtgCard
-		_, err := cursor.ReadDocument(ctx, &card)
-		if err != nil {
-			log.Error().Err(err).Msgf("GetMTGCardsBasic: Error reading document")
-			return nil, err
-		}
-		cards = append(cards, &card)
-	}
-	processDuration := time.Since(processStart)
-
-	totalDuration := queryBuildDuration + queryExecDuration + processDuration
-	log.Info().
-		Int("cards_count", len(cards)).
-		Dur("totalDuration", totalDuration).
-		Dur("queryBuildDuration", queryBuildDuration).
-		Dur("queryExecDuration", queryExecDuration).
-		Dur("processDuration", processDuration).
-		Msg("GetMTGCardsBasic: Finished")
-
-	return cards, nil
-}
-
-// GetMTGCardsByIDs fetches specific cards by their IDs with full ratings and tags
-func GetMTGCardsByIDs(ctx context.Context, cardIDs []string) ([]*model.MtgCard, error) {
-	if len(cardIDs) == 0 {
-		return []*model.MtgCard{}, nil
-	}
-
-	log.Info().Int("card_ids", len(cardIDs)).Msg("GetMTGCardsByIDs: Started")
-
-	// Build the query to fetch specific cards with ratings and tags
-	queryBuildStart := time.Now()
-	aq := arango.NewQuery( /* aql */ `
-		FOR doc IN @@collection
-			FILTER doc._key IN @cardIDs
-			LET ratings = (
-				FOR user, rating IN 1..1 INBOUND doc @@userRatingEdge
-				RETURN {
-					user: user,
-					value: rating.value
-				}
-			)
-			LET cardTags = (
-				FOR tag, tagEdge IN 1..1 INBOUND doc @@tagCardEdge
-				FILTER tag.type == "CardTag"
-				LET cardTagRatings = (
-					FOR user, rating IN 1..1 INBOUND tag @@userRatingEdge
-					RETURN {
-						user: user,
-						value: rating.value
-					}
-				)
-				RETURN MERGE(tag, {
-					aggregatedRating: {
-						average: AVERAGE(cardTagRatings[*].value),
-						count: LENGTH(cardTagRatings)
-					},
-					ratings: cardTagRatings,
-					myRating: @userID != "" ? FIRST(
-						FOR rating IN cardTagRatings
-							FILTER rating.user._key == @userID
-							RETURN rating
-					) : {}
-				})
-			)
-			LET deckTags = (
-				FOR tag, tagEdge IN 1..1 INBOUND doc @@tagCardEdge
-				FILTER tag.type == "DeckTag"
-				LET cardTagRatings = (
-					FOR user, rating IN 1..1 INBOUND tag @@userRatingEdge
-					RETURN {
-						user: user,
-						value: rating.value
-					}
-				)
-				RETURN MERGE(tag, {
-					aggregatedRating: {
-						average: AVERAGE(cardTagRatings[*].value),
-						count: LENGTH(cardTagRatings)
-					},
-					ratings: cardTagRatings,
-					myRating: @userID != "" ? FIRST(
-						FOR rating IN cardTagRatings
-							FILTER rating.user._key == @userID
-							RETURN rating
-					) : {}
-				})
-			)
-			RETURN MERGE(doc, {
-				aggregatedRating: {
-					average: AVERAGE(ratings[*].value),
-					count: LENGTH(ratings)
-				},
-				ratings: ratings,
-				myRating: @userID != "" ? FIRST(
-					FOR rating IN ratings
-						FILTER rating.user._key == @userID
-						RETURN rating
-				) : {},
-				cardTags: cardTags,
-				deckTags: deckTags
-			})
-	`)
-
-	col := arango.MTG_CARDS_COLLECTION
-	aq.AddBindVar("@collection", col)
-	aq.AddBindVar("@userRatingEdge", arango.MTG_USER_RATING_EDGE_COLLECTION)
-	aq.AddBindVar("@tagCardEdge", arango.MTG_TAG_EDGE_COLLECTION)
-	aq.AddBindVar("cardIDs", cardIDs)
-
-	// Safely get user ID from context
-	userID, ok := ctx.Value(ctxkeys.UserIDKey).(string)
-	if !ok {
-		userID = util.USER_ID
-	}
-	aq = aq.AddBindVar("userID", userID)
-	queryBuildDuration := time.Since(queryBuildStart)
-
-	// Execute the query
-	queryExecStart := time.Now()
-	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
-	if err != nil {
-		log.Error().Err(err).Msgf("GetMTGCardsByIDs: Error querying database")
-		return nil, err
-	}
-	queryExecDuration := time.Since(queryExecStart)
-
-	// Process results
-	processStart := time.Now()
-	var cards []*model.MtgCard
-	defer cursor.Close()
-	for cursor.HasMore() {
-		var card model.MtgCard
-		_, err := cursor.ReadDocument(ctx, &card)
-		if err != nil {
-			log.Error().Err(err).Msgf("GetMTGCardsByIDs: Error reading document")
-			return nil, err
-		}
-		cards = append(cards, &card)
-	}
-	processDuration := time.Since(processStart)
-
-	totalDuration := queryBuildDuration + queryExecDuration + processDuration
-	log.Info().
-		Int("cards_count", len(cards)).
-		Dur("totalDuration", totalDuration).
-		Dur("queryBuildDuration", queryBuildDuration).
-		Dur("queryExecDuration", queryExecDuration).
-		Dur("processDuration", processDuration).
-		Msg("GetMTGCardsByIDs: Finished")
-
-	return cards, nil
-}
-
 func GetMTGCardsFiltered(ctx context.Context, filter model.MtgFilterSearchInput, pagination model.MtgFilterPaginationInput, sort []*model.MtgFilterSortInput) (*model.MtgFilterSearch, error) {
 	log.Info().Msg("GetMTGCardsFiltered: Started")
 
 	// Step 1: Get basic cards for filtering (without ratings/tags)
 	step1Start := time.Now()
-	var basicCards []*model.MtgCard
+	var cards []*model.MtgCard
 	var err error
 
 	// Try to use cached cards from index if available
 	if mtgCardSearch.IsIndexReady() {
 		log.Info().Msg("GetMTGCardsFiltered: Using cached cards from index")
-		basicCards = mtgCardSearch.GetAllCardsFromIndex()
+		cards = mtgCardSearch.GetAllCardsFromIndex()
 	} else {
 		log.Info().Msg("GetMTGCardsFiltered: Index not ready, fetching basic cards from database")
-		basicCards, err = GetMTGCardsBasic(ctx)
+		cards, err = GetMTGCards(ctx)
 		if err != nil {
 			return nil, err
 		}
 	}
 	step1Duration := time.Since(step1Start)
 	log.Info().
-		Int("basic_cards", len(basicCards)).
+		Int("basic_cards", len(cards)).
 		Dur("duration", step1Duration).
 		Msg("GetMTGCardsFiltered: Basic cards fetched")
 
 	// Step 2: Filter and sort cards using basic data
 	step2Start := time.Now()
-	filteredCards := mtgCardSearch.FilterCards(basicCards, filter, sort)
+	filteredCards := mtgCardSearch.FilterCards(cards, filter, sort)
 	step2Duration := time.Since(step2Start)
 	log.Info().
 		Int("filteredCards", len(filteredCards)).
@@ -614,50 +524,13 @@ func GetMTGCardsFiltered(ctx context.Context, filter model.MtgFilterSearchInput,
 		Dur("duration", step3Duration).
 		Msg("GetMTGCardsFiltered: Cards paginated")
 
-	// Step 4: Fetch full enriched data (with ratings/tags) only for paginated results
-	step4Start := time.Now()
-	var enrichedCards []*model.MtgCard
-	if len(pagedCards) > 0 {
-		// Extract card IDs from paginated results
-		cardIDs := make([]string, len(pagedCards))
-		for i, card := range pagedCards {
-			cardIDs[i] = card.ID
-		}
-
-		// Fetch full enriched data for these specific cards
-		enrichedCards, err = GetMTGCardsByIDs(ctx, cardIDs)
-		if err != nil {
-			return nil, err
-		}
-
-		// Create a map for quick lookup to preserve order
-		enrichedMap := make(map[string]*model.MtgCard)
-		for _, card := range enrichedCards {
-			enrichedMap[card.ID] = card
-		}
-
-		// Rebuild the slice in the correct order
-		enrichedCards = make([]*model.MtgCard, 0, len(pagedCards))
-		for _, pagedCard := range pagedCards {
-			if enrichedCard, exists := enrichedMap[pagedCard.ID]; exists {
-				enrichedCards = append(enrichedCards, enrichedCard)
-			}
-		}
-	}
-	step4Duration := time.Since(step4Start)
-	log.Info().
-		Int("enrichedCards", len(enrichedCards)).
-		Dur("duration", step4Duration).
-		Msg("GetMTGCardsFiltered: Cards enriched")
-
-	totalDuration := step1Duration + step2Duration + step3Duration + step4Duration
+	totalDuration := step1Duration + step2Duration + step3Duration
 	log.Info().
 		Dur("totalDuration", totalDuration).
 		Dur("step1Duration", step1Duration).
 		Dur("step2Duration", step2Duration).
 		Dur("step3Duration", step3Duration).
-		Dur("step4Duration", step4Duration).
 		Msg("GetMTGCardsFiltered: Finished")
 
-	return &model.MtgFilterSearch{PagedCards: enrichedCards, TotalCount: len(filteredCards)}, nil
+	return &model.MtgFilterSearch{PagedCards: pagedCards, TotalCount: len(filteredCards)}, nil
 }

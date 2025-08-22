@@ -1,6 +1,6 @@
 import { useMediaQuery } from '@mui/material'
 import { cloneDeep } from 'lodash'
-import { ReactNode, useCallback, useEffect, useState } from 'react'
+import { ReactNode, useEffect, useMemo, useState } from 'react'
 import getMTGAFilters from '../../../graphql/MTGA/queries/getMTGFilters'
 import {
     MTG_Color,
@@ -30,7 +30,6 @@ const initialSortOrder = [
 export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
     const [filter, setFilter] = useState<MTGFilterType>(initialMTGFilter)
     const [originalFilter, setOriginalFilter] = useState<MTGFilterType>(initialMTGFilter)
-    const [isSelectingCommander, setIsSelectingCommander] = useState(false)
     const isMobile = useMediaQuery('(max-width: 600px)')
 
     const [sort, setSort] = useState(
@@ -42,11 +41,9 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
     )
     const [zoom, setZoom] = useState<'IN' | 'OUT'>('OUT')
 
-    const [page, setPage] = useState(0)
-
-    useEffect(() => {
-        setPage(0)
-    }, [filter, isSelectingCommander, isMobile])
+    // useEffect(() => {
+    //     setPage(0)
+    // }, [filter, isMobile])
 
     useEffect(() => {
         fetchData<Query>(getMTGAFilters).then((data) => {
@@ -55,7 +52,7 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
             const cardTags = data.data.cardTags
             const deckTags = data.data.deckTags
             setFilter((prev) => {
-                prev = cloneDeep(initialMTGFilter)
+                // prev = cloneDeep(initialMTGFilter) IS THIS NEEDED??
                 for (const key of result.types) {
                     prev.cardTypes[key.cardType] = TernaryBoolean.UNSET
                     prev.subtypes[key.cardType] = {}
@@ -88,6 +85,7 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
                 for (const tag of deckTags || []) {
                     prev.tags[tag.name] = TernaryBoolean.UNSET
                 }
+                prev.page = 0
                 setOriginalFilter({ ...prev })
                 return { ...prev }
             })
@@ -127,7 +125,7 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
         setFilter(originalFilter)
     }
 
-    const convertFilters = useCallback((): QuerygetMTGCardsFilteredArgs => {
+    const convertedFilters = useMemo((): QuerygetMTGCardsFilteredArgs => {
         const toReturn = cloneDeep(initialConvertedFilter)
         toReturn.sort = sort
             .filter((s) => s.enabled)
@@ -137,7 +135,7 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
                 enabled: true,
             }))
         toReturn.pagination = {
-            page: page,
+            page: filter.page,
             pageSize: isMobile ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP,
         }
         const cardTypes = Object.entries(filter.cardTypes).filter(([_, value]) => isNotUnsetTB(value))
@@ -157,7 +155,7 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
             game: key as MTG_Game,
             value,
         }))
-        toReturn.filter.hideIgnored = filter.hideIgnored ? TernaryBoolean.TRUE : TernaryBoolean.FALSE
+        toReturn.filter.hideIgnored = filter.hideIgnored
         const layouts = Object.entries(filter.layouts).filter(([_, value]) => isNotUnsetTB(value))
         toReturn.filter.layouts = layouts.map(([key, value]) => ({
             layout: key as MTG_Layout,
@@ -204,8 +202,13 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
                 tag: key,
                 value,
             }))
+
+        toReturn.filter.deckID = filter.deckID
+        toReturn.filter.commander = filter.commander
+        toReturn.filter.isSelectingCommander = filter.isSelectingCommander
+
         return toReturn
-    }, [filter, sort, page, isMobile])
+    }, [filter, sort, isMobile])
 
     return (
         <MTGFilterContext.Provider
@@ -219,11 +222,7 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
                 setSort,
                 zoom,
                 setZoom,
-                page,
-                setPage,
-                isSelectingCommander,
-                setIsSelectingCommander,
-                convertFilters,
+                convertedFilters,
             }}
         >
             {children}

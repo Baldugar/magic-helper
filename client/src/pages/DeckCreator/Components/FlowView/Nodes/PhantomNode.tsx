@@ -1,10 +1,10 @@
 import { NodeProps } from '@xyflow/react'
-import { useMTGDeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
-import { MTG_DeckCard, Position as NodePosition } from '../../../graphql/types'
-import { getCorrectCardImage } from '../../../utils/functions/cardFunctions'
-import { ContextMenu } from '../../../utils/hooks/ContextMenu/ContextMenu'
-import { ContextMenuOption } from '../../../utils/hooks/ContextMenu/types'
-import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
+import { useMTGDeckFlowCreator } from '../../../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
+import { MTG_DeckCard, Position as NodePosition } from '../../../../../graphql/types'
+import { getCorrectCardImage } from '../../../../../utils/functions/cardFunctions'
+import { ContextMenu } from '../../../../../utils/hooks/ContextMenu/ContextMenu'
+import { ContextMenuOption } from '../../../../../utils/hooks/ContextMenu/types'
+import { useContextMenu } from '../../../../../utils/hooks/ContextMenu/useContextMenu'
 
 export type PhantomNodeData = {
     phantomOf: string

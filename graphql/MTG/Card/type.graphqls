@@ -16,8 +16,6 @@ type MTG_Card {
     toughness: String
     typeLine: String!
     versions: [MTG_CardVersion!]!
-    aggregatedRating: AggregatedRating!
-    ratings: [UserRating!]!
     myRating: UserRating
     cardTags: [CardTag!]!
     deckTags: [DeckTag!]!
@@ -70,4 +68,21 @@ type MTG_Image {
     normal: String!
     PNG: String!
     small: String!
+}
+
+type MTG_Card_Dashboard {
+    ID: ID! @goTag(key: "json", value: "_key")
+    versions: [MTG_CardVersion_Dashboard!]!
+}
+
+type MTG_CardVersion_Dashboard {
+    ID: ID!
+    isDefault: Boolean!
+    isAlchemy: Boolean!
+    cardFaces: [MTG_CardFace_Dashboard!]!
+    imageUris: MTG_Image
+}
+
+type MTG_CardFace_Dashboard {
+    imageUris: MTG_Image
 }

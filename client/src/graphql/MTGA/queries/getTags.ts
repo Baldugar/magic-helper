@@ -1,5 +1,5 @@
 import gql from 'graphql-tag'
-import { MTG_CardFragments } from '../fragments'
+import { MTG_TagFragments } from '../fragments'
 
 export const getTagsQuery = gql`
     query tags {
@@ -8,5 +8,5 @@ export const getTagsQuery = gql`
             ...DeckTagFragment
         }
     }
-    ${MTG_CardFragments}
+    ${MTG_TagFragments}
 `

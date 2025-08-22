@@ -6,7 +6,10 @@ import {
     MutationsaveMTGDeckAsCopyArgs,
     MutationupdateMTGDeckArgs,
     Query,
-    QuerygetMTGDecksArgs,
+    QuerygetMTGCardPackagesArgs,
+    QuerygetMTGCardsFilteredArgs,
+    QuerygetMTGDeckArgs,
+    QuerytagArgs,
 } from '../../graphql/types'
 import { getGraphQLServerURI } from './getEnvConfig'
 
@@ -20,7 +23,7 @@ export interface FetchError {
     path: string[]
 }
 type VariablesFor<Result> = Result extends { __typename?: 'Query' }
-    ? QuerygetMTGDecksArgs | undefined
+    ? QuerygetMTGCardPackagesArgs | QuerygetMTGCardsFilteredArgs | QuerygetMTGDeckArgs | QuerytagArgs | undefined
     : Result extends { __typename?: 'Mutation' }
     ?
           | MutationcreateMTGDeckArgs

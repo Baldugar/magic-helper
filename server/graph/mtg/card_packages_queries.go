@@ -4,7 +4,6 @@ import (
 	"context"
 	"magic-helper/arango"
 	"magic-helper/graph/model"
-	"magic-helper/util"
 	"magic-helper/util/ctxkeys"
 
 	"github.com/rs/zerolog/log"
@@ -19,61 +18,43 @@ func GetMTGCardPackages(ctx context.Context, cardPackageID *string) ([]*model.Mt
 		Msg("GetMTGCardPackages: Context debug")
 
 	aq := arango.NewQuery( /* aql */ `
-		FOR doc IN @@collection
+		FOR doc IN MTG_Card_Packages
 			// single: FILTER doc._key == @cardPackageID
 			LET cards = (
-				FOR card, edge IN 1..1 INBOUND doc @@cardPackageEdge
-				LET ratings = (
-					FOR user, rating IN 1..1 INBOUND card @@userRatingEdge
+				FOR card, edge IN 1..1 INBOUND doc MTG_Card_Card_Package
+				LET rating = FIRST( // Remove FIRST when we get multiaccount
+					FOR node, ratingEdge IN 1..1 INBOUND card MTG_User_Rating
 					RETURN {
-						user: user,
-						value: rating.value
+						user: node,
+						value: ratingEdge.value
 					}
 				)
 				LET cardTags = (
-					FOR tag, tagEdge IN 1..1 INBOUND card @@tagCardEdge
+					FOR tag, tagEdge IN 1..1 INBOUND card MTG_Tag_CardDeck
 					FILTER tag.type == "CardTag"
-					LET cardTagRatings = (
-						FOR user, rating IN 1..1 INBOUND tag @@userRatingEdge
+					LET cardTagRating = FIRST( // Remove FIRST when we get multiaccount
+						FOR node, ratingEdge IN 1..1 INBOUND tag MTG_User_Rating
 						RETURN {
-							user: user,
-							value: rating.value
+							user: node,
+							value: ratingEdge.value
 						}
 					)
 					RETURN MERGE(tag, {
-						aggregatedRating: {
-							average: AVERAGE(cardTagRatings[*].value),
-							count: LENGTH(cardTagRatings)
-						},
-						ratings: cardTagRatings,
-						myRating: @userID != "" ? FIRST(
-							FOR rating IN cardTagRatings
-								FILTER rating.user._key == @userID
-								RETURN rating
-						) : {}
+						myRating: cardTagRating
 					})
 				)
 				LET deckTags = (
-					FOR tag, tagEdge IN 1..1 INBOUND card @@tagCardEdge
+					FOR tag, tagEdge IN 1..1 INBOUND card MTG_Tag_CardDeck
 					FILTER tag.type == "DeckTag"
-					LET cardTagRatings = (
-						FOR user, rating IN 1..1 INBOUND tag @@userRatingEdge
+					LET cardTagRating = FIRST( // Remove FIRST when we get multiaccount
+						FOR node, ratingEdge IN 1..1 INBOUND tag MTG_User_Rating
 						RETURN {
-							user: user,
-							value: rating.value
+							user: node,
+							value: ratingEdge.value
 						}
 					)
 					RETURN MERGE(tag, {
-						aggregatedRating: {
-							average: AVERAGE(cardTagRatings[*].value),
-							count: LENGTH(cardTagRatings)
-						},
-						ratings: cardTagRatings,
-						myRating: @userID != "" ? FIRST(
-							FOR rating IN cardTagRatings
-								FILTER rating.user._key == @userID
-								RETURN rating
-						) : {}
+						myRating: cardTagRating
 					})
 				)
 				RETURN MERGE(edge, {
@@ -81,16 +62,7 @@ func GetMTGCardPackages(ctx context.Context, cardPackageID *string) ([]*model.Mt
 					count: edge.count,
 					mainOrSide: edge.mainOrSide,
 					selectedVersionID: edge.selectedVersionID,
-					aggregatedRating: {
-						average: AVERAGE(ratings[*].value),
-						count: LENGTH(ratings)
-					},
-					ratings: ratings,
-					myRating: @userID != "" ? FIRST(
-						FOR rating IN ratings
-							FILTER rating.user._key == @userID
-							RETURN rating
-					) : {},
+					myRating: rating,
 					cardTags: cardTags,
 					deckTags: deckTags,
 				})
@@ -98,31 +70,6 @@ func GetMTGCardPackages(ctx context.Context, cardPackageID *string) ([]*model.Mt
 
 		RETURN MERGE(doc, {cards})
 	`)
-
-	col := arango.MTG_CARD_PACKAGES_COLLECTION
-
-	aq.AddBindVar("@collection", col)
-	aq.AddBindVar("@cardPackageEdge", arango.MTG_CARD_CARD_PACKAGE_EDGE)
-	aq.AddBindVar("@userRatingEdge", arango.MTG_USER_RATING_EDGE_COLLECTION)
-	aq.AddBindVar("@tagCardEdge", arango.MTG_TAG_EDGE_COLLECTION)
-
-	// Safely get user ID from context with logging
-	userID, ok := ctx.Value(ctxkeys.UserIDKey).(string)
-	if !ok {
-		log.Warn().
-			Interface("user_id_value", ctx.Value(ctxkeys.UserIDKey)).
-			Bool("type_assertion_ok", ok).
-			Msg("GetMTGCardPackages: Failed to get user ID from context")
-		// Use the default user ID if not present
-		userID = util.USER_ID
-	}
-	log.Debug().
-		Str("user_id", userID).
-		Interface("bind_vars", aq.BindVars).
-		Msg("GetMTGCardPackages: Setting user ID bind variable")
-
-	// Set the user ID bind variable
-	aq = aq.AddBindVar("userID", userID)
 
 	if cardPackageID != nil {
 		aq = aq.AddBindVar("cardPackageID", *cardPackageID)

@@ -114,11 +114,10 @@ func fetchSets() bool {
 			UPSERT { _key: c.code }
 			INSERT MERGE({ _key: c.code }, c)
 			UPDATE c
-			IN @@collection
+			IN MTG_Original_Sets
 	`)
 
 	aq.AddBindVar("sets", sets)
-	aq.AddBindVar("@collection", arango.MTG_ORIGINAL_SETS_COLLECTION)
 
 	_, err = arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {
@@ -243,12 +242,11 @@ func doDownloadAndSave(ctx context.Context, set scryfall.Set, newETag string) er
 // updateSetETagInDB runs an AQL query to store the new ETag in your "MTGA_ORIGINAL_SETS_COLLECTION".
 func updateSetETagInDB(ctx context.Context, code, newETag string) error {
 	aq := arango.NewQuery( /* aql */ `
-		FOR s IN @@collection
+		FOR s IN MTG_Original_Sets
 			FILTER s._key == @key
-			UPDATE s WITH { eTag: @etag } IN @@collection
+			UPDATE s WITH { eTag: @etag } IN MTG_Original_Sets
 	`)
 
-	aq.AddBindVar("@collection", arango.MTG_ORIGINAL_SETS_COLLECTION)
 	aq.AddBindVar("key", code)
 	aq.AddBindVar("etag", newETag)
 
@@ -266,11 +264,9 @@ func updateDatabaseSets() {
 	ctx := context.Background()
 
 	aq := arango.NewQuery( /* aql */ `
-		FOR s IN @@collection
+		FOR s IN MTG_Original_Sets
 			RETURN s
 	`)
-
-	aq.AddBindVar("@collection", arango.MTG_ORIGINAL_SETS_COLLECTION)
 
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {
@@ -325,11 +321,10 @@ func updateDatabaseSets() {
 			UPSERT { _key: s._key }
 			INSERT MERGE({ _key: s._key }, s)
 			UPDATE s
-			IN @@collection
+			IN MTG_Sets
 	`)
 
 	aq.AddBindVar("sets", dbSets)
-	aq.AddBindVar("@collection", arango.MTG_SETS_COLLECTION)
 
 	_, err = arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {

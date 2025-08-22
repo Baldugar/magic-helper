@@ -4,168 +4,129 @@ import (
 	"context"
 	"magic-helper/arango"
 	"magic-helper/graph/model"
-	"magic-helper/util"
-	"magic-helper/util/ctxkeys"
 
 	"github.com/rs/zerolog/log"
 )
 
-func GetMTGDecks(ctx context.Context, deckID *string) ([]*model.MtgDeck, error) {
+// Dashboard
+func GetMTGDecks(ctx context.Context) ([]*model.MtgDeckDashboard, error) {
 	log.Info().Msg("GetMTGADecks: Started")
 
-	// Debug logging for context
-	log.Debug().
-		Interface("context_keys", ctx.Value(ctxkeys.UserIDKey)).
-		Msg("GetMTGDecks: Context debug")
-
 	aq := arango.NewQuery( /* aql */ `
-		FOR doc IN @@collection
-			// deckID: FILTER doc._key == @deckID
+		FOR doc IN MTG_Decks
 			LET cardFrontImage = FIRST(
-				FOR card, edge IN 1..1 OUTBOUND doc @@edge
-					LET version = (
+				FOR card, edge IN 1..1 OUTBOUND doc MTG_Deck_Front_Card_Image
+					LET imageVersion = FIRST(
 						FOR v IN card.versions
 							FILTER v.ID == edge.versionID
 							RETURN v
 					)
-					LET ratings = (
-						FOR user, rating IN 1..1 INBOUND card @@userRatingEdge
-						RETURN {
-							user: user,
-							value: rating.value
-						}
-					)
-					LET cardTags = (
-						FOR tag, tagEdge IN 1..1 INBOUND card @@tagCardEdge
-						FILTER tag.type == "CardTag"
-						LET cardTagRatings = (
-							FOR user, rating IN 1..1 INBOUND tag @@userRatingEdge
-							RETURN {
-								user: user,
-								value: rating.value
-							}
-						)
-						RETURN MERGE(tag, {
-							aggregatedRating: {
-								average: AVERAGE(cardTagRatings[*].value),
-								count: LENGTH(cardTagRatings)
-							},
-							ratings: cardTagRatings,
-							myRating: @userID != "" ? FIRST(
-								FOR rating IN cardTagRatings
-									FILTER rating.user._key == @userID
-									RETURN rating
-							) : {}
-						})
-					)
-					LET deckTags = (
-						FOR tag, tagEdge IN 1..1 INBOUND card @@tagCardEdge
-						FILTER tag.type == "DeckTag"
-						LET cardTagRatings = (
-							FOR user, rating IN 1..1 INBOUND tag @@userRatingEdge
-							RETURN {
-								user: user,
-								value: rating.value
-							}
-						)
-						RETURN MERGE(tag, {
-							aggregatedRating: {
-								average: AVERAGE(cardTagRatings[*].value),
-								count: LENGTH(cardTagRatings)
-							},
-							ratings: cardTagRatings,
-							myRating: @userID != "" ? FIRST(
-								FOR rating IN cardTagRatings
-									FILTER rating.user._key == @userID
-									RETURN rating
-							) : {}
-						})
-					)
-					FILTER LENGTH(version) > 0
-					RETURN MERGE(card, {
-						versions: version,
-						aggregatedRating: {
-							average: AVERAGE(ratings[*].value),
-							count: LENGTH(ratings)
-						},
-						ratings: ratings,
-						myRating: @userID != "" ? FIRST(
-							FOR rating IN ratings
-								FILTER rating.user._key == @userID
-								RETURN rating
-						) : {},
-						cardTags: cardTags,
-						deckTags: deckTags
-					})
+					FILTER imageVersion != null
+					RETURN {
+						image: imageVersion.cardFaces != null && LENGTH(imageVersion.cardFaces) > 0 && imageVersion.cardFaces[0].imageUris != null 
+						? imageVersion.cardFaces[0].imageUris.artCrop 
+						: imageVersion.imageUris.artCrop,
+						cardID: card.ID,
+						versionID: imageVersion.ID
+					}
 			)
 			LET cards = (
-				FOR card, edge IN 1..1 INBOUND doc @@edge2
-				LET ratings = (
-					FOR user, rating IN 1..1 INBOUND card @@userRatingEdge
+				FOR card, edge IN 1..1 INBOUND doc MTG_Card_Deck
+				FILTER card != null
+				SORT edge.position.x ASC, edge.position.y ASC
+				RETURN MERGE(edge, {card})
+			)
+		RETURN MERGE(doc, {cardFrontImage, cards})
+	`)
+
+	log.Info().Str("query", aq.Query).Msg("GetMTGADecks: Querying database")
+
+	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
+	if err != nil {
+		log.Error().Err(err).Msgf("GetMTGADecks: Error querying database")
+		return nil, err
+	}
+
+	var decks []*model.MtgDeckDashboard
+	defer cursor.Close()
+	for cursor.HasMore() {
+		var deck model.MtgDeckDashboard
+		_, err := cursor.ReadDocument(ctx, &deck)
+		if err != nil {
+			log.Error().Err(err).Msgf("GetMTGADecks: Error reading document")
+			return nil, err
+		}
+
+		decks = append(decks, &deck)
+	}
+
+	log.Info().Msg("GetMTGADecks: Finished")
+	return decks, nil
+}
+
+func GetMTGDeck(ctx context.Context, deckID string) (*model.MtgDeck, error) {
+	log.Info().Msg("GetMTGDeck: Started")
+
+	aq := arango.NewQuery( /* aql */ `
+		FOR doc IN MTG_Decks
+			FILTER doc._key == @deckID			
+			LET cardFrontImage = FIRST(
+				FOR card, edge IN 1..1 OUTBOUND doc MTG_Deck_Front_Card_Image
+					LET imageVersion = FIRST(
+						FOR v IN card.versions
+							FILTER v.ID == edge.versionID
+							RETURN v
+					)
+					FILTER imageVersion != null
 					RETURN {
-						user: user,
-						value: rating.value
+						image: imageVersion.cardFaces != null && LENGTH(imageVersion.cardFaces) > 0 && imageVersion.cardFaces[0].imageUris != null 
+						? imageVersion.cardFaces[0].imageUris.artCrop 
+						: imageVersion.imageUris.artCrop,
+						cardID: card.ID,
+						versionID: imageVersion.ID
+					}
+			)
+			LET cards = (
+				FOR card, edge IN 1..1 INBOUND doc MTG_Card_Deck
+				LET rating = FIRST( // Remove FIRST when we get multiaccount
+					FOR node, ratingEdge IN 1..1 INBOUND card MTG_User_Rating
+					RETURN {
+						user: node,
+						value: ratingEdge.value
 					}
 				)
 				LET cardTags = (
-					FOR tag, tagEdge IN 1..1 INBOUND card @@tagCardEdge
+					FOR tag, tagEdge IN 1..1 INBOUND card MTG_Tag_CardDeck
 					FILTER tag.type == "CardTag"
-					LET cardTagRatings = (
-						FOR user, rating IN 1..1 INBOUND tag @@userRatingEdge
+					LET cardTagRating = FIRST( // Remove FIRST when we get multiaccount
+						FOR node, ratingEdge IN 1..1 INBOUND tag MTG_User_Rating
 						RETURN {
-							user: user,
-							value: rating.value
+							user: node,
+							value: ratingEdge.value
 						}
 					)
 					RETURN MERGE(tag, {
-						aggregatedRating: {
-							average: AVERAGE(cardTagRatings[*].value),
-							count: LENGTH(cardTagRatings)
-						},
-						ratings: cardTagRatings,
-						myRating: @userID != "" ? FIRST(
-							FOR rating IN cardTagRatings
-								FILTER rating.user._key == @userID
-								RETURN rating
-						) : {}
+						myRating: cardTagRating
 					})
 				)
 				LET deckTags = (
-					FOR tag, tagEdge IN 1..1 INBOUND card @@tagCardEdge
+					FOR tag, tagEdge IN 1..1 INBOUND card MTG_Tag_CardDeck
 					FILTER tag.type == "DeckTag"
-					LET cardTagRatings = (
-						FOR user, rating IN 1..1 INBOUND tag @@userRatingEdge
+					LET cardTagRating = FIRST( // Remove FIRST when we get multiaccount
+						FOR node, ratingEdge IN 1..1 INBOUND tag MTG_User_Rating
 						RETURN {
-							user: user,
-							value: rating.value
+							user: node,
+							value: ratingEdge.value
 						}
 					)
 					RETURN MERGE(tag, {
-						aggregatedRating: {
-							average: AVERAGE(cardTagRatings[*].value),
-							count: LENGTH(cardTagRatings)
-						},
-						ratings: cardTagRatings,
-						myRating: @userID != "" ? FIRST(
-							FOR rating IN cardTagRatings
-								FILTER rating.user._key == @userID
-								RETURN rating
-						) : {}
+						myRating: cardTagRating
 					})
 				)
 				SORT edge.position.x ASC, edge.position.y ASC
 				RETURN MERGE(edge, {					
 					card: MERGE(card, {
-						aggregatedRating: {
-							average: AVERAGE(ratings[*].value),
-							count: LENGTH(ratings)
-						},
-						ratings: ratings,
-						myRating: @userID != "" ? FIRST(
-							FOR rating IN ratings
-								FILTER rating.user._key == @userID
-								RETURN rating
-						) : {},
+						myRating: rating,
 						cardTags: cardTags,
 						deckTags: deckTags
 					}),
@@ -176,59 +137,86 @@ func GetMTGDecks(ctx context.Context, deckID *string) ([]*model.MtgDeck, error) 
 					phantoms: edge.phantoms
 				})
 			)
-		RETURN MERGE(doc, {cardFrontImage, cards})
+			LET ignoredCards = (
+				FOR card, edge IN 1..1 INBOUND doc MTG_Deck_Ignore_Card
+				RETURN card.ID
+			)
+		RETURN MERGE(doc, {cardFrontImage, cards, ignoredCards})
 	`)
 
-	col := arango.MTG_DECKS_COLLECTION
+	aq.AddBindVar("deckID", deckID)
 
-	aq.AddBindVar("@collection", col)
-	aq.AddBindVar("@edge", arango.MTG_DECK_FRONT_CARD_IMAGE_EDGE)
-	aq.AddBindVar("@edge2", arango.MTG_CARD_DECK_EDGE)
-	aq.AddBindVar("@userRatingEdge", arango.MTG_USER_RATING_EDGE_COLLECTION)
-	aq.AddBindVar("@tagCardEdge", arango.MTG_TAG_EDGE_COLLECTION)
-
-	// Safely get user ID from context with logging
-	userID, ok := ctx.Value(ctxkeys.UserIDKey).(string)
-	if !ok {
-		log.Warn().
-			Interface("user_id_value", ctx.Value(ctxkeys.UserIDKey)).
-			Bool("type_assertion_ok", ok).
-			Msg("GetMTGDecks: Failed to get user ID from context")
-		// Use the default user ID if not present
-		userID = util.USER_ID
-	}
-	log.Debug().
-		Str("user_id", userID).
-		Interface("bind_vars", aq.BindVars).
-		Msg("GetMTGDecks: Setting user ID bind variable")
-
-	// Set the user ID bind variable
-	aq = aq.AddBindVar("userID", userID)
-
-	if deckID != nil {
-		aq = aq.Uncomment("deckID").AddBindVar("deckID", *deckID)
-	}
-
-	log.Info().Str("query", aq.Query).Msg("GetMTGADecks: Querying database")
+	log.Info().Str("query", aq.Query).Msg("GetMTGDeck: Querying database")
 
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {
-		log.Error().Err(err).Msgf("GetMTGADecks: Error querying database")
+		log.Error().Err(err).Msgf("GetMTGDeck: Error querying database")
 		return nil, err
 	}
 
-	var decks []*model.MtgDeck
-	defer cursor.Close()
-	for cursor.HasMore() {
-		var deck model.MtgDeck
-		_, err := cursor.ReadDocument(ctx, &deck)
-		if err != nil {
-			log.Error().Err(err).Msgf("GetMTGADecks: Error reading document")
-			return nil, err
-		}
-		decks = append(decks, &deck)
+	var deck model.MtgDeck
+	_, err = cursor.ReadDocument(ctx, &deck)
+	if err != nil {
+		log.Error().Err(err).Msgf("GetMTGDeck: Error reading document")
+		return nil, err
 	}
 
-	log.Info().Msg("GetMTGADecks: Finished")
-	return decks, nil
+	log.Info().Msg("GetMTGDeck: Finished")
+	return &deck, nil
+}
+
+func AddIgnoredCard(ctx context.Context, input model.AddIgnoredCardInput) (*model.Response, error) {
+	log.Info().Msg("AddIgnoredCard: Started")
+
+	aq := arango.NewQuery( /* aql */ `
+		INSERT {
+			cardID: @cardID,
+			deckID: @deckID
+		} INTO MTG_Deck_Ignore_Card
+		RETURN NEW
+	`)
+
+	aq.AddBindVar("cardID", input.CardID)
+	aq.AddBindVar("deckID", input.DeckID)
+
+	log.Info().Str("query", aq.Query).Msg("AddIgnoredCard: Querying database")
+
+	_, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
+	if err != nil {
+		log.Error().Err(err).Msgf("AddIgnoredCard: Error querying database")
+		return nil, err
+	}
+
+	log.Info().Msg("AddIgnoredCard: Finished")
+	return &model.Response{
+		Status:  true,
+		Message: nil,
+	}, nil
+}
+
+func RemoveIgnoredCard(ctx context.Context, input model.RemoveIgnoredCardInput) (*model.Response, error) {
+	log.Info().Msg("RemoveIgnoredCard: Started")
+
+	aq := arango.NewQuery( /* aql */ `
+		FOR card, edge IN 1..1 INBOUND doc MTG_Deck_Ignore_Card
+		FILTER card.ID == @cardID
+		REMOVE edge IN MTG_Deck_Ignore_Card
+	`)
+
+	aq.AddBindVar("cardID", input.CardID)
+	aq.AddBindVar("deckID", input.DeckID)
+
+	log.Info().Str("query", aq.Query).Msg("RemoveIgnoredCard: Querying database")
+
+	_, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
+	if err != nil {
+		log.Error().Err(err).Msgf("RemoveIgnoredCard: Error querying database")
+		return nil, err
+	}
+
+	log.Info().Msg("RemoveIgnoredCard: Finished")
+	return &model.Response{
+		Status:  true,
+		Message: nil,
+	}, nil
 }

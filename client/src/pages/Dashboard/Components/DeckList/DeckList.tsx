@@ -1,12 +1,11 @@
 import { Box, Button, Grid, Paper, Popover, Stack, TextField, Typography } from '@mui/material'
 import { useContext, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import RotatingHDeckBox from '../../components/HDeckBox'
-import { MTGDecksContext } from '../../context/MTGA/Decks/MTGDecksContext'
-import { MTGFunctions } from '../../graphql/MTGA/functions'
+import RotatingHDeckBox from '../../../../components/HDeckBox'
+import { MTGDecksContext } from '../../../../context/MTGA/Decks/MTGDecksContext'
 
 export const DeckList = () => {
-    const { decks, setDecks } = useContext(MTGDecksContext)
+    const { decks, createDeck, deleteDeck } = useContext(MTGDecksContext)
 
     const navigate = useNavigate()
 
@@ -23,9 +22,6 @@ export const DeckList = () => {
     }
 
     const open = Boolean(anchorEl)
-    const {
-        mutations: { createMTGDeck, deleteMTGDeck },
-    } = MTGFunctions
 
     return (
         <Stack padding={4} gap={2}>
@@ -60,14 +56,10 @@ export const DeckList = () => {
                                 variant={'contained'}
                                 color={'primary'}
                                 disabled={name.length === 0}
-                                onClick={() =>
-                                    createMTGDeck({
-                                        name,
-                                    }).then((deck) => {
-                                        setDecks([...decks, deck])
-                                        handleClose()
-                                    })
-                                }
+                                onClick={() => {
+                                    createDeck(name)
+                                    handleClose()
+                                }}
                             >
                                 Create
                             </Button>
@@ -85,7 +77,7 @@ export const DeckList = () => {
                             onDelete={() => {
                                 const confirmed = window.confirm('Are you sure you want to delete this deck?')
                                 if (confirmed) {
-                                    deleteMTGDeck(deck.ID).then(() => setDecks(decks.filter((d) => d.ID !== deck.ID)))
+                                    deleteDeck(deck.ID)
                                 }
                             }}
                         />

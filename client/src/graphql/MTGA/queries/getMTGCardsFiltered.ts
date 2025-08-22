@@ -1,5 +1,5 @@
 import gql from 'graphql-tag'
-import { MTG_CardFragments, MTG_TagFragments } from '../fragments'
+import { MTG_CardFragments } from '../fragments'
 
 export default gql`
     query getMTGCardsFiltered(
@@ -15,5 +15,4 @@ export default gql`
         }
     }
     ${MTG_CardFragments}
-    ${MTG_TagFragments}
 `

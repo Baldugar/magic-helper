@@ -1,12 +1,36 @@
 import gql from 'graphql-tag'
-import { MTG_DeckFragments, MTG_TagFragments } from '../fragments'
+import { MTG_ImageFragments } from '../fragments'
 
 export default gql`
-    query getMTGDecks($deckID: ID) {
-        getMTGDecks(deckID: $deckID) {
-            ...MTG_DeckFragment
+    query getMTGDecks {
+        getMTGDecks {
+            ID
+            name
+            cardFrontImage {
+                cardID
+                versionID
+                image
+            }
+            cards {
+                selectedVersionID
+                card {
+                    ID
+                    versions {
+                        ID
+                        cardFaces {
+                            imageUris {
+                                ...MTG_ImageFragment
+                            }
+                        }
+                        imageUris {
+                            ...MTG_ImageFragment
+                        }
+                        isDefault
+                        isAlchemy
+                    }
+                }
+            }
         }
     }
-    ${MTG_DeckFragments}
-    ${MTG_TagFragments}
+    ${MTG_ImageFragments}
 `

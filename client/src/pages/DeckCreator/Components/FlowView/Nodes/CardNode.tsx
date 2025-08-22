@@ -1,13 +1,13 @@
 import { Node, NodeProps, useReactFlow } from '@xyflow/react'
-import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
-import { useMTGDeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
-import { MTG_DeckCard, Position } from '../../../graphql/types'
-import { getCorrectCardImage } from '../../../utils/functions/cardFunctions'
-import { uuidv4 } from '../../../utils/functions/IDFunctions'
-import { NodeType } from '../../../utils/functions/nodeFunctions'
-import { ContextMenu } from '../../../utils/hooks/ContextMenu/ContextMenu'
-import { ContextMenuOption } from '../../../utils/hooks/ContextMenu/types'
-import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
+import { useMTGDeckCreator } from '../../../../../context/MTGA/DeckCreator/useMTGDeckCreator'
+import { useMTGDeckFlowCreator } from '../../../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
+import { MTG_DeckCard, Position } from '../../../../../graphql/types'
+import { getCorrectCardImage } from '../../../../../utils/functions/cardFunctions'
+import { uuidv4 } from '../../../../../utils/functions/IDFunctions'
+import { NodeType } from '../../../../../utils/functions/nodeFunctions'
+import { ContextMenu } from '../../../../../utils/hooks/ContextMenu/ContextMenu'
+import { ContextMenuOption } from '../../../../../utils/hooks/ContextMenu/types'
+import { useContextMenu } from '../../../../../utils/hooks/ContextMenu/useContextMenu'
 import { GroupNodeData } from './GroupNode'
 import { PhantomNodeData } from './PhantomNode'
 
@@ -75,7 +75,7 @@ export const CardNode = (props: CardNodeProps) => {
             action: () => {
                 const nodes = getNodes()
                 const zone = nodes.find(
-                    (n) => n.type === 'groupNode' && (n.data as GroupNodeData)?.childrenIDs?.includes(card.card.ID),
+                    (n) => n.type === 'groupNode' && (n.data as GroupNodeData)?.cardChildren?.includes(card.card.ID),
                 )
                 const newPosition: Position = {
                     x: (zone?.position.x ?? 0) + card.position.x + 100,

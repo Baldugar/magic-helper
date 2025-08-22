@@ -12,16 +12,14 @@ import { DeckCreatorView } from '../../../types/deckCreatorView'
 import { singleSetSelected } from '../../../utils/functions/filterFunctions'
 import { uuidv4 } from '../../../utils/functions/IDFunctions'
 import { findNextAvailablePosition } from '../../../utils/functions/nodeFunctions'
-import { useMTGDecks } from '../Decks/useMTGDecks'
 import { useMTGFilter } from '../Filter/useMTGFilter'
 import { MTGDeckCreatorContext } from './MTGDeckCreatorContext'
 
-export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNode; deckID: string | undefined }) => {
-    const { decks } = useMTGDecks()
-    const { filter, isSelectingCommander, setIsSelectingCommander } = useMTGFilter()
+export const MTGDeckCreatorProvider = ({ children, initialDeck }: { children: ReactNode; initialDeck: MTG_Deck }) => {
+    const { filter, setFilter } = useMTGFilter()
     const set = singleSetSelected(filter)
 
-    const [deck, setDeck] = useState<MTG_Deck>()
+    const [deck, setDeck] = useState<MTG_Deck>(initialDeck)
     const [openDrawer, setOpenDrawer] = useState(false)
     const [viewMode, setViewMode] = useState<DeckCreatorView>('CATALOGUE')
     const [deckTab, setDeckTab] = useState<MainOrSide>(MainOrSide.MAIN)
@@ -34,62 +32,72 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
     const [openedCardDialog, setOpenedCardDialog] = useState<string | null>(null)
 
     useEffect(() => {
-        if (deckID) {
-            const foundDeck = decks.find((d) => d.ID === deckID)
-            if (foundDeck) {
-                setDeck(foundDeck)
-            }
+        if (filter.deckID !== deck.ID) {
+            setFilter((prev) => ({
+                ...prev,
+                deckID: deck.ID,
+            }))
         }
-    }, [deckID, decks])
+        const commander = deck.cards.find((c) => c.deckCardType === MTG_DeckCardType.COMMANDER)
+        if (commander && filter.commander !== commander.card.ID) {
+            setFilter((prev) => ({
+                ...prev,
+                commander: commander.card.ID,
+            }))
+        } else if (!commander && filter.commander) {
+            setFilter((prev) => ({
+                ...prev,
+                commander: null,
+            }))
+        }
+    }, [deck, setFilter, filter])
 
     // Add a card to the deck via dragging from the catalogue onto the board
-    const onAddCard = (
-        card: MTG_Card,
-        position?: Position,
-        whatDeck?: MTG_Deck,
-        selectedVersionID?: string | null,
-    ): MTG_Deck | undefined => {
-        const newDeck = structuredClone(whatDeck ?? deck)
-        if (newDeck) {
-            if (isSelectingCommander) {
-                // Remove the previous commander
-                newDeck.cards = newDeck.cards.filter((c) => c.deckCardType !== MTG_DeckCardType.COMMANDER)
-                // Add the new commander
+    const onAddCard = (card: MTG_Card, position?: Position, selectedVersionID?: string | null): MTG_Deck => {
+        const newDeck = structuredClone(deck)
+        if (filter.isSelectingCommander) {
+            // Remove the previous commander
+            newDeck.cards = newDeck.cards.filter((c) => c.deckCardType !== MTG_DeckCardType.COMMANDER)
+            // Add the new commander
+            const setVersion = card.versions.find((v) => v.ID === selectedVersionID || v.set === set)
+            const cardToReturn: MTG_DeckCard = {
+                card,
+                count: 1,
+                deckCardType: MTG_DeckCardType.COMMANDER,
+                mainOrSide: MainOrSide.MAIN,
+                position: position || { x: 0, y: 0 },
+                phantoms: [],
+                selectedVersionID: setVersion?.ID,
+            }
+            newDeck.cards.push(cardToReturn)
+            setFilter((prevFilter) => ({
+                ...prevFilter,
+                page: 0,
+                commander: card.ID,
+                isSelectingCommander: false,
+            }))
+        } else {
+            const ID = card.ID
+            const index = newDeck.cards.findIndex((c) => c.card.ID === ID && c.mainOrSide === deckTab)
+            const nextAvailableSpot = findNextAvailablePosition(newDeck.cards)
+            // If the card is already in the deck, add a phantom
+            if (index !== -1) {
+                newDeck.cards[index].phantoms.push({ ID: uuidv4(), position: position || nextAvailableSpot })
+            } else {
                 const setVersion = card.versions.find((v) => v.ID === selectedVersionID || v.set === set)
                 const cardToReturn: MTG_DeckCard = {
                     card,
                     count: 1,
-                    deckCardType: MTG_DeckCardType.COMMANDER,
-                    mainOrSide: MainOrSide.MAIN,
-                    position: position || { x: 0, y: 0 },
+                    deckCardType: MTG_DeckCardType.NORMAL,
+                    mainOrSide: deckTab,
+                    position: position || nextAvailableSpot,
                     phantoms: [],
                     selectedVersionID: setVersion?.ID,
                 }
                 newDeck.cards.push(cardToReturn)
-                setIsSelectingCommander(false)
-            } else {
-                const ID = card.ID
-                const index = newDeck.cards.findIndex((c) => c.card.ID === ID && c.mainOrSide === deckTab)
-                const nextAvailableSpot = findNextAvailablePosition(newDeck.cards)
-                // If the card is already in the deck, add a phantom
-                if (index !== -1) {
-                    newDeck.cards[index].phantoms.push({ ID: uuidv4(), position: position || nextAvailableSpot })
-                } else {
-                    const setVersion = card.versions.find((v) => v.ID === selectedVersionID || v.set === set)
-                    const cardToReturn: MTG_DeckCard = {
-                        card,
-                        count: 1,
-                        deckCardType: MTG_DeckCardType.NORMAL,
-                        mainOrSide: deckTab,
-                        position: position || nextAvailableSpot,
-                        phantoms: [],
-                        selectedVersionID: setVersion?.ID,
-                    }
-                    newDeck.cards.push(cardToReturn)
-                }
             }
-            if (!whatDeck) setDeck(newDeck)
         }
+        setDeck(newDeck)
         return newDeck
     }
 
@@ -139,6 +147,11 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
                 }
                 if (deckCard.deckCardType === MTG_DeckCardType.COMMANDER) {
                     newDeck.cards = newDeck.cards.filter((c) => c.deckCardType !== MTG_DeckCardType.COMMANDER)
+                    setFilter((prevFilter) => ({
+                        ...prevFilter,
+                        page: 0,
+                        commander: null,
+                    }))
                 }
                 break
             case MainOrSide.SIDEBOARD:
@@ -168,6 +181,11 @@ export const MTGDeckCreatorProvider = ({ children, deckID }: { children: ReactNo
             case MainOrSide.MAIN:
                 if (isCommander) {
                     newDeck.cards = newDeck.cards.filter((c) => c.deckCardType !== MTG_DeckCardType.COMMANDER)
+                    setFilter((prevFilter) => ({
+                        ...prevFilter,
+                        page: 0,
+                        commander: null,
+                    }))
                 }
                 newDeck.cards = newDeck.cards.filter(
                     (c) => !(c.card.ID === card.ID && c.mainOrSide === MainOrSide.MAIN),

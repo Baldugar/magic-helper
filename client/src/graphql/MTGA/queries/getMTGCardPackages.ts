@@ -1,5 +1,5 @@
 import gql from 'graphql-tag'
-import { MTG_CardPackageFragments, MTG_TagFragments } from '../fragments'
+import { MTG_CardPackageFragments } from '../fragments'
 
 export default gql`
     query getMTGCardPackages($cardPackageID: ID) {
@@ -8,5 +8,4 @@ export default gql`
         }
     }
     ${MTG_CardPackageFragments}
-    ${MTG_TagFragments}
 `

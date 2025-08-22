@@ -1,8 +1,19 @@
-import { MTG_Card, MTG_CardVersion, MTG_Deck, MTG_DeckCard, MTG_Image } from '../../graphql/types'
+import {
+    MTG_Card,
+    MTG_CardVersion,
+    MTG_CardVersion_Dashboard,
+    MTG_Deck,
+    MTG_DeckCard,
+    MTG_Image,
+} from '../../graphql/types'
 
-export const getCorrectCardImage = (card: MTG_CardVersion, size: keyof MTG_Image, other?: boolean) => {
+export const getCorrectCardImage = (
+    card: MTG_CardVersion | MTG_CardVersion_Dashboard,
+    size: keyof MTG_Image,
+    other?: boolean,
+) => {
     const cardFaces = card.cardFaces
-    if (!cardFaces) {
+    if (!cardFaces || cardFaces.length === 0) {
         return other ? undefined : card.imageUris![size]
     }
     if (other && cardFaces.length > 1) {

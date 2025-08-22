@@ -5,11 +5,10 @@ import { calculateCardsFromNodes, calculateZonesFromNodes } from './nodeFunction
 
 export const calculateNewDeck = (
     cards: MTG_Card[],
-    deck: MTG_Deck | undefined,
+    deck: MTG_Deck,
     getNodes: () => Node[],
-    setDeck: (value: SetStateAction<MTG_Deck | undefined>) => void,
+    setDeck: (value: SetStateAction<MTG_Deck>) => void,
 ) => {
-    if (!deck) return
     const nodes = getNodes()
     const newCards = calculateCardsFromNodes(nodes, deck.cards).map((c) => {
         const card: MTG_DeckCard = {

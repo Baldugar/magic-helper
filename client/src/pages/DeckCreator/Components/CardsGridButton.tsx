@@ -9,17 +9,15 @@ import { useDnD } from '../../../context/DnD/useDnD'
 import { useMTGCardPackages } from '../../../context/MTGA/CardPackages/useCardPackages'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGDeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
-import { useMTGDecks } from '../../../context/MTGA/Decks/useMTGDecks'
 import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
-import { MTGFunctions } from '../../../graphql/MTGA/functions'
-import { MTG_Card, MTG_CardVersion } from '../../../graphql/types'
-import { isCardInDeck } from '../../../utils/functions/cardFunctions'
+import { MainOrSide, MTG_Card, MTG_CardVersion } from '../../../graphql/types'
+import { getCorrectCardImage, isCardInDeck } from '../../../utils/functions/cardFunctions'
 import { singleSetSelected } from '../../../utils/functions/filterFunctions'
 import { NodeType, organizeNodes } from '../../../utils/functions/nodeFunctions'
 import { ContextMenu } from '../../../utils/hooks/ContextMenu/ContextMenu'
 import { ContextMenuOption } from '../../../utils/hooks/ContextMenu/types'
 import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
-import { PhantomNodeData } from '../../FlowView/Nodes/PhantomNode'
+import { PhantomNodeData } from './FlowView/Nodes/PhantomNode'
 import { VersionCard } from './VersionCard'
 
 export type CardsGridButtonProps = {
@@ -29,12 +27,8 @@ export type CardsGridButtonProps = {
 
 export const CardsGridButton = (props: CardsGridButtonProps) => {
     const { card, onIgnore } = props
-    const { decks, updateDeck } = useMTGDecks()
-    const { cardPackages, updateCardPackage } = useMTGCardPackages()
-
-    const {
-        mutations: { addMTGCardToCardPackage, removeMTGCardFromCardPackage, createMTGCardPackage },
-    } = MTGFunctions
+    const { cardPackages, addMTGCardToCardPackage, removeMTGCardFromCardPackage, createCardPackage } =
+        useMTGCardPackages()
 
     const { onAddCard, deck, removeCard, setDeck, setOpenedCardDialog } = useMTGDeckCreator()
     const { handleDeleteZone, handleRenameZone, handleDeletePhantom } = useMTGDeckFlowCreator()
@@ -61,8 +55,7 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
     if (!defaultVersion) return null
 
     const handleAddCard = (card: MTG_Card, versionID?: string) => {
-        const newDeck = onAddCard(card, undefined, undefined, versionID)
-        if (!newDeck) return
+        const newDeck = onAddCard(card, undefined, versionID)
         setNodes(organizeNodes(newDeck, handleDeleteZone, handleRenameZone, handleDeletePhantom))
     }
 
@@ -83,9 +76,6 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
     const deckCardIDs = deck?.cards.map((c) => c.card.ID) || []
 
     const cardIsInDeck = isCardInDeck(card, deck)
-    const {
-        mutations: { updateMTGDeck: updateMTGADeck },
-    } = MTGFunctions
 
     if (!deck) return null
 
@@ -130,141 +120,132 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                 if (onIgnore) onIgnore()
             },
         },
-        {
-            id: 'addToOtherDeck',
-            label: 'Add to other deck',
-            shouldKeepOpen: true,
-            subMenu: [
-                {
-                    id: 'createNewDeck',
-                    label: 'Create new deck',
-                    shouldKeepOpen: true,
-                    action: () => {
-                        const name = prompt('Enter the name of the new deck')
-                        if (!name) return
-                        const {
-                            mutations: { createMTGDeck: createMTGADeck },
-                        } = MTGFunctions
-                        // TODO: The type should be dynamic
-                        createMTGADeck({ name }).then((deck) => {
-                            const d = onAddCard(card, undefined, deck)
-                            if (!d) return
-                            updateDeck(d)
-                            let version: MTG_CardVersion | undefined
-                            const set = singleSetSelected(filter)
-                            if (set) {
-                                version = card.versions.find((v) => v.set === set)
-                            } else {
-                                version = card.versions.find((v) => v.isDefault)
-                            }
-                            if (!version) return
-                            updateMTGADeck({
-                                cards: d.cards.map((c) => ({
-                                    ...c,
-                                    card: c.card.ID,
-                                    ID: c.card.ID,
-                                })),
-                                deckID: d.ID,
-                                ignoredCards: d.ignoredCards,
-                                name: d.name,
-                                zones: d.zones.map((z) => ({
-                                    ...z,
-                                    ID: z.ID,
-                                    name: z.name,
-                                    position: z.position,
-                                })),
-                                cardFrontImage: {
-                                    cardID: card.ID,
-                                    versionID: version.ID,
-                                },
-                            })
-                            updateDeck(d)
-                        })
-                    },
-                },
-                ...decks
-                    .filter((d) => d.ID !== deck?.ID)
-                    .map((deck) => {
-                        const alreadyInDeck = deck.cards.find((c) => c.card.ID === card.ID)
-                        return {
-                            label: deck.name,
-                            selected: alreadyInDeck ? true : false,
-                            shouldKeepOpen: true,
-                            action: !alreadyInDeck
-                                ? () => {
-                                      let version: MTG_CardVersion | undefined
-                                      const set = singleSetSelected(filter)
-                                      if (set) {
-                                          version = card.versions.find((v) => v.set === set)
-                                      } else {
-                                          version = card.versions.find((v) => v.isDefault)
-                                      }
-                                      if (!version) return
-                                      const newDeck = onAddCard(card, undefined, deck, version.ID)
-                                      if (!newDeck) return
-                                      updateMTGADeck({
-                                          cards: newDeck.cards.map((c) => ({
-                                              ...c,
-                                              card: c.card.ID,
-                                              ID: c.card.ID,
-                                          })),
-                                          deckID: deck.ID,
-                                          ignoredCards: deck.ignoredCards,
-                                          name: deck.name,
-                                          zones: deck.zones.map((z) => ({
-                                              ...z,
-                                              ID: z.ID,
-                                              name: z.name,
-                                              position: z.position,
-                                          })),
-                                          cardFrontImage: {
-                                              cardID: card.ID,
-                                              versionID: version.ID,
-                                          },
-                                      }).then((d) => {
-                                          updateDeck(d)
-                                      })
-                                  }
-                                : () => {
-                                      let version: MTG_CardVersion | undefined
-                                      const set = singleSetSelected(filter)
-                                      if (set) {
-                                          version = card.versions.find((v) => v.set === set)
-                                      } else {
-                                          version = card.versions.find((v) => v.isDefault)
-                                      }
-                                      if (!version) return
-                                      const cardIndex = deck.cards.findIndex((c) => c.card.ID === card.ID)
-                                      if (cardIndex !== -1) {
-                                          deck.cards.splice(cardIndex, 1)
-                                      }
-                                      updateMTGADeck({
-                                          cards: deck.cards.map((c) => ({
-                                              ...c,
-                                              card: c.card.ID,
-                                              ID: c.card.ID,
-                                          })),
-                                          deckID: deck.ID,
-                                          ignoredCards: deck.ignoredCards,
-                                          name: deck.name,
-                                          zones: deck.zones.map((z) => ({
-                                              ...z,
-                                              ID: z.ID,
-                                              name: z.name,
-                                              position: z.position,
-                                          })),
-                                          cardFrontImage: {
-                                              cardID: card.ID,
-                                              versionID: version.ID,
-                                          },
-                                      }).then((d) => {
-                                          updateDeck(d)
-                                      })
-                                  },
-                        } as ContextMenuOption
-                    }),
-            ],
-        },
+        // {
+        //     id: 'addToOtherDeck',
+        //     label: 'Add to other deck',
+        //     shouldKeepOpen: true,
+        //     subMenu: [
+        //         {
+        //             id: 'createNewDeck',
+        //             label: 'Create new deck',
+        //             shouldKeepOpen: true,
+        //             action: () => {
+        //                 const name = prompt('Enter the name of the new deck')
+        //                 if (!name) return
+        //                 const {
+        //                     mutations: { createMTGDeck: createMTGADeck },
+        //                 } = MTGFunctions
+        //                 // TODO: The type should be dynamic
+        //                 createMTGADeck({ name }).then((deck) => {
+        //                     const d = onAddCard(card, undefined, deck)
+        //                     if (!d) return
+        //                     updateDeck(d)
+        //                     let version: MTG_CardVersion | undefined
+        //                     const set = singleSetSelected(filter)
+        //                     if (set) {
+        //                         version = card.versions.find((v) => v.set === set)
+        //                     } else {
+        //                         version = card.versions.find((v) => v.isDefault)
+        //                     }
+        //                     if (!version) return
+        //                     updateMTGADeck({
+        //                         cards: d.cards.map((c) => ({
+        //                             ...c,
+        //                             card: c.card.ID,
+        //                             ID: c.card.ID,
+        //                         })),
+        //                         deckID: d.ID,
+        //                         ignoredCards: d.ignoredCards,
+        //                         name: d.name,
+        //                         zones: d.zones.map((z) => ({
+        //                             ...z,
+        //                             ID: z.ID,
+        //                             name: z.name,
+        //                             position: z.position,
+        //                         })),
+        //                         cardFrontImage: getCorrectCardImage(version, 'artCrop'),
+        //                     })
+        //                     updateDeck(d)
+        //                 })
+        //             },
+        //         },
+        //         ...decks
+        //             .filter((d) => d.ID !== deck?.ID)
+        //             .map((deck) => {
+        //                 const alreadyInDeck = deck.cards.find((c) => c.card.ID === card.ID)
+        //                 return {
+        //                     label: deck.name,
+        //                     selected: alreadyInDeck ? true : false,
+        //                     shouldKeepOpen: true,
+        //                     action: !alreadyInDeck
+        //                         ? () => {
+        //                               let version: MTG_CardVersion | undefined
+        //                               const set = singleSetSelected(filter)
+        //                               if (set) {
+        //                                   version = card.versions.find((v) => v.set === set)
+        //                               } else {
+        //                                   version = card.versions.find((v) => v.isDefault)
+        //                               }
+        //                               if (!version) return
+        //                               const newDeck = onAddCard(card, undefined, deck, version.ID)
+        //                               if (!newDeck) return
+        //                               updateMTGADeck({
+        //                                   cards: newDeck.cards.map((c) => ({
+        //                                       ...c,
+        //                                       card: c.card.ID,
+        //                                       ID: c.card.ID,
+        //                                   })),
+        //                                   deckID: deck.ID,
+        //                                   ignoredCards: deck.ignoredCards,
+        //                                   name: deck.name,
+        //                                   zones: deck.zones.map((z) => ({
+        //                                       ...z,
+        //                                       ID: z.ID,
+        //                                       name: z.name,
+        //                                       position: z.position,
+        //                                   })),
+        //                                   cardFrontImage: getCorrectCardImage(version, 'artCrop'),
+        //                               }).then((d) => {
+        //                                   updateDeck(d)
+        //                               })
+        //                           }
+        //                         : () => {
+        //                               let version: MTG_CardVersion | undefined
+        //                               const set = singleSetSelected(filter)
+        //                               if (set) {
+        //                                   version = card.versions.find((v) => v.set === set)
+        //                               } else {
+        //                                   version = card.versions.find((v) => v.isDefault)
+        //                               }
+        //                               if (!version) return
+        //                               const cardIndex = deck.cards.findIndex((c) => c.card.ID === card.ID)
+        //                               if (cardIndex !== -1) {
+        //                                   deck.cards.splice(cardIndex, 1)
+        //                               }
+        //                               updateMTGADeck({
+        //                                   cards: deck.cards.map((c) => ({
+        //                                       ...c,
+        //                                       card: c.card.ID,
+        //                                       ID: c.card.ID,
+        //                                   })),
+        //                                   deckID: deck.ID,
+        //                                   ignoredCards: deck.ignoredCards,
+        //                                   name: deck.name,
+        //                                   zones: deck.zones.map((z) => ({
+        //                                       ...z,
+        //                                       ID: z.ID,
+        //                                       name: z.name,
+        //                                       position: z.position,
+        //                                   })),
+        //                                   cardFrontImage: getCorrectCardImage(version, 'artCrop'),
+        //                               }).then((d) => {
+        //                                   updateDeck(d)
+        //                               })
+        //                           },
+        //                 } as ContextMenuOption
+        //             }),
+        //     ],
+        // },
         {
             id: 'addToCardPackage',
             label: 'Add to card package',
@@ -276,15 +257,7 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                     action: () => {
                         const name = prompt('Enter the name of the new card package')
                         if (!name) return
-                        createMTGCardPackage({ name }).then((cardPackage) => {
-                            addMTGCardToCardPackage({
-                                cardPackageID: cardPackage.ID,
-                                card: card.ID,
-                                count: 1,
-                            }).then((cp) => {
-                                updateCardPackage(cp)
-                            })
-                        })
+                        createCardPackage(name, card, MainOrSide.MAIN)
                     },
                 },
                 ...cardPackages.map((cp) => {
@@ -295,21 +268,10 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                         shouldKeepOpen: true,
                         action: !alreadyInDeck
                             ? () => {
-                                  addMTGCardToCardPackage({
-                                      cardPackageID: cp.ID,
-                                      card: card.ID,
-                                      count: 1,
-                                  }).then((cp) => {
-                                      updateCardPackage(cp)
-                                  })
+                                  addMTGCardToCardPackage(cp.ID, card, MainOrSide.MAIN)
                               }
                             : () => {
-                                  removeMTGCardFromCardPackage({
-                                      cardPackageID: cp.ID,
-                                      card: card.ID,
-                                  }).then((cp) => {
-                                      updateCardPackage(cp)
-                                  })
+                                  removeMTGCardFromCardPackage(cp.ID, card)
                               },
                     } as ContextMenuOption
                 }),
@@ -321,7 +283,6 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
             action: () => {
                 if (!deck) return
                 setDeck((prev) => {
-                    if (!prev) return prev
                     let version: MTG_CardVersion | undefined
                     const set = singleSetSelected(filter)
                     if (set) {
@@ -333,8 +294,9 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                     return {
                         ...prev,
                         cardFrontImage: {
-                            ...card,
-                            versions: [version],
+                            cardID: card.ID,
+                            image: getCorrectCardImage(version, 'artCrop') ?? '',
+                            versionID: version.ID,
                         },
                     }
                 })

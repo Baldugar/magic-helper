@@ -11,6 +11,7 @@ func EnsureDatabaseIntegrity(ctx context.Context) {
 	log.Info().Msgf("Ensuring database integrity")
 	ensureDocumentCollections(ctx)
 	ensureEdgeCollections(ctx)
+	ensureIndexes(ctx)
 	log.Info().Msgf("Database integrity ensured")
 }
 
@@ -90,4 +91,39 @@ func EnsureEdgeCollection(ctx context.Context, edge ArangoEdge) (arangoDriver.Co
 	}
 	log.Info().Msgf("Edge collection %s already exists", c.Name())
 	return c, nil
+}
+
+func ensureIndexes(ctx context.Context) {
+	for _, index := range INDEX_ARRAY {
+		EnsureIndex(ctx, index)
+	}
+}
+
+func EnsureIndex(ctx context.Context, index ArangoIndexStruct) error {
+	log.Info().Msgf("Ensuring index %s", index.Options.Name)
+	if index.IsEdge {
+		col, err := EnsureEdgeCollection(ctx, ArangoEdge(index.CollectionName))
+		if err != nil {
+			log.Fatal().Err(err).Msg("Failed to ensure edge collection")
+			return err
+		}
+
+		_, _, err = col.EnsurePersistentIndex(ctx, index.Fields, index.Options)
+		if err != nil {
+			log.Fatal().Err(err).Msg("Failed to ensure persistent index")
+			return err
+		}
+	} else {
+		col, err := EnsureDocumentCollection(ctx, ArangoDocument(index.CollectionName))
+		if err != nil {
+			log.Fatal().Err(err).Msg("Failed to ensure document collection")
+			return err
+		}
+		_, _, err = col.EnsurePersistentIndex(ctx, index.Fields, index.Options)
+		if err != nil {
+			log.Fatal().Err(err).Msg("Failed to ensure persistent index")
+			return err
+		}
+	}
+	return nil
 }

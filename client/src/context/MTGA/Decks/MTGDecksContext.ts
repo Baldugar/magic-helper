@@ -1,16 +1,20 @@
-import { createContext, Dispatch, SetStateAction } from 'react'
-import { MTG_Deck } from '../../../graphql/types'
+import { createContext } from 'react'
+import { MTG_Deck, MTG_DeckDashboard } from '../../../graphql/types'
 
 type MTGDecksContextType = {
-    decks: Array<MTG_Deck>
-    setDecks: Dispatch<SetStateAction<Array<MTG_Deck>>>
-    updateDeck: (deck: MTG_Deck) => void
+    decks: Array<MTG_DeckDashboard>
     loading: boolean
+    createDeck: (name: string) => void
+    deleteDeck: (deckID: string) => void
+    propagateChangesToDashboardDeck: (deck: MTG_Deck) => void
+    reload: () => void
 }
 
 export const MTGDecksContext = createContext<MTGDecksContextType>({
     decks: [],
-    setDecks: () => {},
-    updateDeck: () => {},
     loading: true,
+    createDeck: () => {},
+    deleteDeck: () => {},
+    propagateChangesToDashboardDeck: () => {},
+    reload: () => {},
 })

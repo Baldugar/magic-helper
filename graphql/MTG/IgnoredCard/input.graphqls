@@ -1,0 +1,9 @@
+input AddIgnoredCardInput {
+    cardID: ID!
+    deckID: ID!
+}
+
+input RemoveIgnoredCardInput {
+    cardID: ID!
+    deckID: ID!
+}

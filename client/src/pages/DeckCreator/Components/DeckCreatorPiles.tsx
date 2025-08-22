@@ -79,7 +79,7 @@ export const DeckCreatorPiles: React.FC<DeckCreatorPilesProps> = () => {
 
         const allCategorizedIdsInEffect = new Set<string>()
         actualZones.forEach((zone) => {
-            zone.childrenIDs.forEach((id) => allCategorizedIdsInEffect.add(id))
+            zone.cardChildren.forEach((id) => allCategorizedIdsInEffect.add(id))
         })
         const currentActualUncategorizedCards = deckCardEntries
             .map((dc) => dc.card)
@@ -151,10 +151,11 @@ export const DeckCreatorPiles: React.FC<DeckCreatorPilesProps> = () => {
     const uncategorizedZoneDisplayData = {
         ID: 'uncategorized',
         name: 'Uncategorized',
-        childrenIDs: sessionUncategorizedCardIds, // Use state here
+        cardChildren: sessionUncategorizedCardIds, // Use state here
+        zoneChildren: [],
         get cards() {
             // Use a getter to derive cards based on current sessionUncategorizedCardIds
-            return this.childrenIDs
+            return this.cardChildren
                 .map((id) => allDeckCardsMap.get(id))
                 .filter((card): card is MTG_Card => card !== undefined)
         },
@@ -166,7 +167,8 @@ export const DeckCreatorPiles: React.FC<DeckCreatorPilesProps> = () => {
             const newZoneToAdd: FlowZone = {
                 ID: `zone_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
                 name: zoneName,
-                childrenIDs: [],
+                cardChildren: [],
+                zoneChildren: [],
                 position: { x: 0, y: 0 }, // Default position, might not be used in this view
                 width: 200, // Default width, might not be used in this view
                 height: 300, // Default height, might not be used in this view
@@ -263,11 +265,11 @@ export const DeckCreatorPiles: React.FC<DeckCreatorPilesProps> = () => {
                 if (source.droppableId !== 'uncategorized') {
                     const sourceZoneIndex = newActualZones.findIndex((z) => z.ID === source.droppableId)
                     if (sourceZoneIndex !== -1) {
-                        const sourceChildren = [...newActualZones[sourceZoneIndex].childrenIDs]
+                        const sourceChildren = [...newActualZones[sourceZoneIndex].cardChildren]
                         sourceChildren.splice(source.index, 1)
                         newActualZones[sourceZoneIndex] = {
                             ...newActualZones[sourceZoneIndex],
-                            childrenIDs: sourceChildren,
+                            cardChildren: sourceChildren,
                         }
                     } else {
                         console.error('RBD: Source zone not found in actual zones', source.droppableId)
@@ -279,9 +281,9 @@ export const DeckCreatorPiles: React.FC<DeckCreatorPilesProps> = () => {
                 if (destination.droppableId !== 'uncategorized') {
                     const destZoneIndex = newActualZones.findIndex((z) => z.ID === destination.droppableId)
                     if (destZoneIndex !== -1) {
-                        const destChildren = [...newActualZones[destZoneIndex].childrenIDs]
+                        const destChildren = [...newActualZones[destZoneIndex].cardChildren]
                         destChildren.splice(destination.index, 0, draggableId)
-                        newActualZones[destZoneIndex] = { ...newActualZones[destZoneIndex], childrenIDs: destChildren }
+                        newActualZones[destZoneIndex] = { ...newActualZones[destZoneIndex], cardChildren: destChildren }
                     } else {
                         console.error('RBD: Destination zone not found in actual zones', destination.droppableId)
                         return prevDeck // Should not happen if optimistic update for uncategorized worked
@@ -295,14 +297,20 @@ export const DeckCreatorPiles: React.FC<DeckCreatorPilesProps> = () => {
     console.log('[DeckCreatorPiles] About to render. List height:', listHeight)
 
     const renderZoneColumn = (
-        zoneData: { ID: string; name: string; childrenIDs: string[]; cards?: MTG_Card[] | (() => MTG_Card[]) },
+        zoneData: {
+            ID: string
+            name: string
+            cardChildren: string[]
+            zoneChildren: string[]
+            cards?: MTG_Card[] | (() => MTG_Card[])
+        },
         isUncategorized: boolean,
         draggableProvided?: DraggableProvided,
     ) => {
         const cardsToRenderInZone =
             isUncategorized && typeof zoneData.cards === 'function'
                 ? zoneData.cards()
-                : zoneData.childrenIDs
+                : zoneData.cardChildren
                       .map((id) => allDeckCardsMap.get(id))
                       .filter((card): card is MTG_Card => card !== undefined)
 

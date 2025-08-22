@@ -1,4 +1,4 @@
-import { ArrowLeft, BarChart, DashboardCustomize, Edit, VerticalSplit, ViewCompact } from '@mui/icons-material'
+import { ArrowLeft, DashboardCustomize, Edit, VerticalSplit, ViewCompact } from '@mui/icons-material'
 import MenuIcon from '@mui/icons-material/Menu'
 import {
     Box,
@@ -14,7 +14,7 @@ import {
     useMediaQuery,
 } from '@mui/material'
 import { ReactFlowProvider, useReactFlow } from '@xyflow/react'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { CardPackageImportDialog } from '../../components/CardPackageImportDialog'
 import { ExportDialog } from '../../components/ExportDialog'
@@ -28,16 +28,15 @@ import { MTGDeckCreatorFlowProvider } from '../../context/MTGA/DeckCreatorFlow/M
 import { useMTGDecks } from '../../context/MTGA/Decks/useMTGDecks'
 import { MTGAFilterProvider } from '../../context/MTGA/Filter/MTGFilterProvider'
 import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
+import { MTGTagsProvider } from '../../context/MTGA/Tags/MTGTagsProvider'
 import { MTGFunctions } from '../../graphql/MTGA/functions'
-import { MTG_UpdateDeckInput } from '../../graphql/types'
+import { MTG_Deck, MTG_UpdateDeckInput } from '../../graphql/types'
 import { DeckCreatorView } from '../../types/deckCreatorView'
 import { DRAWER_WIDTH_DESKTOP, DRAWER_WIDTH_MOBILE, PAGE_SIZE_DESKTOP, PAGE_SIZE_MOBILE } from '../../utils/constants'
 import { calculateNewDeck } from '../../utils/functions/deckFunctions'
 import { useLocalStoreFilter } from '../../utils/hooks/useLocalStoreFilter'
-import { FlowView } from '../FlowView/FlowView'
 import { CardDialog } from './Components/CardDialog'
 import { CardsGrid } from './Components/CardsGrid'
-import { DeckCreatorPiles } from './Components/DeckCreatorPiles'
 import { Drawer } from './Components/Drawer'
 import { Filters } from './Components/Filters'
 
@@ -45,19 +44,19 @@ export const DeckCreator = () => {
     const { cards, totalCount } = useMTGCards()
     const {
         deck,
+        setDeck,
         openDrawer,
         setOpenDrawer,
         setViewMode,
         viewMode,
         setOpenImportDialog,
         setOpenExportDialog,
-        setDeck,
         setOpenImportCardPackageDialog,
     } = useMTGDeckCreator()
-    const { updateDeck } = useMTGDecks()
-    const { page, setPage } = useMTGFilter()
+    const { propagateChangesToDashboardDeck } = useMTGDecks()
+    const { filter, setFilter } = useMTGFilter()
 
-    console.log('cards', cards)
+    console.log(filter)
 
     const { loadLocalStoreFilter, saveLocalStoreFilter } = useLocalStoreFilter()
     const { clearFilter } = useMTGFilter()
@@ -82,24 +81,6 @@ export const DeckCreator = () => {
 
     const saveDeck = () => {
         if (!deck) return
-        // const nodes = getNodes()
-        // const deckInput: MTG_UpdateDeckInput = {
-        //     cards: calculateCardsFromNodes(nodes, deck.cards),
-        //     deckID: deck.ID,
-        //     name: deck.name,
-        //     zones: calculateZonesFromNodes(nodes),
-        //     cardFrontImage: deck.cardFrontImage
-        //         ? {
-        //               cardID: deck.cardFrontImage.ID,
-        //               versionID: deck.cardFrontImage.versions[0].ID,
-        //           }
-        //         : undefined,
-        //     ignoredCards: deck.ignoredCards,
-        // }
-        // updateMTGDeck(deckInput).then((deck) => {
-        //     updateDeck(deck)
-        // })
-        // TODO: FIX THIS TO WORK BOTH WITH BOARD AND PILES
         const deckInput: MTG_UpdateDeckInput = {
             cards: deck.cards.map((c) => ({
                 card: c.card.ID,
@@ -111,18 +92,14 @@ export const DeckCreator = () => {
                 ID: c.card.ID,
             })),
             deckID: deck.ID,
-            ignoredCards: deck.ignoredCards,
             name: deck.name,
             zones: deck.zones,
-            cardFrontImage: deck.cardFrontImage
-                ? {
-                      cardID: deck.cardFrontImage.ID,
-                      versionID: deck.cardFrontImage.versions[0].ID,
-                  }
-                : undefined,
+            cardFrontImage: deck.cardFrontImage,
         }
-        updateMTGDeck(deckInput).then((deck) => {
-            updateDeck(deck)
+        updateMTGDeck(deckInput).then((resp) => {
+            if (resp.status) {
+                propagateChangesToDashboardDeck(deck)
+            }
         })
     }
 
@@ -179,75 +156,15 @@ export const DeckCreator = () => {
                             <Box mt={'auto'} display={'flex'} justifyContent={'center'} paddingTop={1}>
                                 <Pagination
                                     count={Math.floor(totalCount / pageSize) + 1}
-                                    page={page + 1}
+                                    page={filter.page + 1}
                                     onChange={(_, page) => {
-                                        setPage(page - 1)
+                                        setFilter((prev) => ({ ...prev, page: page - 1 }))
                                     }}
                                     showFirstButton
                                     showLastButton
                                 />
                             </Box>
                         </>
-                    )}
-                    {viewMode === 'BOARD' && (
-                        <Box flex={1} height={'100%'}>
-                            <FlowView />
-                        </Box>
-                    )}
-                    {viewMode === 'CATALOGUE_BOARD' && (
-                        <Box flex={1} height={'100%'} display={'flex'} overflow={'hidden'}>
-                            <Box flex={1} display={'flex'} flexDirection={'column'} height={'100%'}>
-                                <Filters />
-                                <CardsGrid />
-                                <Box mt={'auto'} display={'flex'} justifyContent={'center'} paddingTop={1}>
-                                    <Pagination
-                                        count={Math.floor(totalCount / pageSize) + 1}
-                                        page={page + 1}
-                                        onChange={(_, page) => {
-                                            setPage(page - 1)
-                                        }}
-                                        showFirstButton
-                                        showLastButton
-                                    />
-                                </Box>
-                            </Box>
-                            <Box flex={1} height={'100%'}>
-                                <FlowView />
-                            </Box>
-                        </Box>
-                    )}
-                    {viewMode === 'PILES' && (
-                        <Box flex={1} height={'100%'} maxWidth={'100vw'} overflow={'hidden'}>
-                            <DeckCreatorPiles />
-                        </Box>
-                    )}
-                    {viewMode === 'CATALOGUE_PILES' && (
-                        <Box flex={1} height={'100%'} display={'flex'} overflow={'hidden'} width={'100%'}>
-                            <Box
-                                flex={0.4}
-                                display={'flex'}
-                                flexDirection={'column'}
-                                height={'100%'}
-                                sx={{ borderRight: '1px solid lightgray' }}
-                            >
-                                <Filters />
-                                <CardsGrid />
-                                <Box mt={'auto'} display={'flex'} justifyContent={'center'} paddingTop={1}>
-                                    <Pagination
-                                        count={Math.floor(totalCount / pageSize) + 1}
-                                        page={page + 1}
-                                        onChange={(_, page) => {
-                                            setPage(page - 1)
-                                        }}
-                                        showFirstButton
-                                        showLastButton
-                                    />
-                                </Box>
-                            </Box>
-                            <Box flex={0.6} height={'100%'} width={'100%'}>
-                                <DeckCreatorPiles />
-                            </Box>
-                        </Box>
                     )}
                     <Box position={'absolute'} top={10} right={10} display={'flex'} gap={1}>
                         <IconButton
@@ -291,7 +208,7 @@ export const DeckCreator = () => {
                                         </IconButton>
                                     </Box>
                                 </Grid>
-                                <Grid item xs={6} md={'auto'}>
+                                {/* <Grid item xs={6} md={'auto'}>
                                     <Box display={'flex'} justifyContent={'center'}>
                                         <IconButton onClick={() => handleChangeView('CATALOGUE_PILES')}>
                                             <VerticalSplit />
@@ -304,7 +221,7 @@ export const DeckCreator = () => {
                                             <BarChart />
                                         </IconButton>
                                     </Box>
-                                </Grid>
+                                </Grid> */}
                             </Grid>
                             <Divider />
                             <Typography variant="caption" display="block" gutterBottom>
@@ -392,17 +309,33 @@ export const DeckCreator = () => {
 export const DeckCreatorWrapper = () => {
     const { deckID } = useParams()
 
+    const {
+        queries: { getMTGDeck },
+    } = MTGFunctions
+    const [deck, setDeck] = useState<MTG_Deck>()
+
+    useEffect(() => {
+        if (!deckID || !!deck) return
+        getMTGDeck(deckID).then((deck) => {
+            setDeck(deck)
+        })
+    }, [deckID, deck, getMTGDeck])
+
+    if (!deck) return null
+
     return (
-        <MTGAFilterProvider>
-            <MTGCardsProvider>
-                <ReactFlowProvider>
-                    <MTGDeckCreatorProvider deckID={deckID}>
-                        <DndProvider>
-                            <DeckCreator />
-                        </DndProvider>
-                    </MTGDeckCreatorProvider>
-                </ReactFlowProvider>
-            </MTGCardsProvider>
-        </MTGAFilterProvider>
+        <MTGTagsProvider>
+            <MTGAFilterProvider>
+                <MTGCardsProvider>
+                    <ReactFlowProvider>
+                        <MTGDeckCreatorProvider initialDeck={deck}>
+                            <DndProvider>
+                                <DeckCreator />
+                            </DndProvider>
+                        </MTGDeckCreatorProvider>
+                    </ReactFlowProvider>
+                </MTGCardsProvider>
+            </MTGAFilterProvider>
+        </MTGTagsProvider>
     )
 }

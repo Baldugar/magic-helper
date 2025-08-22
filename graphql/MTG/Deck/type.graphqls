@@ -1,7 +1,7 @@
 type MTG_Deck {
     ID: ID! @goTag(key: "json", value: "_key")
     name: String!
-    cardFrontImage: MTG_Card
+    cardFrontImage: MTG_Deck_CardFrontImage
     cards: [MTG_DeckCard!]!
     zones: [FlowZone!]!
     ignoredCards: [String!]!
@@ -20,4 +20,22 @@ type MTG_DeckCard {
 type Phantom {
     position: Position!
     ID: ID!
+}
+
+type MTG_DeckDashboard {
+    ID: ID! @goTag(key: "json", value: "_key")
+    name: String!
+    cardFrontImage: MTG_Deck_CardFrontImage
+    cards: [MTG_DeckCard_Dashboard!]!
+}
+
+type MTG_Deck_CardFrontImage {
+    cardID: ID!
+    versionID: ID!
+    image: String!
+}
+
+type MTG_DeckCard_Dashboard {
+    card: MTG_Card_Dashboard!
+    selectedVersionID: String
 }

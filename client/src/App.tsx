@@ -11,10 +11,6 @@ function WrappedApp() {
         <BrowserRouter>
             <Suspense fallback={<div>🥷🥷🥷🥷</div>}>
                 <Routes>
-                    {/* <DeckCreator /> */}
-                    {/* <ReactFlowProvider>
-                <FlowView />
-            </ReactFlowProvider> */}
                     <Route path={'/deck/:deckID'} element={<DeckCreatorWrapper />} />
                     <Route path={'/'} element={<Navigate to={'/dashboard'} />} />
                     <Route path={'/dashboard'} element={<Dashboard />} />

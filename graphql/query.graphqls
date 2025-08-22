@@ -8,7 +8,8 @@ type Query {
     ): MTG_Filter_Search!
     getMTGFilters: MTG_Filter_Entries!
     # Decks
-    getMTGDecks(deckID: ID): [MTG_Deck!]!
+    getMTGDecks: [MTG_DeckDashboard!]!
+    getMTGDeck(deckID: ID!): MTG_Deck!
     # Card Packages
     getMTGCardPackages(cardPackageID: ID): [MTG_CardPackage!]!
     # Tags

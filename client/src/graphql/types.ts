@@ -15,10 +15,9 @@ export type Scalars = {
   Map: { input: Record<string, unknown>; output: Record<string, unknown>; }
 };
 
-export type AggregatedRating = {
-  __typename?: 'AggregatedRating';
-  average: Scalars['Float']['output'];
-  count: Scalars['Int']['output'];
+export type AddIgnoredCardInput = {
+  cardID: Scalars['ID']['input'];
+  deckID: Scalars['ID']['input'];
 };
 
 export type AssignTagInput = {
@@ -29,11 +28,9 @@ export type AssignTagInput = {
 export type CardTag = Tag & {
   __typename?: 'CardTag';
   ID: Scalars['ID']['output'];
-  aggregatedRating: AggregatedRating;
   description?: Maybe<Scalars['String']['output']>;
   myRating?: Maybe<UserRating>;
   name: Scalars['String']['output'];
-  ratings: Array<UserRating>;
 };
 
 export type CreateTagInput = {
@@ -47,12 +44,10 @@ export type CreateTagInput = {
 export type DeckTag = Tag & {
   __typename?: 'DeckTag';
   ID: Scalars['ID']['output'];
-  aggregatedRating: AggregatedRating;
   colors: Array<MTG_Color>;
   description?: Maybe<Scalars['String']['output']>;
   myRating?: Maybe<UserRating>;
   name: Scalars['String']['output'];
-  ratings: Array<UserRating>;
 };
 
 export enum DeckType {
@@ -63,20 +58,22 @@ export enum DeckType {
 export type FlowZone = {
   __typename?: 'FlowZone';
   ID: Scalars['ID']['output'];
-  childrenIDs: Array<Scalars['ID']['output']>;
+  cardChildren: Array<Scalars['ID']['output']>;
   height: Scalars['Float']['output'];
   name: Scalars['String']['output'];
   position: Position;
   width: Scalars['Float']['output'];
+  zoneChildren: Array<Scalars['ID']['output']>;
 };
 
 export type FlowZoneInput = {
   ID: Scalars['ID']['input'];
-  childrenIDs: Array<Scalars['ID']['input']>;
+  cardChildren: Array<Scalars['ID']['input']>;
   height: Scalars['Float']['input'];
   name: Scalars['String']['input'];
   position: PositionInput;
   width: Scalars['Float']['input'];
+  zoneChildren: Array<Scalars['ID']['input']>;
 };
 
 export type MTG_AddCardToCardPackageInput = {
@@ -90,7 +87,6 @@ export type MTG_Card = {
   CMC: Scalars['Float']['output'];
   EDHRecRank?: Maybe<Scalars['Int']['output']>;
   ID: Scalars['ID']['output'];
-  aggregatedRating: AggregatedRating;
   cardTags: Array<CardTag>;
   colorIdentity: Array<MTG_Color>;
   colorIndicator?: Maybe<Array<Scalars['String']['output']>>;
@@ -105,7 +101,6 @@ export type MTG_Card = {
   oracleText?: Maybe<Scalars['String']['output']>;
   power?: Maybe<Scalars['String']['output']>;
   producedMana?: Maybe<Array<MTG_Color>>;
-  ratings: Array<UserRating>;
   toughness?: Maybe<Scalars['String']['output']>;
   typeLine: Scalars['String']['output'];
   versions: Array<MTG_CardVersion>;
@@ -127,6 +122,11 @@ export type MTG_CardFace = {
   power?: Maybe<Scalars['String']['output']>;
   toughness?: Maybe<Scalars['String']['output']>;
   typeLine?: Maybe<Scalars['String']['output']>;
+};
+
+export type MTG_CardFace_Dashboard = {
+  __typename?: 'MTG_CardFace_Dashboard';
+  imageUris?: Maybe<MTG_Image>;
 };
 
 export type MTG_CardPackage = {
@@ -175,6 +175,21 @@ export type MTG_CardVersion = {
   variationOf?: Maybe<Scalars['String']['output']>;
 };
 
+export type MTG_CardVersion_Dashboard = {
+  __typename?: 'MTG_CardVersion_Dashboard';
+  ID: Scalars['ID']['output'];
+  cardFaces: Array<MTG_CardFace_Dashboard>;
+  imageUris?: Maybe<MTG_Image>;
+  isAlchemy: Scalars['Boolean']['output'];
+  isDefault: Scalars['Boolean']['output'];
+};
+
+export type MTG_Card_Dashboard = {
+  __typename?: 'MTG_Card_Dashboard';
+  ID: Scalars['ID']['output'];
+  versions: Array<MTG_CardVersion_Dashboard>;
+};
+
 export enum MTG_Color {
   B = 'B',
   C = 'C',
@@ -195,7 +210,7 @@ export type MTG_CreateDeckInput = {
 export type MTG_Deck = {
   __typename?: 'MTG_Deck';
   ID: Scalars['ID']['output'];
-  cardFrontImage?: Maybe<MTG_Card>;
+  cardFrontImage?: Maybe<MTG_Deck_CardFrontImage>;
   cards: Array<MTG_DeckCard>;
   ignoredCards: Array<Scalars['String']['output']>;
   name: Scalars['String']['output'];
@@ -233,6 +248,27 @@ export enum MTG_DeckCardType {
   COMMANDER = 'COMMANDER',
   NORMAL = 'NORMAL'
 }
+
+export type MTG_DeckCard_Dashboard = {
+  __typename?: 'MTG_DeckCard_Dashboard';
+  card: MTG_Card_Dashboard;
+  selectedVersionID?: Maybe<Scalars['String']['output']>;
+};
+
+export type MTG_DeckDashboard = {
+  __typename?: 'MTG_DeckDashboard';
+  ID: Scalars['ID']['output'];
+  cardFrontImage?: Maybe<MTG_Deck_CardFrontImage>;
+  cards: Array<MTG_DeckCard_Dashboard>;
+  name: Scalars['String']['output'];
+};
+
+export type MTG_Deck_CardFrontImage = {
+  __typename?: 'MTG_Deck_CardFrontImage';
+  cardID: Scalars['ID']['output'];
+  image: Scalars['String']['output'];
+  versionID: Scalars['ID']['output'];
+};
 
 export type MTG_DeleteCardPackageInput = {
   cardPackageID: Scalars['ID']['input'];
@@ -331,8 +367,11 @@ export type MTG_Filter_Search = {
 export type MTG_Filter_SearchInput = {
   cardTypes: Array<MTG_Filter_CardTypeInput>;
   color: Array<MTG_Filter_ColorInput>;
+  commander?: InputMaybe<Scalars['ID']['input']>;
+  deckID?: InputMaybe<Scalars['ID']['input']>;
   games: Array<MTG_Filter_GameInput>;
-  hideIgnored: TernaryBoolean;
+  hideIgnored: Scalars['Boolean']['input'];
+  isSelectingCommander: Scalars['Boolean']['input'];
   layouts: Array<MTG_Filter_LayoutInput>;
   legalities: Array<MTG_Filter_LegalityInput>;
   manaCosts: Array<MTG_Filter_ManaCostInput>;
@@ -440,7 +479,6 @@ export type MTG_UpdateDeckInput = {
   cardFrontImage?: InputMaybe<MTG_DeckCardFrontImageInput>;
   cards: Array<MTG_DeckCardInput>;
   deckID: Scalars['ID']['input'];
-  ignoredCards: Array<Scalars['String']['input']>;
   name: Scalars['String']['input'];
   zones: Array<FlowZoneInput>;
 };
@@ -452,20 +490,27 @@ export enum MainOrSide {
 
 export type Mutation = {
   __typename?: 'Mutation';
-  addMTGCardToCardPackage: MTG_CardPackage;
-  assignTag: Scalars['Boolean']['output'];
-  createMTGCardPackage: MTG_CardPackage;
-  createMTGDeck: MTG_Deck;
-  createTag: Scalars['ID']['output'];
-  deleteMTGCardPackage: Scalars['Boolean']['output'];
-  deleteMTGDeck: Scalars['Boolean']['output'];
-  deleteTag: Scalars['ID']['output'];
-  rate: Scalars['ID']['output'];
-  removeMTGCardFromCardPackage: MTG_CardPackage;
-  saveMTGDeckAsCopy: MTG_Deck;
-  unassignTag: Scalars['Boolean']['output'];
-  updateMTGDeck: MTG_Deck;
-  updateTag: Scalars['ID']['output'];
+  addIgnoredCard: Response;
+  addMTGCardToCardPackage: Response;
+  assignTag: Response;
+  createMTGCardPackage: Response;
+  createMTGDeck: Response;
+  createTag: Response;
+  deleteMTGCardPackage: Response;
+  deleteMTGDeck: Response;
+  deleteTag: Response;
+  rate: Response;
+  removeIgnoredCard: Response;
+  removeMTGCardFromCardPackage: Response;
+  saveMTGDeckAsCopy: Response;
+  unassignTag: Response;
+  updateMTGDeck: Response;
+  updateTag: Response;
+};
+
+
+export type MutationaddIgnoredCardArgs = {
+  input: AddIgnoredCardInput;
 };
 
 
@@ -511,6 +556,11 @@ export type MutationdeleteTagArgs = {
 
 export type MutationrateArgs = {
   input: RateInput;
+};
+
+
+export type MutationremoveIgnoredCardArgs = {
+  input: RemoveIgnoredCardInput;
 };
 
 
@@ -567,7 +617,8 @@ export type Query = {
   getMTGCardPackages: Array<MTG_CardPackage>;
   getMTGCards: Array<MTG_Card>;
   getMTGCardsFiltered: MTG_Filter_Search;
-  getMTGDecks: Array<MTG_Deck>;
+  getMTGDeck: MTG_Deck;
+  getMTGDecks: Array<MTG_DeckDashboard>;
   getMTGFilters: MTG_Filter_Entries;
   tag?: Maybe<Tag>;
   tags: Array<Tag>;
@@ -586,8 +637,8 @@ export type QuerygetMTGCardsFilteredArgs = {
 };
 
 
-export type QuerygetMTGDecksArgs = {
-  deckID?: InputMaybe<Scalars['ID']['input']>;
+export type QuerygetMTGDeckArgs = {
+  deckID: Scalars['ID']['input'];
 };
 
 
@@ -603,8 +654,12 @@ export enum RatableEntityType {
 export type RateInput = {
   entityID: Scalars['ID']['input'];
   entityType: RatableEntityType;
-  userID: Scalars['ID']['input'];
   value: Scalars['Int']['input'];
+};
+
+export type RemoveIgnoredCardInput = {
+  cardID: Scalars['ID']['input'];
+  deckID: Scalars['ID']['input'];
 };
 
 export type Response = {
@@ -615,11 +670,9 @@ export type Response = {
 
 export type Tag = {
   ID: Scalars['ID']['output'];
-  aggregatedRating: AggregatedRating;
   description?: Maybe<Scalars['String']['output']>;
   myRating?: Maybe<UserRating>;
   name: Scalars['String']['output'];
-  ratings: Array<UserRating>;
 };
 
 export enum TagType {

@@ -39,6 +39,10 @@ export interface MTGFilterType {
         min: number | null
         max: number | null
     }
+    deckID: string | null
+    commander: string | null
+    isSelectingCommander: boolean
+    page: number
 }
 
 export interface MTGFilterContextType {
@@ -62,16 +66,10 @@ export interface MTGFilterContextType {
         >
     >
 
-    isSelectingCommander: boolean
-    setIsSelectingCommander: Dispatch<SetStateAction<boolean>>
-
     zoom: 'IN' | 'OUT'
     setZoom: Dispatch<SetStateAction<'IN' | 'OUT'>>
 
-    page: number
-    setPage: Dispatch<SetStateAction<number>>
-
-    convertFilters: () => QuerygetMTGCardsFilteredArgs
+    convertedFilters: QuerygetMTGCardsFilteredArgs
 }
 
 export const initialMTGFilter: MTGFilterType = {
@@ -120,6 +118,10 @@ export const initialMTGFilter: MTGFilterType = {
         min: null,
         max: null,
     },
+    deckID: null,
+    commander: null,
+    isSelectingCommander: false,
+    page: 0,
 }
 
 export const initialConvertedFilter: QuerygetMTGCardsFilteredArgs = {
@@ -128,7 +130,7 @@ export const initialConvertedFilter: QuerygetMTGCardsFilteredArgs = {
         color: [],
         manaCosts: [],
         games: [],
-        hideIgnored: TernaryBoolean.UNSET,
+        hideIgnored: false,
         layouts: [],
         legalities: [],
         multiColor: TernaryBoolean.UNSET,
@@ -141,6 +143,7 @@ export const initialConvertedFilter: QuerygetMTGCardsFilteredArgs = {
         subtypes: [],
         tags: [],
         searchString: '',
+        isSelectingCommander: false,
     },
     pagination: {
         page: 0,
@@ -163,9 +166,31 @@ export const MTGFilterContext = createContext<MTGFilterContextType>({
     setSort: () => {},
     zoom: 'OUT',
     setZoom: () => {},
-    page: 0,
-    setPage: () => {},
-    isSelectingCommander: false,
-    setIsSelectingCommander: () => {},
-    convertFilters: () => initialConvertedFilter,
+    convertedFilters: {
+        filter: {
+            cardTypes: [],
+            color: [],
+            manaCosts: [],
+            games: [],
+            hideIgnored: false,
+            layouts: [],
+            legalities: [],
+            multiColor: TernaryBoolean.UNSET,
+            rarity: [],
+            rating: {
+                min: null,
+                max: null,
+            },
+            sets: [],
+            subtypes: [],
+            tags: [],
+            searchString: '',
+            isSelectingCommander: false,
+        },
+        pagination: {
+            page: 0,
+            pageSize: PAGE_SIZE_DESKTOP,
+        },
+        sort: [],
+    },
 })

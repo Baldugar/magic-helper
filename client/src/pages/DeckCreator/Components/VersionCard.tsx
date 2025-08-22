@@ -4,7 +4,7 @@ import { MTGCardWithHover } from '../../../components/MTGCardWithHover'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGDeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
 import { MTG_Card, MTG_CardVersion } from '../../../graphql/types'
-import { isCardInDeck } from '../../../utils/functions/cardFunctions'
+import { getCorrectCardImage, isCardInDeck } from '../../../utils/functions/cardFunctions'
 import { NodeType, organizeNodes } from '../../../utils/functions/nodeFunctions'
 import { ContextMenu } from '../../../utils/hooks/ContextMenu/ContextMenu'
 import { ContextMenuOption } from '../../../utils/hooks/ContextMenu/types'
@@ -24,7 +24,7 @@ export const VersionCard = (props: VersionCardProps) => {
     const { onAddCard, deck, setDeck, setCardVersion } = useMTGDeckCreator()
 
     const handleAddCard = (card: MTG_Card, versionID?: string) => {
-        const newDeck = onAddCard(card, undefined, undefined, versionID)
+        const newDeck = onAddCard(card, undefined, versionID)
         if (!newDeck) return
         setNodes(organizeNodes(newDeck, handleDeleteZone, handleRenameZone, handleDeletePhantom))
     }
@@ -44,12 +44,12 @@ export const VersionCard = (props: VersionCardProps) => {
             action: () => {
                 if (!deck) return
                 setDeck((prev) => {
-                    if (!prev) return prev
                     return {
                         ...prev,
                         cardFrontImage: {
-                            ...card,
-                            versions: [version],
+                            cardID: card.ID,
+                            image: getCorrectCardImage(version, 'artCrop') ?? '',
+                            versionID: version.ID,
                         },
                     }
                 })

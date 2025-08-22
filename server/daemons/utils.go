@@ -173,17 +173,16 @@ func parseCardsFromRaw(allCards []json.RawMessage) ([]map[string]any, error) {
 	return cards, nil
 }
 
-func upsertOriginalCards(ctx context.Context, cards []map[string]any, collection arango.ArangoDocument) error {
+func upsertOriginalCards(ctx context.Context, cards []map[string]any) error {
 	aq := arango.NewQuery( /* aql */ `
 		FOR c IN @cards
 			UPSERT { _key: c.id }
 			INSERT MERGE({ _key: c.id }, c)
 			UPDATE c
-			IN @@collection
+			IN MTG_Original_Cards
 	`)
 
 	aq.AddBindVar("cards", cards)
-	aq.AddBindVar("@collection", collection)
 
 	_, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {

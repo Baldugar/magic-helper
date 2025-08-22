@@ -10,7 +10,7 @@ export interface TagPillProps {
 
 const TagPill = (props: TagPillProps): JSX.Element => {
     const { tag } = props
-    const { ID, name, aggregatedRating, description, myRating, __typename } = tag
+    const { ID, name, description, __typename, myRating } = tag
     const colors = __typename === 'DeckTag' ? tag.colors ?? [] : ([] as MTG_Color[])
     const tagColor = calculateColor(colors)
     const [open, setOpen] = useState(false)
@@ -117,12 +117,6 @@ const TagPill = (props: TagPillProps): JSX.Element => {
                     <Typography>{description}</Typography>
                     <Box display={'flex'} columnGap={'4px'}>
                         {myRating && <Typography>My Rating: {myRating.value}</Typography>}
-                        {aggregatedRating && (
-                            <Typography>
-                                Aggregated Rating: {aggregatedRating.average}{' '}
-                                <span style={{ color: 'gray' }}>({aggregatedRating.count})</span>
-                            </Typography>
-                        )}
                     </Box>
                 </Box>
             </Collapse>

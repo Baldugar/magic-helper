@@ -1,11 +1,10 @@
 import { Box, Button, Grid, Paper, Popover, Stack, TextField, Typography } from '@mui/material'
 import { useContext, useState } from 'react'
-import MTGCardPackage from '../../components/CardPackageCard'
-import { MTGCardPackagesContext } from '../../context/MTGA/CardPackages/CardPackagesContext'
-import { MTGFunctions } from '../../graphql/MTGA/functions'
+import MTGCardPackage from '../../../../components/CardPackageCard'
+import { MTGCardPackagesContext } from '../../../../context/MTGA/CardPackages/CardPackagesContext'
 
 export const CardPackageList = () => {
-    const { cardPackages, setCardPackages } = useContext(MTGCardPackagesContext)
+    const { cardPackages, createCardPackage } = useContext(MTGCardPackagesContext)
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
     const [name, setName] = useState('')
@@ -20,9 +19,6 @@ export const CardPackageList = () => {
     }
 
     const open = Boolean(anchorEl)
-    const {
-        mutations: { createMTGCardPackage },
-    } = MTGFunctions
 
     return (
         <Stack padding={4} gap={2}>
@@ -57,14 +53,7 @@ export const CardPackageList = () => {
                                 variant={'contained'}
                                 color={'primary'}
                                 disabled={name.length === 0}
-                                onClick={() =>
-                                    createMTGCardPackage({
-                                        name,
-                                    }).then((cardPackage) => {
-                                        setCardPackages([...cardPackages, cardPackage])
-                                        handleClose()
-                                    })
-                                }
+                                onClick={() => createCardPackage(name)}
                             >
                                 Create
                             </Button>

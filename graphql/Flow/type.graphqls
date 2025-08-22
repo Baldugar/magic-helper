@@ -4,7 +4,8 @@ type FlowZone {
     position: Position!
     width: Float!
     height: Float!
-    childrenIDs: [ID!]!
+    cardChildren: [ID!]!
+    zoneChildren: [ID!]!
 }
 
 type Position {

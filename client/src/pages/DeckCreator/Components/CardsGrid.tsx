@@ -10,8 +10,7 @@ import { CardsGridButton } from './CardsGridButton'
 
 export const CardsGrid = () => {
     const { cards: filteredCards, totalCount } = useMTGCards()
-    const { page, setPage } = useMTGFilter()
-    const { filter, originalFilter } = useMTGFilter()
+    const { filter, originalFilter, setFilter } = useMTGFilter()
     const gridRef = useRef<HTMLDivElement | null>(null)
     const scrollDebounceTimeout = useRef<NodeJS.Timeout | null>(null)
     const { stickyCardsGrid } = useMTGDeckCreator()
@@ -30,12 +29,12 @@ export const CardsGrid = () => {
     const handleHorizontalSwipe = (direction: 'left' | 'right') => {
         if (!isMobile) return
 
-        if (direction === 'left' && page < totalPages - 1) {
+        if (direction === 'left' && filter.page < totalPages - 1) {
             lastPageChangeInteractionRef.current = 'other'
-            setPage(page + 1)
-        } else if (direction === 'right' && page > 0) {
+            setFilter((prev) => ({ ...prev, page: prev.page + 1 }))
+        } else if (direction === 'right' && filter.page > 0) {
             lastPageChangeInteractionRef.current = 'other'
-            setPage(page - 1)
+            setFilter((prev) => ({ ...prev, page: prev.page - 1 }))
         }
     }
 
@@ -50,14 +49,14 @@ export const CardsGrid = () => {
         const atTop = scrollTop <= tolerance
         const atBottom = scrollTop >= scrollHeight - clientHeight - tolerance
 
-        if (direction === 'down' && atBottom && page < totalPages - 1) {
+        if (direction === 'down' && atBottom && filter.page < totalPages - 1) {
             // Finger swipe UP, go NEXT
             lastPageChangeInteractionRef.current = 'swipeUp'
-            setPage(page + 1)
-        } else if (direction === 'up' && atTop && page > 0) {
+            setFilter((prev) => ({ ...prev, page: prev.page + 1 }))
+        } else if (direction === 'up' && atTop && filter.page > 0) {
             // Finger swipe DOWN, go PREVIOUS
             lastPageChangeInteractionRef.current = 'swipeDown'
-            setPage(page - 1)
+            setFilter((prev) => ({ ...prev, page: prev.page - 1 }))
         }
     }
 
@@ -148,7 +147,7 @@ export const CardsGrid = () => {
                 gridRef.current.scrollTop = 0
             }
         }
-    }, [page, scrollToCard, isMobile, stickyCardsGrid, cardsToShow.length]) // Removed lastPageChangeInteraction from dependencies
+    }, [filter.page, scrollToCard, isMobile, stickyCardsGrid, cardsToShow.length]) // Removed lastPageChangeInteraction from dependencies
 
     // After cardsToShow changes (e.g., after ignore), scroll to the correct card
     useEffect(() => {
@@ -193,13 +192,13 @@ export const CardsGrid = () => {
                 if (!isMobile) {
                     const hasVerticalScrollbar = e.currentTarget.scrollHeight > e.currentTarget.clientHeight
                     if (hasVerticalScrollbar && !e.shiftKey) return
-                    if (e.deltaY > 0 && page < totalPages - 1) {
+                    if (e.deltaY > 0 && filter.page < totalPages - 1) {
                         lastPageChangeInteractionRef.current = 'other'
-                        setPage(page + 1)
+                        setFilter((prev) => ({ ...prev, page: prev.page + 1 }))
                     }
-                    if (e.deltaY < 0 && page > 0) {
+                    if (e.deltaY < 0 && filter.page > 0) {
                         lastPageChangeInteractionRef.current = 'other'
-                        setPage(page - 1)
+                        setFilter((prev) => ({ ...prev, page: prev.page - 1 }))
                     }
                 }
             }}

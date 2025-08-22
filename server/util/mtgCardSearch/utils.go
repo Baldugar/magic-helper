@@ -5,7 +5,9 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
+	"magic-helper/arango"
 	"magic-helper/graph/model"
 
 	"github.com/rs/zerolog/log"
@@ -48,19 +50,6 @@ type CardIndex struct {
 	// All cards cached in memory
 	AllCards []*model.MtgCard
 
-	// Indices for fast lookups
-	CardsByCMC    map[int][]*model.MtgCard
-	CardsByRarity map[model.MtgRarity][]*model.MtgCard
-	CardsByColor  map[model.MtgColor][]*model.MtgCard
-	CardsBySet    map[string][]*model.MtgCard
-	CardsByType   map[string][]*model.MtgCard
-	CardsByLayout map[model.MtgLayout][]*model.MtgCard
-	CardsByGame   map[model.MtgGame][]*model.MtgCard
-
-	// Text search indices
-	CardsByName       map[string][]*model.MtgCard
-	CardsByOracleText map[string][]*model.MtgCard
-
 	// Timestamp of last update
 	LastUpdated int64
 }
@@ -71,19 +60,90 @@ var cardIndex *CardIndex
 // GetCardIndex returns the global card index, initializing it if necessary
 func GetCardIndex() *CardIndex {
 	if cardIndex == nil {
-		cardIndex = &CardIndex{
-			CardsByCMC:        make(map[int][]*model.MtgCard),
-			CardsByRarity:     make(map[model.MtgRarity][]*model.MtgCard),
-			CardsByColor:      make(map[model.MtgColor][]*model.MtgCard),
-			CardsBySet:        make(map[string][]*model.MtgCard),
-			CardsByType:       make(map[string][]*model.MtgCard),
-			CardsByLayout:     make(map[model.MtgLayout][]*model.MtgCard),
-			CardsByGame:       make(map[model.MtgGame][]*model.MtgCard),
-			CardsByName:       make(map[string][]*model.MtgCard),
-			CardsByOracleText: make(map[string][]*model.MtgCard),
-		}
+		cardIndex = &CardIndex{}
 	}
 	return cardIndex
+}
+
+// UpdateCardInIndex updates a card in the index after the user has assigned a rating or a cardTag / deckTag
+func UpdateCardInIndex(ctx context.Context, cardID string) error {
+	log.Info().Msg("Updating card index...")
+
+	aq := arango.NewQuery( /* aql */ `
+		FOR doc IN MTG_Cards
+			FILTER doc._key == @cardID
+			LET rating = FIRST(
+				FOR node, ratingEdge IN 1..1 INBOUND doc MTG_User_Rating
+				RETURN {
+					user: node,
+					value: ratingEdge.value
+				}
+			)
+			LET cardTags = (
+				FOR tag, tagEdge IN 1..1 INBOUND doc MTG_Tag_CardDeck
+				FILTER tag.type == "CardTag"
+				LET cardTagRating = FIRST(
+					FOR node, ratingEdge IN 1..1 INBOUND tag MTG_User_Rating
+					RETURN {
+						user: node,
+						value: ratingEdge.value
+					}
+				)
+				RETURN MERGE(tag, {
+					myRating: cardTagRating
+				})
+			)
+			LET deckTags = (
+				FOR tag, tagEdge IN 1..1 INBOUND doc MTG_Tag_CardDeck
+				FILTER tag.type == "DeckTag"
+				LET cardTagRating = FIRST(
+					FOR node, ratingEdge IN 1..1 INBOUND tag MTG_User_Rating
+					RETURN {
+						user: node,
+						value: ratingEdge.value
+					}
+				)
+				RETURN MERGE(tag, {
+					myRating: cardTagRating
+				})
+			)
+			RETURN MERGE(doc, {
+				myRating: rating,
+				cardTags: cardTags,
+				deckTags: deckTags
+			})
+	`)
+
+	aq.AddBindVar("cardID", cardID)
+
+	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
+	if err != nil {
+		log.Error().Err(err).Msgf("Error updating card index")
+		return err
+	}
+
+	defer cursor.Close()
+	var card model.MtgCard
+	for cursor.HasMore() {
+		_, err := cursor.ReadDocument(ctx, &card)
+		if err != nil {
+			log.Error().Err(err).Msgf("Error reading card document")
+			return err
+		}
+	}
+
+	index := GetCardIndex()
+	index.mutex.Lock()
+	defer index.mutex.Unlock()
+
+	for i, c := range index.AllCards {
+		if c.ID == card.ID {
+			index.AllCards[i] = &card
+			break
+		}
+	}
+
+	return nil
 }
 
 // BuildCardIndexWithCards builds the card index from provided cards
@@ -94,85 +154,13 @@ func BuildCardIndexWithCards(cards []*model.MtgCard) error {
 	index.mutex.Lock()
 	defer index.mutex.Unlock()
 
-	// Clear existing indices
-	index.AllCards = make([]*model.MtgCard, 0, len(cards))
-	index.CardsByCMC = make(map[int][]*model.MtgCard)
-	index.CardsByRarity = make(map[model.MtgRarity][]*model.MtgCard)
-	index.CardsByColor = make(map[model.MtgColor][]*model.MtgCard)
-	index.CardsBySet = make(map[string][]*model.MtgCard)
-	index.CardsByType = make(map[string][]*model.MtgCard)
-	index.CardsByLayout = make(map[model.MtgLayout][]*model.MtgCard)
-	index.CardsByGame = make(map[model.MtgGame][]*model.MtgCard)
-	index.CardsByName = make(map[string][]*model.MtgCard)
-	index.CardsByOracleText = make(map[string][]*model.MtgCard)
-
 	// Build indices
-	for _, card := range cards {
-		index.AllCards = append(index.AllCards, card)
-
-		// CMC index
-		cmc := int(card.Cmc)
-		index.CardsByCMC[cmc] = append(index.CardsByCMC[cmc], card)
-
-		// Color identity index
-		for _, color := range card.ColorIdentity {
-			index.CardsByColor[color] = append(index.CardsByColor[color], card)
-		}
-
-		// Layout index
-		index.CardsByLayout[card.Layout] = append(index.CardsByLayout[card.Layout], card)
-
-		// Type index (build from type line)
-		typeWords := strings.Fields(strings.ToLower(card.TypeLine))
-		for _, typeWord := range typeWords {
-			if typeWord != "—" && typeWord != "//" {
-				index.CardsByType[typeWord] = append(index.CardsByType[typeWord], card)
-			}
-		}
-
-		// Name index (for fast text search)
-		nameWords := strings.Fields(strings.ToLower(card.Name))
-		for _, word := range nameWords {
-			if len(word) >= 3 { // Only index words of 3+ characters
-				index.CardsByName[word] = append(index.CardsByName[word], card)
-			}
-		}
-
-		// Oracle text index
-		if card.OracleText != nil {
-			oracleWords := strings.Fields(strings.ToLower(*card.OracleText))
-			for _, word := range oracleWords {
-				if len(word) >= 3 { // Only index words of 3+ characters
-					index.CardsByOracleText[word] = append(index.CardsByOracleText[word], card)
-				}
-			}
-		}
-
-		// Version-specific indices
-		for _, version := range card.Versions {
-			// Rarity index
-			index.CardsByRarity[version.Rarity] = append(index.CardsByRarity[version.Rarity], card)
-
-			// Set index
-			setLower := strings.ToLower(version.Set)
-			index.CardsBySet[setLower] = append(index.CardsBySet[setLower], card)
-
-			// Game index
-			for _, game := range version.Games {
-				index.CardsByGame[game] = append(index.CardsByGame[game], card)
-			}
-		}
-	}
+	index.AllCards = cards
 
 	index.LastUpdated = getCurrentTimestamp()
 
 	log.Info().
 		Int("total_cards", len(index.AllCards)).
-		Int("cmc_buckets", len(index.CardsByCMC)).
-		Int("rarity_buckets", len(index.CardsByRarity)).
-		Int("color_buckets", len(index.CardsByColor)).
-		Int("set_buckets", len(index.CardsBySet)).
-		Int("type_buckets", len(index.CardsByType)).
 		Msg("Card index built successfully")
 
 	return nil
@@ -203,7 +191,7 @@ func IsIndexReady() bool {
 
 // getCurrentTimestamp returns the current Unix timestamp
 func getCurrentTimestamp() int64 {
-	return 0 // TODO: Implement proper timestamp
+	return time.Now().UnixMilli()
 }
 
 func CalculateQuery(s string) Query {

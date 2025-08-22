@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from 'react'
 import { MTGFunctions } from '../../../graphql/MTGA/functions'
-import { MTG_CardPackage } from '../../../graphql/types'
+import { MainOrSide, MTG_Card, MTG_CardPackage } from '../../../graphql/types'
 import { MTGCardPackagesContext } from './CardPackagesContext'
 
 export const MTGCardPackagesProvider = ({ children }: { children: ReactNode }) => {
@@ -9,6 +9,11 @@ export const MTGCardPackagesProvider = ({ children }: { children: ReactNode }) =
 
     const {
         queries: { getMTGCardPackages },
+        mutations: {
+            addMTGCardToCardPackage: addMTGCardToCardPackageMutation,
+            removeMTGCardFromCardPackage: removeMTGCardFromCardPackageMutation,
+            createMTGCardPackage: createMTGCardPackageMutation,
+        },
     } = MTGFunctions
 
     useEffect(() => {
@@ -19,18 +24,76 @@ export const MTGCardPackagesProvider = ({ children }: { children: ReactNode }) =
         })
     }, [getMTGCardPackages])
 
-    const updateCardPackage = (cardPackage: MTG_CardPackage) => {
-        const index = cardPackages.findIndex((d) => d.ID === cardPackage.ID)
-        if (index !== -1) {
-            cardPackages[index] = cardPackage
-            setCardPackages([...cardPackages])
-        } else {
-            setCardPackages([...cardPackages, cardPackage])
-        }
+    const addMTGCardToCardPackage = (cardPackageID: string, card: MTG_Card, mainOrSide: MainOrSide) => {
+        addMTGCardToCardPackageMutation({
+            cardPackageID,
+            card: card.ID,
+            count: 1,
+        }).then((response) => {
+            if (response.status) {
+                setCardPackages(
+                    cardPackages.map((cp) =>
+                        cp.ID === cardPackageID
+                            ? {
+                                  ...cp,
+                                  cards: [
+                                      ...cp.cards,
+                                      {
+                                          card: card,
+                                          count: 1,
+                                          mainOrSide,
+                                      },
+                                  ],
+                              }
+                            : cp,
+                    ),
+                )
+            }
+        })
+    }
+
+    const removeMTGCardFromCardPackage = (cardPackageID: string, card: MTG_Card) => {
+        removeMTGCardFromCardPackageMutation({
+            cardPackageID,
+            card: card.ID,
+        }).then((response) => {
+            if (response.status) {
+                setCardPackages(
+                    cardPackages.map((cp) =>
+                        cp.ID === cardPackageID
+                            ? {
+                                  ...cp,
+                                  cards: cp.cards.filter((c) => c.card.ID !== card.ID),
+                              }
+                            : cp,
+                    ),
+                )
+            }
+        })
+    }
+
+    const createCardPackage = (name: string, card?: MTG_Card, mainOrSide?: MainOrSide) => {
+        createMTGCardPackageMutation({ name }).then((response) => {
+            if (response.status) {
+                setCardPackages([...cardPackages, { cards: [], ID: response.message ?? '', name }])
+                if (card) {
+                    addMTGCardToCardPackage(response.message ?? '', card, mainOrSide ?? MainOrSide.MAIN)
+                }
+            }
+        })
     }
 
     return (
-        <MTGCardPackagesContext.Provider value={{ cardPackages, setCardPackages, updateCardPackage, loading }}>
+        <MTGCardPackagesContext.Provider
+            value={{
+                cardPackages,
+                setCardPackages,
+                loading,
+                addMTGCardToCardPackage,
+                removeMTGCardFromCardPackage,
+                createCardPackage,
+            }}
+        >
             {children}
         </MTGCardPackagesContext.Provider>
     )

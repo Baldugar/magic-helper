@@ -9,11 +9,10 @@ import (
 )
 
 func GetTags(ctx context.Context) ([]model.Tag, error) {
-	aq := arango.NewQuery(`
-		FOR tag IN @@tagsCollection
+	aq := arango.NewQuery( /* aql */ `
+		FOR tag IN MTG_Tags
 			RETURN tag
 	`)
-	aq.AddBindVar("@tagsCollection", arango.MTG_TAGS_COLLECTION)
 
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {
@@ -51,12 +50,11 @@ func GetTags(ctx context.Context) ([]model.Tag, error) {
 }
 
 func GetCardTags(ctx context.Context) ([]*model.CardTag, error) {
-	aq := arango.NewQuery(`
-		FOR tag IN @@tagsCollection
+	aq := arango.NewQuery( /* aql */ `
+		FOR tag IN MTG_Tags
 			FILTER tag.type == @type
 			RETURN tag
 	`)
-	aq.AddBindVar("@tagsCollection", arango.MTG_TAGS_COLLECTION)
 	aq.AddBindVar("type", model.TagTypeCardTag)
 
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
@@ -85,12 +83,11 @@ func GetCardTags(ctx context.Context) ([]*model.CardTag, error) {
 }
 
 func GetDeckTags(ctx context.Context) ([]*model.DeckTag, error) {
-	aq := arango.NewQuery(`
-		FOR tag IN @@tagsCollection
+	aq := arango.NewQuery( /* aql */ `
+		FOR tag IN MTG_Tags
 			FILTER tag.type == @type
 			RETURN tag
 	`)
-	aq.AddBindVar("@tagsCollection", arango.MTG_TAGS_COLLECTION)
 	aq.AddBindVar("type", model.TagTypeDeckTag)
 
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
@@ -120,12 +117,11 @@ func GetDeckTags(ctx context.Context) ([]*model.DeckTag, error) {
 }
 
 func GetTag(ctx context.Context, id string) (model.Tag, error) {
-	aq := arango.NewQuery(`
-		FOR tag IN @@tagsCollection
+	aq := arango.NewQuery( /* aql */ `
+		FOR tag IN MTG_Tags
 			FILTER tag._key == @id
 			RETURN tag
 	`)
-	aq.AddBindVar("@tagsCollection", arango.MTG_TAGS_COLLECTION)
 	aq.AddBindVar("id", id)
 
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)

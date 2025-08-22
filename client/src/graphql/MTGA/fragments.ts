@@ -1,6 +1,6 @@
 import gql from 'graphql-tag'
 
-export const MTG_CardFragments = gql`
+export const MTG_ImageFragments = gql`
     fragment MTG_ImageFragment on MTG_Image {
         artCrop
         borderCrop
@@ -9,7 +9,37 @@ export const MTG_CardFragments = gql`
         small
         PNG
     }
+`
 
+export const MTG_TagFragments = gql`
+    fragment UserRatingFragment on UserRating {
+        user {
+            ID
+        }
+        value
+    }
+
+    fragment CardTagFragment on CardTag {
+        ID
+        name
+        description
+        myRating {
+            ...UserRatingFragment
+        }
+    }
+
+    fragment DeckTagFragment on DeckTag {
+        ID
+        name
+        description
+        colors
+        myRating {
+            ...UserRatingFragment
+        }
+    }
+`
+
+export const MTG_CardFragments = gql`
     fragment MTG_CardFaceFragment on MTG_CardFace {
         imageUris {
             ...MTG_ImageFragment
@@ -76,9 +106,6 @@ export const MTG_CardFragments = gql`
         keywords
         loyalty
         manaCost
-        aggregatedRating {
-            ...AggregatedRatingFragment
-        }
         myRating {
             ...UserRatingFragment
         }
@@ -88,55 +115,9 @@ export const MTG_CardFragments = gql`
         deckTags {
             ...DeckTagFragment
         }
-        ratings {
-            ...UserRatingFragment
-        }
     }
-`
-
-export const MTG_TagFragments = gql`
-    fragment AggregatedRatingFragment on AggregatedRating {
-        average
-        count
-    }
-
-    fragment UserRatingFragment on UserRating {
-        user {
-            ID
-        }
-        value
-    }
-
-    fragment CardTagFragment on CardTag {
-        ID
-        name
-        description
-        aggregatedRating {
-            ...AggregatedRatingFragment
-        }
-        myRating {
-            ...UserRatingFragment
-        }
-        ratings {
-            ...UserRatingFragment
-        }
-    }
-
-    fragment DeckTagFragment on DeckTag {
-        ID
-        name
-        description
-        colors
-        aggregatedRating {
-            ...AggregatedRatingFragment
-        }
-        myRating {
-            ...UserRatingFragment
-        }
-        ratings {
-            ...UserRatingFragment
-        }
-    }
+    ${MTG_ImageFragments}
+    ${MTG_TagFragments}
 `
 
 export const MTG_DeckFragments = gql`
@@ -149,19 +130,9 @@ export const MTG_DeckFragments = gql`
         ID
         name
         cardFrontImage {
-            ID
-            versions {
-                ID
-                imageUris {
-                    ...MTG_ImageFragment
-                }
-                cardFaces {
-                    layout
-                    imageUris {
-                        ...MTG_ImageFragment
-                    }
-                }
-            }
+            cardID
+            versionID
+            image
         }
         cards {
             card {
@@ -189,7 +160,8 @@ export const MTG_DeckFragments = gql`
             }
             width
             height
-            childrenIDs
+            cardChildren
+            zoneChildren
         }
         ignoredCards
     }

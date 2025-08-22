@@ -13,14 +13,12 @@ type Tag interface {
 	GetID() string
 	GetName() string
 	GetDescription() *string
-	GetAggregatedRating() *AggregatedRating
-	GetRatings() []*UserRating
 	GetMyRating() *UserRating
 }
 
-type AggregatedRating struct {
-	Average float64 `json:"average"`
-	Count   int     `json:"count"`
+type AddIgnoredCardInput struct {
+	CardID string `json:"cardID"`
+	DeckID string `json:"deckID"`
 }
 
 type AssignTagInput struct {
@@ -29,29 +27,16 @@ type AssignTagInput struct {
 }
 
 type CardTag struct {
-	ID               string            `json:"_key"`
-	Name             string            `json:"name"`
-	Description      *string           `json:"description,omitempty"`
-	AggregatedRating *AggregatedRating `json:"aggregatedRating"`
-	Ratings          []*UserRating     `json:"ratings"`
-	MyRating         *UserRating       `json:"myRating,omitempty"`
+	ID          string      `json:"_key"`
+	Name        string      `json:"name"`
+	Description *string     `json:"description,omitempty"`
+	MyRating    *UserRating `json:"myRating,omitempty"`
 }
 
-func (CardTag) IsTag()                                      {}
-func (this CardTag) GetID() string                          { return this.ID }
-func (this CardTag) GetName() string                        { return this.Name }
-func (this CardTag) GetDescription() *string                { return this.Description }
-func (this CardTag) GetAggregatedRating() *AggregatedRating { return this.AggregatedRating }
-func (this CardTag) GetRatings() []*UserRating {
-	if this.Ratings == nil {
-		return nil
-	}
-	interfaceSlice := make([]*UserRating, 0, len(this.Ratings))
-	for _, concrete := range this.Ratings {
-		interfaceSlice = append(interfaceSlice, concrete)
-	}
-	return interfaceSlice
-}
+func (CardTag) IsTag()                        {}
+func (this CardTag) GetID() string            { return this.ID }
+func (this CardTag) GetName() string          { return this.Name }
+func (this CardTag) GetDescription() *string  { return this.Description }
 func (this CardTag) GetMyRating() *UserRating { return this.MyRating }
 
 type CreateTagInput struct {
@@ -63,48 +48,37 @@ type CreateTagInput struct {
 }
 
 type DeckTag struct {
-	ID               string            `json:"_key"`
-	Name             string            `json:"name"`
-	Description      *string           `json:"description,omitempty"`
-	AggregatedRating *AggregatedRating `json:"aggregatedRating"`
-	Ratings          []*UserRating     `json:"ratings"`
-	MyRating         *UserRating       `json:"myRating,omitempty"`
-	Colors           []MtgColor        `json:"colors"`
+	ID          string      `json:"_key"`
+	Name        string      `json:"name"`
+	Description *string     `json:"description,omitempty"`
+	MyRating    *UserRating `json:"myRating,omitempty"`
+	Colors      []MtgColor  `json:"colors"`
 }
 
-func (DeckTag) IsTag()                                      {}
-func (this DeckTag) GetID() string                          { return this.ID }
-func (this DeckTag) GetName() string                        { return this.Name }
-func (this DeckTag) GetDescription() *string                { return this.Description }
-func (this DeckTag) GetAggregatedRating() *AggregatedRating { return this.AggregatedRating }
-func (this DeckTag) GetRatings() []*UserRating {
-	if this.Ratings == nil {
-		return nil
-	}
-	interfaceSlice := make([]*UserRating, 0, len(this.Ratings))
-	for _, concrete := range this.Ratings {
-		interfaceSlice = append(interfaceSlice, concrete)
-	}
-	return interfaceSlice
-}
+func (DeckTag) IsTag()                        {}
+func (this DeckTag) GetID() string            { return this.ID }
+func (this DeckTag) GetName() string          { return this.Name }
+func (this DeckTag) GetDescription() *string  { return this.Description }
 func (this DeckTag) GetMyRating() *UserRating { return this.MyRating }
 
 type FlowZone struct {
-	ID          string    `json:"ID"`
-	Name        string    `json:"name"`
-	Position    *Position `json:"position"`
-	Width       float64   `json:"width"`
-	Height      float64   `json:"height"`
-	ChildrenIDs []string  `json:"childrenIDs"`
+	ID           string    `json:"ID"`
+	Name         string    `json:"name"`
+	Position     *Position `json:"position"`
+	Width        float64   `json:"width"`
+	Height       float64   `json:"height"`
+	CardChildren []string  `json:"cardChildren"`
+	ZoneChildren []string  `json:"zoneChildren"`
 }
 
 type FlowZoneInput struct {
-	ID          string         `json:"ID"`
-	Name        string         `json:"name"`
-	Position    *PositionInput `json:"position"`
-	Width       float64        `json:"width"`
-	Height      float64        `json:"height"`
-	ChildrenIDs []string       `json:"childrenIDs"`
+	ID           string         `json:"ID"`
+	Name         string         `json:"name"`
+	Position     *PositionInput `json:"position"`
+	Width        float64        `json:"width"`
+	Height       float64        `json:"height"`
+	CardChildren []string       `json:"cardChildren"`
+	ZoneChildren []string       `json:"zoneChildren"`
 }
 
 type MtgAddCardToCardPackageInput struct {
@@ -114,28 +88,26 @@ type MtgAddCardToCardPackageInput struct {
 }
 
 type MtgCard struct {
-	ID               string            `json:"_key"`
-	Layout           MtgLayout         `json:"layout"`
-	Cmc              float64           `json:"CMC"`
-	ColorIdentity    []MtgColor        `json:"colorIdentity"`
-	ColorIndicator   []string          `json:"colorIndicator,omitempty"`
-	Colors           []MtgColor        `json:"colors,omitempty"`
-	EDHRecRank       *int              `json:"EDHRecRank,omitempty"`
-	Keywords         []string          `json:"keywords"`
-	Loyalty          *string           `json:"loyalty,omitempty"`
-	ManaCost         *string           `json:"manaCost,omitempty"`
-	Name             string            `json:"name"`
-	OracleText       *string           `json:"oracleText,omitempty"`
-	Power            *string           `json:"power,omitempty"`
-	ProducedMana     []MtgColor        `json:"producedMana,omitempty"`
-	Toughness        *string           `json:"toughness,omitempty"`
-	TypeLine         string            `json:"typeLine"`
-	Versions         []*MtgCardVersion `json:"versions"`
-	AggregatedRating *AggregatedRating `json:"aggregatedRating"`
-	Ratings          []*UserRating     `json:"ratings"`
-	MyRating         *UserRating       `json:"myRating,omitempty"`
-	CardTags         []*CardTag        `json:"cardTags"`
-	DeckTags         []*DeckTag        `json:"deckTags"`
+	ID             string            `json:"_key"`
+	Layout         MtgLayout         `json:"layout"`
+	Cmc            float64           `json:"CMC"`
+	ColorIdentity  []MtgColor        `json:"colorIdentity"`
+	ColorIndicator []string          `json:"colorIndicator,omitempty"`
+	Colors         []MtgColor        `json:"colors,omitempty"`
+	EDHRecRank     *int              `json:"EDHRecRank,omitempty"`
+	Keywords       []string          `json:"keywords"`
+	Loyalty        *string           `json:"loyalty,omitempty"`
+	ManaCost       *string           `json:"manaCost,omitempty"`
+	Name           string            `json:"name"`
+	OracleText     *string           `json:"oracleText,omitempty"`
+	Power          *string           `json:"power,omitempty"`
+	ProducedMana   []MtgColor        `json:"producedMana,omitempty"`
+	Toughness      *string           `json:"toughness,omitempty"`
+	TypeLine       string            `json:"typeLine"`
+	Versions       []*MtgCardVersion `json:"versions"`
+	MyRating       *UserRating       `json:"myRating,omitempty"`
+	CardTags       []*CardTag        `json:"cardTags"`
+	DeckTags       []*DeckTag        `json:"deckTags"`
 }
 
 type MtgCardFace struct {
@@ -153,6 +125,10 @@ type MtgCardFace struct {
 	Power          *string    `json:"power,omitempty"`
 	Toughness      *string    `json:"toughness,omitempty"`
 	TypeLine       *string    `json:"typeLine,omitempty"`
+}
+
+type MtgCardFaceDashboard struct {
+	ImageUris *MtgImage `json:"imageUris,omitempty"`
 }
 
 type MtgCardPackage struct {
@@ -198,6 +174,19 @@ type MtgCardVersion struct {
 	VariationOf *string        `json:"variationOf,omitempty"`
 }
 
+type MtgCardVersionDashboard struct {
+	ID        string                  `json:"ID"`
+	IsDefault bool                    `json:"isDefault"`
+	IsAlchemy bool                    `json:"isAlchemy"`
+	CardFaces []*MtgCardFaceDashboard `json:"cardFaces"`
+	ImageUris *MtgImage               `json:"imageUris,omitempty"`
+}
+
+type MtgCardDashboard struct {
+	ID       string                     `json:"_key"`
+	Versions []*MtgCardVersionDashboard `json:"versions"`
+}
+
 type MtgCreateCardPackageInput struct {
 	Name string `json:"name"`
 }
@@ -207,12 +196,12 @@ type MtgCreateDeckInput struct {
 }
 
 type MtgDeck struct {
-	ID             string         `json:"_key"`
-	Name           string         `json:"name"`
-	CardFrontImage *MtgCard       `json:"cardFrontImage,omitempty"`
-	Cards          []*MtgDeckCard `json:"cards"`
-	Zones          []*FlowZone    `json:"zones"`
-	IgnoredCards   []string       `json:"ignoredCards"`
+	ID             string                 `json:"_key"`
+	Name           string                 `json:"name"`
+	CardFrontImage *MtgDeckCardFrontImage `json:"cardFrontImage,omitempty"`
+	Cards          []*MtgDeckCard         `json:"cards"`
+	Zones          []*FlowZone            `json:"zones"`
+	IgnoredCards   []string               `json:"ignoredCards"`
 }
 
 type MtgDeckCard struct {
@@ -239,6 +228,24 @@ type MtgDeckCardInput struct {
 	MainOrSide        MainOrSide      `json:"mainOrSide"`
 	DeckCardType      MtgDeckCardType `json:"deckCardType"`
 	Phantoms          []*PhantomInput `json:"phantoms"`
+}
+
+type MtgDeckCardDashboard struct {
+	Card              *MtgCardDashboard `json:"card"`
+	SelectedVersionID *string           `json:"selectedVersionID,omitempty"`
+}
+
+type MtgDeckDashboard struct {
+	ID             string                  `json:"_key"`
+	Name           string                  `json:"name"`
+	CardFrontImage *MtgDeckCardFrontImage  `json:"cardFrontImage,omitempty"`
+	Cards          []*MtgDeckCardDashboard `json:"cards"`
+}
+
+type MtgDeckCardFrontImage struct {
+	CardID    string `json:"cardID"`
+	VersionID string `json:"versionID"`
+	Image     string `json:"image"`
 }
 
 type MtgDeleteCardPackageInput struct {
@@ -331,20 +338,23 @@ type MtgFilterSearch struct {
 }
 
 type MtgFilterSearchInput struct {
-	SearchString *string                   `json:"searchString,omitempty"`
-	Rarity       []*MtgFilterRarityInput   `json:"rarity"`
-	Color        []*MtgFilterColorInput    `json:"color"`
-	MultiColor   TernaryBoolean            `json:"multiColor"`
-	ManaCosts    []*MtgFilterManaCostInput `json:"manaCosts"`
-	CardTypes    []*MtgFilterCardTypeInput `json:"cardTypes"`
-	Subtypes     []*MtgFilterSubtypeInput  `json:"subtypes"`
-	Sets         []*MtgFilterSetInput      `json:"sets"`
-	Legalities   []*MtgFilterLegalityInput `json:"legalities"`
-	Layouts      []*MtgFilterLayoutInput   `json:"layouts"`
-	Games        []*MtgFilterGameInput     `json:"games"`
-	HideIgnored  TernaryBoolean            `json:"hideIgnored"`
-	Tags         []*MtgFilterTagInput      `json:"tags"`
-	Rating       *MtgFilterRatingInput     `json:"rating"`
+	SearchString         *string                   `json:"searchString,omitempty"`
+	Rarity               []*MtgFilterRarityInput   `json:"rarity"`
+	Color                []*MtgFilterColorInput    `json:"color"`
+	MultiColor           TernaryBoolean            `json:"multiColor"`
+	ManaCosts            []*MtgFilterManaCostInput `json:"manaCosts"`
+	CardTypes            []*MtgFilterCardTypeInput `json:"cardTypes"`
+	Subtypes             []*MtgFilterSubtypeInput  `json:"subtypes"`
+	Sets                 []*MtgFilterSetInput      `json:"sets"`
+	Legalities           []*MtgFilterLegalityInput `json:"legalities"`
+	Layouts              []*MtgFilterLayoutInput   `json:"layouts"`
+	Games                []*MtgFilterGameInput     `json:"games"`
+	HideIgnored          bool                      `json:"hideIgnored"`
+	Tags                 []*MtgFilterTagInput      `json:"tags"`
+	Rating               *MtgFilterRatingInput     `json:"rating"`
+	Commander            *string                   `json:"commander,omitempty"`
+	DeckID               *string                   `json:"deckID,omitempty"`
+	IsSelectingCommander bool                      `json:"isSelectingCommander"`
 }
 
 type MtgFilterSetInput struct {
@@ -388,7 +398,6 @@ type MtgUpdateDeckInput struct {
 	CardFrontImage *MtgDeckCardFrontImageInput `json:"cardFrontImage,omitempty"`
 	Cards          []*MtgDeckCardInput         `json:"cards"`
 	Zones          []*FlowZoneInput            `json:"zones"`
-	IgnoredCards   []string                    `json:"ignoredCards"`
 }
 
 type Mutation struct {
@@ -418,10 +427,14 @@ type Query struct {
 }
 
 type RateInput struct {
-	UserID     string            `json:"userID"`
 	EntityID   string            `json:"entityID"`
 	EntityType RatableEntityType `json:"entityType"`
 	Value      int               `json:"value"`
+}
+
+type RemoveIgnoredCardInput struct {
+	CardID string `json:"cardID"`
+	DeckID string `json:"deckID"`
 }
 
 type Response struct {

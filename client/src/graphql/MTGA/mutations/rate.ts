@@ -2,6 +2,9 @@ import gql from 'graphql-tag'
 
 export const rate = gql`
     mutation rate($input: RateInput!) {
-        rate(input: $input)
+        rate(input: $input) {
+            status
+            message
+        }
     }
 `

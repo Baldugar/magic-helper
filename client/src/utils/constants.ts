@@ -21,7 +21,8 @@ export const DEFAULT_ZONE: FlowZone = {
     position: DEFAULT_ZONE_POSITION,
     ID: 'default',
     name: 'Default',
-    childrenIDs: [],
+    cardChildren: [],
+    zoneChildren: [],
 }
 
 export const DRAWER_WIDTH_DESKTOP = 500

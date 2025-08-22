@@ -20,5 +20,7 @@ export const MTGTagsProvider = ({ children }: { children: ReactNode }) => {
         })
     }, [])
 
+    // TODO: Create Tags, Edit Tags, Delete Tags
+
     return <MTGTagsContext.Provider value={{ cardTags, deckTags }}>{children}</MTGTagsContext.Provider>
 }

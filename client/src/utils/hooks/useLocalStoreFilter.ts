@@ -58,11 +58,11 @@ export const calculateHash = (filter: MTGFilterType) => {
 }
 
 export const useLocalStoreFilter = () => {
-    const { filter, setFilter, sort, setSort, page, setPage } = useMTGFilter()
+    const { filter, setFilter, sort, setSort } = useMTGFilter()
 
     const saveLocalStoreFilter = () => {
         const hash = calculateHash(filter)
-        const localStoreFilter = { filter, page, hash, sort }
+        const localStoreFilter = { filter, page: filter.page, hash, sort }
         localStorage.setItem('localStoreFilter', JSON.stringify(localStoreFilter))
     }
 
@@ -71,9 +71,8 @@ export const useLocalStoreFilter = () => {
         if (localStoreFilter) {
             const { filter: newFilter, page, hash, sort } = JSON.parse(localStoreFilter) as LocalStoreFilter
             if (hash === calculateHash(filter)) {
-                setFilter(newFilter)
+                setFilter((prev) => ({ ...prev, ...newFilter, page }))
                 setSort(sort)
-                setTimeout(() => setPage(page), 50)
             } else {
                 alert('Local store filter is outdated, trying to load it anyway')
 
@@ -159,9 +158,8 @@ export const useLocalStoreFilter = () => {
                 // filterToSet.searchString
                 filterToSet.searchString = newFilter.searchString
 
-                setFilter(filterToSet)
+                setFilter((prev) => ({ ...prev, ...filterToSet, page }))
                 setSort(sort)
-                setTimeout(() => setPage(page), 50)
             }
         }
     }

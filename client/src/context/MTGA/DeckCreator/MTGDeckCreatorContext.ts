@@ -4,14 +4,9 @@ import { DeckCreatorView } from '../../../types/deckCreatorView'
 
 type MTGDeckCreatorContextType = {
     // Deck & Cards
-    deck: MTG_Deck | undefined
-    setDeck: Dispatch<SetStateAction<MTG_Deck | undefined>>
-    onAddCard: (
-        card: MTG_Card,
-        position?: Position,
-        whatDeck?: MTG_Deck,
-        selectedVersionID?: string,
-    ) => MTG_Deck | undefined
+    deck: MTG_Deck
+    setDeck: Dispatch<SetStateAction<MTG_Deck>>
+    onAddCard: (card: MTG_Card, position?: Position, selectedVersionID?: string) => MTG_Deck
     addOne: (deckCard: MTG_DeckCard) => void
     removeOne: (deckCard: MTG_DeckCard) => void
     removeCard: (card: MTG_Card) => void
@@ -48,9 +43,21 @@ type MTGDeckCreatorContextType = {
 
 export const MTGDeckCreatorContext = createContext<MTGDeckCreatorContextType>({
     // Deck & Cards
-    deck: undefined,
+    deck: {
+        cards: [],
+        ignoredCards: [],
+        name: '',
+        zones: [],
+        ID: '',
+    },
     setDeck: () => {},
-    onAddCard: () => undefined,
+    onAddCard: () => ({
+        cards: [],
+        ignoredCards: [],
+        name: '',
+        zones: [],
+        ID: '',
+    }),
     addOne: () => {},
     removeOne: () => {},
     removeCard: () => {},

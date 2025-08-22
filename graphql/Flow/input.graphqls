@@ -4,7 +4,8 @@ input FlowZoneInput {
     position: PositionInput!
     width: Float!
     height: Float!
-    childrenIDs: [ID!]!
+    cardChildren: [ID!]!
+    zoneChildren: [ID!]!
 }
 
 input PositionInput {

@@ -1,5 +1,7 @@
 package arango
 
+import arangoDriver "github.com/arangodb/go-driver"
+
 // Document collections
 type ArangoDocument string
 
@@ -28,15 +30,26 @@ type ArangoEdge string
 
 const (
 	// MTG edge collections
-	MTG_CARD_DECK_EDGE              ArangoEdge = "MTG_Card_Deck"
-	MTG_DECK_FRONT_CARD_IMAGE_EDGE  ArangoEdge = "MTG_Deck_Front_Card_Image"
-	MTG_CARD_CARD_PACKAGE_EDGE      ArangoEdge = "MTG_Card_Card_Package"
-	MTG_TAG_EDGE_COLLECTION         ArangoEdge = "MTG_Tag_CardDeck"
-	MTG_USER_RATING_EDGE_COLLECTION ArangoEdge = "MTG_User_Rating"
+	MTG_CARD_DECK_EDGE                ArangoEdge = "MTG_Card_Deck"
+	MTG_DECK_FRONT_CARD_IMAGE_EDGE    ArangoEdge = "MTG_Deck_Front_Card_Image"
+	MTG_CARD_CARD_PACKAGE_EDGE        ArangoEdge = "MTG_Card_Card_Package"
+	MTG_TAG_EDGE_COLLECTION           ArangoEdge = "MTG_Tag_CardDeck"
+	MTG_USER_RATING_EDGE_COLLECTION   ArangoEdge = "MTG_User_Rating"
+	MTG_IGNORED_CARDS_EDGE_COLLECTION ArangoEdge = "MTG_Deck_Ignore_Card"
 )
 
 func (e ArangoEdge) String() string {
 	return string(e)
+}
+
+type ArangoIndexEnum string
+
+const (
+	MTG_CARDS_BUILDUP_INDEX ArangoIndexEnum = "MTG_Cards_Buildup"
+)
+
+func (i ArangoIndexEnum) String() string {
+	return string(i)
 }
 
 // Arrays of collections, views, and indexes
@@ -61,4 +74,27 @@ var EDGE_COLLECTIONS = []ArangoEdge{
 	MTG_CARD_CARD_PACKAGE_EDGE,
 	MTG_TAG_EDGE_COLLECTION,
 	MTG_USER_RATING_EDGE_COLLECTION,
+	MTG_IGNORED_CARDS_EDGE_COLLECTION,
+}
+
+type ArangoIndexStruct struct {
+	CollectionName string
+	IsEdge         bool
+	Fields         []string
+	Options        *arangoDriver.EnsurePersistentIndexOptions
+}
+
+type ArangoIndexMap map[ArangoIndexEnum]ArangoIndexStruct
+
+var INDEX_ARRAY ArangoIndexMap = map[ArangoIndexEnum]ArangoIndexStruct{
+	MTG_CARDS_BUILDUP_INDEX: {
+		CollectionName: MTG_CARDS_COLLECTION.String(),
+		IsEdge:         false,
+		Fields:         []string{"manaCost", "layout"},
+		Options: &arangoDriver.EnsurePersistentIndexOptions{
+			Unique: false,
+			Sparse: false,
+			Name:   MTG_CARDS_BUILDUP_INDEX.String(),
+		},
+	},
 }
