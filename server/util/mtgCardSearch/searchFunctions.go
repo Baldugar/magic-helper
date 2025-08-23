@@ -34,9 +34,10 @@ func FilterCards(cards []*model.MtgCard, filter model.MtgFilterSearchInput, sort
 	if filter.DeckID != nil && filter.HideIgnored {
 		ctx := context.Background()
 		aq := arango.NewQuery( /* aql */ `
-			FOR card, edge IN 1..1 INBOUND doc MTG_Deck_Ignore_Card
-			RETURN card.ID
+			FOR card, edge IN 1..1 OUTBOUND CONCAT("MTG_Decks/", @deckID) MTG_Deck_Ignore_Card
+			RETURN card._key
 		`)
+		aq.AddBindVar("deckID", *filter.DeckID)
 		cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
 		if err != nil {
 			log.Error().Err(err).Msg("Error querying database")

@@ -51,6 +51,7 @@ export interface MTGFilterContextType {
     clearFilter: () => void
     setFilter: Dispatch<SetStateAction<MTGFilterType>>
     setOriginalFilter: Dispatch<SetStateAction<MTGFilterType>>
+    setIgnoredCardIDs: Dispatch<SetStateAction<string[]>>
     sort: {
         sortBy: MTG_Filter_SortBy
         sortDirection: MTG_Filter_SortDirection
@@ -158,6 +159,7 @@ export const MTGFilterContext = createContext<MTGFilterContextType>({
     clearFilter: () => {},
     originalFilter: initialMTGFilter,
     setOriginalFilter: () => {},
+    setIgnoredCardIDs: () => {},
     sort: Object.values(MTG_Filter_SortBy).map((sortBy) => ({
         enabled: true,
         sortBy,

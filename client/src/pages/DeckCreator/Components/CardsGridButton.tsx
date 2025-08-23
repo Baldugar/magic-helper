@@ -10,6 +10,7 @@ import { useMTGCardPackages } from '../../../context/MTGA/CardPackages/useCardPa
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGDeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
 import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
+import { MTGFunctions } from '../../../graphql/MTGA/functions'
 import { MainOrSide, MTG_Card, MTG_CardVersion } from '../../../graphql/types'
 import { getCorrectCardImage, isCardInDeck } from '../../../utils/functions/cardFunctions'
 import { singleSetSelected } from '../../../utils/functions/filterFunctions'
@@ -34,7 +35,7 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
     const { handleDeleteZone, handleRenameZone, handleDeletePhantom } = useMTGDeckFlowCreator()
     const { setNodes } = useReactFlow<NodeType>()
     const { item } = useDnD()
-    const { filter } = useMTGFilter()
+    const { filter, setFilter } = useMTGFilter()
     const {
         anchorRef: mainCardAnchorRef,
         handleClick: mainCardHandleClick,
@@ -83,6 +84,8 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
         ? card.versions.find((v) => v.ID === deck.cards.find((c) => c.card.ID === card.ID)?.selectedVersionID)
         : null
 
+    const cardIsIgnored = deck.ignoredCards.includes(card.ID)
+
     const mainCardOptions: ContextMenuOption[] = [
         {
             label: !cardIsInDeck ? 'Add to deck' : 'Remove from deck',
@@ -95,7 +98,7 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
             },
         },
         {
-            label: 'Ignore card',
+            label: 'Ignore card', // TODO: Fix this
             action: () => {
                 if (!deck) return
                 let confirmation = true
@@ -115,9 +118,26 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                     } else {
                         newDeck.ignoredCards.splice(ignoreIndex, 1)
                     }
+                    if (filter.hideIgnored) {
+                        setFilter((prev) => ({
+                            ...prev,
+                            ignoredCardIDs: newDeck.ignoredCards,
+                        }))
+                    }
                     return newDeck
                 })
-                if (onIgnore) onIgnore()
+                const {
+                    mutations: { addIgnoredCard, removeIgnoredCard },
+                } = MTGFunctions
+                if (cardIsIgnored) {
+                    removeIgnoredCard({ cardID: card.ID, deckID: deck.ID }).then(() => {
+                        if (onIgnore) onIgnore()
+                    })
+                } else {
+                    addIgnoredCard({ cardID: card.ID, deckID: deck.ID }).then(() => {
+                        if (onIgnore) onIgnore()
+                    })
+                }
             },
         },
         // {

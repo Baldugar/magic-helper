@@ -311,3 +311,59 @@ func SaveMTGDeckAsCopy(ctx context.Context, input model.MtgUpdateDeckInput) (*mo
 		Message: &deck.ID,
 	}, nil
 }
+
+func AddIgnoredCard(ctx context.Context, input model.AddIgnoredCardInput) (*model.Response, error) {
+	log.Info().Msg("AddIgnoredCard: Started")
+
+	aq := arango.NewQuery( /* aql */ `
+		INSERT {
+			_from: CONCAT("MTG_Decks", "/", @deckID),
+			_to: CONCAT("MTG_Cards", "/", @cardID),
+		} INTO MTG_Deck_Ignore_Card
+		RETURN NEW
+	`)
+
+	aq.AddBindVar("cardID", input.CardID)
+	aq.AddBindVar("deckID", input.DeckID)
+
+	log.Info().Str("query", aq.Query).Msg("AddIgnoredCard: Querying database")
+
+	_, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
+	if err != nil {
+		log.Error().Err(err).Msgf("AddIgnoredCard: Error querying database")
+		return nil, err
+	}
+
+	log.Info().Msg("AddIgnoredCard: Finished")
+	return &model.Response{
+		Status:  true,
+		Message: nil,
+	}, nil
+}
+
+func RemoveIgnoredCard(ctx context.Context, input model.RemoveIgnoredCardInput) (*model.Response, error) {
+	log.Info().Msg("RemoveIgnoredCard: Started")
+
+	aq := arango.NewQuery( /* aql */ `
+		FOR card, edge IN 1..1 OUTBOUND CONCAT("MTG_Decks", "/", @deckID) MTG_Deck_Ignore_Card
+		FILTER edge._to == CONCAT("MTG_Cards", "/", @cardID)
+		REMOVE edge IN MTG_Deck_Ignore_Card
+	`)
+
+	aq.AddBindVar("cardID", input.CardID)
+	aq.AddBindVar("deckID", input.DeckID)
+
+	log.Info().Str("query", aq.Query).Msg("RemoveIgnoredCard: Querying database")
+
+	_, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
+	if err != nil {
+		log.Error().Err(err).Msgf("RemoveIgnoredCard: Error querying database")
+		return nil, err
+	}
+
+	log.Info().Msg("RemoveIgnoredCard: Finished")
+	return &model.Response{
+		Status:  true,
+		Message: nil,
+	}, nil
+}

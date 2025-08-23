@@ -33,8 +33,8 @@ import { TernaryBoolean } from '../../../graphql/types'
 import { nextTB, prevTB } from '../../../types/ternaryBoolean'
 
 export const Filters = () => {
-    const { filter, setFilter } = useMTGFilter()
-    const { stickyCardsGrid, setStickyCardsGrid } = useMTGDeckCreator()
+    const { filter, setFilter, setIgnoredCardIDs } = useMTGFilter()
+    const { stickyCardsGrid, setStickyCardsGrid, deck } = useMTGDeckCreator()
     const isMobile = useMediaQuery('(max-width: 600px)')
     const [searchAnchorEl, setSearchAnchorEl] = useState<null | HTMLElement>(null)
     const [search, setSearch] = useState<string>('')
@@ -337,12 +337,14 @@ export const Filters = () => {
                 control={<Switch color="primary" />}
                 label="Hide Ignored"
                 labelPlacement="bottom"
-                onChange={(_, c) =>
+                onChange={(_, c) => {
                     setFilter((prev) => ({
                         ...prev,
                         hideIgnored: c,
+                        page: 0,
                     }))
-                }
+                    setIgnoredCardIDs(deck.ignoredCards)
+                }}
             />
             {isMobile && (
                 <IconButton

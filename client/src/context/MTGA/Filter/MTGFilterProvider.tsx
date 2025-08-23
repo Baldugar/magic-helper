@@ -30,6 +30,7 @@ const initialSortOrder = [
 export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
     const [filter, setFilter] = useState<MTGFilterType>(initialMTGFilter)
     const [originalFilter, setOriginalFilter] = useState<MTGFilterType>(initialMTGFilter)
+    const [ignoredCardIDs, setIgnoredCardIDs] = useState<string[]>([])
     const isMobile = useMediaQuery('(max-width: 600px)')
 
     const [sort, setSort] = useState(
@@ -125,90 +126,95 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
         setFilter(originalFilter)
     }
 
-    const convertedFilters = useMemo((): QuerygetMTGCardsFilteredArgs => {
-        const toReturn = cloneDeep(initialConvertedFilter)
-        toReturn.sort = sort
-            .filter((s) => s.enabled)
-            .map((s) => ({
-                sortBy: s.sortBy,
-                sortDirection: s.sortDirection,
-                enabled: true,
-            }))
-        toReturn.pagination = {
-            page: filter.page,
-            pageSize: isMobile ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP,
-        }
-        const cardTypes = Object.entries(filter.cardTypes).filter(([_, value]) => isNotUnsetTB(value))
-        toReturn.filter.cardTypes = cardTypes.map(([key, value]) => ({
-            cardType: key,
-            value,
-        }))
-        const colors = Object.entries(filter.color).filter(([_, value]) => isNotUnsetTB(value))
-        toReturn.filter.color = colors.map(([key, value]) => ({
-            color: key as MTG_Color,
-            value,
-        }))
-        const multiColor = filter.multiColor
-        toReturn.filter.multiColor = multiColor
-        const games = Object.entries(filter.games).filter(([_, value]) => isNotUnsetTB(value))
-        toReturn.filter.games = games.map(([key, value]) => ({
-            game: key as MTG_Game,
-            value,
-        }))
-        toReturn.filter.hideIgnored = filter.hideIgnored
-        const layouts = Object.entries(filter.layouts).filter(([_, value]) => isNotUnsetTB(value))
-        toReturn.filter.layouts = layouts.map(([key, value]) => ({
-            layout: key as MTG_Layout,
-            value,
-        }))
-        const legalities = Object.entries(filter.legalities).filter(([_, value]) =>
-            Object.values(value).some(isNotUnsetTB),
-        )
-        toReturn.filter.legalities = legalities.map(([key, value]) => ({
-            format: key,
-            legalityEntries: Object.entries(value)
-                .filter(([_, value]) => isNotUnsetTB(value))
-                .map(([key, value]) => ({
-                    legalityValue: key,
-                    value,
-                })),
-        }))
-        const manaCosts = Object.entries(filter.manaCosts).filter(([_, value]) => isNotUnsetTB(value))
-        toReturn.filter.manaCosts = manaCosts.map(([key, value]) => ({
-            manaCost: key,
-            value,
-        }))
-        const rarities = Object.entries(filter.rarity).filter(([_, value]) => isNotUnsetTB(value))
-        toReturn.filter.rarity = rarities.map(([key, value]) => ({
-            rarity: key as MTG_Rarity,
-            value,
-        }))
-        toReturn.filter.rating = {
-            max: filter.rating.max,
-            min: filter.rating.min,
-        }
-        toReturn.filter.searchString = filter.searchString
-        const sets = Object.entries(filter.sets).filter(([_, value]) => isNotUnsetTB(value.value))
-        toReturn.filter.sets = sets.map(([key, value]) => ({
-            set: key,
-            value: value.value,
-        }))
-        // const subtypes = Object.entries(filter.subtypes).filter(([_, value]) => Object.values(value).some(isNotUnsetTB))
-        // TODO: Add subtypes
-        toReturn.filter.subtypes = []
-        toReturn.filter.tags = Object.entries(filter.tags)
-            .filter(([_, value]) => isNotUnsetTB(value))
-            .map(([key, value]) => ({
-                tag: key,
+    const convertedFilters = useMemo(
+        (): QuerygetMTGCardsFilteredArgs => {
+            const toReturn = cloneDeep(initialConvertedFilter)
+            toReturn.sort = sort
+                .filter((s) => s.enabled)
+                .map((s) => ({
+                    sortBy: s.sortBy,
+                    sortDirection: s.sortDirection,
+                    enabled: true,
+                }))
+            toReturn.pagination = {
+                page: filter.page,
+                pageSize: isMobile ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP,
+            }
+            const cardTypes = Object.entries(filter.cardTypes).filter(([_, value]) => isNotUnsetTB(value))
+            toReturn.filter.cardTypes = cardTypes.map(([key, value]) => ({
+                cardType: key,
                 value,
             }))
+            const colors = Object.entries(filter.color).filter(([_, value]) => isNotUnsetTB(value))
+            toReturn.filter.color = colors.map(([key, value]) => ({
+                color: key as MTG_Color,
+                value,
+            }))
+            const multiColor = filter.multiColor
+            toReturn.filter.multiColor = multiColor
+            const games = Object.entries(filter.games).filter(([_, value]) => isNotUnsetTB(value))
+            toReturn.filter.games = games.map(([key, value]) => ({
+                game: key as MTG_Game,
+                value,
+            }))
+            toReturn.filter.hideIgnored = filter.hideIgnored
+            const layouts = Object.entries(filter.layouts).filter(([_, value]) => isNotUnsetTB(value))
+            toReturn.filter.layouts = layouts.map(([key, value]) => ({
+                layout: key as MTG_Layout,
+                value,
+            }))
+            const legalities = Object.entries(filter.legalities).filter(([_, value]) =>
+                Object.values(value).some(isNotUnsetTB),
+            )
+            toReturn.filter.legalities = legalities.map(([key, value]) => ({
+                format: key,
+                legalityEntries: Object.entries(value)
+                    .filter(([_, value]) => isNotUnsetTB(value))
+                    .map(([key, value]) => ({
+                        legalityValue: key,
+                        value,
+                    })),
+            }))
+            const manaCosts = Object.entries(filter.manaCosts).filter(([_, value]) => isNotUnsetTB(value))
+            toReturn.filter.manaCosts = manaCosts.map(([key, value]) => ({
+                manaCost: key,
+                value,
+            }))
+            const rarities = Object.entries(filter.rarity).filter(([_, value]) => isNotUnsetTB(value))
+            toReturn.filter.rarity = rarities.map(([key, value]) => ({
+                rarity: key as MTG_Rarity,
+                value,
+            }))
+            toReturn.filter.rating = {
+                max: filter.rating.max,
+                min: filter.rating.min,
+            }
+            toReturn.filter.searchString = filter.searchString
+            const sets = Object.entries(filter.sets).filter(([_, value]) => isNotUnsetTB(value.value))
+            toReturn.filter.sets = sets.map(([key, value]) => ({
+                set: key,
+                value: value.value,
+            }))
+            // const subtypes = Object.entries(filter.subtypes).filter(([_, value]) => Object.values(value).some(isNotUnsetTB))
+            // TODO: Add subtypes
+            toReturn.filter.subtypes = []
+            toReturn.filter.tags = Object.entries(filter.tags)
+                .filter(([_, value]) => isNotUnsetTB(value))
+                .map(([key, value]) => ({
+                    tag: key,
+                    value,
+                }))
 
-        toReturn.filter.deckID = filter.deckID
-        toReturn.filter.commander = filter.commander
-        toReturn.filter.isSelectingCommander = filter.isSelectingCommander
+            toReturn.filter.deckID = filter.deckID
+            toReturn.filter.commander = filter.commander
+            toReturn.filter.isSelectingCommander = filter.isSelectingCommander
 
-        return toReturn
-    }, [filter, sort, isMobile])
+            return toReturn
+        },
+        // ignoredCardIDs is not used but is needed to trigger the filtering if the user has the "Hide Ignored" filter enabled
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [filter, sort, isMobile, ignoredCardIDs],
+    )
 
     return (
         <MTGFilterContext.Provider
@@ -218,6 +224,7 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
                 clearFilter,
                 originalFilter,
                 setOriginalFilter,
+                setIgnoredCardIDs,
                 sort,
                 setSort,
                 zoom,
