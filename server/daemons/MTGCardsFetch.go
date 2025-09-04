@@ -538,33 +538,16 @@ func collectCards(ctx context.Context) {
 			cardForGroup.Versions = append(cardForGroup.Versions, cardVersionDB)
 		}
 
-		// --- Start: Logic to determine the single default version ---
+		// --- Start: Logic to determine the single default version (improved) ---
 		if len(cardForGroup.Versions) > 0 {
-			bestIdx := 0
-			bestScore := math.MinInt
-
-			for i, v := range cardForGroup.Versions {
-				if v.Reprint {
-					continue
-				} // mantenemos tu filtro
-				sc := score(&v)
-				if sc > bestScore {
-					bestScore, bestIdx = sc, i
-				}
-			}
-
-			// fallback si todo eran reprints
-			if bestScore == math.MinInt {
-				bestIdx = 0
-			}
-
+			bestIdx := pickDefaultIndex(cardForGroup.Versions)
 			for i := range cardForGroup.Versions {
 				cardForGroup.Versions[i].IsDefault = (i == bestIdx)
 			}
 			defaultVersion := cardForGroup.Versions[bestIdx]
 			cardForGroup.ID = normalizeCardName(defaultVersion.Name)
 		}
-		// --- End: Logic to determine the single default version ---
+		// --- End: Logic to determine the single default version (improved) ---
 
 		// Find versions that are from the same set, for each of them, if they have the same illustration_id, log them in groups in the console
 		// Group by set, then by illustration_id
@@ -621,51 +604,236 @@ func collectCards(ctx context.Context) {
 	}
 }
 
-func strSliceContains(sl []string, s string) bool {
+func has(sl []string, target string) bool {
 	for _, v := range sl {
-		if v == s {
+		if v == target {
 			return true
 		}
 	}
 	return false
-}
-func hasAny(sl []string, targets []string) bool {
-	for _, t := range targets {
-		if strSliceContains(sl, t) {
-			return true
-		}
-	}
-	return false
-}
-func onlyFoil(v *scryfall.MTG_CardVersionDB) bool {
-	return len(v.Finishes) == 1 && v.Finishes[0] == "foil"
 }
 
-func score(v *scryfall.MTG_CardVersionDB) int {
+func hasAny(sl []string, targets []string) bool {
+	for _, t := range targets {
+		if has(sl, t) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasOpt(sl *[]string, target string) bool {
+	if sl == nil {
+		return false
+	}
+	return has(*sl, target)
+}
+
+func safeString(p *string) string {
+	if p == nil {
+		return ""
+	}
+	return *p
+}
+
+func intForCollectorNumber(cn string) int {
+	n, err := strconv.Atoi(cn)
+	if err != nil {
+		return math.MaxInt32
+	}
+	return n
+}
+
+func containsGame(games []scryfallModel.Game, target string) bool {
+	for _, g := range games {
+		if string(g) == target {
+			return true
+		}
+	}
+	return false
+}
+
+func platformCount(games []scryfallModel.Game) int {
+	count := 0
+	if containsGame(games, "paper") {
+		count++
+	}
+	if containsGame(games, "mtgo") {
+		count++
+	}
+	if containsGame(games, "arena") {
+		count++
+	}
+	return count
+}
+
+type groupStats struct {
+	modeIllustrationID string
+	topArtists         map[string]struct{}
+}
+
+func computeGroupStats(versions []scryfall.MTG_CardVersionDB) groupStats {
+	illCount := make(map[string]int)
+	artistCount := make(map[string]int)
+
+	for _, v := range versions {
+		id := safeString(v.IllustrationID)
+		if id != "" {
+			illCount[id]++
+		}
+		artist := safeString(v.Artist)
+		if artist != "" {
+			artistCount[artist]++
+		}
+	}
+
+	stats := groupStats{topArtists: make(map[string]struct{})}
+	for id, c := range illCount {
+		if c > illCount[stats.modeIllustrationID] {
+			stats.modeIllustrationID = id
+		}
+	}
+
+	maxArtist := 0
+	for artist, c := range artistCount {
+		if c > maxArtist {
+			maxArtist = c
+			stats.topArtists = map[string]struct{}{artist: {}}
+		} else if c == maxArtist {
+			stats.topArtists[artist] = struct{}{}
+		}
+	}
+
+	return stats
+}
+
+var promoTypePenalties = []string{"portrait", "ripplefoil", "boosterfun", "showcase", "serial", "halo", "galaxy", "neon", "stainedglass"}
+
+func scoreVersion(v *scryfall.MTG_CardVersionDB, stats groupStats) int {
 	s := 0
-	if v.Booster {
-		s += 10000
+	if containsGame(v.Games, "paper") {
+		s += 6
 	}
-	if !v.IsAlchemy {
-		s += 200000
+	if containsGame(v.Games, "mtgo") {
+		s += 3
 	}
-	if strSliceContains(v.Finishes, "nonfoil") {
-		s += 1000
+	if containsGame(v.Games, "arena") {
+		s += 2
 	}
-	if v.FrameEffects != nil && len(*v.FrameEffects) == 0 && !v.FullArt {
-		s += 500
+
+	hasNonfoil := has(v.Finishes, "nonfoil")
+	hasFoil := has(v.Finishes, "foil")
+	if hasNonfoil {
+		s += 6
 	}
-	if v.PromoTypes != nil && !hasAny(*v.PromoTypes, []string{"serialized", "doublerainbow", "boosterfun", "showcase"}) {
-		s += 200
+	if hasFoil {
+		s += 1
 	}
-	if v.FrameEffects != nil && len(*v.FrameEffects) == 0 && !v.FullArt {
-		s += 500
+	if hasNonfoil && hasFoil {
+		s += 2
 	}
-	if onlyFoil(v) {
-		s -= 200
+	if hasFoil && !hasNonfoil {
+		s -= 3
+	}
+	if has(v.Finishes, "etched") && len(v.Finishes) == 1 {
+		s -= 5
+	}
+
+	if v.FullArt {
+		s -= 4
+	}
+	if hasOpt(v.FrameEffects, "inverted") {
+		s -= 3
+	}
+	if hasOpt(v.FrameEffects, "extendedart") {
+		s -= 3
+	}
+	if hasOpt(v.FrameEffects, "etched") {
+		s -= 3
+	}
+
+	if v.PromoTypes != nil {
+		for _, pt := range *v.PromoTypes {
+			if has(promoTypePenalties, pt) {
+				s -= 6
+			}
+		}
+	}
+
+	if stats.modeIllustrationID != "" && safeString(v.IllustrationID) == stats.modeIllustrationID {
+		s += 3
+	}
+	if _, ok := stats.topArtists[safeString(v.Artist)]; ok {
+		s += 1
+	}
+
+	if v.IsDefault {
+		s += 1
 	}
 
 	return s
+}
+
+func tieBreak(bestIdx, challengerIdx int, versions []scryfall.MTG_CardVersionDB) int {
+	best := versions[bestIdx]
+	challenger := versions[challengerIdx]
+
+	bp := platformCount(best.Games)
+	cp := platformCount(challenger.Games)
+	if cp > bp {
+		return challengerIdx
+	}
+	if cp < bp {
+		return bestIdx
+	}
+
+	bNon := has(best.Finishes, "nonfoil")
+	cNon := has(challenger.Finishes, "nonfoil")
+	if cNon && !bNon {
+		return challengerIdx
+	}
+	if bNon && !cNon {
+		return bestIdx
+	}
+
+	if !challenger.FullArt && best.FullArt {
+		return challengerIdx
+	}
+	if !best.FullArt && challenger.FullArt {
+		return bestIdx
+	}
+
+	bInv := hasOpt(best.FrameEffects, "inverted")
+	cInv := hasOpt(challenger.FrameEffects, "inverted")
+	if !cInv && bInv {
+		return challengerIdx
+	}
+	if !bInv && cInv {
+		return bestIdx
+	}
+
+	bNum := intForCollectorNumber(best.CollectorNumber)
+	cNum := intForCollectorNumber(challenger.CollectorNumber)
+	if cNum < bNum {
+		return challengerIdx
+	}
+	return bestIdx
+}
+
+func pickDefaultIndex(versions []scryfall.MTG_CardVersionDB) int {
+	stats := computeGroupStats(versions)
+	bestIdx := 0
+	bestScore := math.MinInt
+	for i := range versions {
+		sc := scoreVersion(&versions[i], stats)
+		if sc > bestScore {
+			bestScore = sc
+			bestIdx = i
+		} else if sc == bestScore {
+			bestIdx = tieBreak(bestIdx, i, versions)
+		}
+	}
+	return bestIdx
 }
 
 // normalizeCardName normalizes a card name to be used as a document key in ArangoDB.
