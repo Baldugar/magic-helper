@@ -1,19 +1,17 @@
 import { Stack } from '@mui/material'
-import { MTGCardPackagesProvider } from '../../context/MTGA/CardPackages/CardPackagesProvider'
-import { MTGDecksProvider } from '../../context/MTGA/Decks/MTGDecksProvider'
 import { CardPackageList } from './Components/CardPackageList/CardPackageList'
 import { DeckList } from './Components/DeckList/DeckList'
 
+/**
+ * Dashboard aggregates high-level entities: Decks and Card Packages.
+ * It renders creation controls and lists for both domains.
+ */
 const Dashboard = () => {
     return (
-        <MTGDecksProvider>
-            <MTGCardPackagesProvider>
-                <Stack padding={4} gap={2}>
-                    <DeckList />
-                    <CardPackageList />
-                </Stack>
-            </MTGCardPackagesProvider>
-        </MTGDecksProvider>
+        <Stack padding={4} gap={2}>
+            <DeckList />
+            <CardPackageList />
+        </Stack>
     )
 }
 

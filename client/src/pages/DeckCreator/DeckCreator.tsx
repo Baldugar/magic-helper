@@ -40,6 +40,15 @@ import { CardsGrid } from './Components/CardsGrid'
 import { Drawer } from './Components/Drawer'
 import { Filters } from './Components/Filters'
 
+/**
+ * DeckCreator renders the full deck editing experience.
+ *
+ * Features
+ * - Switchable views: Catalogue, Catalogue+Board split, Board-only
+ * - Filter and pagination controls for card catalogue
+ * - Deck operations: save, import/export, card package import
+ * - Responsive layout with a collapsible drawer for deck management
+ */
 export const DeckCreator = () => {
     const { cards, totalCount } = useMTGCards()
     const {
@@ -62,7 +71,7 @@ export const DeckCreator = () => {
     const { clearFilter } = useMTGFilter()
     const { getNodes } = useReactFlow()
     const {
-        mutations: { updateMTGDeck },
+        mutations: { updateMTGDeckMutation },
     } = MTGFunctions
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
     const open = Boolean(anchorEl)
@@ -96,7 +105,7 @@ export const DeckCreator = () => {
             zones: deck.zones,
             cardFrontImage: deck.cardFrontImage,
         }
-        updateMTGDeck(deckInput).then((resp) => {
+        updateMTGDeckMutation(deckInput).then((resp) => {
             if (resp.status) {
                 propagateChangesToDashboardDeck(deck)
             }
@@ -306,20 +315,28 @@ export const DeckCreator = () => {
     )
 }
 
+/**
+ * DeckCreatorWrapper resolves the deck by ID and wires required providers.
+ *
+ * Providers
+ * - Tags, Filters, Cards, ReactFlow, DeckCreator, DnD
+ *
+ * This isolation prevents remounting the editor when higher-level context changes.
+ */
 export const DeckCreatorWrapper = () => {
     const { deckID } = useParams()
 
     const {
-        queries: { getMTGDeck },
+        queries: { getMTGDeckQuery },
     } = MTGFunctions
     const [deck, setDeck] = useState<MTG_Deck>()
 
     useEffect(() => {
         if (!deckID || !!deck) return
-        getMTGDeck(deckID).then((deck) => {
+        getMTGDeckQuery(deckID).then((deck) => {
             setDeck(deck)
         })
-    }, [deckID, deck, getMTGDeck])
+    }, [deckID, deck, getMTGDeckQuery])
 
     if (!deck) return null
 

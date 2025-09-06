@@ -13,6 +13,15 @@ import { calculateCardsFromNodes, calculateZonesFromNodes, NodeType } from '../.
 import { DeckCard } from './DeckCard'
 import { PhantomNodeData } from './FlowView/Nodes/PhantomNode'
 
+/**
+ * Drawer shows and manages the current deck list with commander, main, and sideboard.
+ *
+ * Actions
+ * - Save deck / Save as copy
+ * - Add/Remove cards and quantities
+ * - Toggle between main and sideboard tabs
+ * - Responsive fixed overlay on mobile
+ */
 export const Drawer = () => {
     const { deckTab, setDeckTab, deck, removeCard, addOne, removeOne, setOpenDrawer } = useMTGDeckCreator()
     const { filter, setFilter } = useMTGFilter()
@@ -21,7 +30,7 @@ export const Drawer = () => {
     const isMobile = useMediaQuery('(max-width: 600px)')
 
     const {
-        mutations: { updateMTGDeck, saveMTGDeckAsCopy },
+        mutations: { updateMTGDeckMutation, saveMTGDeckAsCopyMutation },
     } = MTGFunctions
 
     const saveDeck = () => {
@@ -39,7 +48,7 @@ export const Drawer = () => {
                   }
                 : undefined,
         }
-        updateMTGDeck(deckInput).then((resp) => {
+        updateMTGDeckMutation(deckInput).then((resp) => {
             if (resp.status) {
                 reloadDecks()
             }
@@ -61,7 +70,7 @@ export const Drawer = () => {
                   }
                 : undefined,
         }
-        saveMTGDeckAsCopy(deckInput)
+        saveMTGDeckAsCopyMutation(deckInput)
     }
 
     const handleRemoveCard = (deckCard: MTG_DeckCard) => {

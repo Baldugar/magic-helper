@@ -8,6 +8,20 @@ import { MTG_DeckDashboard } from '../graphql/types'
 import { getCorrectCardImage } from '../utils/functions/cardFunctions'
 import { getUniqueRandomIntegers } from '../utils/functions/deckFunctions'
 
+/**
+ * Props for the low-level 3D deck box primitive.
+ *
+ * layout
+ * - width/height/depth: physical dimensions in px for the 3D box
+ * - lidRotation/hoverLidRotation: angle applied to the lid when idle/hovered
+ * - hovered: whether hover state animations should be applied
+ *
+ * deck
+ * - Dashboard deck used to compute preview images
+ *
+ * onDelete
+ * - Optional affordance to render delete icon overlay and handle click
+ */
 interface HDeckBoxProps {
     layout: {
         width?: number
@@ -21,6 +35,11 @@ interface HDeckBoxProps {
     onDelete?: () => void
 }
 
+/**
+ * HDeckBox renders a textured 3D deck box with an optional lid animation and up to
+ * three preview cards peeking from inside. It is used by the higher-level RotatingHDeckBox
+ * which applies perspective and rotation controls.
+ */
 const HDeckBox = ({
     layout: {
         width = 200, // x-dimension
@@ -33,6 +52,7 @@ const HDeckBox = ({
     deck,
     onDelete,
 }: HDeckBoxProps) => {
+    // Precompute geometry helpers for face placement
     const halfDepth = depth / 2
     const halfHeight = height / 2
 
@@ -52,6 +72,7 @@ const HDeckBox = ({
         outlineOffset: '-2px',
     }
 
+    // Randomly select up to three cards to showcase on the lid animation
     const [cardIndexes, setCardIndexes] = useState(() => getUniqueRandomIntegers(deck.cards.length - 1, 3))
 
     const defaultFirstCard = deck.cards[cardIndexes[0]]
@@ -67,6 +88,7 @@ const HDeckBox = ({
         defaultThirdCard?.selectedVersionID ? defaultThirdCard?.selectedVersionID === v.ID : v.isDefault,
     )
 
+    // Interpolate lid animation values based on hover state
     const currentRightLidRotation = hovered ? hoverLidRotation : lidRotation
     const rightLidTransition = hovered ? 'transform 0.3s ease' : 'transform 0.3s ease'
     const rightLidDelay = hovered ? '0s' : `${0.2 + 0.2 * cardIndexes.length}s`
@@ -85,6 +107,9 @@ const HDeckBox = ({
     const card2Delay = cardIndexes.length > 2 ? '0.2s' : '0s'
     const card3Delay = hovered ? '0.4s' : '0s'
 
+    /**
+     * When the lid closes, shuffle the preview cards so each hover shows variety.
+     */
     const handleLidTransitionEnd = (e: React.TransitionEvent<HTMLDivElement>) => {
         if (e.propertyName === 'transform' && !hovered) {
             // Recalculate cardIndexes once the lid animation is finished
@@ -102,7 +127,7 @@ const HDeckBox = ({
                     transformStyle: 'preserve-3d',
                 }}
             >
-                {/* Front Face */}
+                {/* Front Face: shows deck front image if configured */}
                 <Box
                     sx={{
                         ...commonFaceStyle,
@@ -139,7 +164,7 @@ const HDeckBox = ({
                     }}
                 />
 
-                {/* Back Face */}
+                {/* Back Face: subtle darkened texture for depth */}
                 <Box
                     sx={{
                         ...commonFaceStyle,
@@ -192,7 +217,7 @@ const HDeckBox = ({
                     }}
                 />
 
-                {/* Right Lid */}
+                {/* Right Lid: three faces plus inner/outer faces; rotates on hover */}
                 <Box
                     sx={{
                         position: 'absolute',
@@ -319,7 +344,7 @@ const HDeckBox = ({
                     </Box>
                 </Box>
 
-                {/* Card 1 */}
+                {/* Card 1: first preview card */}
                 {cardIndexes.length > 0 && defaultFirstCardVersion && (
                     <Box
                         sx={{
@@ -343,7 +368,7 @@ const HDeckBox = ({
                     </Box>
                 )}
 
-                {/* Card 2 */}
+                {/* Card 2: second preview card */}
                 {cardIndexes.length > 1 && defaultSecondCardVersion && (
                     <Box
                         sx={{
@@ -367,7 +392,7 @@ const HDeckBox = ({
                     </Box>
                 )}
 
-                {/* Card 3 */}
+                {/* Card 3: third preview card */}
                 {cardIndexes.length > 2 && defaultThirdCardVersion && (
                     <Box
                         sx={{
@@ -404,6 +429,16 @@ const HDeckBox = ({
 
 // The RotatingHDeckBox component now includes panning (drag-to-rotate) support.
 // You can still use the sliders to adjust rotation values manually.
+/**
+ * RotatingHDeckBox composes perspective, interaction (hover/drag) and the HDeckBox
+ * primitive to display a rich, interactive deck preview card.
+ *
+ * Props
+ * - debug: enables drag-to-rotate and on-screen sliders
+ * - deck: dashboard deck to render
+ * - onClick: invoked when the box is clicked
+ * - onDelete: optional delete affordance under the title
+ */
 const RotatingHDeckBox = ({
     debug = false,
     deck,
@@ -430,12 +465,14 @@ const RotatingHDeckBox = ({
     const [isDragging, setIsDragging] = useState(false)
     const [lastMousePos, setLastMousePos] = useState<{ x: number; y: number } | null>(null)
 
+    /** Begin drag-to-rotate (debug mode only). */
     const handleMouseDown = (e: React.MouseEvent) => {
         if (!debug) return
         setIsDragging(true)
         setLastMousePos({ x: e.clientX, y: e.clientY })
     }
 
+    /** Update rotation based on pointer deltas (debug mode only). */
     const handleMouseMove = (e: React.MouseEvent) => {
         if (!isDragging || !lastMousePos || !debug) return
         const dx = e.clientX - lastMousePos.x
@@ -447,6 +484,7 @@ const RotatingHDeckBox = ({
         setLastMousePos({ x: e.clientX, y: e.clientY })
     }
 
+    /** End drag-to-rotate (debug mode only). */
     const handleMouseUpOrLeave = () => {
         if (!debug) return
         setIsDragging(false)

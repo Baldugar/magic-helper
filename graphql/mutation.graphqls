@@ -29,6 +29,10 @@ type Mutation {
     """
     deleteMTGCardPackage(input: MTG_DeleteCardPackageInput!): Response!
     """
+    Edit a card package name.
+    """
+    editMTGCardPackageName(input: MTG_EditCardPackageNameInput!): Response!
+    """
     Add a card to a package (edge insert).
     """
     addMTGCardToCardPackage(input: MTG_AddCardToCardPackageInput!): Response!

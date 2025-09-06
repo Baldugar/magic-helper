@@ -8,6 +8,10 @@ export interface TagPillProps {
     tag: CardTag | DeckTag
 }
 
+/**
+ * TagPill renders a pill-shaped tag with icon, colors, name and a collapsible
+ * description area. Supports both CardTag and DeckTag with color gradients.
+ */
 const TagPill = (props: TagPillProps): JSX.Element => {
     const { tag } = props
     const { ID, name, description, __typename, myRating } = tag

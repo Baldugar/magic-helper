@@ -9,6 +9,11 @@ export type ImageWithSkeletonProps = {
     setHover?: (hover: boolean) => void
 }
 
+/**
+ * ImageWithSkeleton lazily renders an image and displays a MUI Skeleton
+ * placeholder until the image is loaded. It adapts dimensions for mobile
+ * screens and can notify a parent hover state via setHover.
+ */
 export const ImageWithSkeleton: FC<ImageWithSkeletonProps> = (props) => {
     const { img, width, height, setHover = () => {} } = props
     const [loaded, setLoaded] = useState(false)

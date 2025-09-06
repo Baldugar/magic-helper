@@ -6,6 +6,10 @@ import { MTGDecksProvider } from './context/MTGA/Decks/MTGDecksProvider'
 import Dashboard from './pages/Dashboard/Dashboard'
 import { DeckCreatorWrapper } from './pages/DeckCreator/DeckCreator'
 
+/**
+ * WrappedApp wires up the router and lazy route tree.
+ * Providers are applied one level up to avoid remounting routes on context changes.
+ */
 function WrappedApp() {
     return (
         <BrowserRouter>
@@ -20,6 +24,9 @@ function WrappedApp() {
     )
 }
 
+/**
+ * App composes top-level application providers and renders the route tree.
+ */
 function App() {
     return (
         <MTGDecksProvider>

@@ -3,16 +3,26 @@ import { useContext, useState } from 'react'
 import MTGCardPackage from '../../../../components/CardPackageCard'
 import { MTGCardPackagesContext } from '../../../../context/MTGA/CardPackages/CardPackagesContext'
 
+/**
+ * CardPackageList shows the dashboard section for Card Packages.
+ *
+ * Includes
+ * - Create button with popover form
+ * - Responsive grid of package summaries
+ */
 export const CardPackageList = () => {
+    // Card Packages: creation UI and list
     const { cardPackages, createCardPackage } = useContext(MTGCardPackagesContext)
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
     const [name, setName] = useState('')
 
+    /** Open the create card package popover. */
     const handleClick = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget)
     }
 
+    /** Close the popover and reset input. */
     const handleClose = () => {
         setAnchorEl(null)
         setName('')
@@ -22,11 +32,13 @@ export const CardPackageList = () => {
 
     return (
         <Stack padding={4} gap={2}>
+            {/* Header bar with title and create card package action */}
             <Stack justifyContent={'flex-start'} direction={'row'} spacing={4}>
                 <Typography variant={'h4'}>Card Packages</Typography>
                 <Button variant={'contained'} color={'secondary'} onClick={handleClick}>
                     Create Card Package
                 </Button>
+                {/* Create Card Package popover form */}
                 <Popover
                     open={open}
                     anchorEl={anchorEl}
@@ -41,6 +53,7 @@ export const CardPackageList = () => {
                     }}
                 >
                     <Paper sx={{ padding: 2 }}>
+                        {/* Name input for new card package */}
                         <TextField
                             fullWidth
                             variant={'filled'}
@@ -61,6 +74,7 @@ export const CardPackageList = () => {
                     </Paper>
                 </Popover>
             </Stack>
+            {/* Responsive grid of card package summaries */}
             <Grid container columnSpacing={4}>
                 {cardPackages.map((cardPackage) => (
                     <Grid item xs={'auto'} key={cardPackage.ID} container justifyContent={'center'}>

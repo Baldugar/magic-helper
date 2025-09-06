@@ -1,3 +1,8 @@
+/**
+ * Application entry point.
+ *
+ * Sets up global providers (user, MUI theme) and mounts the React tree.
+ */
 import { CssBaseline, ThemeProvider } from '@mui/material'
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
@@ -6,6 +11,7 @@ import { UserProvider } from './context/User/UserProvider.tsx'
 import './index.css'
 import theme from './theme.ts'
 
+// Bootstrap the root and render the application
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <StrictMode>
         <UserProvider>

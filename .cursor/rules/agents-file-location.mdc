@@ -1,0 +1,5 @@
+---
+description: Always check the AGENTS.MD file for guidelines on code
+globs:
+alwaysApply: true
+---

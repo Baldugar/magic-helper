@@ -24,18 +24,23 @@ type CardPackageProps = {
     cardPackage: MTG_CardPackage
 }
 
+/**
+ * MTGCardPackage renders a summary card for a Card Package with counts and
+ * a virtualized list of entries when expanded. Delete is confirmed via dialog.
+ */
 const MTGCardPackage = (props: CardPackageProps) => {
     const { cardPackage } = props
 
     const { setCardPackages, cardPackages } = useMTGCardPackages()
     const {
-        mutations: { deleteMTGCardPackage },
+        mutations: { deleteMTGCardPackageMutation },
     } = MTGFunctions
 
+    /** Confirm and delete the card package from server and local state. */
     const handleDelete = () => {
         const confirm = window.confirm('Are you sure you want to delete this card package?')
         if (!confirm) return
-        deleteMTGCardPackage(cardPackage.ID).then(() => {
+        deleteMTGCardPackageMutation(cardPackage.ID).then(() => {
             setCardPackages(cardPackages.filter((p) => p.ID !== cardPackage.ID))
         })
     }
@@ -50,6 +55,9 @@ const MTGCardPackage = (props: CardPackageProps) => {
     const sideboardCards = totalCards - mainDeckCards
 
     // Virtual row renderer
+    /**
+     * Virtualized row renderer for package entries to keep rendering fast.
+     */
     const CardRow = memo(({ index, style }: ListChildComponentProps) => {
         const packageCard = cardPackage.cards[index]
 

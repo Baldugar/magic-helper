@@ -13,6 +13,14 @@ input MTG_DeleteCardPackageInput {
 }
 
 """
+Edit a card package name.
+"""
+input MTG_EditCardPackageNameInput {
+    cardPackageID: ID!
+    name: String!
+}
+
+"""
 Add a card to a package with count.
 """
 input MTG_AddCardToCardPackageInput {

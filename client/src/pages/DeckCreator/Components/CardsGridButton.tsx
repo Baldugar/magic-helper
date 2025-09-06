@@ -26,6 +26,14 @@ export type CardsGridButtonProps = {
     onIgnore?: () => void
 }
 
+/**
+ * CardsGridButton renders a single card tile within the catalogue grid.
+ *
+ * Capabilities
+ * - Left click to add to the deck
+ * - Context menu with actions (add/remove, ignore, add to package, set as deck image)
+ * - Shows version modal, integrates with DnD and deck graph updates
+ */
 export const CardsGridButton = (props: CardsGridButtonProps) => {
     const { card, onIgnore } = props
     const { cardPackages, addMTGCardToCardPackage, removeMTGCardFromCardPackage, createCardPackage } =
@@ -127,14 +135,14 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
                     return newDeck
                 })
                 const {
-                    mutations: { addIgnoredCard, removeIgnoredCard },
+                    mutations: { addIgnoredCardMutation, removeIgnoredCardMutation },
                 } = MTGFunctions
                 if (cardIsIgnored) {
-                    removeIgnoredCard({ cardID: card.ID, deckID: deck.ID }).then(() => {
+                    removeIgnoredCardMutation({ cardID: card.ID, deckID: deck.ID }).then(() => {
                         if (onIgnore) onIgnore()
                     })
                 } else {
-                    addIgnoredCard({ cardID: card.ID, deckID: deck.ID }).then(() => {
+                    addIgnoredCardMutation({ cardID: card.ID, deckID: deck.ID }).then(() => {
                         if (onIgnore) onIgnore()
                     })
                 }
@@ -153,10 +161,10 @@ export const CardsGridButton = (props: CardsGridButtonProps) => {
         //                 const name = prompt('Enter the name of the new deck')
         //                 if (!name) return
         //                 const {
-        //                     mutations: { createMTGDeck: createMTGADeck },
+        //                     mutations: { createMTGDeckMutation },
         //                 } = MTGFunctions
         //                 // TODO: The type should be dynamic
-        //                 createMTGADeck({ name }).then((deck) => {
+        //                 createMTGADeckMutation({ name }).then((deck) => {
         //                     const d = onAddCard(card, undefined, deck)
         //                     if (!d) return
         //                     updateDeck(d)

@@ -4,26 +4,39 @@ import { MainOrSide, MTG_Card, MTG_CardPackage } from '../../../graphql/types'
 import { MTGCardPackagesContext } from './CardPackagesContext'
 
 export const MTGCardPackagesProvider = ({ children }: { children: ReactNode }) => {
+    // Holds card packages used outside of deck context
     const [cardPackages, setCardPackages] = useState<Array<MTG_CardPackage>>([])
     const [loading, setLoading] = useState(true)
 
     const {
-        queries: { getMTGCardPackages },
+        queries: { getMTGCardPackagesQuery },
         mutations: {
-            addMTGCardToCardPackage: addMTGCardToCardPackageMutation,
-            removeMTGCardFromCardPackage: removeMTGCardFromCardPackageMutation,
-            createMTGCardPackage: createMTGCardPackageMutation,
+            addMTGCardToCardPackageMutation,
+            removeMTGCardFromCardPackageMutation,
+            createMTGCardPackageMutation,
+            deleteMTGCardPackageMutation,
+            editMTGCardPackageNameMutation,
         },
     } = MTGFunctions
 
+    /**
+     * Initial load: fetch all card packages for the user.
+     */
     useEffect(() => {
         setLoading(true)
-        getMTGCardPackages().then((cardPackages) => {
+        getMTGCardPackagesQuery().then((cardPackages) => {
             setCardPackages(cardPackages)
             setLoading(false)
         })
-    }, [getMTGCardPackages])
+    }, [getMTGCardPackagesQuery])
 
+    /**
+     * Add a card entry to a package (count=1 by default) and update state.
+     *
+     * @param cardPackageID Target package
+     * @param card MTG card to add
+     * @param mainOrSide Whether the card is for main or sideboard context
+     */
     const addMTGCardToCardPackage = (cardPackageID: string, card: MTG_Card, mainOrSide: MainOrSide) => {
         addMTGCardToCardPackageMutation({
             cardPackageID,
@@ -52,6 +65,12 @@ export const MTGCardPackagesProvider = ({ children }: { children: ReactNode }) =
         })
     }
 
+    /**
+     * Remove a card entry from a card package.
+     *
+     * @param cardPackageID Target package
+     * @param card Card to remove (by ID)
+     */
     const removeMTGCardFromCardPackage = (cardPackageID: string, card: MTG_Card) => {
         removeMTGCardFromCardPackageMutation({
             cardPackageID,
@@ -72,13 +91,48 @@ export const MTGCardPackagesProvider = ({ children }: { children: ReactNode }) =
         })
     }
 
+    /**
+     * Create a card package and optionally seed it with a card entry.
+     *
+     * @param name Package name
+     * @param card Optional card to add
+     * @param mainOrSide Optional slot side when seeding with a card
+     */
     const createCardPackage = (name: string, card?: MTG_Card, mainOrSide?: MainOrSide) => {
         createMTGCardPackageMutation({ name }).then((response) => {
             if (response.status) {
+                // Optimistically add the new package
                 setCardPackages([...cardPackages, { cards: [], ID: response.message ?? '', name }])
                 if (card) {
                     addMTGCardToCardPackage(response.message ?? '', card, mainOrSide ?? MainOrSide.MAIN)
                 }
+            }
+        })
+    }
+
+    /**
+     * Delete a card package and remove it from local state.
+     *
+     * @param cardPackageID Package identifier
+     */
+    const deleteCardPackage = (cardPackageID: string) => {
+        deleteMTGCardPackageMutation(cardPackageID).then((response) => {
+            if (response.status) {
+                setCardPackages(cardPackages.filter((cp) => cp.ID !== cardPackageID))
+            }
+        })
+    }
+
+    /**
+     * Rename a card package and update local state.
+     *
+     * @param cardPackageID Package identifier
+     * @param name New name
+     */
+    const editCardPackageName = (cardPackageID: string, name: string) => {
+        editMTGCardPackageNameMutation({ cardPackageID, name }).then((response) => {
+            if (response.status) {
+                setCardPackages(cardPackages.map((cp) => (cp.ID === cardPackageID ? { ...cp, name } : cp)))
             }
         })
     }
@@ -92,6 +146,8 @@ export const MTGCardPackagesProvider = ({ children }: { children: ReactNode }) =
                 addMTGCardToCardPackage,
                 removeMTGCardFromCardPackage,
                 createCardPackage,
+                deleteCardPackage,
+                editCardPackageName,
             }}
         >
             {children}

@@ -28,6 +28,11 @@ export type MTGCardWithHoverProps = {
     forceSize?: keyof Omit<MTG_Image, '__typename'>
 }
 
+/**
+ * MTGCardWithHover displays an MTG card image that reveals a large hover preview
+ * near the cursor. It supports both card and cardVersion inputs, mobile sizing,
+ * and integrates with drag-and-drop when used within the deck creator.
+ */
 export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
     const { data, hideHover, forceSize } = props
     const { card, type, debugValue } = data
@@ -46,6 +51,7 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
     const isMobileQuery = useMediaQuery('(max-width: 600px)')
     const isMobileEffective = !forceSize && isMobileQuery
 
+    // Select a version based on the current filter's set constraints (if any)
     const randomVersion = useMemo(() => {
         if (type === 'card') {
             return getRandomVersionFromFilter(filter.sets, card)

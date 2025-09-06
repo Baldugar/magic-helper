@@ -1,6 +1,9 @@
 import { createContext } from 'react'
 import { MTG_Deck, MTG_DeckDashboard } from '../../../graphql/types'
 
+/**
+ * Context shape for MTG Decks dashboard and CRUD operations.
+ */
 type MTGDecksContextType = {
     decks: Array<MTG_DeckDashboard>
     loading: boolean

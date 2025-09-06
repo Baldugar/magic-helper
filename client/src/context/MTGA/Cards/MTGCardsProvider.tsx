@@ -4,6 +4,13 @@ import { MTG_Card, RatableEntityType } from '../../../graphql/types'
 import { useMTGFilter } from '../Filter/useMTGFilter'
 import { MTGCardsContext } from './MTGCardsContext'
 
+/**
+ * MTGCardsProvider supplies filtered cards and rating actions to consumers.
+ *
+ * Behavior
+ * - Reacts to converted filters and fetches paginated cards + total count
+ * - Exposes setRatingForCard to optimistically update local state and persist via mutation
+ */
 export const MTGCardsProvider = ({ children }: { children: ReactNode }) => {
     const [cards, setCards] = useState<Array<MTG_Card>>([])
     const [totalCount, setTotalCount] = useState(0)
@@ -12,19 +19,25 @@ export const MTGCardsProvider = ({ children }: { children: ReactNode }) => {
     const { convertedFilters } = useMTGFilter()
 
     const {
-        queries: { getMTGCardsFiltered },
-        mutations: { rate },
+        queries: { getMTGCardsFilteredQuery },
+        mutations: { rateMutation },
     } = MTGFunctions
 
     useEffect(() => {
         setLoading(true)
-        getMTGCardsFiltered(convertedFilters).then((cards) => {
+        getMTGCardsFilteredQuery(convertedFilters).then((cards) => {
             setCards(cards.pagedCards)
             setTotalCount(cards.totalCount)
             setLoading(false)
         })
-    }, [getMTGCardsFiltered, convertedFilters])
+    }, [getMTGCardsFilteredQuery, convertedFilters])
 
+    /**
+     * Optimistically set the rating for a card and persist through GraphQL.
+     *
+     * @param cardID Target card identifier
+     * @param rating Integer rating value
+     */
     const setRatingForCard = (cardID: string, rating: number) => {
         const newCards = structuredClone(cards)
         const cardIndex = newCards.findIndex((c) => c.ID === cardID)
@@ -37,7 +50,7 @@ export const MTGCardsProvider = ({ children }: { children: ReactNode }) => {
             }
             setCards((prev) => prev.map((c) => (c.ID === cardID ? newCards[cardIndex] : c)))
         }
-        rate({ entityID: cardID, entityType: RatableEntityType.CARD, value: rating })
+        rateMutation({ entityID: cardID, entityType: RatableEntityType.CARD, value: rating })
     }
 
     return (
