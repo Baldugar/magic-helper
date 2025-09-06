@@ -1,3 +1,6 @@
+"""
+Magic color identity abbreviations.
+"""
 enum MTG_Color {
     C
     W
@@ -7,6 +10,9 @@ enum MTG_Color {
     G
 }
 
+"""
+Rarity tiers for a printing.
+"""
 enum MTG_Rarity {
     common
     uncommon
@@ -14,6 +20,9 @@ enum MTG_Rarity {
     mythic
 }
 
+"""
+Card layouts as defined by Scryfall.
+"""
 enum MTG_Layout {
     normal
     split
@@ -41,6 +50,9 @@ enum MTG_Layout {
     reversible_card
 }
 
+"""
+Game platforms where a print is available.
+"""
 enum MTG_Game {
     paper
     mtgo

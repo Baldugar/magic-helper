@@ -1,14 +1,23 @@
+"""
+Supported deck archetypes.
+"""
 enum DeckType {
     # STANDARD
     BRAWL_60
     BRAWL_100
 }
 
+"""
+Indicates whether a card is in main or sideboard.
+"""
 enum MainOrSide {
     MAIN
     SIDEBOARD
 }
 
+"""
+Card role in deck (normal or commander).
+"""
 enum MTG_DeckCardType {
     NORMAL
     COMMANDER

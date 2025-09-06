@@ -1,3 +1,6 @@
+"""
+Combined filter input used to filter cards.
+"""
 input MTG_Filter_SearchInput {
     searchString: String
     rarity: [MTG_Filter_RarityInput!]!
@@ -18,71 +21,113 @@ input MTG_Filter_SearchInput {
     isSelectingCommander: Boolean!
 }
 
+"""
+Rarity filter entry with ternary state.
+"""
 input MTG_Filter_RarityInput {
     rarity: MTG_Rarity!
     value: TernaryBoolean!
 }
 
+"""
+Color filter entry with ternary state.
+"""
 input MTG_Filter_ColorInput {
     color: MTG_Color!
     value: TernaryBoolean!
 }
 
+"""
+Mana cost filter entry with ternary state or special values.
+"""
 input MTG_Filter_ManaCostInput {
     manaCost: String!
     value: TernaryBoolean!
 }
 
+"""
+Card type filter entry with ternary state.
+"""
 input MTG_Filter_CardTypeInput {
     cardType: String!
     value: TernaryBoolean!
 }
 
+"""
+Subtype filter entry with ternary state.
+"""
 input MTG_Filter_SubtypeInput {
     subtype: String!
     value: TernaryBoolean!
 }
 
+"""
+Set filter entry with ternary state.
+"""
 input MTG_Filter_SetInput {
     set: String!
     value: TernaryBoolean!
 }
 
+"""
+Single legality value with ternary state.
+"""
 input MTG_Filter_LegalityEntryInput {
     legalityValue: String!
     value: TernaryBoolean!
 }
 
+"""
+Legality format and associated statuses.
+"""
 input MTG_Filter_LegalityInput {
     format: String!
     legalityEntries: [MTG_Filter_LegalityEntryInput!]!
 }
 
+"""
+Layout filter entry with ternary state.
+"""
 input MTG_Filter_LayoutInput {
     layout: MTG_Layout!
     value: TernaryBoolean!
 }
 
+"""
+Game platform filter entry with ternary state.
+"""
 input MTG_Filter_GameInput {
     game: MTG_Game!
     value: TernaryBoolean!
 }
 
+"""
+Tag filter entry by name or id with ternary state.
+"""
 input MTG_Filter_TagInput {
     tag: String!
     value: TernaryBoolean!
 }
 
+"""
+Min/max rating bounds for filtering.
+"""
 input MTG_Filter_RatingInput {
     min: Int
     max: Int
 }
 
+"""
+Page and page size for cursorless pagination.
+"""
 input MTG_Filter_PaginationInput {
     page: Int!
     pageSize: Int!
 }
 
+"""
+Sort directive with field, direction, and enabled flag.
+"""
 input MTG_Filter_SortInput {
     sortBy: MTG_Filter_SortBy!
     sortDirection: MTG_Filter_SortDirection!

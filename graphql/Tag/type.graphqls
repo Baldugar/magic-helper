@@ -1,3 +1,6 @@
+"""
+A tag that can annotate cards or decks.
+"""
 interface Tag {
     ID: ID! @goTag(key: "json", value: "_key")
     name: String!
@@ -5,6 +8,9 @@ interface Tag {
     myRating: UserRating
 }
 
+"""
+A tag intended for annotating cards.
+"""
 type CardTag implements Tag {
     ID: ID! @goTag(key: "json", value: "_key")
     name: String!

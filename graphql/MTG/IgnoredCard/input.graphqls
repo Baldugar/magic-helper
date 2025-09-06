@@ -1,8 +1,14 @@
+"""
+Mark a card as ignored for the specified deck.
+"""
 input AddIgnoredCardInput {
     cardID: ID!
     deckID: ID!
 }
 
+"""
+Remove an ignored mark for a deck/card pair.
+"""
 input RemoveIgnoredCardInput {
     cardID: ID!
     deckID: ID!

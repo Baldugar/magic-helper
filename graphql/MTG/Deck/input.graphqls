@@ -1,11 +1,20 @@
+"""
+Input to create a new deck.
+"""
 input MTG_CreateDeckInput {
     name: String!
 }
 
+"""
+Input to delete a deck by ID.
+"""
 input MTG_DeleteDeckInput {
     deckID: ID!
 }
 
+"""
+Input to update deck fields, cards, zones and front image.
+"""
 input MTG_UpdateDeckInput {
     deckID: ID!
     name: String!
@@ -14,11 +23,17 @@ input MTG_UpdateDeckInput {
     zones: [FlowZoneInput!]!
 }
 
+"""
+Front image selection referencing a card version.
+"""
 input MTG_DeckCardFrontImageInput {
     cardID: ID!
     versionID: ID!
 }
 
+"""
+Deck card entry with position and selection metadata.
+"""
 input MTG_DeckCardInput {
     ID: ID!
     card: ID!
@@ -30,6 +45,9 @@ input MTG_DeckCardInput {
     phantoms: [PhantomInput!]!
 }
 
+"""
+Phantom placeholder to aid UI grouping.
+"""
 input PhantomInput {
     ID: ID!
     position: PositionInput!

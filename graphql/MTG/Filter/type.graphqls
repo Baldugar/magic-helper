@@ -1,3 +1,6 @@
+"""
+Aggregated entries used to render filter UI.
+"""
 type MTG_Filter_Entries {
     types: [MTG_Filter_CardTypes!]!
     expansions: [MTG_Filter_Expansion!]!
@@ -5,16 +8,25 @@ type MTG_Filter_Entries {
     layouts: [MTG_Layout!]!
 }
 
+"""
+A card type and its associated subtypes.
+"""
 type MTG_Filter_CardTypes {
     cardType: String!
     subtypes: [String!]!
 }
 
+"""
+Distinct legality formats and statuses collected from cards.
+"""
 type MTG_Filter_Legality {
     formats: [String!]!
     legalityValues: [String!]!
 }
 
+"""
+Expansion metadata used by filters and sorting.
+"""
 type MTG_Filter_Expansion {
     set: String!
     setName: String!
@@ -24,6 +36,9 @@ type MTG_Filter_Expansion {
     games: [MTG_Game!]!
 }
 
+"""
+Search results and total count for pagination.
+"""
 type MTG_Filter_Search {
     pagedCards: [MTG_Card!]!
     totalCount: Int!

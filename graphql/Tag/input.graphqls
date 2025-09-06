@@ -1,3 +1,6 @@
+"""
+Create a new tag, optionally linked to a card.
+"""
 input CreateTagInput {
     type: TagType!
     name: String!
@@ -6,6 +9,9 @@ input CreateTagInput {
     cardID: ID
 }
 
+"""
+Update tag fields.
+"""
 input UpdateTagInput {
     ID: ID!
     name: String
@@ -13,11 +19,17 @@ input UpdateTagInput {
     colors: [MTG_Color!]
 }
 
+"""
+Assign a tag to a card.
+"""
 input AssignTagInput {
     tagID: ID!
     cardID: ID!
 }
 
+"""
+Remove a tag from a card.
+"""
 input UnassignTagInput {
     tagID: ID!
     cardID: ID!

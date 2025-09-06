@@ -1,22 +1,37 @@
+"""
+Create a new card package.
+"""
 input MTG_CreateCardPackageInput {
     name: String!
 }
 
+"""
+Delete a card package by ID.
+"""
 input MTG_DeleteCardPackageInput {
     cardPackageID: ID!
 }
 
+"""
+Add a card to a package with count.
+"""
 input MTG_AddCardToCardPackageInput {
     cardPackageID: ID!
     card: ID!
     count: Int!
 }
 
+"""
+Remove a card from a package.
+"""
 input MTG_RemoveCardFromCardPackageInput {
     cardPackageID: ID!
     card: ID!
 }
 
+"""
+Card entry details for a package.
+"""
 input MTG_CardPackageCardInput {
     card: ID!
     selectedVersionID: String

@@ -1,3 +1,6 @@
+"""
+Entities that can be rated by users.
+"""
 enum RatableEntityType {
     CARD
     TAG

@@ -1,23 +1,74 @@
+"""
+Root-level write operations.
+"""
 type Mutation {
     # Decks
+    """
+    Create a new deck and return its ID in Response.message.
+    """
     createMTGDeck(input: MTG_CreateDeckInput!): Response!
+    """
+    Delete a deck by ID.
+    """
     deleteMTGDeck(input: MTG_DeleteDeckInput!): Response!
+    """
+    Replace deck fields and card edges.
+    """
     updateMTGDeck(input: MTG_UpdateDeckInput!): Response!
+    """
+    Create a new deck by copying another deck's data.
+    """
     saveMTGDeckAsCopy(input: MTG_UpdateDeckInput!): Response!
     # Card Packages
+    """
+    Create a card package container.
+    """
     createMTGCardPackage(input: MTG_CreateCardPackageInput!): Response!
+    """
+    Delete a card package and its edges.
+    """
     deleteMTGCardPackage(input: MTG_DeleteCardPackageInput!): Response!
+    """
+    Add a card to a package (edge insert).
+    """
     addMTGCardToCardPackage(input: MTG_AddCardToCardPackageInput!): Response!
+    """
+    Remove a card from a package (edge delete).
+    """
     removeMTGCardFromCardPackage(input: MTG_RemoveCardFromCardPackageInput!): Response!
     # Tags
+    """
+    Create a tag and optionally link to a card.
+    """
     createTag(input: CreateTagInput!): Response!
+    """
+    Update tag name/description/colors.
+    """
     updateTag(input: UpdateTagInput!): Response!
+    """
+    Delete a tag and its edges.
+    """
     deleteTag(tagID: ID!): Response!
+    """
+    Link a tag to a card.
+    """
     assignTag(input: AssignTagInput!): Response!
+    """
+    Unlink a tag from a card.
+    """
     unassignTag(input: UnassignTagInput!): Response!
     # Ratings
+    """
+    Rate a card or tag.
+    """
     rate(input: RateInput!): Response!
     # Ignored Cards
+    """
+    Mark a card as ignored for a deck.
+    """
     addIgnoredCard(input: AddIgnoredCardInput!): Response!
+    """
+    Remove ignored mark from a deck/card pair.
+    """
     removeIgnoredCard(input: RemoveIgnoredCardInput!): Response!
 }

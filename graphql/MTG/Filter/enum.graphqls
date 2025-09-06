@@ -1,9 +1,15 @@
+"""
+Three-state boolean used for filter entries.
+"""
 enum TernaryBoolean {
     TRUE
     FALSE
     UNSET
 }
 
+"""
+Sortable fields for card lists.
+"""
 enum MTG_Filter_SortBy {
     NAME
     CMC
@@ -14,6 +20,9 @@ enum MTG_Filter_SortBy {
     RELEASED_AT
 }
 
+"""
+Sort direction.
+"""
 enum MTG_Filter_SortDirection {
     ASC
     DESC

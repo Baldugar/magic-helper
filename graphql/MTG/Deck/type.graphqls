@@ -1,3 +1,6 @@
+"""
+A user deck with cards, positions, zones and optional front image.
+"""
 type MTG_Deck {
     ID: ID! @goTag(key: "json", value: "_key")
     name: String!
@@ -7,6 +10,9 @@ type MTG_Deck {
     ignoredCards: [String!]!
 }
 
+"""
+A card entry in a deck with selection and positioning metadata.
+"""
 type MTG_DeckCard {
     card: MTG_Card!
     selectedVersionID: String
@@ -17,11 +23,17 @@ type MTG_DeckCard {
     phantoms: [Phantom!]!
 }
 
+"""
+A phantom placeholder used for visual grouping on the board.
+"""
 type Phantom {
     position: Position!
     ID: ID!
 }
 
+"""
+Deck summary for dashboard listings.
+"""
 type MTG_DeckDashboard {
     ID: ID! @goTag(key: "json", value: "_key")
     name: String!
@@ -29,12 +41,18 @@ type MTG_DeckDashboard {
     cards: [MTG_DeckCard_Dashboard!]!
 }
 
+"""
+Selected front image for a deck, referencing a card version.
+"""
 type MTG_Deck_CardFrontImage {
     cardID: ID!
     versionID: ID!
     image: String!
 }
 
+"""
+Minimal deck card data for dashboard UI.
+"""
 type MTG_DeckCard_Dashboard {
     card: MTG_Card_Dashboard!
     selectedVersionID: String

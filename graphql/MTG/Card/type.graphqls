@@ -1,3 +1,6 @@
+"""
+Aggregated MTG card entity with curated versions and user context.
+"""
 type MTG_Card {
     ID: ID! @goTag(key: "json", value: "_key")
     layout: MTG_Layout!
@@ -21,6 +24,9 @@ type MTG_Card {
     deckTags: [DeckTag!]!
 }
 
+"""
+A specific printing/version of a card used by the app.
+"""
 type MTG_CardVersion {
     ID: ID!
     isDefault: Boolean!
@@ -44,6 +50,9 @@ type MTG_CardVersion {
     variationOf: String
 }
 
+"""
+One face of a multi-faced card version.
+"""
 type MTG_CardFace {
     artist: String
     CMC: Float
@@ -61,6 +70,9 @@ type MTG_CardFace {
     typeLine: String
 }
 
+"""
+Image URLs in multiple sizes from Scryfall.
+"""
 type MTG_Image {
     artCrop: String!
     borderCrop: String!
@@ -70,11 +82,17 @@ type MTG_Image {
     small: String!
 }
 
+"""
+Minimal card representation for dashboard listings.
+"""
 type MTG_Card_Dashboard {
     ID: ID! @goTag(key: "json", value: "_key")
     versions: [MTG_CardVersion_Dashboard!]!
 }
 
+"""
+Minimal card version data for dashboard UI.
+"""
 type MTG_CardVersion_Dashboard {
     ID: ID!
     isDefault: Boolean!
@@ -83,6 +101,9 @@ type MTG_CardVersion_Dashboard {
     imageUris: MTG_Image
 }
 
+"""
+Minimal face data for dashboard UI.
+"""
 type MTG_CardFace_Dashboard {
     imageUris: MTG_Image
 }

@@ -1,20 +1,50 @@
+"""
+Root-level read operations.
+"""
 type Query {
     # Cards
+    """
+    Return all curated MTG cards with ratings and tags.
+    """
     getMTGCards: [MTG_Card!]!
     getMTGCardsFiltered(
         filter: MTG_Filter_SearchInput!
         pagination: MTG_Filter_PaginationInput!
         sort: [MTG_Filter_SortInput!]!
     ): MTG_Filter_Search!
+    """
+    Return available filter options (types, layouts, expansions, legalities).
+    """
     getMTGFilters: MTG_Filter_Entries!
     # Decks
+    """
+    List all decks for dashboard view.
+    """
     getMTGDecks: [MTG_DeckDashboard!]!
+    """
+    Return a single deck by ID with cards and metadata.
+    """
     getMTGDeck(deckID: ID!): MTG_Deck!
     # Card Packages
+    """
+    List card packages or fetch one by ID.
+    """
     getMTGCardPackages(cardPackageID: ID): [MTG_CardPackage!]!
     # Tags
+    """
+    Return all tags (card and deck).
+    """
     tags: [Tag!]!
+    """
+    Return only CardTag items.
+    """
     cardTags: [CardTag!]!
+    """
+    Return only DeckTag items.
+    """
     deckTags: [DeckTag!]!
+    """
+    Fetch a tag by ID (CardTag or DeckTag).
+    """
     tag(id: ID!): Tag
 }

@@ -1,3 +1,6 @@
+"""
+Represents a zone in the deck builder.
+"""
 type FlowZone {
     ID: ID!
     name: String!
@@ -8,6 +11,9 @@ type FlowZone {
     zoneChildren: [ID!]!
 }
 
+"""
+Represents the position of an entity in the deck builder.
+"""
 type Position {
     x: Float!
     y: Float!

@@ -1,3 +1,6 @@
+"""
+Used to save the deck builder zones and their children.
+"""
 input FlowZoneInput {
     ID: ID!
     name: String!
@@ -8,6 +11,9 @@ input FlowZoneInput {
     zoneChildren: [ID!]!
 }
 
+"""
+Used to save the position of an entity in the deck builder.
+"""
 input PositionInput {
     x: Float!
     y: Float!

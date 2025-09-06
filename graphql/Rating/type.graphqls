@@ -1,3 +1,6 @@
+"""
+A user's rating for an entity (card or tag).
+"""
 type UserRating {
     user: User!
     value: Int!

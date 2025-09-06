@@ -1,3 +1,6 @@
+"""
+A package grouping cards outside of a deck context.
+"""
 type MTG_CardPackage {
     ID: ID! @goTag(key: "json", value: "_key")
     name: String!
@@ -5,6 +8,9 @@ type MTG_CardPackage {
     # zones: [FlowZone!]! TODO: Add zones to card package in the future
 }
 
+"""
+A card entry inside a card package.
+"""
 type MTG_CardPackageCard {
     card: MTG_Card!
     selectedVersionID: String
