@@ -4,18 +4,13 @@ import (
 	"context"
 	"magic-helper/arango"
 	"magic-helper/graph/model"
-	"magic-helper/util/ctxkeys"
 
 	"github.com/rs/zerolog/log"
 )
 
+// GetMTGCardPackages returns card packages and their cards, optionally filtered by ID.
 func GetMTGCardPackages(ctx context.Context, cardPackageID *string) ([]*model.MtgCardPackage, error) {
 	log.Info().Msg("GetMTGCardPackages: Started")
-
-	// Debug logging for context
-	log.Debug().
-		Interface("context_keys", ctx.Value(ctxkeys.UserIDKey)).
-		Msg("GetMTGCardPackages: Context debug")
 
 	aq := arango.NewQuery( /* aql */ `
 		FOR doc IN MTG_Card_Packages

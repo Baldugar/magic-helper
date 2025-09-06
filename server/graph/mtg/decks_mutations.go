@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// CreateMTGDeck inserts a new deck and returns its ID.
 func CreateMTGDeck(ctx context.Context, input model.MtgCreateDeckInput) (*model.Response, error) {
 	log.Info().Msg("CreateMTGDeck: Started")
 
@@ -57,6 +58,7 @@ func CreateMTGDeck(ctx context.Context, input model.MtgCreateDeckInput) (*model.
 	}, nil
 }
 
+// DeleteMTGDeck deletes a deck and associated edges.
 func DeleteMTGDeck(ctx context.Context, input model.MtgDeleteDeckInput) (*model.Response, error) {
 	log.Info().Msg("DeleteMTGDeck: Started")
 
@@ -102,6 +104,7 @@ func DeleteMTGDeck(ctx context.Context, input model.MtgDeleteDeckInput) (*model.
 	}, nil
 }
 
+// UpdateMTGDeck replaces deck fields and rewrites card edges and front image.
 func UpdateMTGDeck(ctx context.Context, input model.MtgUpdateDeckInput) (*model.Response, error) {
 	log.Info().Msg("UpdateMTGDeck: Started")
 
@@ -265,6 +268,7 @@ func UpdateMTGDeck(ctx context.Context, input model.MtgUpdateDeckInput) (*model.
 	}, nil
 }
 
+// SaveMTGDeckAsCopy creates a new deck with copied data from the input deck.
 func SaveMTGDeckAsCopy(ctx context.Context, input model.MtgUpdateDeckInput) (*model.Response, error) {
 	log.Info().Msg("SaveDeckAsCopy: Started")
 
@@ -312,6 +316,7 @@ func SaveMTGDeckAsCopy(ctx context.Context, input model.MtgUpdateDeckInput) (*mo
 	}, nil
 }
 
+// AddIgnoredCard marks a card as ignored for a given deck.
 func AddIgnoredCard(ctx context.Context, input model.AddIgnoredCardInput) (*model.Response, error) {
 	log.Info().Msg("AddIgnoredCard: Started")
 
@@ -341,6 +346,7 @@ func AddIgnoredCard(ctx context.Context, input model.AddIgnoredCardInput) (*mode
 	}, nil
 }
 
+// RemoveIgnoredCard unmarks an ignored card for a given deck.
 func RemoveIgnoredCard(ctx context.Context, input model.RemoveIgnoredCardInput) (*model.Response, error) {
 	log.Info().Msg("RemoveIgnoredCard: Started")
 

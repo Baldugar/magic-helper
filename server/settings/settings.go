@@ -2,13 +2,13 @@ package settings
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"strings"
 
 	"github.com/rs/zerolog/log"
 )
 
+// ArangoDBConfig holds connection details for ArangoDB.
 type ArangoDBConfig struct {
 	Addr     string `json:"addr"`
 	Port     string `json:"port"`
@@ -17,6 +17,7 @@ type ArangoDBConfig struct {
 	Password string `json:"password"`
 }
 
+// LogConfig controls logging output and verbosity.
 type LogConfig struct {
 	LogLevel    string `json:"logLevel"`
 	LogFile     string `json:"logFile"`
@@ -33,6 +34,7 @@ type Settings struct {
 	ArangoDB          ArangoDBConfig `json:"arangoDB"`
 }
 
+// Current holds the process-wide active configuration.
 var Current Settings
 
 // Loads the settings
@@ -40,9 +42,11 @@ func Load(settingsFile string) {
 	loadSettingsFromFile(settingsFile)
 }
 
+// loadSettingsFromFile reads, parses, validates, applies defaults, and stores
+// configuration values into the global Current variable.
 func loadSettingsFromFile(settingsFile string) {
 	// read the settings file
-	jsonData, err := ioutil.ReadFile(settingsFile)
+	jsonData, err := os.ReadFile(settingsFile)
 	if os.IsNotExist(err) {
 		log.Fatal().Err(err).Msg("error could not find settings file")
 	} else if err != nil {
@@ -89,6 +93,7 @@ func loadSettingsFromFile(settingsFile string) {
 	Current = newSettings
 }
 
+// isEmpty returns true when the string is empty or whitespace-only.
 func isEmpty(text string) bool {
 	return len(strings.Trim(text, " ")) == 0
 }

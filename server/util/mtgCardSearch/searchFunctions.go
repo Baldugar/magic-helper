@@ -14,6 +14,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// FilterCards filters MTG cards using provided input and optional in-memory index.
 func FilterCards(cards []*model.MtgCard, filter model.MtgFilterSearchInput, sort []*model.MtgFilterSortInput) []*model.MtgCard {
 	// Try to use cached cards from index if available and no cards were provided
 	var cardsToFilter []*model.MtgCard
@@ -74,6 +75,7 @@ func FilterCards(cards []*model.MtgCard, filter model.MtgFilterSearchInput, sort
 	return filteredCards
 }
 
+// PaginateCards slices the input according to page and pageSize.
 func PaginateCards(cards []*model.MtgCard, pagination model.MtgFilterPaginationInput) []*model.MtgCard {
 	// Convert page and pageSize to offset and limit
 	log.Info().Int("page", pagination.Page).Int("pageSize", pagination.PageSize).Msg("PaginateCards: Pagination")
@@ -94,7 +96,7 @@ func PaginateCards(cards []*model.MtgCard, pagination model.MtgFilterPaginationI
 	return cards[start:end]
 }
 
-// passesFilter checks if a card passes all the filter criteria
+// passesFilter checks if a card passes all the filter criteria.
 func passesFilter(card *model.MtgCard, filter model.MtgFilterSearchInput, cards []*model.MtgCard, ignoredCardIDs []string) bool {
 	if slices.Contains(ignoredCardIDs, card.ID) {
 		return false
@@ -186,7 +188,7 @@ func passesFilter(card *model.MtgCard, filter model.MtgFilterSearchInput, cards 
 	return true
 }
 
-// passesSearchString checks if a card matches the search string criteria
+// passesSearchString checks if a card matches the search string criteria.
 func passesSearchString(card *model.MtgCard, searchString string) bool {
 	searchQueries := strings.Split(searchString, ";")
 
@@ -332,7 +334,7 @@ func passesSearchString(card *model.MtgCard, searchString string) bool {
 	return true
 }
 
-// passesColorFilter checks if a card passes the color filtering criteria
+// passesColorFilter checks if a card passes the color filtering criteria.
 func passesColorFilter(card *model.MtgCard, colorFilters []*model.MtgFilterColorInput, multiColor model.TernaryBoolean) bool {
 	if len(colorFilters) == 0 && multiColor == model.TernaryBooleanUnset {
 		return true
@@ -396,7 +398,7 @@ func passesColorFilter(card *model.MtgCard, colorFilters []*model.MtgFilterColor
 	return true
 }
 
-// passesRarityFilter checks if a card passes the rarity filtering criteria
+// passesRarityFilter checks if a card passes the rarity filtering criteria.
 func passesRarityFilter(card *model.MtgCard, rarityFilters []*model.MtgFilterRarityInput) bool {
 	if len(rarityFilters) == 0 {
 		return true
@@ -445,7 +447,7 @@ func passesRarityFilter(card *model.MtgCard, rarityFilters []*model.MtgFilterRar
 	return true
 }
 
-// passesManaCostFilter checks if a card passes the mana cost filtering criteria
+// passesManaCostFilter checks if a card passes the mana cost filtering criteria.
 func passesManaCostFilter(card *model.MtgCard, manaCostFilters []*model.MtgFilterManaCostInput) bool {
 	if len(manaCostFilters) == 0 {
 		return true
@@ -504,7 +506,7 @@ func passesManaCostFilter(card *model.MtgCard, manaCostFilters []*model.MtgFilte
 	return true
 }
 
-// passesSetFilter checks if a card passes the set filtering criteria
+// passesSetFilter checks if a card passes the set filtering criteria.
 func passesSetFilter(card *model.MtgCard, setFilters []*model.MtgFilterSetInput) bool {
 	if len(setFilters) == 0 {
 		return true
@@ -553,7 +555,7 @@ func passesSetFilter(card *model.MtgCard, setFilters []*model.MtgFilterSetInput)
 	return true
 }
 
-// passesCardTypeFilter checks if a card passes the card type filtering criteria
+// passesCardTypeFilter checks if a card passes the card type filtering criteria.
 func passesCardTypeFilter(card *model.MtgCard, cardTypeFilters []*model.MtgFilterCardTypeInput) bool {
 	if len(cardTypeFilters) == 0 {
 		return true
@@ -595,7 +597,7 @@ func passesCardTypeFilter(card *model.MtgCard, cardTypeFilters []*model.MtgFilte
 	return true
 }
 
-// passesLayoutFilter checks if a card passes the layout filtering criteria
+// passesLayoutFilter checks if a card passes the layout filtering criteria.
 func passesLayoutFilter(card *model.MtgCard, layoutFilters []*model.MtgFilterLayoutInput) bool {
 	if len(layoutFilters) == 0 {
 		return true
@@ -637,7 +639,7 @@ func passesLayoutFilter(card *model.MtgCard, layoutFilters []*model.MtgFilterLay
 	return true
 }
 
-// passesGameFilter checks if a card passes the game filtering criteria
+// passesGameFilter checks if a card passes the game filtering criteria.
 func passesGameFilter(card *model.MtgCard, gameFilters []*model.MtgFilterGameInput) bool {
 	if len(gameFilters) == 0 {
 		return true
@@ -693,7 +695,7 @@ func passesGameFilter(card *model.MtgCard, gameFilters []*model.MtgFilterGameInp
 	return true
 }
 
-// passesTagFilter checks if a card passes the tag filtering criteria
+// passesTagFilter checks if a card passes the tag filtering criteria.
 func passesTagFilter(card *model.MtgCard, tagFilters []*model.MtgFilterTagInput) bool {
 	if len(tagFilters) == 0 {
 		return true
@@ -760,7 +762,7 @@ func passesTagFilter(card *model.MtgCard, tagFilters []*model.MtgFilterTagInput)
 	return true
 }
 
-// passesRatingFilter checks if a card passes the rating filtering criteria
+// passesRatingFilter checks if a card passes the rating filtering criteria.
 func passesRatingFilter(card *model.MtgCard, ratingFilter *model.MtgFilterRatingInput) bool {
 	if ratingFilter == nil {
 		return true
@@ -787,7 +789,7 @@ func passesRatingFilter(card *model.MtgCard, ratingFilter *model.MtgFilterRating
 	return true
 }
 
-// applySorting applies sorting to the filtered cards
+// applySorting applies sorting to the filtered cards.
 func applySorting(cards []*model.MtgCard, sortInputs []*model.MtgFilterSortInput) []*model.MtgCard {
 	if len(sortInputs) == 0 {
 		return cards
@@ -827,8 +829,8 @@ func applySorting(cards []*model.MtgCard, sortInputs []*model.MtgFilterSortInput
 	return sortedCards
 }
 
-// compareBySortCriteria compares two cards based on a sort criteria
-// Returns: -1 if cardA < cardB, 1 if cardA > cardB, 0 if equal
+// compareBySortCriteria compares two cards based on a sort criteria.
+// Returns: -1 if cardA < cardB, 1 if cardA > cardB, 0 if equal.
 func compareBySortCriteria(cardA, cardB *model.MtgCard, sortCriteria *model.MtgFilterSortInput) int {
 	isDesc := sortCriteria.SortDirection == model.MtgFilterSortDirectionDesc
 
@@ -905,7 +907,7 @@ func compareBySortCriteria(cardA, cardB *model.MtgCard, sortCriteria *model.MtgF
 	return comparison
 }
 
-// compareByColor implements the complex color sorting logic from TypeScript
+// compareByColor implements the complex color sorting logic from TypeScript.
 func compareByColor(cardA, cardB *model.MtgCard) int {
 	// First, check if it's a land (lands come after non-lands)
 	isLandA := strings.Contains(cardA.TypeLine, "Land") && !strings.Contains(cardA.TypeLine, "//")
@@ -946,7 +948,7 @@ func compareByColor(cardA, cardB *model.MtgCard) int {
 	return 0
 }
 
-// getColorIdentityString converts color identity to a sortable string
+// getColorIdentityString converts color identity to a sortable string.
 func getColorIdentityString(colors []model.MtgColor) string {
 	colorStr := ""
 	for _, color := range colors {
@@ -955,7 +957,7 @@ func getColorIdentityString(colors []model.MtgColor) string {
 	return colorStr
 }
 
-// colorToValue converts a color to a sortable character (matching TypeScript)
+// colorToValue converts a color to a sortable character (matching TypeScript).
 func colorToValue(color model.MtgColor) rune {
 	switch color {
 	case model.MtgColorC:
@@ -975,7 +977,7 @@ func colorToValue(color model.MtgColor) rune {
 	}
 }
 
-// getRarityValue converts rarity to a sortable integer (matching TypeScript)
+// getRarityValue converts rarity to a sortable integer (matching TypeScript).
 func getRarityValue(card *model.MtgCard) int {
 	defaultVersion := getDefaultVersion(card)
 	if defaultVersion == nil {
@@ -996,7 +998,7 @@ func getRarityValue(card *model.MtgCard) int {
 	}
 }
 
-// getTypeValue calculates a type value based on the type line (matching TypeScript)
+// getTypeValue calculates a type value based on the type line (matching TypeScript).
 func getTypeValue(card *model.MtgCard) int {
 	types := make(map[string]bool)
 	for _, t := range strings.Fields(card.TypeLine) {
@@ -1010,7 +1012,7 @@ func getTypeValue(card *model.MtgCard) int {
 	return value
 }
 
-// typeToValue converts a type name to a numeric value (matching TypeScript)
+// typeToValue converts a type name to a numeric value (matching TypeScript).
 func typeToValue(typeName string) int {
 	switch typeName {
 	case "Artifact":
@@ -1042,7 +1044,7 @@ func typeToValue(typeName string) int {
 	}
 }
 
-// getSetReleaseDate gets the release date for set sorting
+// getSetReleaseDate gets the release date for set sorting.
 func getSetReleaseDate(card *model.MtgCard) int64 {
 	// For now, use the default version's release date
 	// In the future, this could be enhanced to match against expansions
@@ -1057,7 +1059,7 @@ func getSetReleaseDate(card *model.MtgCard) int64 {
 	return 0
 }
 
-// getReleasedAtValue gets the release date value based on sort direction
+// getReleasedAtValue gets the release date value based on sort direction.
 func getReleasedAtValue(card *model.MtgCard, isDesc bool) int64 {
 	if len(card.Versions) == 0 {
 		return 0
@@ -1094,7 +1096,7 @@ func getReleasedAtValue(card *model.MtgCard, isDesc bool) int64 {
 	}
 }
 
-// getDefaultVersion gets the default version of a card
+// getDefaultVersion gets the default version of a card.
 func getDefaultVersion(card *model.MtgCard) *model.MtgCardVersion {
 	for _, version := range card.Versions {
 		if version.IsDefault {

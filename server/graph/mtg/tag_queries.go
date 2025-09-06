@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// GetTags returns all tags, mapping DB shape to GraphQL union types.
 func GetTags(ctx context.Context) ([]model.Tag, error) {
 	aq := arango.NewQuery( /* aql */ `
 		FOR tag IN MTG_Tags
@@ -49,6 +50,7 @@ func GetTags(ctx context.Context) ([]model.Tag, error) {
 	return tags, nil
 }
 
+// GetCardTags returns all card tags.
 func GetCardTags(ctx context.Context) ([]*model.CardTag, error) {
 	aq := arango.NewQuery( /* aql */ `
 		FOR tag IN MTG_Tags
@@ -82,6 +84,7 @@ func GetCardTags(ctx context.Context) ([]*model.CardTag, error) {
 	return tags, nil
 }
 
+// GetDeckTags returns all deck tags with colors.
 func GetDeckTags(ctx context.Context) ([]*model.DeckTag, error) {
 	aq := arango.NewQuery( /* aql */ `
 		FOR tag IN MTG_Tags
@@ -116,6 +119,7 @@ func GetDeckTags(ctx context.Context) ([]*model.DeckTag, error) {
 	return tags, nil
 }
 
+// GetTag fetches a single tag by ID and returns the proper union type.
 func GetTag(ctx context.Context, id string) (model.Tag, error) {
 	aq := arango.NewQuery( /* aql */ `
 		FOR tag IN MTG_Tags

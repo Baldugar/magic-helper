@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// CreateMTGCardPackage inserts a new card package document.
 func CreateMTGCardPackage(ctx context.Context, input model.MtgCreateCardPackageInput) (*model.Response, error) {
 	log.Info().Msgf("CreateMTGCardPackage: Started")
 
@@ -53,6 +54,7 @@ func CreateMTGCardPackage(ctx context.Context, input model.MtgCreateCardPackageI
 	}, nil
 }
 
+// DeleteMTGCardPackage removes a package and its card edges.
 func DeleteMTGCardPackage(ctx context.Context, input model.MtgDeleteCardPackageInput) (*model.Response, error) {
 	log.Info().Msgf("DeleteMTGCardPackage: Started")
 
@@ -101,6 +103,7 @@ func DeleteMTGCardPackage(ctx context.Context, input model.MtgDeleteCardPackageI
 	}, nil
 }
 
+// AddMTGCardToCardPackage creates an edge from a card to a package.
 func AddMTGCardToCardPackage(ctx context.Context, input model.MtgAddCardToCardPackageInput) (*model.Response, error) {
 	log.Info().Msgf("AddMTGCardToCardPackage: Started")
 
@@ -165,6 +168,7 @@ func AddMTGCardToCardPackage(ctx context.Context, input model.MtgAddCardToCardPa
 	}, nil
 }
 
+// RemoveMTGCardFromCardPackage removes an edge from a card to a package.
 func RemoveMTGCardFromCardPackage(ctx context.Context, input model.MtgRemoveCardFromCardPackageInput) (*model.Response, error) {
 	log.Info().Msgf("RemoveMTGCardFromCardPackage: Started")
 

@@ -8,7 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// Dashboard
+// GetMTGDecks lists all decks with a front image preview and sorted card edges.
 func GetMTGDecks(ctx context.Context) ([]*model.MtgDeckDashboard, error) {
 	log.Info().Msg("GetMTGADecks: Started")
 
@@ -64,6 +64,7 @@ func GetMTGDecks(ctx context.Context) ([]*model.MtgDeckDashboard, error) {
 	return decks, nil
 }
 
+// GetMTGDeck fetches a single deck with full card details and tags.
 func GetMTGDeck(ctx context.Context, deckID string) (*model.MtgDeck, error) {
 	log.Info().Msg("GetMTGDeck: Started")
 

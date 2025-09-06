@@ -5,6 +5,7 @@ import (
 	scryfallModel "magic-helper/graph/model/scryfall/model"
 )
 
+// MTG_SetDB is the persisted form of a set document in ArangoDB.
 type MTG_SetDB struct {
 	ID            string  `json:"_key"`
 	Code          string  `json:"code"`
@@ -29,6 +30,7 @@ type MTG_SetDB struct {
 	ETag          string  `json:"eTag"`
 }
 
+// MTG_CardDB is the persisted aggregated card document used by the app.
 type MTG_CardDB struct {
 	ID             string               `json:"_key"`
 	Layout         scryfallModel.Layout `json:"layout"`
@@ -49,6 +51,7 @@ type MTG_CardDB struct {
 	Versions       []MTG_CardVersionDB  `json:"versions"`
 }
 
+// MTG_CardVersionDB describes a specific printing/version of a card.
 type MTG_CardVersionDB struct {
 	ID              string                     `json:"ID"`
 	Artist          *string                    `json:"artist,omitempty"`
@@ -80,6 +83,7 @@ type MTG_CardVersionDB struct {
 	IllustrationID  *string                    `json:"illustrationID,omitempty"`
 }
 
+// MTG_CardVersionFaceDB describes a face of a multi-faced card version.
 type MTG_CardVersionFaceDB struct {
 	Artist         *string         `json:"artist,omitempty"`
 	CMC            *float64        `json:"CMC,omitempty"`

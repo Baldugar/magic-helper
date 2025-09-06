@@ -13,6 +13,9 @@ import (
 
 var DB arangoDriver.Database
 
+// Init establishes a connection to ArangoDB, ensures the database exists
+// (creating it if necessary with retries), stores the database handle in DB,
+// and then ensures collections and indexes are in place.
 func Init(settings settings.ArangoDBConfig) {
 	ctx := context.Background()
 

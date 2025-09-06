@@ -14,6 +14,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -21,6 +22,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// ScryfallResponse represents a paginated response from Scryfall APIs that
+// include a data array and optional pagination fields.
 type ScryfallResponse struct {
 	Data     []json.RawMessage `json:"data"`
 	HasMore  bool              `json:"has_more"`
@@ -88,6 +91,7 @@ func NewProgressReader(reader io.Reader, totalSize int64) *ProgressReader {
 	}
 }
 
+// PeriodicFetchMTGCards runs a 24h loop to fetch, process, and index MTG cards from Scryfall.
 func PeriodicFetchMTGCards() {
 	log.Info().Msg("Starting periodic fetch cards daemon")
 	ctx := context.Background() // Create context once for the loop iteration
@@ -113,6 +117,8 @@ func PeriodicFetchMTGCards() {
 	}
 }
 
+// fetchMTGCards checks whether a new download is needed and, if so, locates
+// the "default_cards" bulk dataset and processes it.
 func fetchMTGCards(ctx context.Context) bool {
 	log.Info().Msg("Fetching cards from Scryfall bulk data endpoint")
 	bulkDataUrl := "https://api.scryfall.com/bulk-data"
@@ -197,7 +203,8 @@ func fetchMTGCards(ctx context.Context) bool {
 	return true
 }
 
-// Fetch and process card data
+// fetchAndProcessCardData fetches a bulk JSON file of cards and incrementally
+// decodes and upserts them into Arango in batches while logging progress.
 func fetchAndProcessCardData(ctx context.Context, downloadURI string) error {
 	// Fetch the actual card data file
 	respData, err := fetchURLWithContext(ctx, downloadURI)
@@ -297,6 +304,8 @@ func fetchAndProcessCardData(ctx context.Context, downloadURI string) error {
 	return nil
 }
 
+// collectCards rebuilds the curated MTG_Cards collection from MTG_Original_Cards
+// by grouping variants and picking a default version per group.
 func collectCards(ctx context.Context) {
 	log.Info().Msg("Collecting cards")
 
@@ -604,24 +613,12 @@ func collectCards(ctx context.Context) {
 	}
 }
 
+// has returns whether target is present in sl.
 func has(sl []string, target string) bool {
-	for _, v := range sl {
-		if v == target {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(sl, target)
 }
 
-func hasAny(sl []string, targets []string) bool {
-	for _, t := range targets {
-		if has(sl, t) {
-			return true
-		}
-	}
-	return false
-}
-
+// hasOpt checks membership in an optional slice pointer.
 func hasOpt(sl *[]string, target string) bool {
 	if sl == nil {
 		return false
@@ -629,6 +626,7 @@ func hasOpt(sl *[]string, target string) bool {
 	return has(*sl, target)
 }
 
+// safeString returns the pointed string or the empty string if nil.
 func safeString(p *string) string {
 	if p == nil {
 		return ""
@@ -636,6 +634,7 @@ func safeString(p *string) string {
 	return *p
 }
 
+// intForCollectorNumber converts a collector number to int or returns MaxInt32 on failure.
 func intForCollectorNumber(cn string) int {
 	n, err := strconv.Atoi(cn)
 	if err != nil {
@@ -644,6 +643,7 @@ func intForCollectorNumber(cn string) int {
 	return n
 }
 
+// containsGame checks whether target exists in the list of game platforms.
 func containsGame(games []scryfallModel.Game, target string) bool {
 	for _, g := range games {
 		if string(g) == target {
@@ -653,6 +653,7 @@ func containsGame(games []scryfallModel.Game, target string) bool {
 	return false
 }
 
+// platformCount counts supported platforms among paper/mtgo/arena for a version.
 func platformCount(games []scryfallModel.Game) int {
 	count := 0
 	if containsGame(games, "paper") {
@@ -820,6 +821,8 @@ func tieBreak(bestIdx, challengerIdx int, versions []scryfall.MTG_CardVersionDB)
 	return bestIdx
 }
 
+// pickDefaultIndex computes a ranked score for each version and returns the
+// best index. Ties are resolved deterministically via tieBreak.
 func pickDefaultIndex(versions []scryfall.MTG_CardVersionDB) int {
 	stats := computeGroupStats(versions)
 	bestIdx := 0

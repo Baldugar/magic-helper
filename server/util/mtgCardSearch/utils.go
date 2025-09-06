@@ -5,15 +5,15 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"magic-helper/arango"
 	"magic-helper/graph/model"
+	"magic-helper/util"
 
 	"github.com/rs/zerolog/log"
 )
 
-// QueryType represents the different types of queries
+// QueryType represents the different types of queries.
 type QueryType string
 
 const (
@@ -31,19 +31,19 @@ const (
 	QueryTypeFlavorText QueryType = "FlavorText"
 )
 
-// Query represents a parsed query with its type, value, and negation flag
+// Query represents a parsed query with its type, value, and negation flag.
 type Query struct {
 	Type  QueryType
-	Value interface{} // Can be string, int, []model.MtgColor, or model.MtgRarity
+	Value any // Can be string, int, []model.MtgColor, or model.MtgRarity
 	Not   bool
 }
 
-// CardProvider interface to avoid import cycle
+// CardProvider interface to avoid import cycle.
 type CardProvider interface {
 	GetMTGCards(ctx context.Context) ([]*model.MtgCard, error)
 }
 
-// CardIndex holds indices for fast card filtering
+// CardIndex holds indices for fast card filtering.
 type CardIndex struct {
 	mutex sync.RWMutex
 
@@ -54,10 +54,10 @@ type CardIndex struct {
 	LastUpdated int64
 }
 
-// Global card index instance
+// Global card index instance.
 var cardIndex *CardIndex
 
-// GetCardIndex returns the global card index, initializing it if necessary
+// GetCardIndex returns the global card index, initializing it if necessary.
 func GetCardIndex() *CardIndex {
 	if cardIndex == nil {
 		cardIndex = &CardIndex{}
@@ -65,7 +65,7 @@ func GetCardIndex() *CardIndex {
 	return cardIndex
 }
 
-// UpdateCardInIndex updates a card in the index after the user has assigned a rating or a cardTag / deckTag
+// UpdateCardInIndex updates a single card in the index after ratings or tags change.
 func UpdateCardInIndex(ctx context.Context, cardID string) error {
 	log.Info().Msg("Updating card index...")
 
@@ -146,7 +146,7 @@ func UpdateCardInIndex(ctx context.Context, cardID string) error {
 	return nil
 }
 
-// BuildCardIndexWithCards builds the card index from provided cards
+// BuildCardIndexWithCards builds the card index from provided cards.
 func BuildCardIndexWithCards(cards []*model.MtgCard) error {
 	log.Info().Msg("Building card index for faster filtering...")
 
@@ -157,7 +157,7 @@ func BuildCardIndexWithCards(cards []*model.MtgCard) error {
 	// Build indices
 	index.AllCards = cards
 
-	index.LastUpdated = getCurrentTimestamp()
+	index.LastUpdated = int64(util.Now())
 
 	log.Info().
 		Int("total_cards", len(index.AllCards)).
@@ -166,7 +166,7 @@ func BuildCardIndexWithCards(cards []*model.MtgCard) error {
 	return nil
 }
 
-// GetAllCardsFromIndex returns all cards from the index (with read lock)
+// GetAllCardsFromIndex returns all cards from the index (with read lock).
 func GetAllCardsFromIndex() []*model.MtgCard {
 	index := GetCardIndex()
 	index.mutex.RLock()
@@ -180,18 +180,13 @@ func GetAllCardsFromIndex() []*model.MtgCard {
 	return index.AllCards
 }
 
-// IsIndexReady checks if the card index has been built and is ready to use
+// IsIndexReady checks if the card index has been built and is ready to use.
 func IsIndexReady() bool {
 	index := GetCardIndex()
 	index.mutex.RLock()
 	defer index.mutex.RUnlock()
 
 	return len(index.AllCards) > 0
-}
-
-// getCurrentTimestamp returns the current Unix timestamp
-func getCurrentTimestamp() int64 {
-	return time.Now().UnixMilli()
 }
 
 func CalculateQuery(s string) Query {

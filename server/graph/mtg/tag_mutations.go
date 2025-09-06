@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// CreateTag inserts a tag and optionally links it to a card.
 func CreateTag(ctx context.Context, input model.CreateTagInput) (*model.Response, error) {
 	tagDB := &model.TagDB{
 		Type:        input.Type,
@@ -87,6 +88,7 @@ func CreateTag(ctx context.Context, input model.CreateTagInput) (*model.Response
 	}, nil
 }
 
+// UpdateTag updates tag fields and refreshes the in-memory index.
 func UpdateTag(ctx context.Context, input model.UpdateTagInput) (*model.Response, error) {
 	aq := arango.NewQuery( /* aql */ `
 		UPDATE @key WITH {
@@ -146,6 +148,7 @@ func UpdateTag(ctx context.Context, input model.UpdateTagInput) (*model.Response
 	}, nil
 }
 
+// DeleteTag removes a tag and its edges, then rebuilds the index cache.
 func DeleteTag(ctx context.Context, tagID string) (*model.Response, error) {
 	// remove edges first
 	aq := arango.NewQuery( /* aql */ `
@@ -220,6 +223,7 @@ func DeleteTag(ctx context.Context, tagID string) (*model.Response, error) {
 	}, nil
 }
 
+// AssignTag creates a relation between a tag and a card and updates the index.
 func AssignTag(ctx context.Context, input model.AssignTagInput) (*model.Response, error) {
 	aq := arango.NewQuery( /* aql */ `
 		INSERT {
@@ -256,6 +260,7 @@ func AssignTag(ctx context.Context, input model.AssignTagInput) (*model.Response
 	}, nil
 }
 
+// UnassignTag removes a relation between a tag and a card and updates the index.
 func UnassignTag(ctx context.Context, input model.UnassignTagInput) (*model.Response, error) {
 	aq := arango.NewQuery( /* aql */ `
 		FOR edge IN MTG_Tag_CardDeck

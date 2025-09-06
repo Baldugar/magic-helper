@@ -7,15 +7,17 @@ import (
 	"github.com/google/uuid"
 )
 
+// Now returns the current time in Unix milliseconds.
 func Now() int {
 	return int(time.Now().UnixMilli())
 }
 
+// UUID4 returns a new RFC 4122 version 4 UUID string.
 func UUID4() string {
 	return uuid.New().String()
 }
 
-// Helper function to split typeLine into types and subtypes
+// SplitTypeLine splits a type line into types and subtypes.
 func SplitTypeLine(typeLine string) (types []string, subtypes []string) {
 	// First, split by "//" to remove any separators
 	typeLine = strings.Join(strings.Split(typeLine, "//"), " ")
@@ -36,7 +38,7 @@ func SplitTypeLine(typeLine string) (types []string, subtypes []string) {
 	return types, subtypes
 }
 
-// Final cleaning step to remove subtypes that exist in the gathered types
+// CleanFinalSubtypes removes subtypes that collide with gathered type names.
 func CleanFinalSubtypes(gatheredTypes map[string]struct{}, subtypes []string) []string {
 	var cleanedSubtypes []string
 	for _, subtype := range subtypes {
@@ -47,7 +49,7 @@ func CleanFinalSubtypes(gatheredTypes map[string]struct{}, subtypes []string) []
 	return cleanedSubtypes
 }
 
-// Helper function to clean subtypes by removing any that match types or contain "//"
+// CleanSubtypes removes subtypes that are also types or separators like "//".
 func CleanSubtypes(types []string, subtypes []string) []string {
 	// Create a map to quickly check for types
 	typeSet := make(map[string]struct{})

@@ -16,12 +16,14 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Flags holds CLI options for the server process.
 type Flags = struct {
 	settingsFile string
 }
 
 var flags Flags
 
+// main boots the server: parse flags, load settings, init deps, start HTTP server.
 func main() {
 
 	// The server recovery function
@@ -86,11 +88,13 @@ func main() {
 	log.Fatal().Err(srv.ListenAndServe()).Msg("Failed to start server")
 }
 
+// parseFlags populates the global flags from CLI arguments.
 func parseFlags() {
 	flag.StringVar(&flags.settingsFile, "settings", "", "Determines the file from which the settings are loaded.")
 	flag.Parse()
 }
 
+// loggingHandler logs request duration at debug level.
 func loggingHandler(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		t1 := time.Now()

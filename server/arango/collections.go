@@ -2,7 +2,7 @@ package arango
 
 import arangoDriver "github.com/arangodb/go-driver"
 
-// Document collections
+// ArangoDocument represents the name of a document collection.
 type ArangoDocument string
 
 const (
@@ -25,7 +25,7 @@ func (d ArangoDocument) String() string {
 	return string(d)
 }
 
-// Edge collections
+// ArangoEdge represents the name of an edge collection.
 type ArangoEdge string
 
 const (
@@ -52,7 +52,7 @@ func (i ArangoIndexEnum) String() string {
 	return string(i)
 }
 
-// Arrays of collections, views, and indexes
+// DOCUMENT_COLLECTIONS lists all document collections that must exist.
 var DOCUMENT_COLLECTIONS = []ArangoDocument{
 	// Application collections
 	APPLICATION_CONFIG_COLLECTION,
@@ -67,6 +67,7 @@ var DOCUMENT_COLLECTIONS = []ArangoDocument{
 	USERS_COLLECTION,
 }
 
+// EDGE_COLLECTIONS lists all edge collections that must exist.
 var EDGE_COLLECTIONS = []ArangoEdge{
 	// MTG edge collections
 	MTG_CARD_DECK_EDGE,
@@ -77,6 +78,7 @@ var EDGE_COLLECTIONS = []ArangoEdge{
 	MTG_IGNORED_CARDS_EDGE_COLLECTION,
 }
 
+// ArangoIndexStruct describes a persistent index definition for a collection.
 type ArangoIndexStruct struct {
 	CollectionName string
 	IsEdge         bool
@@ -86,6 +88,7 @@ type ArangoIndexStruct struct {
 
 type ArangoIndexMap map[ArangoIndexEnum]ArangoIndexStruct
 
+// INDEX_ARRAY holds the set of indexes that must be ensured at startup.
 var INDEX_ARRAY ArangoIndexMap = map[ArangoIndexEnum]ArangoIndexStruct{
 	MTG_CARDS_BUILDUP_INDEX: {
 		CollectionName: MTG_CARDS_COLLECTION.String(),

@@ -1,11 +1,9 @@
 package muxRouter
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"magic-helper/settings"
-	"magic-helper/util"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -18,10 +16,7 @@ type ConfigSettings struct {
 	Port   int    `json:"port"`
 }
 
-type contextKey string
-
-const userIDKey contextKey = "USER_ID"
-
+// configHandler exposes runtime configuration to the client as JS.
 func configHandler(w http.ResponseWriter, r *http.Request) {
 	s := settings.Current
 
@@ -45,16 +40,15 @@ func configHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "const __envConfig = %s;", string(b))
 }
 
+// Handler is a pass-through middleware wrapper reserved for future use.
 func Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Add the constant USER_ID to the context TODO: Get from session
-		ctx := context.WithValue(r.Context(), userIDKey, util.USER_ID)
-		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)
 	})
 }
 
+// setHandler serves an SVG for a set code from the public images directory.
 func setHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info().Msg("Serving set image")
 	setName := r.URL.Path[len("/set/"):]

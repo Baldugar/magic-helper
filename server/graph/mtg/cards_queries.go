@@ -12,6 +12,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// GetMTGCards returns all MTG cards with ratings and tags, optimized via index hints.
 func GetMTGCards(ctx context.Context) ([]*model.MtgCard, error) {
 	log.Info().Msg("GetMTGCards: Started")
 
@@ -104,6 +105,8 @@ func GetMTGCards(ctx context.Context) ([]*model.MtgCard, error) {
 	return cards, nil
 }
 
+// GetMTGFilters returns filter entries (types, layouts, expansions, legalities).
+// Uses in-memory processing when index is warm; otherwise queries ArangoDB.
 func GetMTGFilters(ctx context.Context) (*model.MtgFilterEntries, error) {
 	log.Info().Msg("GetMTGFilters: Started")
 
@@ -223,7 +226,7 @@ func GetMTGFilters(ctx context.Context) (*model.MtgFilterEntries, error) {
 	return &filterEntries, nil
 }
 
-// GetMTGExpansions fetches distinct expansions (set and setName) from the database
+// GetMTGExpansions fetches distinct expansions (set and setName).
 func GetMTGExpansions(ctx context.Context) ([]*model.MtgFilterExpansion, error) {
 	log.Info().Msg("GetMTGExpansions: Started")
 
@@ -326,7 +329,7 @@ func GetMTGExpansions(ctx context.Context) ([]*model.MtgFilterExpansion, error) 
 	return expansions, nil
 }
 
-// Helper function to merge game arrays and remove duplicates
+// mergeGameArrays merges two lists of games removing duplicates.
 func mergeGameArrays(games1, games2 []model.MtgGame) []model.MtgGame {
 	gameSet := make(map[model.MtgGame]struct{})
 
@@ -349,7 +352,7 @@ func mergeGameArrays(games1, games2 []model.MtgGame) []model.MtgGame {
 	return result
 }
 
-// Helper function to batch fetch set details
+// fetchSetDetailsBatch queries set details for the provided set codes in batch.
 func fetchSetDetailsBatch(ctx context.Context, setCodes []string) (map[string]struct {
 	ReleasedAt *int64
 	ImageURL   *string
@@ -417,7 +420,7 @@ func fetchSetDetailsBatch(ctx context.Context, setCodes []string) (map[string]st
 	return result, nil
 }
 
-// GetMTGLegalities fetches all legality formats and statuses, then performs aggregation in Go
+// GetMTGLegalities fetches all legality formats and statuses and aggregates them.
 func GetMTGLegalities(ctx context.Context) (*model.MtgFilterLegality, error) {
 	log.Info().Msg("GetMTGLegalities: Started")
 
@@ -481,6 +484,7 @@ func GetMTGLegalities(ctx context.Context) (*model.MtgFilterLegality, error) {
 	return legality, nil
 }
 
+// GetMTGCardsFiltered filters, sorts, and paginates cards using the search index when available.
 func GetMTGCardsFiltered(ctx context.Context, filter model.MtgFilterSearchInput, pagination model.MtgFilterPaginationInput, sort []*model.MtgFilterSortInput) (*model.MtgFilterSearch, error) {
 	log.Info().Msg("GetMTGCardsFiltered: Started")
 

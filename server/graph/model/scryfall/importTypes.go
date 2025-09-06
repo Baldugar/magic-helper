@@ -4,6 +4,7 @@ import (
 	scryfallModel "magic-helper/graph/model/scryfall/model"
 )
 
+// Card mirrors the Scryfall card schema used during import.
 type Card struct {
 	// Core Card Fields
 	ArenaID           *int                       `json:"arena_id"`            // This card's Arena ID, if any. A large percentage of cards are not available on Arena and do not have this ID.
@@ -97,6 +98,7 @@ type Card struct {
 	Preview          *Preview                  `json:"preview"`           // Preview information for this card, if it was previewed.
 }
 
+// CardFace mirrors an individual Scryfall card face.
 type CardFace struct {
 	Artist          *string                      `json:"artist"`            // The name of the illustrator of this card face. Newly spoiled cards may not have this field yet.
 	ArtistID        *string                      `json:"artist_id"`         // The ID of the illustrator of this card face. Newly spoiled cards may not have this field yet.
@@ -123,6 +125,7 @@ type CardFace struct {
 	Watermark       *string                      `json:"watermark"`         // The watermark on this particulary card face, if any.
 }
 
+// ImageUris lists image variants for a card or card face.
 type ImageUris struct {
 	ArtCrop    string `json:"art_crop"`
 	BorderCrop string `json:"border_crop"`
@@ -132,6 +135,7 @@ type ImageUris struct {
 	PNG        string `json:"png"`
 }
 
+// Set mirrors the Scryfall set schema used during import.
 type Set struct {
 	Object        scryfallModel.SetObject `json:"object"`          // A content type for this object, always set.
 	ID            string                  `json:"id"`              // A unique ID for this set on Scryfall that will not change.

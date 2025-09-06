@@ -14,6 +14,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// CreateMux builds the HTTP router with GraphQL, static site and utility routes.
 func CreateMux(settings settings.Settings) *mux.Router {
 	// Create a new mux router
 	router := mux.NewRouter()
@@ -51,6 +52,7 @@ type HTMLDir struct {
 	d http.Dir
 }
 
+// Open allows implicit ".html" extension resolution for static file serving.
 func (d HTMLDir) Open(name string) (http.File, error) {
 	// Try name as supplied
 	f, err := d.d.Open(name)

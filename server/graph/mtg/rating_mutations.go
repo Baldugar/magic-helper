@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Rate upserts a user's rating for a card or tag and refreshes indexes accordingly.
 func Rate(ctx context.Context, input model.RateInput) (*model.Response, error) {
 	var toCollection arango.ArangoDocument
 	if input.EntityType == model.RatableEntityTypeCard {

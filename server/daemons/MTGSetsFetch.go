@@ -15,6 +15,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// PeriodicFetchMTGSets runs a 24h loop fetching Scryfall sets and syncing them to DB.
 func PeriodicFetchMTGSets() {
 	log.Info().Msg("Starting periodic fetch sets daemon")
 	for {
@@ -26,6 +27,8 @@ func PeriodicFetchMTGSets() {
 	}
 }
 
+// fetchSets downloads all paginated Scryfall sets, stores originals, downloads icons,
+// and updates the last-fetched timestamp.
 func fetchSets() bool {
 	log.Info().Msg("Fetching sets from Scryfall")
 	url := "https://api.scryfall.com/sets"
@@ -147,9 +150,8 @@ func fetchSets() bool {
 	return true
 }
 
-// downloadSetIconIfNeeded uses a HEAD request with If-None-Match (ETag) to see
-// if the icon changed. If server returns 304 Not Modified, it skips. Otherwise,
-// it downloads the file, then updates the ETag in DB.
+// downloadSetIconIfNeeded checks the current ETag via HEAD and only downloads
+// the set icon if it changed. On success, it updates the stored ETag.
 func downloadSetIconIfNeeded(ctx context.Context, set scryfall.Set) error {
 	if set.IconSVGURI == "" {
 		// If there's no icon URL, nothing to do
@@ -206,7 +208,7 @@ func downloadSetIconIfNeeded(ctx context.Context, set scryfall.Set) error {
 	return nil
 }
 
-// doDownloadAndSave does the actual GET request, saves the file, and updates the ETag in DB.
+// doDownloadAndSave performs the GET request, saves the icon, and updates the ETag in DB.
 func doDownloadAndSave(ctx context.Context, set scryfall.Set, newETag string) error {
 	resp, err := http.Get(set.IconSVGURI)
 	if err != nil {
@@ -239,7 +241,7 @@ func doDownloadAndSave(ctx context.Context, set scryfall.Set, newETag string) er
 	return nil
 }
 
-// updateSetETagInDB runs an AQL query to store the new ETag in your "MTGA_ORIGINAL_SETS_COLLECTION".
+// updateSetETagInDB stores the latest ETag for a set code in MTG_Original_Sets.
 func updateSetETagInDB(ctx context.Context, code, newETag string) error {
 	aq := arango.NewQuery( /* aql */ `
 		FOR s IN MTG_Original_Sets
@@ -258,6 +260,7 @@ func updateSetETagInDB(ctx context.Context, code, newETag string) error {
 	return nil
 }
 
+// updateDatabaseSets transforms original sets to the app schema and upserts into MTG_Sets.
 func updateDatabaseSets() {
 	log.Info().Msg("Updating database sets")
 

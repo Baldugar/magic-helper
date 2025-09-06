@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog/pkgerrors"
 )
 
+// Configure initializes zerolog with sane defaults and applies level from settings.
 func Configure(settings settings.Settings) {
 	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 	zerolog.TimestampFieldName = "t"
@@ -20,19 +21,20 @@ func Configure(settings settings.Settings) {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	zerolog.DurationFieldUnit = time.Duration(zerolog.DurationFieldUnit.Milliseconds())
 	zerolog.DurationFieldInteger = true
-	if settings.Logging.LogLevel == "Debug" {
+	switch settings.Logging.LogLevel {
+	case "Debug":
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	} else if settings.Logging.LogLevel == "Info" {
+	case "Info":
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	} else if settings.Logging.LogLevel == "Warn" {
+	case "Warn":
 		zerolog.SetGlobalLevel(zerolog.WarnLevel)
-	} else if settings.Logging.LogLevel == "Error" {
+	case "Error":
 		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
-	} else if settings.Logging.LogLevel == "Fatal" {
+	case "Fatal":
 		zerolog.SetGlobalLevel(zerolog.FatalLevel)
-	} else if settings.Logging.LogLevel == "Panic" {
+	case "Panic":
 		zerolog.SetGlobalLevel(zerolog.PanicLevel)
-	} else {
+	default:
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
 	log.Logger = log.With().Caller().Timestamp().Logger().Output(zerolog.ConsoleWriter{Out: os.Stderr})

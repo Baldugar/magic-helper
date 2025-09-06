@@ -11,6 +11,8 @@ import (
 	"magic-helper/graph/mtg"
 )
 
+// Query resolvers delegate to the mtg package which holds domain logic.
+// This layer remains thin, mapping GraphQL to service functions.
 // GetMTGCards is the resolver for the getMTGCards field.
 func (r *queryResolver) GetMTGCards(ctx context.Context) ([]*model.MtgCard, error) {
 	return mtg.GetMTGCards(ctx)

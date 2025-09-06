@@ -11,6 +11,8 @@ import (
 	"magic-helper/graph/mtg"
 )
 
+// Mutation resolvers delegate to the mtg package which holds domain logic.
+// This layer remains thin, mapping GraphQL to service functions.
 // CreateMTGDeck is the resolver for the createMTGDeck field.
 func (r *mutationResolver) CreateMTGDeck(ctx context.Context, input model.MtgCreateDeckInput) (*model.Response, error) {
 	return mtg.CreateMTGDeck(ctx, input)

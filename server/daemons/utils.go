@@ -17,6 +17,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// shouldDownloadStart returns whether a new fetch cycle should begin for a record
+// based on ApplicationConfig's LastTimeFetched; creates the record when missing.
 func shouldDownloadStart(record string) (bool, error) {
 	var appConfig model.MTGApplicationConfig
 	ctx := context.Background()
@@ -63,6 +65,7 @@ func shouldDownloadStart(record string) (bool, error) {
 	}
 }
 
+// updateLastTimeFetched updates ApplicationConfig's LastTimeFetched for a record.
 func updateLastTimeFetched(record string) error {
 	var appConfig model.MTGApplicationConfig
 	ctx := context.Background()
@@ -90,6 +93,7 @@ func updateLastTimeFetched(record string) error {
 	return nil
 }
 
+// createScryfallRequest builds a basic GET request for Scryfall with headers.
 func createScryfallRequest(url string) (*http.Request, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -102,7 +106,7 @@ func createScryfallRequest(url string) (*http.Request, error) {
 	return req, nil
 }
 
-// Download the JSON file and store it in the filesystem, returning the path to the file
+// DownloadScryfallJSONFile downloads a JSON file to disk and returns its path.
 func DownloadScryfallJSONFile(url string, fileName *string) (string, error) {
 	log.Info().Msgf("Downloading JSON file from %v", url)
 
@@ -159,6 +163,7 @@ func DownloadScryfallJSONFile(url string, fileName *string) (string, error) {
 	return file.Name(), nil
 }
 
+// parseCardsFromRaw converts raw JSON items into generic card maps for upsert.
 func parseCardsFromRaw(allCards []json.RawMessage) ([]map[string]any, error) {
 	cards := []map[string]any{}
 	for _, card := range allCards {
@@ -173,6 +178,7 @@ func parseCardsFromRaw(allCards []json.RawMessage) ([]map[string]any, error) {
 	return cards, nil
 }
 
+// upsertOriginalCards upserts the provided card maps into MTG_Original_Cards.
 func upsertOriginalCards(ctx context.Context, cards []map[string]any) error {
 	aq := arango.NewQuery( /* aql */ `
 		FOR c IN @cards
@@ -193,6 +199,7 @@ func upsertOriginalCards(ctx context.Context, cards []map[string]any) error {
 	return nil
 }
 
+// createScryfallRequestWithContext builds a GET request bound to the given context.
 func createScryfallRequestWithContext(ctx context.Context, url string) (*http.Request, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -201,6 +208,7 @@ func createScryfallRequestWithContext(ctx context.Context, url string) (*http.Re
 	return req, nil
 }
 
+// fetchURLWithContext performs an HTTP GET with context and ensures 200 OK.
 func fetchURLWithContext(ctx context.Context, url string) (*http.Response, error) {
 	req, err := createScryfallRequestWithContext(ctx, url)
 	if err != nil {
@@ -216,8 +224,7 @@ func fetchURLWithContext(ctx context.Context, url string) (*http.Response, error
 	return resp, nil
 }
 
-// Helper function to sanitize filenames (replace invalid characters)
-// You might need a more robust implementation depending on expected names
+// SanitizeFilename replaces filesystem-invalid characters for safer filenames.
 func SanitizeFilename(name string) string {
 	// Example: Replace slashes with underscores
 	// You might want to handle other characters like :, ?, *, etc.
@@ -235,7 +242,7 @@ func SanitizeFilename(name string) string {
 	return name
 }
 
-// Helper function to download an image from a URL
+// DownloadImage downloads an image via HTTP into the specified file path.
 func DownloadImage(url string, filePath string) error {
 	// Check if URL is empty
 	if url == "" {
@@ -287,7 +294,7 @@ func DownloadImage(url string, filePath string) error {
 	return nil
 }
 
-// Helper function to find a unique file path by appending a number if necessary
+// FindUniqueFilePath ensures a unique path by appending an incrementing suffix if needed.
 func FindUniqueFilePath(dir, baseName, extension string) string {
 	filePath := filepath.Join(dir, fmt.Sprintf("%s%s", baseName, extension))
 	counter := 1
