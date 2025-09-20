@@ -5,7 +5,7 @@ type MTG_CardPackage {
     ID: ID! @goTag(key: "json", value: "_key")
     name: String!
     cards: [MTG_CardPackageCard!]!
-    # zones: [FlowZone!]! TODO: Add zones to card package in the future
+    zones: [FlowZone!]!
 }
 
 """
@@ -16,4 +16,6 @@ type MTG_CardPackageCard {
     selectedVersionID: String
     count: Int!
     mainOrSide: MainOrSide!
+    position: Position!
+    phantoms: [Phantom!]!
 }

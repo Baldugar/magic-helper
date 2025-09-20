@@ -17,6 +17,7 @@ const (
 	MTG_DECKS_COLLECTION          ArangoDocument = "MTG_Decks"
 	MTG_CARD_PACKAGES_COLLECTION  ArangoDocument = "MTG_Card_Packages"
 	MTG_TAGS_COLLECTION           ArangoDocument = "MTG_Tags"
+	MTG_IMPORT_REPORTS_COLLECTION ArangoDocument = "MTG_Import_Reports"
 	// User collections
 	USERS_COLLECTION ArangoDocument = "Users"
 )
@@ -64,6 +65,7 @@ var DOCUMENT_COLLECTIONS = []ArangoDocument{
 	MTG_DECKS_COLLECTION,
 	MTG_CARD_PACKAGES_COLLECTION,
 	MTG_TAGS_COLLECTION,
+	MTG_IMPORT_REPORTS_COLLECTION,
 	USERS_COLLECTION,
 }
 

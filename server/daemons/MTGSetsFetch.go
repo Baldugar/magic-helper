@@ -34,19 +34,25 @@ func fetchSets() bool {
 	url := "https://api.scryfall.com/sets"
 
 	ctx := context.Background()
+	report := newImportReportBuilder("MTG_sets")
+	defer report.Complete(ctx)
+	report.AddMetadata("source", url)
 
 	// Check if we should fetch sets
 	shouldFetch, err := shouldDownloadStart("MTG_sets")
 	if err != nil {
 		log.Error().Err(err).Msgf("Error checking if we should fetch sets")
+		report.MarkFailed(err)
 		return false
 	}
 
 	if !shouldFetch {
+		report.MarkSkipped("fetched in the last 24 hours")
 		return false
 	}
 
 	var allSets []json.RawMessage
+	pagesFetched := 0
 
 	i := 1
 	for {
@@ -54,17 +60,20 @@ func fetchSets() bool {
 		req, err := createScryfallRequest(url)
 		if err != nil {
 			log.Error().Err(err).Msgf("Error creating request to Scryfall")
+			report.MarkFailed(err)
 			return false
 		}
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			log.Error().Err(err).Msgf("Error fetching sets from Scryfall")
+			report.MarkFailed(err)
 			return false
 		}
 
 		if resp.StatusCode != http.StatusOK {
 			log.Error().Msgf("Error fetching sets from Scryfall: %v", resp.Status)
+			report.MarkFailed(fmt.Errorf("unexpected status: %s", resp.Status))
 			return false
 		}
 
@@ -72,6 +81,7 @@ func fetchSets() bool {
 		resp.Body.Close()
 		if err != nil {
 			log.Error().Err(err).Msgf("Error reading response body")
+			report.MarkFailed(err)
 			return false
 		}
 
@@ -80,10 +90,12 @@ func fetchSets() bool {
 		err = json.Unmarshal(body, &response)
 		if err != nil {
 			log.Error().Err(err).Msgf("Error unmarshalling response body")
+			report.MarkFailed(err)
 			return false
 		}
 
 		allSets = append(allSets, response.Data...)
+		pagesFetched++
 
 		if !response.HasMore {
 			break
@@ -103,12 +115,15 @@ func fetchSets() bool {
 		err := json.Unmarshal(set, &setMap)
 		if err != nil {
 			log.Error().Err(err).Str("set", string(set)).Msgf("Error unmarshalling set")
+			report.MarkFailed(err)
 			return false
 		}
 		sets = append(sets, setMap)
 	}
 
 	log.Info().Msgf("Unmarshalled %v sets", len(sets))
+	report.SetRecordsProcessed(len(sets))
+	report.AddMetadata("pages_fetched", pagesFetched)
 	log.Info().Msgf("Inserting sets into database")
 
 	// Insert the data into the database
@@ -125,22 +140,27 @@ func fetchSets() bool {
 	_, err = arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {
 		log.Error().Err(err).Msgf("Error inserting sets into database")
+		report.MarkFailed(err)
 		return false
 	}
 
 	// Download the icons
+	iconErrors := 0
 	for _, set := range sets {
 		err := downloadSetIconIfNeeded(ctx, set)
 		if err != nil {
 			log.Error().Err(err).Msgf("Error downloading set icon for %s", set.Code)
+			iconErrors++
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
+	report.AddMetadata("icon_download_errors", iconErrors)
 
 	// Update the last time we fetched sets
 	err = updateLastTimeFetched("MTG_sets")
 	if err != nil {
 		log.Error().Err(err).Msgf("Error updating last time fetched")
+		report.MarkFailed(err)
 		return false
 	}
 

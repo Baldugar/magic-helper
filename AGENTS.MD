@@ -1,51 +1,34 @@
-## AI Agents Guide
+# Repository Guidelines
 
-This file is for AI agents contributing code. Keep edits small, typed, documented, and aligned with this structure.
+## Project Structure & Module Organization
+- `server/`: Go API bootstrapped by `main.go`; resolvers live in `graph/mtg`, Arango setup in `arango/`, background fetchers in `daemons/`. Shared helpers stay in `util/`, environment JSON in `settings/`.
+- `client/`: React + Vite front end. State providers in `src/context/MTGA/`, GraphQL ops and generated hooks in `src/graphql/MTGA/`, routed pages under `src/pages/`, reusable UI in `src/components/`.
+- `graphql/`: Authoritative SDL (`*.graphqls`). Update here first so server and client codegen aligns.
+- `docs/`, `arangodb/`, `nginx/`: Deployment notes, database fixtures, and proxy templates referenced during releases.
 
-### Project Structure (where to look)
+## Build, Test, and Development Commands
+- `cd server && bash regenerate.sh`: Refreshes gqlgen bindings after SDL or model edits.
+- `cd server && go test ./...`: Executes Go unit tests; keep suites focused and package-local.
+- `cd server && go run . -settings settings.development.json`: Launches the API with dev config.
+- `cd client && npm install && npm run dev`: Installs dependencies and starts the Vite dev server.
+- `cd client && npm run generate`: Produces TypeScript types from the current schema.
+- `cd client && npm run lint`: ESLint plus strict TypeScript checks before committing.
 
--   server/ (Go, gqlgen)
-    -   arango/: DB bootstrap, collections, indexes
-    -   graph/: resolvers and domain logic under graph/mtg
-    -   daemons/: Scryfall fetchers, index builders
-    -   util/: logging, mux, search index, helpers
-    -   settings/: configuration loader
-    -   main.go: server bootstrap
--   client/ (React + Vite + TS + MUI)
-    -   src/context/MTGA/\*: domain providers and hooks
-    -   src/graphql/MTGA/: queries, mutations, functions.ts wrappers
-    -   src/pages/: routes (Dashboard, DeckCreator)
-    -   src/components/: reusable UI (cards, images, selectors)
--   graphql/: shared SDL (types, inputs, enums, root schema)
+## Coding Style & Naming Conventions
+- Go code stays `gofmt`/`goimports` clean, prefers early returns, and documents exported or non-trivial functions with GoDoc.
+- TypeScript uses Prettier defaults (`tabWidth: 4`, `singleQuote: true`, no semicolons) and ESLint; components use PascalCase, hooks and utilities use camelCase.
+- GraphQL SDL needs triple-quoted descriptions and consistent enum casing; mirror schema names across server and client types.
 
-### Coding Guidelines
+## Testing Guidelines
+- Place `_test.go` files beside the code they cover; table-driven cases suit resolvers and helpers.
+- Frontend validation hinges on `npm run lint`; add Vitest or React Testing Library specs under `client/src/**/__tests__` for interactive pieces.
+- Note manual QA steps in PRs when automation is insufficient.
 
--   General
+## Commit & Pull Request Guidelines
+- Write imperative, concise commit messages (`Add deck search resolver`, `Fix MTGA package filter`) and cross-link issues with `(#NN)` when relevant.
+- Keep PRs narrow, include a short summary, test results, and screenshots or sample queries for UI or API changes.
+- Explain regenerated artifacts and avoid drive-by formatting; leave files better documented than you found them.
 
-    -   Do not reformat unrelated code. Preserve indentation and style.
-    -   Add documentation with each change (GoDoc/JSDoc/SDL descriptions).
-    -   Prefer small, focused edits; keep diffs minimal and clear.
-
--   Go (server)
-
-    -   Use early returns, meaningful errors; avoid deep nesting.
-    -   Keep AQL in helpers; use bind variables and index-aware queries.
-    -   Document exported and non-trivial functions.
-
--   TypeScript/React (client)
-
-    -   Write strict, typed code; side-effects in hooks/providers.
-    -   Add JSDoc for components, hooks, and contexts; include brief usage when useful.
-    -   Annotate complex JSX with inline comments explaining structure and styles.
-
--   GraphQL SDL
-    -   Use triple-quoted descriptions for types/fields.
-    -   Keep SDL, server models, and client types in sync.
-
-### Implementation Workflow
-
-1. Update SDL in graphql/ (types/inputs/enums + descriptions).
-2. Server: regenerate gqlgen using the regenerate.sh script on the server root folder; implement domain logic under server/graph/mtg.
-3. Client: regenerate with npm run generate; add query/mutation and wrapper in client/src/graphql/MTGA/.
-4. Wire provider/hook in client/src/context/MTGA/\*; update UI.
-5. Document changes (GoDoc/JSDoc/SDL) and align types.
+## Agent Workflow Tips
+- Move in the SDL -> server -> client order to keep generated code coherent.
+- Before handing off, rerun the commands above and call out any skipped steps for the next contributor.

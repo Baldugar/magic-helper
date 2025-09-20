@@ -6,6 +6,33 @@ type MTGApplicationConfig struct {
 	LastTimeFetched int    `json:"last_time_fetched"`
 }
 
+// MTGImportReportStatus describes the outcome of a background import job.
+type MTGImportReportStatus string
+
+const (
+	// ImportReportStatusRunning indicates the job is still in progress when persisted.
+	ImportReportStatusRunning MTGImportReportStatus = "running"
+	// ImportReportStatusSuccess indicates the job completed without critical errors.
+	ImportReportStatusSuccess MTGImportReportStatus = "success"
+	// ImportReportStatusFailed indicates the job aborted due to an error.
+	ImportReportStatusFailed MTGImportReportStatus = "failed"
+	// ImportReportStatusSkipped indicates the job skipped execution (e.g., no delta).
+	ImportReportStatusSkipped MTGImportReportStatus = "skipped"
+)
+
+// MTGImportReport captures metrics, status, and optional error details for daemon runs.
+type MTGImportReport struct {
+	ID               string                `json:"_key,omitempty"`
+	JobName          string                `json:"job_name"`
+	StartedAt        int                   `json:"started_at"`
+	CompletedAt      *int                  `json:"completed_at,omitempty"`
+	DurationMs       *int                  `json:"duration_ms,omitempty"`
+	Status           MTGImportReportStatus `json:"status"`
+	RecordsProcessed int                   `json:"records_processed"`
+	ErrorMessage     *string               `json:"error_message,omitempty"`
+	Metadata         map[string]any        `json:"metadata,omitempty"`
+}
+
 // MTGDeckDB is the persisted form of a deck document in ArangoDB.
 type MTGDeckDB struct {
 	ID    string     `json:"_key"`
