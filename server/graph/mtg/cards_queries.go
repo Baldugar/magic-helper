@@ -496,7 +496,6 @@ func GetMTGCardsFiltered(ctx context.Context, filter model.MtgFilterSearchInput,
 	// Try to use cached cards from index if available
 	if mtgCardSearch.IsIndexReady() {
 		log.Info().Msg("GetMTGCardsFiltered: Using cached cards from index")
-		cards = mtgCardSearch.GetAllCardsFromIndex()
 	} else {
 		log.Info().Msg("GetMTGCardsFiltered: Index not ready, fetching basic cards from database")
 		cards, err = GetMTGCards(ctx)

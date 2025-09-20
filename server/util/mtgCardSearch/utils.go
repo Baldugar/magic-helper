@@ -2,9 +2,12 @@ package mtgCardSearch
 
 import (
 	"context"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
+	"unicode"
 
 	"magic-helper/arango"
 	"magic-helper/graph/model"
@@ -43,15 +46,87 @@ type CardProvider interface {
 	GetMTGCards(ctx context.Context) ([]*model.MtgCard, error)
 }
 
-// CardIndex holds indices for fast card filtering.
+// CardIndex holds indices for fast card filtering and scoring.
 type CardIndex struct {
 	mutex sync.RWMutex
 
-	// All cards cached in memory
+	// All cards cached in memory for compatibility with legacy callers.
 	AllCards []*model.MtgCard
 
-	// Timestamp of last update
-	LastUpdated int64
+	// Fast lookup structures for query execution.
+	documents map[string]*CardDocument
+	inverted  map[string][]posting
+
+	// Metrics for observability.
+	metrics IndexMetrics
+
+	// Timestamp of last update and build duration (in milliseconds).
+	LastUpdated     int64
+	BuildDurationMs int64
+}
+
+// IndexMetrics captures statistics about the current in-memory inverted index.
+type IndexMetrics struct {
+	TotalDocuments int
+	UniqueTerms    int
+	TotalPostings  int
+}
+
+// fieldMask represents which fields contributed to a posting.
+type fieldMask uint8
+
+const (
+	fieldName fieldMask = 1 << iota
+	fieldOracle
+	fieldTypeLine
+	fieldSubtype
+	fieldColorIdentity
+	fieldKeyword
+)
+
+// posting stores term-level information for a card.
+type posting struct {
+	cardID    string
+	fields    fieldMask
+	frequency int
+}
+
+// tokenFrequency tracks token counts per field.
+type tokenFrequency map[string]uint16
+
+// CardDocument caches normalized data needed for scoring and filtering.
+type CardDocument struct {
+	Card              *model.MtgCard
+	NormalizedName    string
+	NameTokens        tokenFrequency
+	OracleTokens      tokenFrequency
+	TypeTokens        tokenFrequency
+	SubtypeTokens     tokenFrequency
+	ColorTokens       []string
+	KeywordTokens     []string
+	SetCodes          []string
+	LatestReleaseUnix int64
+}
+
+// defaultStopwords contains a minimal list used to de-noise tokens.
+var defaultStopwords = map[string]struct{}{
+	"a":   {},
+	"an":  {},
+	"the": {},
+	"of":  {},
+	"and": {},
+	"or":  {},
+	"to":  {},
+	"for": {},
+	"in":  {},
+}
+
+var colorNameByCode = map[string]string{
+	"w": "white",
+	"u": "blue",
+	"b": "black",
+	"r": "red",
+	"g": "green",
 }
 
 // Global card index instance.
@@ -60,14 +135,210 @@ var cardIndex *CardIndex
 // GetCardIndex returns the global card index, initializing it if necessary.
 func GetCardIndex() *CardIndex {
 	if cardIndex == nil {
-		cardIndex = &CardIndex{}
+		cardIndex = &CardIndex{
+			documents: make(map[string]*CardDocument),
+			inverted:  make(map[string][]posting),
+		}
 	}
 	return cardIndex
 }
 
+func normalizeText(value string) string {
+	return strings.TrimSpace(strings.ToLower(value))
+}
+
+func tokenize(value string) []string {
+	if value == "" {
+		return nil
+	}
+	value = strings.ToLower(value)
+	result := make([]string, 0, 8)
+	var builder strings.Builder
+	for _, r := range value {
+		if unicode.IsLetter(r) || unicode.IsNumber(r) {
+			builder.WriteRune(r)
+			continue
+		}
+		if builder.Len() == 0 {
+			continue
+		}
+		token := builder.String()
+		builder.Reset()
+		if _, stop := defaultStopwords[token]; stop {
+			continue
+		}
+		result = append(result, token)
+	}
+	if builder.Len() > 0 {
+		token := builder.String()
+		if _, stop := defaultStopwords[token]; !stop {
+			result = append(result, token)
+		}
+	}
+	return result
+}
+
+func buildTokenFrequency(tokens []string) tokenFrequency {
+	if len(tokens) == 0 {
+		return make(tokenFrequency)
+	}
+	freq := make(tokenFrequency, len(tokens))
+	for _, token := range tokens {
+		if token == "" {
+			continue
+		}
+		freq[token]++
+	}
+	return freq
+}
+
+func buildTokenFrequencyFromSlice(values []string) tokenFrequency {
+	if len(values) == 0 {
+		return make(tokenFrequency)
+	}
+	freq := make(tokenFrequency, len(values))
+	for _, value := range values {
+		if value == "" {
+			continue
+		}
+		freq[value]++
+	}
+	return freq
+}
+
+func addField(builder map[string]map[string]*posting, freq tokenFrequency, cardID string, mask fieldMask) {
+	if len(freq) == 0 {
+		return
+	}
+	for token, count := range freq {
+		if token == "" {
+			continue
+		}
+		perCard := builder[token]
+		if perCard == nil {
+			perCard = make(map[string]*posting)
+			builder[token] = perCard
+		}
+		entry, ok := perCard[cardID]
+		if !ok {
+			entry = &posting{cardID: cardID}
+			perCard[cardID] = entry
+		}
+		entry.fields |= mask
+		entry.frequency += int(count)
+	}
+}
+
+func newCardDocument(card *model.MtgCard) *CardDocument {
+	doc := &CardDocument{
+		Card:           card,
+		NormalizedName: normalizeText(card.Name),
+	}
+	doc.NameTokens = buildTokenFrequency(tokenize(card.Name))
+	if card.OracleText != nil {
+		doc.OracleTokens = buildTokenFrequency(tokenize(*card.OracleText))
+	} else {
+		doc.OracleTokens = make(tokenFrequency)
+	}
+	types, subtypes := util.SplitTypeLine(card.TypeLine)
+	doc.TypeTokens = buildTokenFrequency(tokenize(strings.Join(types, " ")))
+	doc.SubtypeTokens = buildTokenFrequency(tokenize(strings.Join(subtypes, " ")))
+	doc.ColorTokens = uniqueLowerColors(card.ColorIdentity)
+	doc.KeywordTokens = uniqueLowerStrings(card.Keywords)
+	doc.SetCodes = uniqueLowerSetCodes(card.Versions)
+	doc.LatestReleaseUnix = latestRelease(card.Versions)
+	return doc
+}
+
+func uniqueLowerStrings(values []string) []string {
+	if len(values) == 0 {
+		return nil
+	}
+	set := make(map[string]struct{}, len(values))
+	result := make([]string, 0, len(values))
+	for _, value := range values {
+		token := strings.ToLower(strings.TrimSpace(value))
+		if token == "" {
+			continue
+		}
+		if _, exists := set[token]; exists {
+			continue
+		}
+		set[token] = struct{}{}
+		result = append(result, token)
+	}
+	sort.Strings(result)
+	return result
+}
+
+func uniqueLowerColors(values []model.MtgColor) []string {
+	if len(values) == 0 {
+		return nil
+	}
+	set := make(map[string]struct{}, len(values)*2)
+	for _, value := range values {
+		token := strings.ToLower(strings.TrimSpace(string(value)))
+		if token == "" {
+			continue
+		}
+		set[token] = struct{}{}
+		if name, ok := colorNameByCode[token]; ok {
+			set[name] = struct{}{}
+		}
+	}
+	result := make([]string, 0, len(set))
+	for token := range set {
+		result = append(result, token)
+	}
+	sort.Strings(result)
+	return result
+}
+
+func uniqueLowerSetCodes(versions []*model.MtgCardVersion) []string {
+	if len(versions) == 0 {
+		return nil
+	}
+	set := make(map[string]struct{}, len(versions))
+	result := make([]string, 0, len(versions))
+	for _, version := range versions {
+		if version == nil {
+			continue
+		}
+		token := strings.ToLower(strings.TrimSpace(version.Set))
+		if token == "" {
+			continue
+		}
+		if _, exists := set[token]; exists {
+			continue
+		}
+		set[token] = struct{}{}
+		result = append(result, token)
+	}
+	sort.Strings(result)
+	return result
+}
+
+func latestRelease(versions []*model.MtgCardVersion) int64 {
+	var latest int64
+	for _, version := range versions {
+		if version == nil || version.ReleasedAt == "" {
+			continue
+		}
+		timestamp, err := time.Parse("2006-01-02", version.ReleasedAt)
+		if err != nil {
+			continue
+		}
+		releaseUnix := timestamp.Unix()
+		if releaseUnix > latest {
+			latest = releaseUnix
+		}
+	}
+	return latest
+}
+
 // UpdateCardInIndex updates a single card in the index after ratings or tags change.
 func UpdateCardInIndex(ctx context.Context, cardID string) error {
-	log.Info().Msg("Updating card index...")
+	log.Info().Str("card_id", cardID).Msg("Updating card index...")
 
 	aq := arango.NewQuery( /* aql */ `
 		FOR doc IN MTG_Cards
@@ -121,8 +392,8 @@ func UpdateCardInIndex(ctx context.Context, cardID string) error {
 		log.Error().Err(err).Msgf("Error updating card index")
 		return err
 	}
-
 	defer cursor.Close()
+
 	var card model.MtgCard
 	for cursor.HasMore() {
 		_, err := cursor.ReadDocument(ctx, &card)
@@ -132,36 +403,100 @@ func UpdateCardInIndex(ctx context.Context, cardID string) error {
 		}
 	}
 
-	index := GetCardIndex()
-	index.mutex.Lock()
-	defer index.mutex.Unlock()
+	if card.ID == "" {
+		log.Warn().Str("card_id", cardID).Msg("Card not found for index update")
+		return nil
+	}
 
-	for i, c := range index.AllCards {
-		if c.ID == card.ID {
-			index.AllCards[i] = &card
+	index := GetCardIndex()
+	index.mutex.RLock()
+	existingCards := append([]*model.MtgCard(nil), index.AllCards...)
+	index.mutex.RUnlock()
+
+	updated := false
+	for i, existing := range existingCards {
+		if existing != nil && existing.ID == card.ID {
+			cardCopy := card
+			existingCards[i] = &cardCopy
+			updated = true
 			break
 		}
 	}
 
-	return nil
+	if !updated {
+		cardCopy := card
+		existingCards = append(existingCards, &cardCopy)
+	}
+
+	return BuildCardIndexWithCards(existingCards)
 }
 
 // BuildCardIndexWithCards builds the card index from provided cards.
 func BuildCardIndexWithCards(cards []*model.MtgCard) error {
-	log.Info().Msg("Building card index for faster filtering...")
+	log.Info().Int("total_cards", len(cards)).Msg("Building card inverted index...")
+	startedAt := time.Now()
+
+	// Prepare builder containers outside of the lock to reduce contention.
+	documents := make(map[string]*CardDocument, len(cards))
+	postingsBuilder := make(map[string]map[string]*posting)
+
+	for _, card := range cards {
+		if card == nil || card.ID == "" {
+			continue
+		}
+		doc := newCardDocument(card)
+		documents[card.ID] = doc
+
+		addField(postingsBuilder, doc.NameTokens, card.ID, fieldName)
+		addField(postingsBuilder, doc.OracleTokens, card.ID, fieldOracle)
+		addField(postingsBuilder, doc.TypeTokens, card.ID, fieldTypeLine)
+		addField(postingsBuilder, doc.SubtypeTokens, card.ID, fieldSubtype)
+		addField(postingsBuilder, buildTokenFrequencyFromSlice(doc.ColorTokens), card.ID, fieldColorIdentity)
+		addField(postingsBuilder, buildTokenFrequencyFromSlice(doc.KeywordTokens), card.ID, fieldKeyword)
+	}
+
+	finalPostings := make(map[string][]posting, len(postingsBuilder))
+	totalPostings := 0
+	for token, perCard := range postingsBuilder {
+		if len(perCard) == 0 {
+			continue
+		}
+		list := make([]posting, 0, len(perCard))
+		for _, entry := range perCard {
+			list = append(list, *entry)
+		}
+		sort.Slice(list, func(i, j int) bool {
+			if list[i].frequency == list[j].frequency {
+				return list[i].cardID < list[j].cardID
+			}
+			return list[i].frequency > list[j].frequency
+		})
+		finalPostings[token] = list
+		totalPostings += len(list)
+	}
+
+	buildDuration := time.Since(startedAt)
 
 	index := GetCardIndex()
 	index.mutex.Lock()
-	defer index.mutex.Unlock()
-
-	// Build indices
-	index.AllCards = cards
-
+	index.AllCards = append([]*model.MtgCard(nil), cards...)
+	index.documents = documents
+	index.inverted = finalPostings
+	index.metrics = IndexMetrics{
+		TotalDocuments: len(cards),
+		UniqueTerms:    len(finalPostings),
+		TotalPostings:  totalPostings,
+	}
 	index.LastUpdated = int64(util.Now())
+	index.BuildDurationMs = buildDuration.Milliseconds()
+	index.mutex.Unlock()
 
 	log.Info().
-		Int("total_cards", len(index.AllCards)).
-		Msg("Card index built successfully")
+		Int("total_cards", len(cards)).
+		Int("unique_terms", len(finalPostings)).
+		Int("postings", totalPostings).
+		Dur("build_duration", buildDuration).
+		Msg("Card inverted index built successfully")
 
 	return nil
 }

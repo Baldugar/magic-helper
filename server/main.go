@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"magic-helper/arango"
 	"magic-helper/daemons"
+	"magic-helper/graph/mtg"
 	"magic-helper/settings"
 	"magic-helper/util/logging"
+	"magic-helper/util/mtgCardSearch"
 	"magic-helper/util/muxRouter"
 	"net/http"
 	"runtime"
@@ -45,6 +48,15 @@ func main() {
 
 	// Initialize ArangoDB
 	arango.Init(settings.Current.ArangoDB)
+
+	// Warm up the in-memory search index before serving traffic.
+	if cards, err := mtg.GetMTGCards(context.Background()); err != nil {
+		log.Error().Err(err).Msg("Failed to preload MTG card index")
+	} else if err := mtgCardSearch.BuildCardIndexWithCards(cards); err != nil {
+		log.Error().Err(err).Msg("Failed to build MTG card index")
+	} else {
+		log.Info().Int("cards", len(cards)).Msg("MTG card index preloaded")
+	}
 
 	// Initialize the daemons
 	go daemons.PeriodicFetchMTGSets()

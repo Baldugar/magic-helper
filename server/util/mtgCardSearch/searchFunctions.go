@@ -2,77 +2,357 @@ package mtgCardSearch
 
 import (
 	"context"
-	"magic-helper/arango"
-	"magic-helper/graph/model"
-	"slices"
+	"fmt"
+	"math"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"sort"
+	"magic-helper/arango"
+	"magic-helper/graph/model"
+	"slices"
 
 	"github.com/rs/zerolog/log"
 )
 
-// FilterCards filters MTG cards using provided input and optional in-memory index.
-func FilterCards(cards []*model.MtgCard, filter model.MtgFilterSearchInput, sort []*model.MtgFilterSortInput) []*model.MtgCard {
-	// Try to use cached cards from index if available and no cards were provided
-	var cardsToFilter []*model.MtgCard
+type scoredCard struct {
+	card  *model.MtgCard
+	score float64
+}
 
-	if len(cards) == 0 && IsIndexReady() {
-		log.Debug().Msg("Using cards from index for filtering")
-		cardsToFilter = GetAllCardsFromIndex()
-	} else if len(cards) > 0 {
-		cardsToFilter = cards
+// FilterCards filters MTG cards using provided input and optional in-memory index.
+func FilterCards(cards []*model.MtgCard, filter model.MtgFilterSearchInput, sortInputs []*model.MtgFilterSortInput) []*model.MtgCard {
+	start := time.Now()
+
+	ignoredIDs, ignoredSet := fetchIgnoredCards(filter)
+	var ignoredForFilter []string
+	if filter.HideIgnored && len(ignoredIDs) > 0 {
+		ignoredForFilter = ignoredIDs
+	}
+
+	negativeSets := collectNegativeSets(filter)
+
+	var (
+		cardUniverse []*model.MtgCard
+		docs         map[string]*CardDocument
+		inverted     map[string][]posting
+		usingIndex   bool
+	)
+
+	if len(cards) == 0 {
+		if !IsIndexReady() {
+			log.Warn().Msg("FilterCards: index not ready and no cards provided")
+			return []*model.MtgCard{}
+		}
+
+		idx := GetCardIndex()
+		idx.mutex.RLock()
+		cardUniverse = append([]*model.MtgCard(nil), idx.AllCards...)
+		docs = idx.documents
+		inverted = idx.inverted
+		idx.mutex.RUnlock()
+		usingIndex = true
 	} else {
-		log.Warn().Msg("No cards provided and index is not ready, returning empty cards")
+		cardUniverse = cards
+		if IsIndexReady() {
+			idx := GetCardIndex()
+			idx.mutex.RLock()
+			docs = idx.documents
+			idx.mutex.RUnlock()
+		}
+	}
+
+	if len(cardUniverse) == 0 {
 		return []*model.MtgCard{}
 	}
 
-	filteredCards := make([]*model.MtgCard, 0, len(cardsToFilter))
+	var tokens []string
+	normalizedQuery := ""
+	if filter.SearchString != nil {
+		normalizedQuery = normalizeText(*filter.SearchString)
+		tokens = extractPlainTokens(*filter.SearchString)
+	}
 
-	ignoredCardIDs := make([]string, 0)
-	if filter.DeckID != nil && filter.HideIgnored {
-		ctx := context.Background()
-		aq := arango.NewQuery( /* aql */ `
+	var candidateSet map[string]struct{}
+	if usingIndex && len(tokens) > 0 && len(inverted) > 0 {
+		candidateSet = candidateIDsFromTokens(tokens, inverted)
+		if candidateSet != nil && len(candidateSet) == 0 {
+			candidateSet = nil
+		}
+	}
+
+	scored := make([]scoredCard, 0, len(cardUniverse))
+	for _, card := range cardUniverse {
+		if card == nil {
+			continue
+		}
+
+		if candidateSet != nil {
+			if _, ok := candidateSet[card.ID]; !ok {
+				continue
+			}
+		}
+
+		doc := docs[card.ID]
+		if doc == nil {
+			doc = newCardDocument(card)
+		}
+
+		if len(tokens) > 0 && !docContainsAllTokens(doc, tokens) {
+			continue
+		}
+
+		score := computeRelevanceScore(doc, tokens, normalizedQuery)
+		if _, ignored := ignoredSet[card.ID]; ignored && !filter.HideIgnored {
+			score -= 200
+		}
+
+		if len(negativeSets) > 0 && docHasNegativeSet(doc, negativeSets) {
+			score -= 50
+		}
+
+		if !passesFilter(card, filter, cardUniverse, ignoredForFilter) {
+			continue
+		}
+
+		scored = append(scored, scoredCard{card: card, score: score})
+	}
+
+	if len(scored) == 0 {
+		return []*model.MtgCard{}
+	}
+
+	sort.SliceStable(scored, func(i, j int) bool {
+		if scored[i].score == scored[j].score {
+			if !strings.EqualFold(scored[i].card.Name, scored[j].card.Name) {
+				return strings.ToLower(scored[i].card.Name) < strings.ToLower(scored[j].card.Name)
+			}
+			return scored[i].card.ID < scored[j].card.ID
+		}
+		return scored[i].score > scored[j].score
+	})
+
+	ordered := make([]*model.MtgCard, len(scored))
+	for i, item := range scored {
+		ordered[i] = item.card
+	}
+
+	ordered = applySorting(ordered, sortInputs)
+
+	log.Debug().
+		Int("input_cards", len(cardUniverse)).
+		Int("filtered_cards", len(ordered)).
+		Dur("duration", time.Since(start)).
+		Msg("FilterCards completed")
+
+	return ordered
+}
+
+func fetchIgnoredCards(filter model.MtgFilterSearchInput) ([]string, map[string]struct{}) {
+	if filter.DeckID == nil {
+		return nil, nil
+	}
+
+	ctx := context.Background()
+	aq := arango.NewQuery( /* aql */ `
                         FOR card, edge IN 1..1 OUTBOUND CONCAT("MTG_Decks/", @deckID) MTG_Deck_Ignore_Card
                         RETURN card._key
                 `)
-		aq.AddBindVar("deckID", *filter.DeckID)
-		cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
+	aq.AddBindVar("deckID", *filter.DeckID)
+
+	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
+	if err != nil {
+		log.Error().Err(err).Msg("FilterCards: error loading ignored cards")
+		return nil, nil
+	}
+	defer cursor.Close()
+
+	ids := make([]string, 0)
+	set := make(map[string]struct{})
+	for cursor.HasMore() {
+		var id string
+		_, err := cursor.ReadDocument(ctx, &id)
 		if err != nil {
-			log.Error().Err(err).Msg("Error querying database")
-			return []*model.MtgCard{}
+			log.Error().Err(err).Msg("FilterCards: error reading ignored card id")
+			continue
 		}
-		defer cursor.Close()
-		for cursor.HasMore() {
-			var ignoredCard string
-			_, err := cursor.ReadDocument(ctx, &ignoredCard)
-			if err != nil {
-				log.Error().Err(err).Msg("Error reading document")
-				return []*model.MtgCard{}
+		ids = append(ids, id)
+		set[id] = struct{}{}
+	}
+
+	return ids, set
+}
+
+func collectNegativeSets(filter model.MtgFilterSearchInput) map[string]struct{} {
+	if len(filter.Sets) == 0 {
+		return nil
+	}
+
+	negatives := make(map[string]struct{})
+	for _, entry := range filter.Sets {
+		if entry == nil {
+			continue
+		}
+		if entry.Value == model.TernaryBooleanFalse {
+			negatives[strings.ToLower(entry.Set)] = struct{}{}
+		}
+	}
+
+	if len(negatives) == 0 {
+		return nil
+	}
+
+	return negatives
+}
+
+func extractPlainTokens(query string) []string {
+	query = strings.TrimSpace(query)
+	if query == "" {
+		return nil
+	}
+
+	tokenSet := make(map[string]struct{})
+	clauses := strings.Split(query, ";")
+	for _, clause := range clauses {
+		clause = strings.TrimSpace(clause)
+		if clause == "" {
+			continue
+		}
+		lower := strings.ToLower(clause)
+		if strings.ContainsAny(lower, ":<>!=") {
+			continue
+		}
+		for _, token := range tokenize(clause) {
+			if token == "" {
+				continue
 			}
-			ignoredCardIDs = append(ignoredCardIDs, ignoredCard)
+			tokenSet[token] = struct{}{}
 		}
 	}
 
-	for _, card := range cardsToFilter {
-		if passesFilter(card, filter, cardsToFilter, ignoredCardIDs) {
-			filteredCards = append(filteredCards, card)
+	if len(tokenSet) == 0 {
+		return nil
+	}
+
+	tokens := make([]string, 0, len(tokenSet))
+	for token := range tokenSet {
+		tokens = append(tokens, token)
+	}
+	sort.Strings(tokens)
+	return tokens
+}
+
+func candidateIDsFromTokens(tokens []string, inverted map[string][]posting) map[string]struct{} {
+	if len(tokens) == 0 {
+		return nil
+	}
+	candidates := make(map[string]struct{})
+	for _, token := range tokens {
+		entries, ok := inverted[token]
+		if !ok {
+			continue
+		}
+		for _, entry := range entries {
+			candidates[entry.cardID] = struct{}{}
+		}
+	}
+	return candidates
+}
+
+func docContainsAllTokens(doc *CardDocument, tokens []string) bool {
+	if len(tokens) == 0 {
+		return true
+	}
+	for _, token := range tokens {
+		if token == "" {
+			continue
+		}
+		if _, ok := doc.NameTokens[token]; ok {
+			continue
+		}
+		if _, ok := doc.OracleTokens[token]; ok {
+			continue
+		}
+		if _, ok := doc.TypeTokens[token]; ok {
+			continue
+		}
+		if _, ok := doc.SubtypeTokens[token]; ok {
+			continue
+		}
+		if containsString(doc.ColorTokens, token) {
+			continue
+		}
+		if containsString(doc.KeywordTokens, token) {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+func computeRelevanceScore(doc *CardDocument, tokens []string, normalizedQuery string) float64 {
+	score := 1.0
+
+	if normalizedQuery != "" && normalizedQuery == doc.NormalizedName {
+		score += 1000
+	}
+
+	for _, token := range tokens {
+		if token == "" {
+			continue
+		}
+		if freq, ok := doc.NameTokens[token]; ok {
+			score += float64(freq) * 120
+		}
+		if freq, ok := doc.OracleTokens[token]; ok {
+			score += float64(freq) * 50
+		}
+		if freq, ok := doc.TypeTokens[token]; ok {
+			score += float64(freq) * 30
+		}
+		if freq, ok := doc.SubtypeTokens[token]; ok {
+			score += float64(freq) * 20
+		}
+		if containsString(doc.ColorTokens, token) {
+			score += 15
+		}
+		if containsString(doc.KeywordTokens, token) {
+			score += 18
 		}
 	}
 
-	// Apply sorting if provided
-	if len(sort) > 0 {
-		filteredCards = applySorting(filteredCards, sort)
+	if doc.LatestReleaseUnix > 0 {
+		age := time.Since(time.Unix(doc.LatestReleaseUnix, 0))
+		years := age.Hours() / (24 * 365)
+		if years < 0 {
+			years = 0
+		}
+		score += math.Max(0, 5.0-years)
 	}
 
-	log.Debug().
-		Int("input_cards", len(cardsToFilter)).
-		Int("filtered_cards", len(filteredCards)).
-		Msg("Filtering completed")
+	return score
+}
 
-	return filteredCards
+func docHasNegativeSet(doc *CardDocument, negatives map[string]struct{}) bool {
+	if len(negatives) == 0 || doc == nil {
+		return false
+	}
+	for _, setCode := range doc.SetCodes {
+		if _, exists := negatives[setCode]; exists {
+			return true
+		}
+	}
+	return false
+}
+
+func containsString(items []string, target string) bool {
+	for _, item := range items {
+		if item == target {
+			return true
+		}
+	}
+	return false
 }
 
 // PaginateCards slices the input according to page and pageSize.
@@ -157,6 +437,11 @@ func passesFilter(card *model.MtgCard, filter model.MtgFilterSearchInput, cards 
 
 	// Set filtering
 	if !passesSetFilter(card, filter.Sets) {
+		return false
+	}
+
+	// Legality filtering
+	if !passesLegalityFilter(card, filter.Legalities) {
 		return false
 	}
 
@@ -506,6 +791,111 @@ func passesManaCostFilter(card *model.MtgCard, manaCostFilters []*model.MtgFilte
 	return true
 }
 
+// passesLegalityFilter checks if a card satisfies requested format legalities.
+func passesLegalityFilter(card *model.MtgCard, legalityFilters []*model.MtgFilterLegalityInput) bool {
+	if len(legalityFilters) == 0 {
+		return true
+	}
+
+	for _, legalityFilter := range legalityFilters {
+		if legalityFilter == nil {
+			continue
+		}
+
+		positives := make([]string, 0)
+		negatives := make([]string, 0)
+		for _, entry := range legalityFilter.LegalityEntries {
+			if entry == nil || entry.LegalityValue == "" {
+				continue
+			}
+			switch entry.Value {
+			case model.TernaryBooleanTrue:
+				positives = append(positives, strings.ToLower(entry.LegalityValue))
+			case model.TernaryBooleanFalse:
+				negatives = append(negatives, strings.ToLower(entry.LegalityValue))
+			}
+		}
+
+		statuses := cardStatusesForFormat(card, legalityFilter.Format)
+		if len(positives) > 0 {
+			matched := false
+			for _, status := range statuses {
+				for _, pos := range positives {
+					if status == pos {
+						matched = true
+						break
+					}
+				}
+				if matched {
+					break
+				}
+			}
+			if !matched {
+				return false
+			}
+		}
+
+		if len(negatives) > 0 {
+			for _, status := range statuses {
+				for _, neg := range negatives {
+					if status == neg {
+						return false
+					}
+				}
+			}
+		}
+	}
+
+	return true
+}
+
+// cardStatusesForFormat returns distinct lower-cased legality statuses for a format.
+func cardStatusesForFormat(card *model.MtgCard, format string) []string {
+	if card == nil || format == "" {
+		return nil
+	}
+
+	format = strings.ToLower(format)
+	statuses := make(map[string]struct{})
+
+	for _, version := range card.Versions {
+		if version == nil || version.Legalities == nil {
+			continue
+		}
+		for key, value := range version.Legalities {
+			if strings.ToLower(key) != format {
+				continue
+			}
+			status := normalizeLegalityValue(value)
+			if status == "" {
+				continue
+			}
+			statuses[status] = struct{}{}
+		}
+	}
+
+	if len(statuses) == 0 {
+		return nil
+	}
+
+	result := make([]string, 0, len(statuses))
+	for status := range statuses {
+		result = append(result, status)
+	}
+	return result
+}
+
+func normalizeLegalityValue(value any) string {
+	switch v := value.(type) {
+	case string:
+		return strings.ToLower(strings.TrimSpace(v))
+	case fmt.Stringer:
+		return strings.ToLower(strings.TrimSpace(v.String()))
+	default:
+		return strings.ToLower(strings.TrimSpace(fmt.Sprint(v)))
+	}
+}
+
 // passesSetFilter checks if a card passes the set filtering criteria.
 func passesSetFilter(card *model.MtgCard, setFilters []*model.MtgFilterSetInput) bool {
 	if len(setFilters) == 0 {
@@ -768,13 +1158,11 @@ func passesRatingFilter(card *model.MtgCard, ratingFilter *model.MtgFilterRating
 		return true
 	}
 
-	// Get the card's rating
-	if card.MyRating == nil {
-		// If no rating exists, only pass if no minimum is set
-		return ratingFilter.Min == nil
+	// Treat missing ratings the same as a zero rating.
+	rating := 0
+	if card.MyRating != nil {
+		rating = card.MyRating.Value
 	}
-
-	rating := card.MyRating.Value
 
 	// Check minimum rating
 	if ratingFilter.Min != nil && rating < *ratingFilter.Min {
@@ -812,7 +1200,7 @@ func applySorting(cards []*model.MtgCard, sortInputs []*model.MtgFilterSortInput
 	copy(sortedCards, cards)
 
 	// Sort using Go's sort.Slice with custom comparison
-	sort.Slice(sortedCards, func(i, j int) bool {
+	sort.SliceStable(sortedCards, func(i, j int) bool {
 		cardA := sortedCards[i]
 		cardB := sortedCards[j]
 
