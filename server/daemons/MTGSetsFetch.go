@@ -19,34 +19,43 @@ import (
 func PeriodicFetchMTGSets() {
 	log.Info().Msg("Starting periodic fetch sets daemon")
 	for {
-		fetched := fetchSets()
-		if fetched {
-			updateDatabaseSets()
-		}
+		runMTGSetsCycle(false)
 		time.Sleep(24 * time.Hour)
+	}
+}
+
+func runMTGSetsCycle(force bool) {
+	ctx := context.Background()
+	if fetchSets(ctx, force) {
+		updateDatabaseSets()
 	}
 }
 
 // fetchSets downloads all paginated Scryfall sets, stores originals, downloads icons,
 // and updates the last-fetched timestamp.
-func fetchSets() bool {
+func fetchSets(ctx context.Context, force bool) bool {
 	log.Info().Msg("Fetching sets from Scryfall")
 	url := "https://api.scryfall.com/sets"
 
-	ctx := context.Background()
 	report := newImportReportBuilder("MTG_sets")
 	defer report.Complete(ctx)
 	report.AddMetadata("source", url)
 
 	// Check if we should fetch sets
-	shouldFetch, err := shouldDownloadStart("MTG_sets")
-	if err != nil {
-		log.Error().Err(err).Msgf("Error checking if we should fetch sets")
-		report.MarkFailed(err)
-		return false
+	shouldFetch := true
+	var err error
+	if !force {
+		shouldFetch, err = shouldDownloadStart("MTG_sets")
+		if err != nil {
+			log.Error().Err(err).Msgf("Error checking if we should fetch sets")
+			report.MarkFailed(err)
+			return false
+		}
+	} else {
+		report.AddMetadata("forced", true)
 	}
 
-	if !shouldFetch {
+	if !shouldFetch && !force {
 		report.MarkSkipped("fetched in the last 24 hours")
 		return false
 	}
@@ -282,9 +291,8 @@ func updateSetETagInDB(ctx context.Context, code, newETag string) error {
 
 // updateDatabaseSets transforms original sets to the app schema and upserts into MTG_Sets.
 func updateDatabaseSets() {
-	log.Info().Msg("Updating database sets")
-
 	ctx := context.Background()
+	log.Info().Msg("Updating database sets")
 
 	aq := arango.NewQuery( /* aql */ `
 		FOR s IN MTG_Original_Sets
@@ -356,4 +364,13 @@ func updateDatabaseSets() {
 
 	log.Info().Msgf("Updated database sets")
 	log.Info().Msgf("Done")
+}
+func RunMTGSetsImport(ctx context.Context, force bool) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	log.Info().Bool("force", force).Msg("Manual MTG sets import triggered")
+	if fetchSets(ctx, force) {
+		updateDatabaseSets()
+	}
 }

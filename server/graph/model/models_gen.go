@@ -8,6 +8,7 @@ import (
 	"strconv"
 )
 
+// A tag that can annotate cards or decks.
 type Tag interface {
 	IsTag()
 	GetID() string
@@ -16,16 +17,81 @@ type Tag interface {
 	GetMyRating() *UserRating
 }
 
+// Mark a card as ignored for the specified deck.
 type AddIgnoredCardInput struct {
 	CardID string `json:"cardID"`
 	DeckID string `json:"deckID"`
 }
 
+// Aggregate admin dashboard information.
+type AdminDashboard struct {
+	Imports              []*AdminImportSummary `json:"imports"`
+	LatestLegalitiesDiff *AdminLegalitiesDiff  `json:"latestLegalitiesDiff,omitempty"`
+}
+
+// Parameters to trigger or backfill import jobs.
+type AdminImportActionInput struct {
+	Job   AdminJob `json:"job"`
+	Force *bool    `json:"force,omitempty"`
+}
+
+// Detailed import report data exposed to admins.
+type AdminImportReport struct {
+	ID               string            `json:"id"`
+	JobName          AdminJob          `json:"jobName"`
+	Status           AdminImportStatus `json:"status"`
+	StartedAt        int               `json:"startedAt"`
+	CompletedAt      *int              `json:"completedAt,omitempty"`
+	DurationMs       *int              `json:"durationMs,omitempty"`
+	RecordsProcessed *int              `json:"recordsProcessed,omitempty"`
+	ErrorMessage     *string           `json:"errorMessage,omitempty"`
+	Metadata         map[string]any    `json:"metadata,omitempty"`
+}
+
+// Summary for an import job with recent runs and metrics.
+type AdminImportSummary struct {
+	JobName     AdminJob             `json:"jobName"`
+	LastRun     *AdminImportReport   `json:"lastRun,omitempty"`
+	PreviousRun *AdminImportReport   `json:"previousRun,omitempty"`
+	Latency     *AdminLatencyMetrics `json:"latency"`
+}
+
+// Latency metrics derived from recent import runs.
+type AdminLatencyMetrics struct {
+	LastDurationMs *int `json:"lastDurationMs,omitempty"`
+	AvgDurationMs  *int `json:"avgDurationMs,omitempty"`
+	P50DurationMs  *int `json:"p50DurationMs,omitempty"`
+	P90DurationMs  *int `json:"p90DurationMs,omitempty"`
+	TotalRuns      int  `json:"totalRuns"`
+	LastStartedAt  *int `json:"lastStartedAt,omitempty"`
+}
+
+// Collection of legality changes tied to an import run.
+type AdminLegalitiesDiff struct {
+	ImportID string                      `json:"importId"`
+	JobName  AdminJob                    `json:"jobName"`
+	Entries  []*AdminLegalitiesDiffEntry `json:"entries"`
+}
+
+// Single legality change entry between consecutive imports.
+type AdminLegalitiesDiffEntry struct {
+	CardID         string  `json:"cardID"`
+	CardName       string  `json:"cardName"`
+	Format         string  `json:"format"`
+	PreviousStatus *string `json:"previousStatus,omitempty"`
+	CurrentStatus  *string `json:"currentStatus,omitempty"`
+	SetCode        *string `json:"setCode,omitempty"`
+	SetName        *string `json:"setName,omitempty"`
+	ChangedAt      int     `json:"changedAt"`
+}
+
+// Assign a tag to a card.
 type AssignTagInput struct {
 	TagID  string `json:"tagID"`
 	CardID string `json:"cardID"`
 }
 
+// A tag intended for annotating cards.
 type CardTag struct {
 	ID          string      `json:"_key"`
 	Name        string      `json:"name"`
@@ -39,6 +105,7 @@ func (this CardTag) GetName() string          { return this.Name }
 func (this CardTag) GetDescription() *string  { return this.Description }
 func (this CardTag) GetMyRating() *UserRating { return this.MyRating }
 
+// Create a new tag, optionally linked to a card.
 type CreateTagInput struct {
 	Type        TagType    `json:"type"`
 	Name        string     `json:"name"`
@@ -61,6 +128,7 @@ func (this DeckTag) GetName() string          { return this.Name }
 func (this DeckTag) GetDescription() *string  { return this.Description }
 func (this DeckTag) GetMyRating() *UserRating { return this.MyRating }
 
+// Represents a zone in the deck builder.
 type FlowZone struct {
 	ID           string    `json:"ID"`
 	Name         string    `json:"name"`
@@ -71,6 +139,7 @@ type FlowZone struct {
 	ZoneChildren []string  `json:"zoneChildren"`
 }
 
+// Used to save the deck builder zones and their children.
 type FlowZoneInput struct {
 	ID           string         `json:"ID"`
 	Name         string         `json:"name"`
@@ -81,12 +150,14 @@ type FlowZoneInput struct {
 	ZoneChildren []string       `json:"zoneChildren"`
 }
 
+// Add a card to a package with count.
 type MtgAddCardToCardPackageInput struct {
 	CardPackageID string `json:"cardPackageID"`
 	Card          string `json:"card"`
 	Count         int    `json:"count"`
 }
 
+// Aggregated MTG card entity with curated versions and user context.
 type MtgCard struct {
 	ID             string            `json:"_key"`
 	Layout         MtgLayout         `json:"layout"`
@@ -110,6 +181,7 @@ type MtgCard struct {
 	DeckTags       []*DeckTag        `json:"deckTags"`
 }
 
+// One face of a multi-faced card version.
 type MtgCardFace struct {
 	Artist         *string    `json:"artist,omitempty"`
 	Cmc            *float64   `json:"CMC,omitempty"`
@@ -127,23 +199,30 @@ type MtgCardFace struct {
 	TypeLine       *string    `json:"typeLine,omitempty"`
 }
 
+// Minimal face data for dashboard UI.
 type MtgCardFaceDashboard struct {
 	ImageUris *MtgImage `json:"imageUris,omitempty"`
 }
 
+// A package grouping cards outside of a deck context.
 type MtgCardPackage struct {
 	ID    string                `json:"_key"`
 	Name  string                `json:"name"`
 	Cards []*MtgCardPackageCard `json:"cards"`
+	Zones []*FlowZone           `json:"zones"`
 }
 
+// A card entry inside a card package.
 type MtgCardPackageCard struct {
 	Card              *MtgCard   `json:"card"`
 	SelectedVersionID *string    `json:"selectedVersionID,omitempty"`
 	Count             int        `json:"count"`
 	MainOrSide        MainOrSide `json:"mainOrSide"`
+	Position          *Position  `json:"position"`
+	Phantoms          []*Phantom `json:"phantoms"`
 }
 
+// Card entry details for a package.
 type MtgCardPackageCardInput struct {
 	Card              string     `json:"card"`
 	SelectedVersionID *string    `json:"selectedVersionID,omitempty"`
@@ -151,6 +230,7 @@ type MtgCardPackageCardInput struct {
 	MainOrSide        MainOrSide `json:"mainOrSide"`
 }
 
+// A specific printing/version of a card used by the app.
 type MtgCardVersion struct {
 	ID          string         `json:"ID"`
 	IsDefault   bool           `json:"isDefault"`
@@ -174,6 +254,7 @@ type MtgCardVersion struct {
 	VariationOf *string        `json:"variationOf,omitempty"`
 }
 
+// Minimal card version data for dashboard UI.
 type MtgCardVersionDashboard struct {
 	ID        string                  `json:"ID"`
 	IsDefault bool                    `json:"isDefault"`
@@ -182,19 +263,23 @@ type MtgCardVersionDashboard struct {
 	ImageUris *MtgImage               `json:"imageUris,omitempty"`
 }
 
+// Minimal card representation for dashboard listings.
 type MtgCardDashboard struct {
 	ID       string                     `json:"_key"`
 	Versions []*MtgCardVersionDashboard `json:"versions"`
 }
 
+// Create a new card package.
 type MtgCreateCardPackageInput struct {
 	Name string `json:"name"`
 }
 
+// Input to create a new deck.
 type MtgCreateDeckInput struct {
 	Name string `json:"name"`
 }
 
+// A user deck with cards, positions, zones and optional front image.
 type MtgDeck struct {
 	ID             string                 `json:"_key"`
 	Name           string                 `json:"name"`
@@ -204,6 +289,7 @@ type MtgDeck struct {
 	IgnoredCards   []string               `json:"ignoredCards"`
 }
 
+// A card entry in a deck with selection and positioning metadata.
 type MtgDeckCard struct {
 	Card              *MtgCard        `json:"card"`
 	SelectedVersionID *string         `json:"selectedVersionID,omitempty"`
@@ -214,11 +300,13 @@ type MtgDeckCard struct {
 	Phantoms          []*Phantom      `json:"phantoms"`
 }
 
+// Front image selection referencing a card version.
 type MtgDeckCardFrontImageInput struct {
 	CardID    string `json:"cardID"`
 	VersionID string `json:"versionID"`
 }
 
+// Deck card entry with position and selection metadata.
 type MtgDeckCardInput struct {
 	ID                string          `json:"ID"`
 	Card              string          `json:"card"`
@@ -230,11 +318,13 @@ type MtgDeckCardInput struct {
 	Phantoms          []*PhantomInput `json:"phantoms"`
 }
 
+// Minimal deck card data for dashboard UI.
 type MtgDeckCardDashboard struct {
 	Card              *MtgCardDashboard `json:"card"`
 	SelectedVersionID *string           `json:"selectedVersionID,omitempty"`
 }
 
+// Deck summary for dashboard listings.
 type MtgDeckDashboard struct {
 	ID             string                  `json:"_key"`
 	Name           string                  `json:"name"`
@@ -242,35 +332,48 @@ type MtgDeckDashboard struct {
 	Cards          []*MtgDeckCardDashboard `json:"cards"`
 }
 
+// Selected front image for a deck, referencing a card version.
 type MtgDeckCardFrontImage struct {
 	CardID    string `json:"cardID"`
 	VersionID string `json:"versionID"`
 	Image     string `json:"image"`
 }
 
+// Delete a card package by ID.
 type MtgDeleteCardPackageInput struct {
 	CardPackageID string `json:"cardPackageID"`
 }
 
+// Input to delete a deck by ID.
 type MtgDeleteDeckInput struct {
 	DeckID string `json:"deckID"`
 }
 
+// Edit a card package name.
+type MtgEditCardPackageNameInput struct {
+	CardPackageID string `json:"cardPackageID"`
+	Name          string `json:"name"`
+}
+
+// Card type filter entry with ternary state.
 type MtgFilterCardTypeInput struct {
 	CardType string         `json:"cardType"`
 	Value    TernaryBoolean `json:"value"`
 }
 
+// A card type and its associated subtypes.
 type MtgFilterCardTypes struct {
 	CardType string   `json:"cardType"`
 	Subtypes []string `json:"subtypes"`
 }
 
+// Color filter entry with ternary state.
 type MtgFilterColorInput struct {
 	Color MtgColor       `json:"color"`
 	Value TernaryBoolean `json:"value"`
 }
 
+// Aggregated entries used to render filter UI.
 type MtgFilterEntries struct {
 	Types      []*MtgFilterCardTypes `json:"types"`
 	Expansions []*MtgFilterExpansion `json:"expansions"`
@@ -278,6 +381,7 @@ type MtgFilterEntries struct {
 	Layouts    []MtgLayout           `json:"layouts"`
 }
 
+// Expansion metadata used by filters and sorting.
 type MtgFilterExpansion struct {
 	Set        string    `json:"set"`
 	SetName    string    `json:"setName"`
@@ -287,56 +391,67 @@ type MtgFilterExpansion struct {
 	Games      []MtgGame `json:"games"`
 }
 
+// Game platform filter entry with ternary state.
 type MtgFilterGameInput struct {
 	Game  MtgGame        `json:"game"`
 	Value TernaryBoolean `json:"value"`
 }
 
+// Layout filter entry with ternary state.
 type MtgFilterLayoutInput struct {
 	Layout MtgLayout      `json:"layout"`
 	Value  TernaryBoolean `json:"value"`
 }
 
+// Distinct legality formats and statuses collected from cards.
 type MtgFilterLegality struct {
 	Formats        []string `json:"formats"`
 	LegalityValues []string `json:"legalityValues"`
 }
 
+// Single legality value with ternary state.
 type MtgFilterLegalityEntryInput struct {
 	LegalityValue string         `json:"legalityValue"`
 	Value         TernaryBoolean `json:"value"`
 }
 
+// Legality format and associated statuses.
 type MtgFilterLegalityInput struct {
 	Format          string                         `json:"format"`
 	LegalityEntries []*MtgFilterLegalityEntryInput `json:"legalityEntries"`
 }
 
+// Mana cost filter entry with ternary state or special values.
 type MtgFilterManaCostInput struct {
 	ManaCost string         `json:"manaCost"`
 	Value    TernaryBoolean `json:"value"`
 }
 
+// Page and page size for cursorless pagination.
 type MtgFilterPaginationInput struct {
 	Page     int `json:"page"`
 	PageSize int `json:"pageSize"`
 }
 
+// Rarity filter entry with ternary state.
 type MtgFilterRarityInput struct {
 	Rarity MtgRarity      `json:"rarity"`
 	Value  TernaryBoolean `json:"value"`
 }
 
+// Min/max rating bounds for filtering.
 type MtgFilterRatingInput struct {
 	Min *int `json:"min,omitempty"`
 	Max *int `json:"max,omitempty"`
 }
 
+// Search results and total count for pagination.
 type MtgFilterSearch struct {
 	PagedCards []*MtgCard `json:"pagedCards"`
 	TotalCount int        `json:"totalCount"`
 }
 
+// Combined filter input used to filter cards.
 type MtgFilterSearchInput struct {
 	SearchString         *string                   `json:"searchString,omitempty"`
 	Rarity               []*MtgFilterRarityInput   `json:"rarity"`
@@ -357,27 +472,32 @@ type MtgFilterSearchInput struct {
 	IsSelectingCommander bool                      `json:"isSelectingCommander"`
 }
 
+// Set filter entry with ternary state.
 type MtgFilterSetInput struct {
 	Set   string         `json:"set"`
 	Value TernaryBoolean `json:"value"`
 }
 
+// Sort directive with field, direction, and enabled flag.
 type MtgFilterSortInput struct {
 	SortBy        MtgFilterSortBy        `json:"sortBy"`
 	SortDirection MtgFilterSortDirection `json:"sortDirection"`
 	Enabled       bool                   `json:"enabled"`
 }
 
+// Subtype filter entry with ternary state.
 type MtgFilterSubtypeInput struct {
 	Subtype string         `json:"subtype"`
 	Value   TernaryBoolean `json:"value"`
 }
 
+// Tag filter entry by name or id with ternary state.
 type MtgFilterTagInput struct {
 	Tag   string         `json:"tag"`
 	Value TernaryBoolean `json:"value"`
 }
 
+// Image URLs in multiple sizes from Scryfall.
 type MtgImage struct {
 	ArtCrop    string `json:"artCrop"`
 	BorderCrop string `json:"borderCrop"`
@@ -387,11 +507,13 @@ type MtgImage struct {
 	Small      string `json:"small"`
 }
 
+// Remove a card from a package.
 type MtgRemoveCardFromCardPackageInput struct {
 	CardPackageID string `json:"cardPackageID"`
 	Card          string `json:"card"`
 }
 
+// Input to update deck fields, cards, zones and front image.
 type MtgUpdateDeckInput struct {
 	DeckID         string                      `json:"deckID"`
 	Name           string                      `json:"name"`
@@ -400,53 +522,64 @@ type MtgUpdateDeckInput struct {
 	Zones          []*FlowZoneInput            `json:"zones"`
 }
 
+// Root-level write operations.
 type Mutation struct {
 }
 
+// A phantom placeholder used for visual grouping on the board.
 type Phantom struct {
 	Position *Position `json:"position"`
 	ID       string    `json:"ID"`
 }
 
+// Phantom placeholder to aid UI grouping.
 type PhantomInput struct {
 	ID       string         `json:"ID"`
 	Position *PositionInput `json:"position"`
 }
 
+// Represents the position of an entity in the deck builder.
 type Position struct {
 	X float64 `json:"x"`
 	Y float64 `json:"y"`
 }
 
+// Used to save the position of an entity in the deck builder.
 type PositionInput struct {
 	X float64 `json:"x"`
 	Y float64 `json:"y"`
 }
 
+// Root-level read operations.
 type Query struct {
 }
 
+// Rate a card or tag by ID.
 type RateInput struct {
 	EntityID   string            `json:"entityID"`
 	EntityType RatableEntityType `json:"entityType"`
 	Value      int               `json:"value"`
 }
 
+// Remove an ignored mark for a deck/card pair.
 type RemoveIgnoredCardInput struct {
 	CardID string `json:"cardID"`
 	DeckID string `json:"deckID"`
 }
 
+// Generic response wrapper with status and optional message.
 type Response struct {
 	Status  bool    `json:"status"`
 	Message *string `json:"message,omitempty"`
 }
 
+// Remove a tag from a card.
 type UnassignTagInput struct {
 	TagID  string `json:"tagID"`
 	CardID string `json:"cardID"`
 }
 
+// Update tag fields.
 type UpdateTagInput struct {
 	ID          string     `json:"ID"`
 	Name        *string    `json:"name,omitempty"`
@@ -454,15 +587,107 @@ type UpdateTagInput struct {
 	Colors      []MtgColor `json:"colors,omitempty"`
 }
 
+// A user entity used for ratings and ownership.
 type User struct {
-	ID string `json:"_key"`
+	ID    string     `json:"_key"`
+	Roles []UserRole `json:"roles"`
 }
 
+// A user's rating for an entity (card or tag).
 type UserRating struct {
 	User  *User `json:"user"`
 	Value int   `json:"value"`
 }
 
+// Execution status values for an import run.
+type AdminImportStatus string
+
+const (
+	AdminImportStatusRunning AdminImportStatus = "RUNNING"
+	AdminImportStatusSuccess AdminImportStatus = "SUCCESS"
+	AdminImportStatusFailed  AdminImportStatus = "FAILED"
+	AdminImportStatusSkipped AdminImportStatus = "SKIPPED"
+)
+
+var AllAdminImportStatus = []AdminImportStatus{
+	AdminImportStatusRunning,
+	AdminImportStatusSuccess,
+	AdminImportStatusFailed,
+	AdminImportStatusSkipped,
+}
+
+func (e AdminImportStatus) IsValid() bool {
+	switch e {
+	case AdminImportStatusRunning, AdminImportStatusSuccess, AdminImportStatusFailed, AdminImportStatusSkipped:
+		return true
+	}
+	return false
+}
+
+func (e AdminImportStatus) String() string {
+	return string(e)
+}
+
+func (e *AdminImportStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AdminImportStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AdminImportStatus", str)
+	}
+	return nil
+}
+
+func (e AdminImportStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Background jobs supported by the importer.
+type AdminJob string
+
+const (
+	AdminJobMtgCards AdminJob = "MTG_CARDS"
+	AdminJobMtgSets  AdminJob = "MTG_SETS"
+)
+
+var AllAdminJob = []AdminJob{
+	AdminJobMtgCards,
+	AdminJobMtgSets,
+}
+
+func (e AdminJob) IsValid() bool {
+	switch e {
+	case AdminJobMtgCards, AdminJobMtgSets:
+		return true
+	}
+	return false
+}
+
+func (e AdminJob) String() string {
+	return string(e)
+}
+
+func (e *AdminJob) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AdminJob(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AdminJob", str)
+	}
+	return nil
+}
+
+func (e AdminJob) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Supported deck archetypes.
 type DeckType string
 
 const (
@@ -504,6 +729,7 @@ func (e DeckType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Magic color identity abbreviations.
 type MtgColor string
 
 const (
@@ -553,6 +779,7 @@ func (e MtgColor) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Card role in deck (normal or commander).
 type MtgDeckCardType string
 
 const (
@@ -594,6 +821,7 @@ func (e MtgDeckCardType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Sortable fields for card lists.
 type MtgFilterSortBy string
 
 const (
@@ -645,6 +873,7 @@ func (e MtgFilterSortBy) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Sort direction.
 type MtgFilterSortDirection string
 
 const (
@@ -686,6 +915,7 @@ func (e MtgFilterSortDirection) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Game platforms where a print is available.
 type MtgGame string
 
 const (
@@ -729,6 +959,7 @@ func (e MtgGame) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Card layouts as defined by Scryfall.
 type MtgLayout string
 
 const (
@@ -814,6 +1045,7 @@ func (e MtgLayout) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Rarity tiers for a printing.
 type MtgRarity string
 
 const (
@@ -859,6 +1091,7 @@ func (e MtgRarity) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Indicates whether a card is in main or sideboard.
 type MainOrSide string
 
 const (
@@ -900,6 +1133,7 @@ func (e MainOrSide) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Entities that can be rated by users.
 type RatableEntityType string
 
 const (
@@ -941,6 +1175,7 @@ func (e RatableEntityType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Union discriminator for tag concrete types.
 type TagType string
 
 const (
@@ -982,6 +1217,7 @@ func (e TagType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Three-state boolean used for filter entries.
 type TernaryBoolean string
 
 const (
@@ -1022,5 +1258,47 @@ func (e *TernaryBoolean) UnmarshalGQL(v any) error {
 }
 
 func (e TernaryBoolean) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Roles that can be assigned to a user.
+type UserRole string
+
+const (
+	UserRoleAdmin UserRole = "ADMIN"
+	UserRoleUser  UserRole = "USER"
+)
+
+var AllUserRole = []UserRole{
+	UserRoleAdmin,
+	UserRoleUser,
+}
+
+func (e UserRole) IsValid() bool {
+	switch e {
+	case UserRoleAdmin, UserRoleUser:
+		return true
+	}
+	return false
+}
+
+func (e UserRole) String() string {
+	return string(e)
+}
+
+func (e *UserRole) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = UserRole(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid UserRole", str)
+	}
+	return nil
+}
+
+func (e UserRole) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

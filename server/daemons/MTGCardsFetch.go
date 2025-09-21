@@ -97,22 +97,7 @@ func PeriodicFetchMTGCards() {
 	log.Info().Msg("Starting periodic fetch cards daemon")
 	ctx := context.Background() // Create context once for the loop iteration
 	for {
-		fetched := fetchMTGCards(ctx) // Pass context
-		if fetched {
-			collectCards(ctx)
-		} else {
-			// Build card index for faster filtering even if no new cards were fetched
-			cards, err := mtg.GetMTGCards(ctx)
-			if err != nil {
-				log.Error().Err(err).Msg("Error fetching cards")
-				continue
-			}
-			err = mtgCardSearch.BuildCardIndexWithCards(cards)
-			if err != nil {
-				log.Error().Err(err).Msg("Error building card index")
-				continue
-			}
-		}
+		runMTGCardsCycle(ctx, false)
 
 		time.Sleep(24 * time.Hour)
 	}
@@ -120,7 +105,7 @@ func PeriodicFetchMTGCards() {
 
 // fetchMTGCards checks whether a new download is needed and, if so, locates
 // the "default_cards" bulk dataset and processes it.
-func fetchMTGCards(ctx context.Context) bool {
+func fetchMTGCards(ctx context.Context, force bool) bool {
 	log.Info().Msg("Fetching cards from Scryfall bulk data endpoint")
 	bulkDataUrl := "https://api.scryfall.com/bulk-data"
 
@@ -129,14 +114,20 @@ func fetchMTGCards(ctx context.Context) bool {
 	report.AddMetadata("bulk_list_url", bulkDataUrl)
 
 	// Check if we should fetch cards
-	shouldFetch, err := shouldDownloadStart("MTG_cards")
-	if err != nil {
-		log.Error().Err(err).Msgf("Error checking if we should fetch cards")
-		report.MarkFailed(err)
-		return false
+	shouldFetch := true
+	var err error
+	if !force {
+		shouldFetch, err = shouldDownloadStart("MTG_cards")
+		if err != nil {
+			log.Error().Err(err).Msgf("Error checking if we should fetch cards")
+			report.MarkFailed(err)
+			return false
+		}
+	} else {
+		report.AddMetadata("forced", true)
 	}
 
-	if !shouldFetch {
+	if !shouldFetch && !force {
 		report.MarkSkipped("fetched in the last 24 hours")
 		return false
 	}
@@ -169,6 +160,7 @@ func fetchMTGCards(ctx context.Context) bool {
 	rawCollections := bulkDataResponse.Data
 	report.AddMetadata("collections_discovered", len(rawCollections))
 	processedCount := 0
+	var legalityDiffs []model.MTGLegalitiesDiff
 	for _, collection := range rawCollections {
 		var collectionMap map[string]any
 		err := json.Unmarshal(collection, &collectionMap)
@@ -191,13 +183,17 @@ func fetchMTGCards(ctx context.Context) bool {
 			report.AddMetadata("download_uri", downloadURI)
 
 			// Fetch and process card data
-			processedCount, err = fetchAndProcessCardData(ctx, downloadURI)
+			var batchDiffs []model.MTGLegalitiesDiff
+			processedCount, batchDiffs, err = fetchAndProcessCardData(ctx, downloadURI, report.report.ID, report.report.StartedAt)
 			if err != nil {
 				log.Error().Err(err).Msgf("Error processing card data from %s", downloadURI)
 				report.MarkFailed(err)
 				return false
 			}
 			report.SetRecordsProcessed(processedCount)
+			if len(batchDiffs) > 0 {
+				legalityDiffs = append(legalityDiffs, batchDiffs...)
+			}
 
 			// Only process the first "default_cards" entry found? If yes, we can break here.
 			// If multiple "default_cards" entries exist (unlikely but possible), this would only process the first.
@@ -207,6 +203,12 @@ func fetchMTGCards(ctx context.Context) bool {
 	} // End of loop through bulk data items
 	report.SetRecordsProcessed(processedCount)
 	report.AddMetadata("default_cards_found", processedCount > 0)
+
+	if processedCount > 0 {
+		if err := persistLegalitiesDiffs(ctx, report.report.ID, legalityDiffs); err != nil {
+			log.Error().Err(err).Msg("Failed to persist legality diffs")
+		}
+	}
 
 	// Update the last time we fetched cards (only if successful?)
 	// Move this inside the loop before the 'break' if we only process one file?
@@ -226,32 +228,27 @@ func fetchMTGCards(ctx context.Context) bool {
 // fetchAndProcessCardData fetches a bulk JSON file of cards and incrementally
 // decodes and upserts them into Arango in batches while logging progress.
 // It returns the number of card documents processed.
-func fetchAndProcessCardData(ctx context.Context, downloadURI string) (int, error) {
-	// Fetch the actual card data file
+func fetchAndProcessCardData(ctx context.Context, downloadURI string, importID string, importTimestamp int) (int, []model.MTGLegalitiesDiff, error) {
 	respData, err := fetchURLWithContext(ctx, downloadURI)
 	if err != nil {
 		log.Error().Err(err).Msgf("Error fetching card data file from %s", downloadURI)
-		return 0, err
+		return 0, nil, err
 	}
 	defer respData.Body.Close()
 
-	// Read the response body into a buffer
 	bodyBytes, err := io.ReadAll(respData.Body)
 	if err != nil {
 		log.Error().Err(err).Msg("Error reading response body")
-		return 0, err
+		return 0, nil, err
 	}
 
-	// Optionally download the file to a local file
-	err = downloadFile(bytes.NewReader(bodyBytes), "cards.json")
-	if err != nil {
+	if err := downloadFile(bytes.NewReader(bodyBytes), "cards.json"); err != nil {
 		log.Error().Err(err).Msgf("Error downloading card data file from %s", downloadURI)
-		return 0, err
+		return 0, nil, err
 	}
 
-	// Get total size for progress reporting
 	contentLengthStr := respData.Header.Get("Content-Length")
-	totalSize, _ := strconv.ParseInt(contentLengthStr, 10, 64) // Ignore error, will default to 0 if invalid/missing
+	totalSize, _ := strconv.ParseInt(contentLengthStr, 10, 64)
 
 	if totalSize > 0 {
 		log.Info().Msgf("Starting download of card data file (%d bytes)...", totalSize)
@@ -259,70 +256,62 @@ func fetchAndProcessCardData(ctx context.Context, downloadURI string) (int, erro
 		log.Info().Msg("Starting download of card data file (size unknown)...")
 	}
 
-	// Wrap the response body with ProgressReader
 	progressReader := NewProgressReader(bytes.NewReader(bodyBytes), totalSize)
-
-	// Decode the JSON array incrementally using the progress reader
 	log.Info().Msgf("Processing cards from %v", downloadURI)
-	decoder := json.NewDecoder(progressReader) // Use progressReader here
+	decoder := json.NewDecoder(progressReader)
 
-	// Read the opening bracket `[` and process the data
-	_, err = decoder.Token()
-	if err != nil {
-		// Check if the error occurred because the download failed early
+	if _, err = decoder.Token(); err != nil {
 		if err == io.EOF && progressReader.ReadSoFar == 0 {
 			log.Error().Msg("Download stream empty or failed immediately.")
 		} else {
 			log.Error().Err(err).Msg("Error decoding card data: expecting start of array `[`")
 		}
-		return 0, err
+		return 0, nil, err
 	}
 
-	batchSize := 1000 // Process 1000 cards at a time
-	var processedCount int = 0
+	batchSize := 1000
+	processedCount := 0
+	allDiffs := make([]model.MTGLegalitiesDiff, 0)
 
 	for decoder.More() {
 		var batchRaw []json.RawMessage
-		var currentBatchCount int = 0
-		// Inner loop to accumulate a batch
-		for currentBatchCount < batchSize && decoder.More() {
+		for len(batchRaw) < batchSize && decoder.More() {
 			var cardRaw json.RawMessage
 			if err := decoder.Decode(&cardRaw); err != nil {
-				// EOF is expected at the end of the stream inside the loop.
-				// Other errors during decode are problematic.
 				if err == io.EOF {
-					break // Reached end of JSON array
+					break
 				}
-				log.Error().Err(err).Msgf("Error decoding card JSON object at ~card %d", processedCount+currentBatchCount)
-				// Decide whether to continue or return false based on error tolerance
-				return processedCount, err // For now, fail on decode errors
+				log.Error().Err(err).Msgf("Error decoding card JSON object at ~card %d", processedCount+len(batchRaw))
+				return processedCount, nil, err
 			}
 			batchRaw = append(batchRaw, cardRaw)
-			currentBatchCount++
-		} // End of inner batch accumulation loop
-
-		// Process the accumulated batch if it's not empty
-		if len(batchRaw) > 0 {
-			parsedArr, parseErr := parseCardsFromRaw(batchRaw) // Renamed err variable
-			if parseErr != nil {
-				log.Error().Err(parseErr).Msgf("Error parsing raw cards batch starting at card %d", processedCount)
-				return processedCount, parseErr
-			}
-
-			upsertErr := upsertOriginalCards(ctx, parsedArr) // Renamed err variable
-			if upsertErr != nil {
-				log.Error().Err(upsertErr).Msgf("Error upserting card batch starting at card %d", processedCount)
-				return processedCount, upsertErr
-			}
-			processedCount += len(batchRaw)
-			// Log processing progress, download progress is handled by ProgressReader
-			log.Info().Msgf("Processed %d cards...", processedCount)
 		}
-	} // End of outer decoder loop (decoder.More)
+
+		if len(batchRaw) == 0 {
+			continue
+		}
+
+		parsedArr, parseErr := parseCardsFromRaw(batchRaw)
+		if parseErr != nil {
+			log.Error().Err(parseErr).Msgf("Error parsing raw cards batch starting at card %d", processedCount)
+			return processedCount, nil, parseErr
+		}
+
+		batchDiffs, upsertErr := upsertCardsWithDiff(ctx, parsedArr, importID, importTimestamp)
+		if upsertErr != nil {
+			log.Error().Err(upsertErr).Msgf("Error upserting card batch starting at card %d", processedCount)
+			return processedCount, nil, upsertErr
+		}
+		if len(batchDiffs) > 0 {
+			allDiffs = append(allDiffs, batchDiffs...)
+		}
+		processedCount += len(batchRaw)
+		log.Info().Msgf("Processed %d cards...", processedCount)
+	}
 
 	log.Info().Msgf("Finished processing approximately %d cards from %s.", processedCount, downloadURI)
 
-	return processedCount, nil
+	return processedCount, allDiffs, nil
 }
 
 // collectCards rebuilds the curated MTG_Cards collection from MTG_Original_Cards
@@ -914,4 +903,30 @@ func downloadFile(body io.Reader, filename string) error {
 	}
 
 	return nil
+}
+func runMTGCardsCycle(ctx context.Context, force bool) {
+	fetched := fetchMTGCards(ctx, force)
+	if fetched {
+		collectCards(ctx)
+		return
+	}
+	rebuildCardIndex(ctx)
+}
+
+func rebuildCardIndex(ctx context.Context) {
+	cards, err := mtg.GetMTGCards(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("Error fetching cards")
+		return
+	}
+	if err := mtgCardSearch.BuildCardIndexWithCards(cards); err != nil {
+		log.Error().Err(err).Msg("Error building card index")
+	}
+}
+func RunMTGCardsImport(ctx context.Context, force bool) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	log.Info().Bool("force", force).Msg("Manual MTG cards import triggered")
+	runMTGCardsCycle(ctx, force)
 }

@@ -6,9 +6,12 @@ package graph
 
 import (
 	"context"
+	"fmt"
+	"magic-helper/graph/admin"
 	"magic-helper/graph/gentypes"
 	"magic-helper/graph/model"
 	"magic-helper/graph/mtg"
+	"magic-helper/util/auth"
 )
 
 // Mutation resolvers delegate to the mtg package which holds domain logic.
@@ -41,6 +44,11 @@ func (r *mutationResolver) CreateMTGCardPackage(ctx context.Context, input model
 // DeleteMTGCardPackage is the resolver for the deleteMTGCardPackage field.
 func (r *mutationResolver) DeleteMTGCardPackage(ctx context.Context, input model.MtgDeleteCardPackageInput) (*model.Response, error) {
 	return mtg.DeleteMTGCardPackage(ctx, input)
+}
+
+// EditMTGCardPackageName is the resolver for the editMTGCardPackageName field.
+func (r *mutationResolver) EditMTGCardPackageName(ctx context.Context, input model.MtgEditCardPackageNameInput) (*model.Response, error) {
+	panic(fmt.Errorf("not implemented: EditMTGCardPackageName - editMTGCardPackageName"))
 }
 
 // AddMTGCardToCardPackage is the resolver for the addMTGCardToCardPackage field.
@@ -91,6 +99,22 @@ func (r *mutationResolver) AddIgnoredCard(ctx context.Context, input model.AddIg
 // RemoveIgnoredCard is the resolver for the removeIgnoredCard field.
 func (r *mutationResolver) RemoveIgnoredCard(ctx context.Context, input model.RemoveIgnoredCardInput) (*model.Response, error) {
 	return mtg.RemoveIgnoredCard(ctx, input)
+}
+
+// AdminRetryImport is the resolver for the adminRetryImport field.
+func (r *mutationResolver) AdminRetryImport(ctx context.Context, input model.AdminImportActionInput) (*model.Response, error) {
+	if err := auth.RequireRole(ctx, auth.RoleAdmin); err != nil {
+		return nil, err
+	}
+	return admin.RetryImport(ctx, input)
+}
+
+// AdminBackfillImport is the resolver for the adminBackfillImport field.
+func (r *mutationResolver) AdminBackfillImport(ctx context.Context, input model.AdminImportActionInput) (*model.Response, error) {
+	if err := auth.RequireRole(ctx, auth.RoleAdmin); err != nil {
+		return nil, err
+	}
+	return admin.BackfillImport(ctx, input)
 }
 
 // Mutation returns gentypes.MutationResolver implementation.

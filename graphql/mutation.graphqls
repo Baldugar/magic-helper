@@ -75,4 +75,13 @@ type Mutation {
     Remove ignored mark from a deck/card pair.
     """
     removeIgnoredCard(input: RemoveIgnoredCardInput!): Response!
+    """
+    Trigger a retry of an import job.
+    """
+    adminRetryImport(input: AdminImportActionInput!): Response!
+    """
+    Force a backfill import run ignoring scheduling safeguards.
+    """
+    adminBackfillImport(input: AdminImportActionInput!): Response!
 }
+

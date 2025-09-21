@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"magic-helper/settings"
+	"magic-helper/util/auth"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -40,10 +41,10 @@ func configHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "const __envConfig = %s;", string(b))
 }
 
-// Handler is a pass-through middleware wrapper reserved for future use.
+// Handler attaches user context to requests before delegating to the GraphQL server.
 func Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
+		r = auth.WithUserFromRequest(r)
 		next.ServeHTTP(w, r)
 	})
 }

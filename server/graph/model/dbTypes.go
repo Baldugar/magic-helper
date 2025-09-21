@@ -33,6 +33,21 @@ type MTGImportReport struct {
 	Metadata         map[string]any        `json:"metadata,omitempty"`
 }
 
+// MTGLegalitiesDiff captures legality status changes per import run.
+type MTGLegalitiesDiff struct {
+	ID             string  `json:"_key,omitempty"`
+	ImportID       string  `json:"import_id"`
+	JobName        string  `json:"job_name"`
+	CardID         string  `json:"card_id"`
+	CardName       string  `json:"card_name"`
+	Format         string  `json:"format"`
+	PreviousStatus *string `json:"previous_status,omitempty"`
+	CurrentStatus  *string `json:"current_status,omitempty"`
+	SetCode        *string `json:"set_code,omitempty"`
+	SetName        *string `json:"set_name,omitempty"`
+	ChangedAt      int     `json:"changed_at"`
+}
+
 // MTGDeckDB is the persisted form of a deck document in ArangoDB.
 type MTGDeckDB struct {
 	ID    string     `json:"_key"`

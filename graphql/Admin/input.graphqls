@@ -1,0 +1,7 @@
+"""
+Parameters to trigger or backfill import jobs.
+"""
+input AdminImportActionInput {
+    job: AdminJob!
+    force: Boolean = false
+}

@@ -3,4 +3,5 @@ A user entity used for ratings and ownership.
 """
 type User {
     ID: ID! @goTag(key: "json", value: "_key")
+    roles: [UserRole!]!
 }

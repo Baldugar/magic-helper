@@ -13,6 +13,11 @@ import {
 } from '../../graphql/types'
 import { getGraphQLServerURI } from './getEnvConfig'
 
+const AUTH_HEADERS: Record<string, string> = {
+    'X-MH-User-ID': 'mock-admin',
+    'X-MH-Roles': 'ADMIN',
+}
+
 export interface FetchResult<Result = Query | Mutation> {
     errors: FetchError[]
     data: Result
@@ -42,6 +47,7 @@ export const fetchData = async <Result = Query | Mutation, Variables = Variables
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         Accept: 'application/json',
+        ...AUTH_HEADERS,
     }
 
     try {
@@ -82,6 +88,7 @@ export const fetchDataRaw = async <Variables = unknown>(
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         Accept: 'application/json',
+        ...AUTH_HEADERS,
     }
 
     try {

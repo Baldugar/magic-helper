@@ -6,9 +6,12 @@ package graph
 
 import (
 	"context"
+	"errors"
+	"magic-helper/graph/admin"
 	"magic-helper/graph/gentypes"
 	"magic-helper/graph/model"
 	"magic-helper/graph/mtg"
+	"magic-helper/util/auth"
 )
 
 // Query resolvers delegate to the mtg package which holds domain logic.
@@ -61,6 +64,41 @@ func (r *queryResolver) DeckTags(ctx context.Context) ([]*model.DeckTag, error) 
 // Tag is the resolver for the tag field.
 func (r *queryResolver) Tag(ctx context.Context, id string) (model.Tag, error) {
 	return mtg.GetTag(ctx, id)
+}
+
+// AdminDashboard is the resolver for the adminDashboard field.
+func (r *queryResolver) AdminDashboard(ctx context.Context) (*model.AdminDashboard, error) {
+	if err := auth.RequireRole(ctx, auth.RoleAdmin); err != nil {
+		return nil, err
+	}
+	return admin.Dashboard(ctx)
+}
+
+// AdminLegalitiesDiff is the resolver for the adminLegalitiesDiff field.
+func (r *queryResolver) AdminLegalitiesDiff(ctx context.Context, importID string) (*model.AdminLegalitiesDiff, error) {
+	if err := auth.RequireRole(ctx, auth.RoleAdmin); err != nil {
+		return nil, err
+	}
+	diff, err := admin.LegalitiesDiffByImport(ctx, importID)
+	if err != nil {
+		if errors.Is(err, admin.ErrNoLegalitiesDiff) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return diff, nil
+}
+
+// AdminImportReports is the resolver for the adminImportReports field.
+func (r *queryResolver) AdminImportReports(ctx context.Context, job model.AdminJob, limit *int) ([]*model.AdminImportReport, error) {
+	if err := auth.RequireRole(ctx, auth.RoleAdmin); err != nil {
+		return nil, err
+	}
+	requestLimit := 25
+	if limit != nil && *limit > 0 {
+		requestLimit = *limit
+	}
+	return admin.FetchImportReports(ctx, job, requestLimit)
 }
 
 // Query returns gentypes.QueryResolver implementation.

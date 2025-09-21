@@ -32,3 +32,9 @@
 ## Agent Workflow Tips
 - Move in the SDL -> server -> client order to keep generated code coherent.
 - Before handing off, rerun the commands above and call out any skipped steps for the next contributor.
+
+## Editing Notes
+- Prefer small Python helpers for file edits; PowerShell quoting breaks easily on multi-line updates.
+- Use `python - <<'PY'` style blocks or temporary scripts, then remove them.
+- Reserve raw PowerShell replacements for simple one-liners (e.g. `Set-Content` with static content).
+

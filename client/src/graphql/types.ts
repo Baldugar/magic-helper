@@ -21,6 +21,88 @@ export type AddIgnoredCardInput = {
   deckID: Scalars['ID']['input'];
 };
 
+/** Aggregate admin dashboard information. */
+export type AdminDashboard = {
+  __typename?: 'AdminDashboard';
+  imports: Array<AdminImportSummary>;
+  latestLegalitiesDiff?: Maybe<AdminLegalitiesDiff>;
+};
+
+/** Parameters to trigger or backfill import jobs. */
+export type AdminImportActionInput = {
+  force?: InputMaybe<Scalars['Boolean']['input']>;
+  job: AdminJob;
+};
+
+/** Detailed import report data exposed to admins. */
+export type AdminImportReport = {
+  __typename?: 'AdminImportReport';
+  completedAt?: Maybe<Scalars['Int']['output']>;
+  durationMs?: Maybe<Scalars['Int']['output']>;
+  errorMessage?: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  jobName: AdminJob;
+  metadata?: Maybe<Scalars['Map']['output']>;
+  recordsProcessed?: Maybe<Scalars['Int']['output']>;
+  startedAt: Scalars['Int']['output'];
+  status: AdminImportStatus;
+};
+
+/** Execution status values for an import run. */
+export enum AdminImportStatus {
+  FAILED = 'FAILED',
+  RUNNING = 'RUNNING',
+  SKIPPED = 'SKIPPED',
+  SUCCESS = 'SUCCESS'
+}
+
+/** Summary for an import job with recent runs and metrics. */
+export type AdminImportSummary = {
+  __typename?: 'AdminImportSummary';
+  jobName: AdminJob;
+  lastRun?: Maybe<AdminImportReport>;
+  latency: AdminLatencyMetrics;
+  previousRun?: Maybe<AdminImportReport>;
+};
+
+/** Background jobs supported by the importer. */
+export enum AdminJob {
+  MTG_CARDS = 'MTG_CARDS',
+  MTG_SETS = 'MTG_SETS'
+}
+
+/** Latency metrics derived from recent import runs. */
+export type AdminLatencyMetrics = {
+  __typename?: 'AdminLatencyMetrics';
+  avgDurationMs?: Maybe<Scalars['Int']['output']>;
+  lastDurationMs?: Maybe<Scalars['Int']['output']>;
+  lastStartedAt?: Maybe<Scalars['Int']['output']>;
+  p50DurationMs?: Maybe<Scalars['Int']['output']>;
+  p90DurationMs?: Maybe<Scalars['Int']['output']>;
+  totalRuns: Scalars['Int']['output'];
+};
+
+/** Collection of legality changes tied to an import run. */
+export type AdminLegalitiesDiff = {
+  __typename?: 'AdminLegalitiesDiff';
+  entries: Array<AdminLegalitiesDiffEntry>;
+  importId: Scalars['ID']['output'];
+  jobName: AdminJob;
+};
+
+/** Single legality change entry between consecutive imports. */
+export type AdminLegalitiesDiffEntry = {
+  __typename?: 'AdminLegalitiesDiffEntry';
+  cardID: Scalars['ID']['output'];
+  cardName: Scalars['String']['output'];
+  changedAt: Scalars['Int']['output'];
+  currentStatus?: Maybe<Scalars['String']['output']>;
+  format: Scalars['String']['output'];
+  previousStatus?: Maybe<Scalars['String']['output']>;
+  setCode?: Maybe<Scalars['String']['output']>;
+  setName?: Maybe<Scalars['String']['output']>;
+};
+
 /** Assign a tag to a card. */
 export type AssignTagInput = {
   cardID: Scalars['ID']['input'];
@@ -146,6 +228,7 @@ export type MTG_CardPackage = {
   ID: Scalars['ID']['output'];
   cards: Array<MTG_CardPackageCard>;
   name: Scalars['String']['output'];
+  zones: Array<FlowZone>;
 };
 
 /** A card entry inside a card package. */
@@ -154,6 +237,8 @@ export type MTG_CardPackageCard = {
   card: MTG_Card;
   count: Scalars['Int']['output'];
   mainOrSide: MainOrSide;
+  phantoms: Array<Phantom>;
+  position: Position;
   selectedVersionID?: Maybe<Scalars['String']['output']>;
 };
 
@@ -560,6 +645,10 @@ export type Mutation = {
   addIgnoredCard: Response;
   /** Add a card to a package (edge insert). */
   addMTGCardToCardPackage: Response;
+  /** Force a backfill import run ignoring scheduling safeguards. */
+  adminBackfillImport: Response;
+  /** Trigger a retry of an import job. */
+  adminRetryImport: Response;
   /** Link a tag to a card. */
   assignTag: Response;
   /** Create a card package container. */
@@ -602,6 +691,18 @@ export type MutationaddIgnoredCardArgs = {
 /** Root-level write operations. */
 export type MutationaddMTGCardToCardPackageArgs = {
   input: MTG_AddCardToCardPackageInput;
+};
+
+
+/** Root-level write operations. */
+export type MutationadminBackfillImportArgs = {
+  input: AdminImportActionInput;
+};
+
+
+/** Root-level write operations. */
+export type MutationadminRetryImportArgs = {
+  input: AdminImportActionInput;
 };
 
 
@@ -723,6 +824,12 @@ export type PositionInput = {
 /** Root-level read operations. */
 export type Query = {
   __typename?: 'Query';
+  /** Admin dashboard data with import status, metrics, and legality diffs. */
+  adminDashboard: AdminDashboard;
+  /** List recent import reports for the given job. */
+  adminImportReports: Array<AdminImportReport>;
+  /** Fetch a specific legality diff by import ID. */
+  adminLegalitiesDiff?: Maybe<AdminLegalitiesDiff>;
   /** Return only CardTag items. */
   cardTags: Array<CardTag>;
   /** Return only DeckTag items. */
@@ -742,6 +849,19 @@ export type Query = {
   tag?: Maybe<Tag>;
   /** Return all tags (card and deck). */
   tags: Array<Tag>;
+};
+
+
+/** Root-level read operations. */
+export type QueryadminImportReportsArgs = {
+  job: AdminJob;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Root-level read operations. */
+export type QueryadminLegalitiesDiffArgs = {
+  importId: Scalars['ID']['input'];
 };
 
 
@@ -835,6 +955,7 @@ export type UpdateTagInput = {
 export type User = {
   __typename?: 'User';
   ID: Scalars['ID']['output'];
+  roles: Array<UserRole>;
 };
 
 /** A user's rating for an entity (card or tag). */
@@ -843,3 +964,9 @@ export type UserRating = {
   user: User;
   value: Scalars['Int']['output'];
 };
+
+/** Roles that can be assigned to a user. */
+export enum UserRole {
+  ADMIN = 'ADMIN',
+  USER = 'USER'
+}

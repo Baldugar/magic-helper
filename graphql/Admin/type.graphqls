@@ -1,0 +1,67 @@
+"""
+Aggregate admin dashboard information.
+"""
+type AdminDashboard {
+    imports: [AdminImportSummary!]!
+    latestLegalitiesDiff: AdminLegalitiesDiff
+}
+
+"""
+Summary for an import job with recent runs and metrics.
+"""
+type AdminImportSummary {
+    jobName: AdminJob!
+    lastRun: AdminImportReport
+    previousRun: AdminImportReport
+    latency: AdminLatencyMetrics!
+}
+
+"""
+Detailed import report data exposed to admins.
+"""
+type AdminImportReport {
+    id: ID!
+    jobName: AdminJob!
+    status: AdminImportStatus!
+    startedAt: Int!
+    completedAt: Int
+    durationMs: Int
+    recordsProcessed: Int
+    errorMessage: String
+    metadata: Map
+}
+
+"""
+Latency metrics derived from recent import runs.
+"""
+type AdminLatencyMetrics {
+    lastDurationMs: Int
+    avgDurationMs: Int
+    p50DurationMs: Int
+    p90DurationMs: Int
+    totalRuns: Int!
+    lastStartedAt: Int
+}
+
+"""
+Single legality change entry between consecutive imports.
+"""
+type AdminLegalitiesDiffEntry {
+    cardID: ID!
+    cardName: String!
+    format: String!
+    previousStatus: String
+    currentStatus: String
+    setCode: String
+    setName: String
+    changedAt: Int!
+}
+
+"""
+Collection of legality changes tied to an import run.
+"""
+type AdminLegalitiesDiff {
+    importId: ID!
+    jobName: AdminJob!
+    entries: [AdminLegalitiesDiffEntry!]!
+}

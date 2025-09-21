@@ -47,4 +47,17 @@ type Query {
     Fetch a tag by ID (CardTag or DeckTag).
     """
     tag(id: ID!): Tag
+    """
+    Admin dashboard data with import status, metrics, and legality diffs.
+    """
+    adminDashboard: AdminDashboard!
+    """
+    Fetch a specific legality diff by import ID.
+    """
+    adminLegalitiesDiff(importId: ID!): AdminLegalitiesDiff
+    """
+    List recent import reports for the given job.
+    """
+    adminImportReports(job: AdminJob!, limit: Int = 25): [AdminImportReport!]!
 }
+

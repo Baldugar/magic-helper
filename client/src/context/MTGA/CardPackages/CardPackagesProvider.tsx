@@ -55,6 +55,8 @@ export const MTGCardPackagesProvider = ({ children }: { children: ReactNode }) =
                                           card: card,
                                           count: 1,
                                           mainOrSide,
+                                          phantoms: [],
+                                          position: { x: 0, y: 0 },
                                       },
                                   ],
                               }
@@ -102,7 +104,7 @@ export const MTGCardPackagesProvider = ({ children }: { children: ReactNode }) =
         createMTGCardPackageMutation({ name }).then((response) => {
             if (response.status) {
                 // Optimistically add the new package
-                setCardPackages([...cardPackages, { cards: [], ID: response.message ?? '', name }])
+                setCardPackages([...cardPackages, { cards: [], zones: [], ID: response.message ?? '', name }])
                 if (card) {
                     addMTGCardToCardPackage(response.message ?? '', card, mainOrSide ?? MainOrSide.MAIN)
                 }

@@ -1,10 +1,21 @@
 import { Suspense } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import './App.css'
 import { MTGCardPackagesProvider } from './context/MTGA/CardPackages/CardPackagesProvider'
 import { MTGDecksProvider } from './context/MTGA/Decks/MTGDecksProvider'
+import AdminDashboardPage from './pages/Admin/AdminDashboardPage'
 import Dashboard from './pages/Dashboard/Dashboard'
 import { DeckCreatorWrapper } from './pages/DeckCreator/DeckCreator'
+
+function MTGDataProviders() {
+    return (
+        <MTGDecksProvider>
+            <MTGCardPackagesProvider>
+                <Outlet />
+            </MTGCardPackagesProvider>
+        </MTGDecksProvider>
+    )
+}
 
 /**
  * WrappedApp wires up the router and lazy route tree.
@@ -15,9 +26,12 @@ function WrappedApp() {
         <BrowserRouter>
             <Suspense fallback={<div>🥷🥷🥷🥷</div>}>
                 <Routes>
-                    <Route path={'/deck/:deckID'} element={<DeckCreatorWrapper />} />
-                    <Route path={'/'} element={<Navigate to={'/dashboard'} />} />
-                    <Route path={'/dashboard'} element={<Dashboard />} />
+                    <Route element={<MTGDataProviders />}>
+                        <Route path={'/deck/:deckID'} element={<DeckCreatorWrapper />} />
+                        <Route path={'/'} element={<Navigate to={'/dashboard'} />} />
+                        <Route path={'/dashboard'} element={<Dashboard />} />
+                    </Route>
+                    <Route path={'/admin'} element={<AdminDashboardPage />} />
                 </Routes>
             </Suspense>
         </BrowserRouter>
@@ -28,13 +42,7 @@ function WrappedApp() {
  * App composes top-level application providers and renders the route tree.
  */
 function App() {
-    return (
-        <MTGDecksProvider>
-            <MTGCardPackagesProvider>
-                <WrappedApp />
-            </MTGCardPackagesProvider>
-        </MTGDecksProvider>
-    )
+    return <WrappedApp />
 }
 
 export default App

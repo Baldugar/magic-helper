@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { User } from '../../graphql/types'
+import { User, UserRole } from '../../graphql/types'
 import { UserContext } from './UserContext'
 
 // Mock user for now
 const mockUser: User = {
     __typename: 'User',
-    ID: '1',
+    ID: 'USER_ID',
+    roles: [UserRole.ADMIN],
 }
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {

@@ -45,6 +45,7 @@ export const MTGCardsProvider = ({ children }: { children: ReactNode }) => {
             newCards[cardIndex].myRating = {
                 user: {
                     ID: 'USER_ID',
+                    roles: [],
                 },
                 value: rating,
             }
