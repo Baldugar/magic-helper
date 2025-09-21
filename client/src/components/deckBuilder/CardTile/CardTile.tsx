@@ -4,7 +4,7 @@ import { ButtonBase, Dialog, DialogContent, DialogTitle, Grid, useMediaQuery } f
 import { useReactFlow } from '@xyflow/react'
 import { useState } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { MTGCardWithHover } from '../../../components/MTGCardWithHover'
+import { MTGCardWithHover } from '../../MTGCardWithHover'
 import { useDnD } from '../../../context/DnD/useDnD'
 import { useMTGCardPackages } from '../../../context/MTGA/CardPackages/useCardPackages'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
@@ -18,23 +18,23 @@ import { NodeType, organizeNodes } from '../../../utils/functions/nodeFunctions'
 import { ContextMenu } from '../../../utils/hooks/ContextMenu/ContextMenu'
 import { ContextMenuOption } from '../../../utils/hooks/ContextMenu/types'
 import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
-import { PhantomNodeData } from './FlowView/Nodes/PhantomNode'
+import { PhantomNodeData } from '../FlowCanvas/Nodes/PhantomNode'
 import { VersionCard } from './VersionCard'
 
-export type CardsGridButtonProps = {
+export type CardTileProps = {
     card: MTG_Card
     onIgnore?: () => void
 }
 
 /**
- * CardsGridButton renders a single card tile within the catalogue grid.
+ * CardTile renders a single card tile within the catalogue grid.
  *
  * Capabilities
  * - Left click to add to the deck
  * - Context menu with actions (add/remove, ignore, add to package, set as deck image)
  * - Shows version modal, integrates with DnD and deck graph updates
  */
-export const CardsGridButton = (props: CardsGridButtonProps) => {
+export const CardTile = (props: CardTileProps) => {
     const { card, onIgnore } = props
     const { cardPackages, addMTGCardToCardPackage, removeMTGCardFromCardPackage, createCardPackage } =
         useMTGCardPackages()

@@ -1,6 +1,6 @@
 import { ButtonBase } from '@mui/material'
 import { useReactFlow } from '@xyflow/react'
-import { MTGCardWithHover } from '../../../components/MTGCardWithHover'
+import { MTGCardWithHover } from '../../MTGCardWithHover'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGDeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
 import { MTG_Card, MTG_CardVersion } from '../../../graphql/types'

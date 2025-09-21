@@ -12,10 +12,10 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { useCallback } from 'react'
-import { useMTGDeckCreator } from '../../../../context/MTGA/DeckCreator/useMTGDeckCreator'
-import { useMTGDeckFlowCreator } from '../../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
-import { uuidv4 } from '../../../../utils/functions/IDFunctions'
-import { NodeType, organizeNodes, sortNodesByNesting } from '../../../../utils/functions/nodeFunctions'
+import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
+import { useMTGDeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
+import { uuidv4 } from '../../../utils/functions/IDFunctions'
+import { NodeType, organizeNodes, sortNodesByNesting } from '../../../utils/functions/nodeFunctions'
 import { CardNode } from './Nodes/CardNode'
 import { GroupNode, GroupNodeData, MIN_SIZE } from './Nodes/GroupNode'
 import { PhantomNode } from './Nodes/PhantomNode'
@@ -26,7 +26,7 @@ const nodeTypes: NodeTypes = {
     phantomNode: PhantomNode,
 }
 
-export const FlowView = () => {
+export const FlowCanvas = () => {
     const {
         handleNodeDragStop,
         onDragOver,

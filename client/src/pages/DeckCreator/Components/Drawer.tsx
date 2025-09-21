@@ -11,7 +11,7 @@ import { MainOrSide, MTG_DeckCard, MTG_DeckCardType, MTG_UpdateDeckInput } from 
 import { DRAWER_WIDTH_DESKTOP, DRAWER_WIDTH_MOBILE } from '../../../utils/constants'
 import { calculateCardsFromNodes, calculateZonesFromNodes, NodeType } from '../../../utils/functions/nodeFunctions'
 import { DeckCard } from './DeckCard'
-import { PhantomNodeData } from './FlowView/Nodes/PhantomNode'
+import { PhantomNodeData } from '../../../components/deckBuilder/FlowCanvas/Nodes/PhantomNode'
 
 /**
  * Drawer shows and manages the current deck list with commander, main, and sideboard.

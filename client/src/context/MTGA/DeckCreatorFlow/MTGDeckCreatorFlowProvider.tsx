@@ -1,9 +1,9 @@
 import { Node, OnNodeDrag, useReactFlow } from '@xyflow/react'
 import { DragEventHandler, ReactNode, useState } from 'react'
 import { MainOrSide, MTG_Card, MTG_Deck, MTG_DeckCard, MTG_DeckCardType, Position } from '../../../graphql/types'
-import { CardNodeData } from '../../../pages/DeckCreator/Components/FlowView/Nodes/CardNode'
-import { GroupNodeData, MIN_SIZE } from '../../../pages/DeckCreator/Components/FlowView/Nodes/GroupNode'
-import { PhantomNodeData } from '../../../pages/DeckCreator/Components/FlowView/Nodes/PhantomNode'
+import { CardNodeData } from '../../../components/deckBuilder/FlowCanvas/Nodes/CardNode'
+import { GroupNodeData, MIN_SIZE } from '../../../components/deckBuilder/FlowCanvas/Nodes/GroupNode'
+import { PhantomNodeData } from '../../../components/deckBuilder/FlowCanvas/Nodes/PhantomNode'
 import { singleSetSelected } from '../../../utils/functions/filterFunctions'
 import { uuidv4 } from '../../../utils/functions/IDFunctions'
 import {

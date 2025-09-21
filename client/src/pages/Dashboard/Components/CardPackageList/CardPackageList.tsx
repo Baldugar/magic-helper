@@ -1,6 +1,6 @@
 import { Box, Button, Grid, Paper, Popover, Stack, TextField, Typography } from '@mui/material'
 import { useContext, useState } from 'react'
-import MTGCardPackage from '../../../../components/CardPackageCard'
+import MTGCardPackage from '../../../../components/deckBuilder/PackagesDialog/PackageCard'
 import { MTGCardPackagesContext } from '../../../../context/MTGA/CardPackages/CardPackagesContext'
 
 /**

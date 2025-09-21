@@ -2,9 +2,9 @@ import { CheckBox, CheckBoxOutlineBlank, IndeterminateCheckBox } from '@mui/icon
 import { Box, Button, Checkbox, ClickAwayListener, FormControl, Grid, Paper, Popper } from '@mui/material'
 import { MouseEvent, useState } from 'react'
 import { VList } from 'virtua'
-import { useMTGTags } from '../../context/MTGA/Tags/useMTGTags'
-import { CardTag, DeckTag, TernaryBoolean } from '../../graphql/types'
-import TagPill from '../TagPill'
+import { useMTGTags } from '../../../../context/MTGA/Tags/useMTGTags'
+import { CardTag, DeckTag, TernaryBoolean } from '../../../../graphql/types'
+import TagPill from '../../../TagPill'
 
 export interface TagSelectorProps {
     selected: { [key: string]: TernaryBoolean }

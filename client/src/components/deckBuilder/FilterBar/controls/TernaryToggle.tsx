@@ -16,9 +16,9 @@ import {
     ToggleButtonGroupProps,
 } from '@mui/material'
 import { DetailedHTMLProps, ImgHTMLAttributes } from 'react'
-import { TernaryBoolean } from '../../graphql/types'
-import { isNegativeTB, isNotUnsetTB, isPositiveTB } from '../../types/ternaryBoolean'
-import TagPill, { TagPillProps } from '../TagPill'
+import { TernaryBoolean } from '../../../../graphql/types'
+import { isNegativeTB, isNotUnsetTB, isPositiveTB } from '../../../../types/ternaryBoolean'
+import TagPill, { TagPillProps } from '../../../TagPill'
 
 export type TernaryToggleProps =
     | {

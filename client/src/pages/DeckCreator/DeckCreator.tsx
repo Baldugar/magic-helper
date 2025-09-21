@@ -16,7 +16,7 @@ import {
 import { ReactFlowProvider, useReactFlow } from '@xyflow/react'
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { CardPackageImportDialog } from '../../components/CardPackageImportDialog'
+import { PackagesDialog } from '../../components/deckBuilder/PackagesDialog/PackagesDialog'
 import { ExportDialog } from '../../components/ExportDialog'
 import { ImportDialog } from '../../components/ImportDialog'
 import { DndProvider } from '../../context/DnD/DnDProvider'
@@ -38,7 +38,7 @@ import { useLocalStoreFilter } from '../../utils/hooks/useLocalStoreFilter'
 import { CardDialog } from './Components/CardDialog'
 import { CardsGrid } from './Components/CardsGrid'
 import { Drawer } from './Components/Drawer'
-import { Filters } from './Components/Filters'
+import { FilterBar } from '../../components/deckBuilder/FilterBar/FilterBar'
 
 /**
  * DeckCreator renders the full deck editing experience.
@@ -160,7 +160,7 @@ export const DeckCreator = () => {
                     </Box>
                     {viewMode === 'CATALOGUE' && (
                         <>
-                            <Filters />
+                            <FilterBar />
                             <CardsGrid />
                             <Box mt={'auto'} display={'flex'} justifyContent={'center'} paddingTop={1}>
                                 <Pagination
@@ -308,7 +308,7 @@ export const DeckCreator = () => {
                 </Collapse>
                 <ImportDialog />
                 <ExportDialog />
-                <CardPackageImportDialog />
+                <PackagesDialog />
                 <CardDialog />
             </Box>
         </MTGDeckCreatorFlowProvider>

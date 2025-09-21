@@ -15,24 +15,24 @@ import {
     useMediaQuery,
 } from '@mui/material'
 import { MouseEvent, useState } from 'react'
-import { CMCSelector } from '../../../components/FilterSelectors/CMCSelector'
-import GameSelector from '../../../components/FilterSelectors/GameSelector'
-import LayoutSelector from '../../../components/FilterSelectors/LayoutSelector'
-import LegalitySelector from '../../../components/FilterSelectors/LegalitySelector'
-import ManaSelector from '../../../components/FilterSelectors/ManaSelector'
-import RaritySelector from '../../../components/FilterSelectors/RaritySelector'
-import RatingSelector from '../../../components/FilterSelectors/RatingSelector'
-import SetSelector from '../../../components/FilterSelectors/SetSelector'
-import { SortSelector } from '../../../components/FilterSelectors/SortSelector'
-import { TagSelector } from '../../../components/FilterSelectors/TagSelector'
-import TypeSelector from '../../../components/FilterSelectors/TypeSelector'
+import { CMCSelector } from './controls/CMCSelector'
+import GameSelector from './controls/GameSelector'
+import LayoutSelector from './controls/LayoutSelector'
+import LegalitySelector from './controls/LegalitySelector'
+import ManaSelector from './controls/ManaSelector'
+import RaritySelector from './controls/RaritySelector'
+import RatingSelector from './controls/RatingSelector'
+import SetSelector from './controls/SetSelector'
+import { SortBuilder } from './controls/SortBuilder'
+import { TagSelector } from './controls/TagSelector'
+import TypeSelector from './controls/TypeSelector'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { initialMTGFilter } from '../../../context/MTGA/Filter/MTGFilterContext'
 import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
 import { TernaryBoolean } from '../../../graphql/types'
 import { nextTB, prevTB } from '../../../types/ternaryBoolean'
 
-export const Filters = () => {
+export const FilterBar = () => {
     const { filter, setFilter, setIgnoredCardIDs } = useMTGFilter()
     const { stickyCardsGrid, setStickyCardsGrid, deck } = useMTGDeckCreator()
     const isMobile = useMediaQuery('(max-width: 600px)')
@@ -280,7 +280,7 @@ export const Filters = () => {
                 }}
             />
             <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
-            <SortSelector />
+            <SortBuilder />
             <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
             <RatingSelector
                 onSetMax={(max) => {

@@ -1,8 +1,8 @@
 import { Badge, Button, ClickAwayListener, Grid, Paper, Popper } from '@mui/material'
 import { MouseEvent, useState } from 'react'
-import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
-import { MTG_Game, TernaryBoolean } from '../../graphql/types'
-import { isNegativeTB, isPositiveTB } from '../../types/ternaryBoolean'
+import { useMTGFilter } from '../../../../context/MTGA/Filter/useMTGFilter'
+import { MTG_Game, TernaryBoolean } from '../../../../graphql/types'
+import { isNegativeTB, isPositiveTB } from '../../../../types/ternaryBoolean'
 import { TernaryToggle } from './TernaryToggle'
 
 export interface GameSelectorProps {

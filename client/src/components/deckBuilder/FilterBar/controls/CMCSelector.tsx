@@ -1,6 +1,6 @@
 import { Grid } from '@mui/material'
-import { CMCFilter } from '../../context/MTGA/Filter/MTGFilterContext'
-import { TernaryBoolean } from '../../graphql/types'
+import { CMCFilter } from '../../../../context/MTGA/Filter/MTGFilterContext'
+import { TernaryBoolean } from '../../../../graphql/types'
 import { TernaryToggle } from './TernaryToggle'
 
 export type CMCSelectorProps = {

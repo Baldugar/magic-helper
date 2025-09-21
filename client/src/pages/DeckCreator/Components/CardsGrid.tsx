@@ -6,7 +6,7 @@ import { useMTGCards } from '../../../context/MTGA/Cards/useMTGCards'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
 import { PAGE_SIZE_DESKTOP, PAGE_SIZE_MOBILE } from '../../../utils/constants'
-import { CardsGridButton } from './CardsGridButton'
+import { CardTile } from '../../../components/deckBuilder/CardTile/CardTile'
 
 export const CardsGrid = () => {
     const { cards: filteredCards, totalCount } = useMTGCards()
@@ -237,7 +237,7 @@ export const CardsGrid = () => {
                 </Box>
             )}
             {cardsToShow.map((card, idx) => (
-                <CardsGridButton card={card} key={card.ID} onIgnore={() => setLastIgnoredIndex(idx)} />
+                <CardTile card={card} key={card.ID} onIgnore={() => setLastIgnoredIndex(idx)} />
             ))}
         </Grid>
     )

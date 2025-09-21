@@ -17,18 +17,18 @@ import { ArrowDownward, ArrowUpward, Delete } from '@mui/icons-material'
 import { memo, useState } from 'react'
 import AutoSizer from 'react-virtualized-auto-sizer'
 import { FixedSizeList, ListChildComponentProps } from 'react-window'
-import { useMTGCardPackages } from '../context/MTGA/CardPackages/useCardPackages'
-import { MTGFunctions } from '../graphql/MTGA/functions'
-import { MainOrSide, MTG_CardPackage } from '../graphql/types'
+import { useMTGCardPackages } from '../../../context/MTGA/CardPackages/useCardPackages'
+import { MTGFunctions } from '../../../graphql/MTGA/functions'
+import { MainOrSide, MTG_CardPackage } from '../../../graphql/types'
 type CardPackageProps = {
     cardPackage: MTG_CardPackage
 }
 
 /**
- * MTGCardPackage renders a summary card for a Card Package with counts and
+ * PackageCard renders a summary card for a Card Package with counts and
  * a virtualized list of entries when expanded. Delete is confirmed via dialog.
  */
-const MTGCardPackage = (props: CardPackageProps) => {
+const PackageCard = (props: CardPackageProps) => {
     const { cardPackage } = props
 
     const { setCardPackages, cardPackages } = useMTGCardPackages()
@@ -131,4 +131,4 @@ const MTGCardPackage = (props: CardPackageProps) => {
     )
 }
 
-export default MTGCardPackage
+export default PackageCard

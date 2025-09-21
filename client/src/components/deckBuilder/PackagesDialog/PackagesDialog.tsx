@@ -1,9 +1,9 @@
 import { ButtonBase, Dialog, DialogContent, DialogTitle, Grid } from '@mui/material'
-import { useMTGCardPackages } from '../context/MTGA/CardPackages/useCardPackages'
-import { useMTGDeckCreator } from '../context/MTGA/DeckCreator/useMTGDeckCreator'
-import MTGCardPackage from './CardPackageCard'
+import { useMTGCardPackages } from '../../../context/MTGA/CardPackages/useCardPackages'
+import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
+import PackageCard from './PackageCard'
 
-export const CardPackageImportDialog = () => {
+export const PackagesDialog = () => {
     const { openImportCardPackageDialog, setOpenImportCardPackageDialog, importCardPackage } = useMTGDeckCreator()
     const { cardPackages } = useMTGCardPackages()
 
@@ -21,7 +21,7 @@ export const CardPackageImportDialog = () => {
                                     importCardPackage(cardPackage)
                                 }}
                             >
-                                <MTGCardPackage cardPackage={cardPackage} />
+                                <PackageCard cardPackage={cardPackage} />
                             </ButtonBase>
                         </Grid>
                     ))}

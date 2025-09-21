@@ -1,7 +1,7 @@
 import { Box } from '@mui/material'
 import { Node, NodeProps, NodeResizer, NodeToolbar, Position, useReactFlow } from '@xyflow/react'
 import { useCallback, useEffect, useState } from 'react'
-import { useMTGDeckFlowCreator } from '../../../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
+import { useMTGDeckFlowCreator } from '../../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
 
 export const MIN_SIZE = 180
 

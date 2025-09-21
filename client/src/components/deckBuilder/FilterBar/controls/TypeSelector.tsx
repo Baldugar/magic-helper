@@ -1,7 +1,7 @@
 import { Badge, Box, Button, ButtonBase, ClickAwayListener, Grid, Paper, Popper, Typography } from '@mui/material'
 import { MouseEvent, useState } from 'react'
-import { TernaryBoolean } from '../../graphql/types'
-import { isNegativeTB, isPositiveTB } from '../../types/ternaryBoolean'
+import { TernaryBoolean } from '../../../../graphql/types'
+import { isNegativeTB, isPositiveTB } from '../../../../types/ternaryBoolean'
 import { TernaryToggle } from './TernaryToggle'
 
 export interface TypeSelectorProps {
