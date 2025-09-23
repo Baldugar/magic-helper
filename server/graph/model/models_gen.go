@@ -206,10 +206,12 @@ type MtgCardFaceDashboard struct {
 
 // A package grouping cards outside of a deck context.
 type MtgCardPackage struct {
-	ID    string                `json:"_key"`
-	Name  string                `json:"name"`
-	Cards []*MtgCardPackageCard `json:"cards"`
-	Zones []*FlowZone           `json:"zones"`
+	ID       string                `json:"_key"`
+	Name     string                `json:"name"`
+	IsPublic bool                  `json:"isPublic"`
+	OwnerID  *string               `json:"ownerID,omitempty"`
+	Cards    []*MtgCardPackageCard `json:"cards"`
+	Zones    []*FlowZone           `json:"zones"`
 }
 
 // A card entry inside a card package.
@@ -271,7 +273,8 @@ type MtgCardDashboard struct {
 
 // Create a new card package.
 type MtgCreateCardPackageInput struct {
-	Name string `json:"name"`
+	Name     string `json:"name"`
+	IsPublic *bool  `json:"isPublic,omitempty"`
 }
 
 // Input to create a new deck.
@@ -353,6 +356,12 @@ type MtgDeleteDeckInput struct {
 type MtgEditCardPackageNameInput struct {
 	CardPackageID string `json:"cardPackageID"`
 	Name          string `json:"name"`
+}
+
+// Toggle card package visibility.
+type MtgEditCardPackageVisibilityInput struct {
+	CardPackageID string `json:"cardPackageID"`
+	IsPublic      bool   `json:"isPublic"`
 }
 
 // Card type filter entry with ternary state.

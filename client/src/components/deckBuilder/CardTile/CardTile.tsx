@@ -285,7 +285,7 @@ export const CardTile = (props: CardTileProps) => {
                     action: () => {
                         const name = prompt('Enter the name of the new card package')
                         if (!name) return
-                        createCardPackage(name, card, MainOrSide.MAIN)
+                        createCardPackage(name, { card, mainOrSide: MainOrSide.MAIN })
                     },
                 },
                 ...cardPackages.map((cp) => {

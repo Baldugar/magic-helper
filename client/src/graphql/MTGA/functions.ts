@@ -11,6 +11,7 @@ import {
     MTG_Deck,
     MTG_DeckDashboard,
     MTG_EditCardPackageNameInput,
+    MTG_EditCardPackageVisibilityInput,
     MTG_Filter_Search,
     MTG_RemoveCardFromCardPackageInput,
     MTG_UpdateDeckInput,
@@ -25,6 +26,7 @@ import {
     MutationdeleteMTGDeckArgs,
     MutationdeleteTagArgs,
     MutationeditMTGCardPackageNameArgs,
+    MutationeditMTGCardPackageVisibilityArgs,
     MutationrateArgs,
     MutationremoveIgnoredCardArgs,
     MutationremoveMTGCardFromCardPackageArgs,
@@ -52,6 +54,7 @@ import deleteMTGCardPackage from './mutations/deleteMTGCardPackage'
 import deleteMTGADeck from './mutations/deleteMTGDeck'
 import { deleteTag } from './mutations/deleteTag'
 import editMTGCardPackageName from './mutations/editMTGCardPackageName'
+import editMTGCardPackageVisibility from './mutations/editMTGCardPackageVisibility'
 import { rate } from './mutations/rate'
 import removeIgnoredCard from './mutations/removeIgnoredCard'
 import removeMTGCardFromCardPackage from './mutations/removeMTGCardFromCardPackage'
@@ -129,9 +132,12 @@ const getMTGDeckQuery = async (ID: string): Promise<MTG_Deck> =>
     })
 
 /** Fetch all card packages or one by ID. */
-const getMTGCardPackagesQuery = async (ID?: string): Promise<MTG_CardPackage[]> =>
+const getMTGCardPackagesQuery = async (options?: { ID?: string; includePublic?: boolean }): Promise<MTG_CardPackage[]> =>
     new Promise((resolve, reject) => {
-        fetchData<Query, QuerygetMTGCardPackagesArgs>(getMTGCardPackages, { cardPackageID: ID }).then((response) => {
+        fetchData<Query, QuerygetMTGCardPackagesArgs>(getMTGCardPackages, {
+            cardPackageID: options?.ID,
+            includePublic: options?.includePublic,
+        }).then((response) => {
             if (response && response.data && !response.errors) {
                 resolve(response.data.getMTGCardPackages)
             } else {
@@ -241,6 +247,17 @@ const editMTGCardPackageNameMutation = async (input: MTG_EditCardPackageNameInpu
     })
 
 /** Add a card entry to a package. */
+const editMTGCardPackageVisibilityMutation = async (input: MTG_EditCardPackageVisibilityInput): Promise<Response> =>
+    new Promise((resolve, reject) => {
+        fetchData<Mutation, MutationeditMTGCardPackageVisibilityArgs>(editMTGCardPackageVisibility, { input }).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.editMTGCardPackageVisibility)
+            } else {
+                reject('Failed to fetch MTG cards')
+            }
+        })
+    })
+
 const addMTGCardToCardPackageMutation = async (input: MTG_AddCardToCardPackageInput): Promise<Response> =>
     new Promise((resolve, reject) => {
         fetchData<Mutation, MutationaddMTGCardToCardPackageArgs>(addMTGCardToCardPackage, { input }).then(
@@ -381,6 +398,7 @@ export const MTGFunctions = {
         createMTGCardPackageMutation,
         deleteMTGCardPackageMutation,
         editMTGCardPackageNameMutation,
+        editMTGCardPackageVisibilityMutation,
         addMTGCardToCardPackageMutation,
         removeMTGCardFromCardPackageMutation,
         createTagMutation,

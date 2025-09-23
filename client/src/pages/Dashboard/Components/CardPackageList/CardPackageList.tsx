@@ -1,6 +1,7 @@
-import { Box, Button, Grid, Paper, Popover, Stack, TextField, Typography } from '@mui/material'
-import { useContext, useState } from 'react'
+import { Box, Button, FormControlLabel, Grid, Paper, Popover, Stack, Switch, TextField, Typography } from '@mui/material'
+import { useCallback, useContext, useState } from 'react'
 import MTGCardPackage from '../../../../components/deckBuilder/PackagesDialog/PackageCard'
+import { MTG_CardPackage } from '../../../../graphql/types'
 import { MTGCardPackagesContext } from '../../../../context/MTGA/CardPackages/CardPackagesContext'
 
 /**
@@ -12,10 +13,16 @@ import { MTGCardPackagesContext } from '../../../../context/MTGA/CardPackages/Ca
  */
 export const CardPackageList = () => {
     // Card Packages: creation UI and list
-    const { cardPackages, createCardPackage } = useContext(MTGCardPackagesContext)
+    const { cardPackages, createCardPackage, setCardPackageVisibility } = useContext(MTGCardPackagesContext)
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
     const [name, setName] = useState('')
+    const [isPublic, setIsPublic] = useState(false)
+
+    const handleToggleVisibility = useCallback(
+        (pkg: MTG_CardPackage, nextValue: boolean) => setCardPackageVisibility(pkg.ID, nextValue),
+        [setCardPackageVisibility],
+    )
 
     /** Open the create card package popover. */
     const handleClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -26,6 +33,7 @@ export const CardPackageList = () => {
     const handleClose = () => {
         setAnchorEl(null)
         setName('')
+        setIsPublic(false)
     }
 
     const open = Boolean(anchorEl)
@@ -61,12 +69,26 @@ export const CardPackageList = () => {
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                         />
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={isPublic}
+                                    onChange={(event) => setIsPublic(event.target.checked)}
+                                    color='primary'
+                                />
+                            }
+                            label='Make public'
+                            sx={{ mt: 2 }}
+                        />
                         <Box display={'flex'} justifyContent={'flex-end'} marginTop={2}>
                             <Button
                                 variant={'contained'}
                                 color={'primary'}
                                 disabled={name.length === 0}
-                                onClick={() => createCardPackage(name)}
+                                onClick={async () => {
+                                    await createCardPackage(name, { isPublic })
+                                    handleClose()
+                                }}
                             >
                                 Create
                             </Button>
@@ -78,7 +100,7 @@ export const CardPackageList = () => {
             <Grid container columnSpacing={4}>
                 {cardPackages.map((cardPackage) => (
                     <Grid item xs={'auto'} key={cardPackage.ID} container justifyContent={'center'}>
-                        <MTGCardPackage cardPackage={cardPackage} />
+                        <MTGCardPackage cardPackage={cardPackage} onToggleVisibility={handleToggleVisibility} />
                     </Grid>
                 ))}
             </Grid>

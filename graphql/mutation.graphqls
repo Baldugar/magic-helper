@@ -33,6 +33,10 @@ type Mutation {
     """
     editMTGCardPackageName(input: MTG_EditCardPackageNameInput!): Response!
     """
+    Update a card package visibility flag.
+    """
+    editMTGCardPackageVisibility(input: MTG_EditCardPackageVisibilityInput!): Response!
+    """
     Add a card to a package (edge insert).
     """
     addMTGCardToCardPackage(input: MTG_AddCardToCardPackageInput!): Response!

@@ -4,17 +4,30 @@ import (
 	"context"
 	"magic-helper/arango"
 	"magic-helper/graph/model"
+	"magic-helper/util/auth"
 
 	"github.com/rs/zerolog/log"
 )
 
-// GetMTGCardPackages returns card packages and their cards, optionally filtered by ID.
-func GetMTGCardPackages(ctx context.Context, cardPackageID *string) ([]*model.MtgCardPackage, error) {
+// GetMTGCardPackages returns card packages and their cards, optionally filtered by ID or visibility.
+func GetMTGCardPackages(ctx context.Context, cardPackageID *string, includePublic bool) ([]*model.MtgCardPackage, error) {
 	log.Info().Msg("GetMTGCardPackages: Started")
+
+	user, _ := auth.UserFromContext(ctx)
+	ownerID := ""
+	if user != nil && user.ID != "" {
+		ownerID = user.ID
+	}
 
 	aq := arango.NewQuery( /* aql */ `
 		FOR doc IN MTG_Card_Packages
-			// single: FILTER doc._key == @cardPackageID
+			LET requestedID = @cardPackageID
+			LET ownerMatches = doc.ownerID == @ownerID OR doc.ownerID == null OR doc.ownerID == ""
+			LET docIsPublic = doc.isPublic == true
+			FILTER (
+				(requestedID != null AND doc._key == requestedID AND (ownerMatches OR (@includePublic AND docIsPublic))) OR
+				(requestedID == null AND (ownerMatches OR (@includePublic AND docIsPublic)))
+			)
 			LET cards = (
 				FOR card, edge IN 1..1 INBOUND doc MTG_Card_Card_Package
 				LET rating = FIRST( // Remove FIRST when we get multiaccount
@@ -63,12 +76,19 @@ func GetMTGCardPackages(ctx context.Context, cardPackageID *string) ([]*model.Mt
 				})
 			)
 
-		RETURN MERGE(doc, {cards})
+		RETURN MERGE(doc, {
+			cards,
+			isPublic: docIsPublic,
+			ownerID: doc.ownerID
+		})
 	`)
 
+	aq.AddBindVar("ownerID", ownerID)
+	aq.AddBindVar("includePublic", includePublic)
 	if cardPackageID != nil {
-		aq = aq.AddBindVar("cardPackageID", *cardPackageID)
-		aq = aq.Uncomment("single")
+		aq.AddBindVar("cardPackageID", *cardPackageID)
+	} else {
+		aq.AddBindVar("cardPackageID", nil)
 	}
 
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)

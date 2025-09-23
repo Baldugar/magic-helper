@@ -5,6 +5,7 @@ import (
 	"errors"
 	"magic-helper/arango"
 	"magic-helper/graph/model"
+	"magic-helper/util/auth"
 
 	"github.com/rs/zerolog/log"
 )
@@ -13,14 +14,29 @@ import (
 func CreateMTGCardPackage(ctx context.Context, input model.MtgCreateCardPackageInput) (*model.Response, error) {
 	log.Info().Msgf("CreateMTGCardPackage: Started")
 
+	user, _ := auth.UserFromContext(ctx)
+	ownerID := ""
+	if user != nil && user.ID != "" {
+		ownerID = user.ID
+	}
+
+	isPublic := false
+	if input.IsPublic != nil {
+		isPublic = *input.IsPublic
+	}
+
 	aq := arango.NewQuery( /* aql */ `
 		INSERT {
-			name: @name
+			name: @name,
+			ownerID: @ownerID,
+			isPublic: @isPublic
 		} INTO MTG_Card_Packages
 		RETURN NEW
 	`)
 
 	aq.AddBindVar("name", input.Name)
+	aq.AddBindVar("ownerID", ownerID)
+	aq.AddBindVar("isPublic", isPublic)
 
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {
@@ -58,6 +74,25 @@ func CreateMTGCardPackage(ctx context.Context, input model.MtgCreateCardPackageI
 func DeleteMTGCardPackage(ctx context.Context, input model.MtgDeleteCardPackageInput) (*model.Response, error) {
 	log.Info().Msgf("DeleteMTGCardPackage: Started")
 
+	cardPackages, err := GetMTGCardPackages(ctx, &input.CardPackageID, false)
+	if err != nil {
+		errMsg := err.Error()
+		log.Error().Err(err).Msgf("DeleteMTGCardPackage: Error retrieving card package")
+		return &model.Response{
+			Status:  false,
+			Message: &errMsg,
+		}, err
+	}
+
+	if len(cardPackages) == 0 {
+		errMsg := "Card package not found"
+		log.Error().Msgf("DeleteMTGCardPackage: Card package not found or unauthorized")
+		return &model.Response{
+			Status:  false,
+			Message: &errMsg,
+		}, errors.New(errMsg)
+	}
+
 	aq := arango.NewQuery( /* aql */ `
 		REMOVE {
 			_key: @cardPackageID
@@ -66,7 +101,7 @@ func DeleteMTGCardPackage(ctx context.Context, input model.MtgDeleteCardPackageI
 
 	aq.AddBindVar("cardPackageID", input.CardPackageID)
 
-	_, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
+	_, err = arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {
 		errMsg := err.Error()
 		log.Error().Err(err).Msgf("DeleteMTGCardPackage: Error deleting card package")
@@ -103,12 +138,86 @@ func DeleteMTGCardPackage(ctx context.Context, input model.MtgDeleteCardPackageI
 	}, nil
 }
 
+// EditMTGCardPackageVisibility toggles the public flag for a card package.
+func EditMTGCardPackageVisibility(ctx context.Context, input model.MtgEditCardPackageVisibilityInput) (*model.Response, error) {
+	log.Info().Msgf("EditMTGCardPackageVisibility: Started")
+
+	user, _ := auth.UserFromContext(ctx)
+	if user == nil || user.ID == "" {
+		errMsg := "unauthorized"
+		log.Error().Msgf("EditMTGCardPackageVisibility: Missing user in context")
+		return &model.Response{
+			Status:  false,
+			Message: &errMsg,
+		}, errors.New(errMsg)
+	}
+
+	cardPackages, err := GetMTGCardPackages(ctx, &input.CardPackageID, false)
+	if err != nil {
+		errMsg := err.Error()
+		log.Error().Err(err).Msgf("EditMTGCardPackageVisibility: Error retrieving card package")
+		return &model.Response{
+			Status:  false,
+			Message: &errMsg,
+		}, err
+	}
+
+	if len(cardPackages) == 0 {
+		errMsg := "Card package not found or unauthorized"
+		log.Error().Msgf("EditMTGCardPackageVisibility: Card package not found")
+		return &model.Response{
+			Status:  false,
+			Message: &errMsg,
+		}, errors.New(errMsg)
+	}
+
+	cardPackage := cardPackages[0]
+	if cardPackage.OwnerID != nil && *cardPackage.OwnerID != "" && *cardPackage.OwnerID != user.ID {
+		errMsg := "Card package not found or unauthorized"
+		log.Error().Msgf("EditMTGCardPackageVisibility: Card package not owned by user")
+		return &model.Response{
+			Status:  false,
+			Message: &errMsg,
+		}, errors.New(errMsg)
+	}
+
+	aq := arango.NewQuery( /* aql */ `
+		UPDATE {
+			_key: @cardPackageID
+		} WITH {
+			isPublic: @isPublic,
+			ownerID: @ownerID
+		} IN MTG_Card_Packages
+	`)
+
+	aq.AddBindVar("cardPackageID", input.CardPackageID)
+	aq.AddBindVar("isPublic", input.IsPublic)
+	aq.AddBindVar("ownerID", user.ID)
+
+	_, err = arango.DB.Query(ctx, aq.Query, aq.BindVars)
+	if err != nil {
+		errMsg := err.Error()
+		log.Error().Err(err).Msgf("EditMTGCardPackageVisibility: Error updating card package")
+		return &model.Response{
+			Status:  false,
+			Message: &errMsg,
+		}, err
+	}
+
+	log.Info().Msgf("EditMTGCardPackageVisibility: Updated card package visibility")
+
+	return &model.Response{
+		Status:  true,
+		Message: nil,
+	}, nil
+}
+
 // AddMTGCardToCardPackage creates an edge from a card to a package.
 func AddMTGCardToCardPackage(ctx context.Context, input model.MtgAddCardToCardPackageInput) (*model.Response, error) {
 	log.Info().Msgf("AddMTGCardToCardPackage: Started")
 
 	// Check if card package exists
-	cardPackages, err := GetMTGCardPackages(ctx, &input.CardPackageID)
+	cardPackages, err := GetMTGCardPackages(ctx, &input.CardPackageID, false)
 	if err != nil {
 		errMsg := err.Error()
 		log.Error().Err(err).Msgf("AddMTGCardToCardPackage: Error getting card package")
@@ -128,6 +237,15 @@ func AddMTGCardToCardPackage(ctx context.Context, input model.MtgAddCardToCardPa
 	}
 
 	cardPackage := cardPackages[0]
+
+	if cardPackage.IsPublic {
+		errMsg := "Cannot modify public card package"
+		log.Error().Msgf("AddMTGCardToCardPackage: Card package is public")
+		return &model.Response{
+			Status:  false,
+			Message: &errMsg,
+		}, errors.New(errMsg)
+	}
 
 	// Check if card is already in card package
 	for _, card := range cardPackage.Cards {
@@ -173,7 +291,7 @@ func RemoveMTGCardFromCardPackage(ctx context.Context, input model.MtgRemoveCard
 	log.Info().Msgf("RemoveMTGCardFromCardPackage: Started")
 
 	// Check if card package exists
-	cardPackages, err := GetMTGCardPackages(ctx, &input.CardPackageID)
+	cardPackages, err := GetMTGCardPackages(ctx, &input.CardPackageID, false)
 	if err != nil {
 		errMsg := err.Error()
 		log.Error().Err(err).Msgf("RemoveMTGCardFromCardPackage: Error getting card package")
@@ -193,6 +311,15 @@ func RemoveMTGCardFromCardPackage(ctx context.Context, input model.MtgRemoveCard
 	}
 
 	cardPackage := cardPackages[0]
+
+	if cardPackage.IsPublic {
+		errMsg := "Cannot modify public card package"
+		log.Error().Msgf("RemoveMTGCardFromCardPackage: Card package is public")
+		return &model.Response{
+			Status:  false,
+			Message: &errMsg,
+		}, errors.New(errMsg)
+	}
 
 	// Check if card is in card package
 	cardFound := false

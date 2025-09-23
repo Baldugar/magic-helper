@@ -4,6 +4,8 @@ A package grouping cards outside of a deck context.
 type MTG_CardPackage {
     ID: ID! @goTag(key: "json", value: "_key")
     name: String!
+    isPublic: Boolean!
+    ownerID: ID
     cards: [MTG_CardPackageCard!]!
     zones: [FlowZone!]!
 }

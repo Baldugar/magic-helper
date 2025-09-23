@@ -20,6 +20,8 @@ import { MTGDeckCreatorFlowContext } from './MTGDeckCreatorFlowContext'
 export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: ReactNode; deck: MTG_Deck }) => {
     const { item, type } = useDnD()
     const { deckTab, setDeck, removeCard } = useMTGDeckCreator()
+    const [readOnly, setReadOnly] = useState(false)
+    const [moveMode, setMoveMode] = useState(false)
     const { screenToFlowPosition, getIntersectingNodes, setNodes, getNodes } = useReactFlow<NodeType>()
 
     const { filter, setFilter } = useMTGFilter()
@@ -29,6 +31,7 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
 
     // Zone Functions
     const handleDeleteZone = (nodeID: string, deleteNodes: boolean) => {
+        if (readOnly) return
         setNodes((nodes) => {
             const node = nodes.find((n) => n.id === nodeID)
             if (!node) return nodes
@@ -79,6 +82,7 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
     }
 
     const handleRenameZone = (nodeID: string, newName: string) => {
+        if (readOnly) return
         setNodes((nodes) => {
             const node = nodes.find((n) => n.id === nodeID)
             if (!node) return nodes
@@ -95,6 +99,7 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
     }
 
     const handleDeletePhantom = (phantomID: string) => {
+        if (readOnly) return
         setNodes((nodes) => {
             const phantomNode = nodes.find((n) => n.id === phantomID)
             if (!phantomNode) return nodes
@@ -123,6 +128,7 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
     }
     // Add a card to the deck via dragging from the catalogue onto the board
     const onAddCard = (card: MTG_Card, position?: Position): MTG_DeckCard | undefined => {
+        if (readOnly) return undefined
         let cardToReturn: MTG_DeckCard | undefined
         if (deck) {
             const newDeck = structuredClone(deck)
@@ -183,12 +189,14 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
 
     // This function is called when a card is dragged over the flow view
     const onDragOver: DragEventHandler<HTMLDivElement> = (event) => {
+        if (readOnly) return
         event.preventDefault()
         event.dataTransfer.dropEffect = 'move'
     }
 
     // This function is called when a card is dropped on the flow view and should add a new node to the flow, then call the onAddCard function to add the card to the deck
     const onDrop: DragEventHandler<HTMLDivElement> = (event) => {
+        if (readOnly) return
         event.preventDefault()
         console.log('onDrop', type, item)
         // check if the dropped element is valid
@@ -264,6 +272,7 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
 
     // This function is called when a node is dragged and dropped inside the flow view
     const handleNodeDragStop: OnNodeDrag<NodeType> = (_, node) => {
+        if (readOnly) return
         const nodes = getNodes()
         onNodeDragStop(node, getIntersectingNodes, nodes, setNodes)
     }
@@ -280,6 +289,10 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
                 onAddCard,
                 draggingGroupId,
                 setDraggingGroupId,
+                readOnly,
+                setReadOnly,
+                moveMode,
+                setMoveMode,
             }}
         >
             {children}

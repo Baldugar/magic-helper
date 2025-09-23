@@ -29,7 +29,7 @@ type Query {
     """
     List card packages or fetch one by ID.
     """
-    getMTGCardPackages(cardPackageID: ID): [MTG_CardPackage!]!
+    getMTGCardPackages(cardPackageID: ID, includePublic: Boolean = false): [MTG_CardPackage!]!
     # Tags
     """
     Return all tags (card and deck).

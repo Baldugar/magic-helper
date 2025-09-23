@@ -3,6 +3,7 @@ Create a new card package.
 """
 input MTG_CreateCardPackageInput {
     name: String!
+    isPublic: Boolean = false
 }
 
 """
@@ -19,6 +20,15 @@ input MTG_EditCardPackageNameInput {
     cardPackageID: ID!
     name: String!
 }
+"""
+Toggle card package visibility.
+"""
+input MTG_EditCardPackageVisibilityInput {
+    cardPackageID: ID!
+    isPublic: Boolean!
+}
+
+
 
 """
 Add a card to a package with count.

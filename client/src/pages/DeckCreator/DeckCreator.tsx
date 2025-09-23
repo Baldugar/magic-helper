@@ -16,7 +16,11 @@ import {
 import { ReactFlowProvider, useReactFlow } from '@xyflow/react'
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { DeckCoverPicker } from '../../components/deckBuilder/DeckCoverPicker'
+import { FilterBar } from '../../components/deckBuilder/FilterBar/FilterBar'
+import { FlowToolbar } from '../../components/deckBuilder/FlowToolbar'
 import { PackagesDialog } from '../../components/deckBuilder/PackagesDialog/PackagesDialog'
+import { WarningsFab } from '../../components/deckBuilder/WarningsFab'
 import { ExportDialog } from '../../components/ExportDialog'
 import { ImportDialog } from '../../components/ImportDialog'
 import { DndProvider } from '../../context/DnD/DnDProvider'
@@ -38,7 +42,6 @@ import { useLocalStoreFilter } from '../../utils/hooks/useLocalStoreFilter'
 import { CardDialog } from './Components/CardDialog'
 import { CardsGrid } from './Components/CardsGrid'
 import { Drawer } from './Components/Drawer'
-import { FilterBar } from '../../components/deckBuilder/FilterBar/FilterBar'
 
 /**
  * DeckCreator renders the full deck editing experience.
@@ -156,6 +159,7 @@ export const DeckCreator = () => {
                             >
                                 <Edit />
                             </IconButton>
+                            <DeckCoverPicker />
                         </Box>
                     </Box>
                     {viewMode === 'CATALOGUE' && (
@@ -175,6 +179,7 @@ export const DeckCreator = () => {
                             </Box>
                         </>
                     )}
+                    {viewMode === 'BOARD' && <FlowToolbar />}
                     <Box position={'absolute'} top={10} right={10} display={'flex'} gap={1}>
                         <IconButton
                             size="large"
@@ -310,6 +315,7 @@ export const DeckCreator = () => {
                 <ExportDialog />
                 <PackagesDialog />
                 <CardDialog />
+                <WarningsFab />
             </Box>
         </MTGDeckCreatorFlowProvider>
     )

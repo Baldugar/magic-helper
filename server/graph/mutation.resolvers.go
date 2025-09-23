@@ -51,6 +51,11 @@ func (r *mutationResolver) EditMTGCardPackageName(ctx context.Context, input mod
 	panic(fmt.Errorf("not implemented: EditMTGCardPackageName - editMTGCardPackageName"))
 }
 
+// EditMTGCardPackageVisibility is the resolver for the editMTGCardPackageVisibility field.
+func (r *mutationResolver) EditMTGCardPackageVisibility(ctx context.Context, input model.MtgEditCardPackageVisibilityInput) (*model.Response, error) {
+	return mtg.EditMTGCardPackageVisibility(ctx, input)
+}
+
 // AddMTGCardToCardPackage is the resolver for the addMTGCardToCardPackage field.
 func (r *mutationResolver) AddMTGCardToCardPackage(ctx context.Context, input model.MtgAddCardToCardPackageInput) (*model.Response, error) {
 	return mtg.AddMTGCardToCardPackage(ctx, input)

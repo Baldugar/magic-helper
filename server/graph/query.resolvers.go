@@ -42,8 +42,12 @@ func (r *queryResolver) GetMTGDeck(ctx context.Context, deckID string) (*model.M
 }
 
 // GetMTGCardPackages is the resolver for the getMTGCardPackages field.
-func (r *queryResolver) GetMTGCardPackages(ctx context.Context, cardPackageID *string) ([]*model.MtgCardPackage, error) {
-	return mtg.GetMTGCardPackages(ctx, cardPackageID)
+func (r *queryResolver) GetMTGCardPackages(ctx context.Context, cardPackageID *string, includePublic *bool) ([]*model.MtgCardPackage, error) {
+	include := false
+	if includePublic != nil {
+		include = *includePublic
+	}
+	return mtg.GetMTGCardPackages(ctx, cardPackageID, include)
 }
 
 // Tags is the resolver for the tags field.

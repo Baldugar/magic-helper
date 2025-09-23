@@ -227,7 +227,9 @@ export type MTG_CardPackage = {
   __typename?: 'MTG_CardPackage';
   ID: Scalars['ID']['output'];
   cards: Array<MTG_CardPackageCard>;
+  isPublic: Scalars['Boolean']['output'];
   name: Scalars['String']['output'];
+  ownerID?: Maybe<Scalars['ID']['output']>;
   zones: Array<FlowZone>;
 };
 
@@ -304,6 +306,7 @@ export enum MTG_Color {
 
 /** Create a new card package. */
 export type MTG_CreateCardPackageInput = {
+  isPublic?: InputMaybe<Scalars['Boolean']['input']>;
   name: Scalars['String']['input'];
 };
 
@@ -397,6 +400,12 @@ export type MTG_DeleteDeckInput = {
 export type MTG_EditCardPackageNameInput = {
   cardPackageID: Scalars['ID']['input'];
   name: Scalars['String']['input'];
+};
+
+/** Toggle card package visibility. */
+export type MTG_EditCardPackageVisibilityInput = {
+  cardPackageID: Scalars['ID']['input'];
+  isPublic: Scalars['Boolean']['input'];
 };
 
 /** Card type filter entry with ternary state. */
@@ -665,6 +674,8 @@ export type Mutation = {
   deleteTag: Response;
   /** Edit a card package name. */
   editMTGCardPackageName: Response;
+  /** Update a card package visibility flag. */
+  editMTGCardPackageVisibility: Response;
   /** Rate a card or tag. */
   rate: Response;
   /** Remove ignored mark from a deck/card pair. */
@@ -751,6 +762,12 @@ export type MutationdeleteTagArgs = {
 /** Root-level write operations. */
 export type MutationeditMTGCardPackageNameArgs = {
   input: MTG_EditCardPackageNameInput;
+};
+
+
+/** Root-level write operations. */
+export type MutationeditMTGCardPackageVisibilityArgs = {
+  input: MTG_EditCardPackageVisibilityInput;
 };
 
 
@@ -868,6 +885,7 @@ export type QueryadminLegalitiesDiffArgs = {
 /** Root-level read operations. */
 export type QuerygetMTGCardPackagesArgs = {
   cardPackageID?: InputMaybe<Scalars['ID']['input']>;
+  includePublic?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 

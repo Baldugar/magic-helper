@@ -172,6 +172,7 @@ export const MTG_CardPackageFragments = gql`
     fragment MTG_CardPackageFragment on MTG_CardPackage {
         ID
         name
+        isPublic
         cards {
             card {
                 ...MTG_CardFragment

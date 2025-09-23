@@ -166,10 +166,12 @@ type ComplexityRoot struct {
 	}
 
 	MTG_CardPackage struct {
-		Cards func(childComplexity int) int
-		ID    func(childComplexity int) int
-		Name  func(childComplexity int) int
-		Zones func(childComplexity int) int
+		Cards    func(childComplexity int) int
+		ID       func(childComplexity int) int
+		IsPublic func(childComplexity int) int
+		Name     func(childComplexity int) int
+		OwnerID  func(childComplexity int) int
+		Zones    func(childComplexity int) int
 	}
 
 	MTG_CardPackageCard struct {
@@ -307,6 +309,7 @@ type ComplexityRoot struct {
 		DeleteMTGDeck                func(childComplexity int, input model.MtgDeleteDeckInput) int
 		DeleteTag                    func(childComplexity int, tagID string) int
 		EditMTGCardPackageName       func(childComplexity int, input model.MtgEditCardPackageNameInput) int
+		EditMTGCardPackageVisibility func(childComplexity int, input model.MtgEditCardPackageVisibilityInput) int
 		Rate                         func(childComplexity int, input model.RateInput) int
 		RemoveIgnoredCard            func(childComplexity int, input model.RemoveIgnoredCardInput) int
 		RemoveMTGCardFromCardPackage func(childComplexity int, input model.MtgRemoveCardFromCardPackageInput) int
@@ -332,7 +335,7 @@ type ComplexityRoot struct {
 		AdminLegalitiesDiff func(childComplexity int, importID string) int
 		CardTags            func(childComplexity int) int
 		DeckTags            func(childComplexity int) int
-		GetMTGCardPackages  func(childComplexity int, cardPackageID *string) int
+		GetMTGCardPackages  func(childComplexity int, cardPackageID *string, includePublic *bool) int
 		GetMTGCards         func(childComplexity int) int
 		GetMTGCardsFiltered func(childComplexity int, filter model.MtgFilterSearchInput, pagination model.MtgFilterPaginationInput, sort []*model.MtgFilterSortInput) int
 		GetMTGDeck          func(childComplexity int, deckID string) int
@@ -366,6 +369,7 @@ type MutationResolver interface {
 	CreateMTGCardPackage(ctx context.Context, input model.MtgCreateCardPackageInput) (*model.Response, error)
 	DeleteMTGCardPackage(ctx context.Context, input model.MtgDeleteCardPackageInput) (*model.Response, error)
 	EditMTGCardPackageName(ctx context.Context, input model.MtgEditCardPackageNameInput) (*model.Response, error)
+	EditMTGCardPackageVisibility(ctx context.Context, input model.MtgEditCardPackageVisibilityInput) (*model.Response, error)
 	AddMTGCardToCardPackage(ctx context.Context, input model.MtgAddCardToCardPackageInput) (*model.Response, error)
 	RemoveMTGCardFromCardPackage(ctx context.Context, input model.MtgRemoveCardFromCardPackageInput) (*model.Response, error)
 	CreateTag(ctx context.Context, input model.CreateTagInput) (*model.Response, error)
@@ -385,7 +389,7 @@ type QueryResolver interface {
 	GetMTGFilters(ctx context.Context) (*model.MtgFilterEntries, error)
 	GetMTGDecks(ctx context.Context) ([]*model.MtgDeckDashboard, error)
 	GetMTGDeck(ctx context.Context, deckID string) (*model.MtgDeck, error)
-	GetMTGCardPackages(ctx context.Context, cardPackageID *string) ([]*model.MtgCardPackage, error)
+	GetMTGCardPackages(ctx context.Context, cardPackageID *string, includePublic *bool) ([]*model.MtgCardPackage, error)
 	Tags(ctx context.Context) ([]model.Tag, error)
 	CardTags(ctx context.Context) ([]*model.CardTag, error)
 	DeckTags(ctx context.Context) ([]*model.DeckTag, error)
@@ -1009,12 +1013,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MTG_CardPackage.ID(childComplexity), true
 
+	case "MTG_CardPackage.isPublic":
+		if e.complexity.MTG_CardPackage.IsPublic == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardPackage.IsPublic(childComplexity), true
+
 	case "MTG_CardPackage.name":
 		if e.complexity.MTG_CardPackage.Name == nil {
 			break
 		}
 
 		return e.complexity.MTG_CardPackage.Name(childComplexity), true
+
+	case "MTG_CardPackage.ownerID":
+		if e.complexity.MTG_CardPackage.OwnerID == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardPackage.OwnerID(childComplexity), true
 
 	case "MTG_CardPackage.zones":
 		if e.complexity.MTG_CardPackage.Zones == nil {
@@ -1706,6 +1724,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.EditMTGCardPackageName(childComplexity, args["input"].(model.MtgEditCardPackageNameInput)), true
 
+	case "Mutation.editMTGCardPackageVisibility":
+		if e.complexity.Mutation.EditMTGCardPackageVisibility == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_editMTGCardPackageVisibility_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.EditMTGCardPackageVisibility(childComplexity, args["input"].(model.MtgEditCardPackageVisibilityInput)), true
+
 	case "Mutation.rate":
 		if e.complexity.Mutation.Rate == nil {
 			break
@@ -1873,7 +1903,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.GetMTGCardPackages(childComplexity, args["cardPackageID"].(*string)), true
+		return e.complexity.Query.GetMTGCardPackages(childComplexity, args["cardPackageID"].(*string), args["includePublic"].(*bool)), true
 
 	case "Query.getMTGCards":
 		if e.complexity.Query.GetMTGCards == nil {
@@ -2003,6 +2033,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputMTG_DeleteCardPackageInput,
 		ec.unmarshalInputMTG_DeleteDeckInput,
 		ec.unmarshalInputMTG_EditCardPackageNameInput,
+		ec.unmarshalInputMTG_EditCardPackageVisibilityInput,
 		ec.unmarshalInputMTG_Filter_CardTypeInput,
 		ec.unmarshalInputMTG_Filter_ColorInput,
 		ec.unmarshalInputMTG_Filter_GameInput,
@@ -2443,6 +2474,7 @@ Create a new card package.
 """
 input MTG_CreateCardPackageInput {
     name: String!
+    isPublic: Boolean = false
 }
 
 """
@@ -2459,6 +2491,15 @@ input MTG_EditCardPackageNameInput {
     cardPackageID: ID!
     name: String!
 }
+"""
+Toggle card package visibility.
+"""
+input MTG_EditCardPackageVisibilityInput {
+    cardPackageID: ID!
+    isPublic: Boolean!
+}
+
+
 
 """
 Add a card to a package with count.
@@ -2493,6 +2534,8 @@ A package grouping cards outside of a deck context.
 type MTG_CardPackage {
     ID: ID! @goTag(key: "json", value: "_key")
     name: String!
+    isPublic: Boolean!
+    ownerID: ID
     cards: [MTG_CardPackageCard!]!
     zones: [FlowZone!]!
 }
@@ -2922,6 +2965,10 @@ type Mutation {
     """
     editMTGCardPackageName(input: MTG_EditCardPackageNameInput!): Response!
     """
+    Update a card package visibility flag.
+    """
+    editMTGCardPackageVisibility(input: MTG_EditCardPackageVisibilityInput!): Response!
+    """
     Add a card to a package (edge insert).
     """
     addMTGCardToCardPackage(input: MTG_AddCardToCardPackageInput!): Response!
@@ -3006,7 +3053,7 @@ type Query {
     """
     List card packages or fetch one by ID.
     """
-    getMTGCardPackages(cardPackageID: ID): [MTG_CardPackage!]!
+    getMTGCardPackages(cardPackageID: ID, includePublic: Boolean = false): [MTG_CardPackage!]!
     # Tags
     """
     Return all tags (card and deck).
@@ -3494,6 +3541,34 @@ func (ec *executionContext) field_Mutation_editMTGCardPackageName_argsInput(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Mutation_editMTGCardPackageVisibility_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_editMTGCardPackageVisibility_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_editMTGCardPackageVisibility_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (model.MtgEditCardPackageVisibilityInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal model.MtgEditCardPackageVisibilityInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNMTG_EditCardPackageVisibilityInput2magicᚑhelperᚋgraphᚋmodelᚐMtgEditCardPackageVisibilityInput(ctx, tmp)
+	}
+
+	var zeroVal model.MtgEditCardPackageVisibilityInput
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_rate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -3805,6 +3880,11 @@ func (ec *executionContext) field_Query_getMTGCardPackages_args(ctx context.Cont
 		return nil, err
 	}
 	args["cardPackageID"] = arg0
+	arg1, err := ec.field_Query_getMTGCardPackages_argsIncludePublic(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["includePublic"] = arg1
 	return args, nil
 }
 func (ec *executionContext) field_Query_getMTGCardPackages_argsCardPackageID(
@@ -3822,6 +3902,24 @@ func (ec *executionContext) field_Query_getMTGCardPackages_argsCardPackageID(
 	}
 
 	var zeroVal *string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_getMTGCardPackages_argsIncludePublic(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*bool, error) {
+	if _, ok := rawArgs["includePublic"]; !ok {
+		var zeroVal *bool
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("includePublic"))
+	if tmp, ok := rawArgs["includePublic"]; ok {
+		return ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+	}
+
+	var zeroVal *bool
 	return zeroVal, nil
 }
 
@@ -7884,6 +7982,91 @@ func (ec *executionContext) fieldContext_MTG_CardPackage_name(_ context.Context,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardPackage_isPublic(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardPackage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardPackage_isPublic(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsPublic, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardPackage_isPublic(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardPackage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardPackage_ownerID(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardPackage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardPackage_ownerID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OwnerID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardPackage_ownerID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardPackage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -12096,6 +12279,67 @@ func (ec *executionContext) fieldContext_Mutation_editMTGCardPackageName(ctx con
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_editMTGCardPackageVisibility(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_editMTGCardPackageVisibility(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().EditMTGCardPackageVisibility(rctx, fc.Args["input"].(model.MtgEditCardPackageVisibilityInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Response)
+	fc.Result = res
+	return ec.marshalNResponse2ᚖmagicᚑhelperᚋgraphᚋmodelᚐResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_editMTGCardPackageVisibility(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "status":
+				return ec.fieldContext_Response_status(ctx, field)
+			case "message":
+				return ec.fieldContext_Response_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Response", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_editMTGCardPackageVisibility_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_addMTGCardToCardPackage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_addMTGCardToCardPackage(ctx, field)
 	if err != nil {
@@ -13348,7 +13592,7 @@ func (ec *executionContext) _Query_getMTGCardPackages(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetMTGCardPackages(rctx, fc.Args["cardPackageID"].(*string))
+		return ec.resolvers.Query().GetMTGCardPackages(rctx, fc.Args["cardPackageID"].(*string), fc.Args["includePublic"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13377,6 +13621,10 @@ func (ec *executionContext) fieldContext_Query_getMTGCardPackages(ctx context.Co
 				return ec.fieldContext_MTG_CardPackage_ID(ctx, field)
 			case "name":
 				return ec.fieldContext_MTG_CardPackage_name(ctx, field)
+			case "isPublic":
+				return ec.fieldContext_MTG_CardPackage_isPublic(ctx, field)
+			case "ownerID":
+				return ec.fieldContext_MTG_CardPackage_ownerID(ctx, field)
 			case "cards":
 				return ec.fieldContext_MTG_CardPackage_cards(ctx, field)
 			case "zones":
@@ -16465,7 +16713,11 @@ func (ec *executionContext) unmarshalInputMTG_CreateCardPackageInput(ctx context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name"}
+	if _, present := asMap["isPublic"]; !present {
+		asMap["isPublic"] = false
+	}
+
+	fieldsInOrder := [...]string{"name", "isPublic"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -16479,6 +16731,13 @@ func (ec *executionContext) unmarshalInputMTG_CreateCardPackageInput(ctx context
 				return it, err
 			}
 			it.Name = data
+		case "isPublic":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isPublic"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IsPublic = data
 		}
 	}
 
@@ -16704,6 +16963,40 @@ func (ec *executionContext) unmarshalInputMTG_EditCardPackageNameInput(ctx conte
 				return it, err
 			}
 			it.Name = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTG_EditCardPackageVisibilityInput(ctx context.Context, obj any) (model.MtgEditCardPackageVisibilityInput, error) {
+	var it model.MtgEditCardPackageVisibilityInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"cardPackageID", "isPublic"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "cardPackageID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cardPackageID"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CardPackageID = data
+		case "isPublic":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isPublic"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IsPublic = data
 		}
 	}
 
@@ -18389,6 +18682,13 @@ func (ec *executionContext) _MTG_CardPackage(ctx context.Context, sel ast.Select
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "isPublic":
+			out.Values[i] = ec._MTG_CardPackage_isPublic(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "ownerID":
+			out.Values[i] = ec._MTG_CardPackage_ownerID(ctx, field, obj)
 		case "cards":
 			out.Values[i] = ec._MTG_CardPackage_cards(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -19345,6 +19645,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "editMTGCardPackageName":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_editMTGCardPackageName(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "editMTGCardPackageVisibility":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_editMTGCardPackageVisibility(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -21490,6 +21797,11 @@ func (ec *executionContext) unmarshalNMTG_DeleteDeckInput2magicᚑhelperᚋgraph
 
 func (ec *executionContext) unmarshalNMTG_EditCardPackageNameInput2magicᚑhelperᚋgraphᚋmodelᚐMtgEditCardPackageNameInput(ctx context.Context, v any) (model.MtgEditCardPackageNameInput, error) {
 	res, err := ec.unmarshalInputMTG_EditCardPackageNameInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNMTG_EditCardPackageVisibilityInput2magicᚑhelperᚋgraphᚋmodelᚐMtgEditCardPackageVisibilityInput(ctx context.Context, v any) (model.MtgEditCardPackageVisibilityInput, error) {
+	res, err := ec.unmarshalInputMTG_EditCardPackageVisibilityInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 

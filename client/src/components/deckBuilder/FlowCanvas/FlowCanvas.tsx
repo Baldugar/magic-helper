@@ -35,6 +35,8 @@ export const FlowCanvas = () => {
         handleRenameZone,
         handleDeletePhantom,
         setDraggingGroupId,
+        readOnly,
+        moveMode,
     } = useMTGDeckFlowCreator()
     const { deck } = useMTGDeckCreator()
     const { setNodes, getNodes } = useReactFlow<NodeType>()
@@ -97,6 +99,10 @@ export const FlowCanvas = () => {
                 fitView
                 minZoom={0.1}
                 maxZoom={4}
+                nodesDraggable={!readOnly}
+                nodesConnectable={!readOnly}
+                panOnDrag={readOnly || moveMode}
+                selectionOnDrag={!moveMode}
             >
                 <Panel position={'bottom-left'}>
                     <Button variant={'contained'} onClick={handleCreateZone}>

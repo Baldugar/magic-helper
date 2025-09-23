@@ -10,11 +10,17 @@ import {
     IconButton,
     InputAdornment,
     Popover,
+    Stack,
     Switch,
     TextField,
     useMediaQuery,
 } from '@mui/material'
 import { MouseEvent, useState } from 'react'
+import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
+import { initialMTGFilter } from '../../../context/MTGA/Filter/MTGFilterContext'
+import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
+import { TernaryBoolean } from '../../../graphql/types'
+import { nextTB, prevTB } from '../../../types/ternaryBoolean'
 import { CMCSelector } from './controls/CMCSelector'
 import GameSelector from './controls/GameSelector'
 import LayoutSelector from './controls/LayoutSelector'
@@ -26,11 +32,7 @@ import SetSelector from './controls/SetSelector'
 import { SortBuilder } from './controls/SortBuilder'
 import { TagSelector } from './controls/TagSelector'
 import TypeSelector from './controls/TypeSelector'
-import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
-import { initialMTGFilter } from '../../../context/MTGA/Filter/MTGFilterContext'
-import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
-import { TernaryBoolean } from '../../../graphql/types'
-import { nextTB, prevTB } from '../../../types/ternaryBoolean'
+import { SavedFiltersPopover } from './SavedFiltersPopover'
 
 export const FilterBar = () => {
     const { filter, setFilter, setIgnoredCardIDs } = useMTGFilter()
@@ -49,13 +51,16 @@ export const FilterBar = () => {
     return (
         <Grid container alignItems={'center'}>
             <Grid item xs={'auto'}>
-                <IconButton size={'small'} onClick={openSearchMenu}>
-                    {filter.searchString === initialMTGFilter.searchString ? (
-                        <Search style={{ width: 40, height: 40 }} />
-                    ) : (
-                        <FindReplace style={{ width: 40, height: 40 }} />
-                    )}
-                </IconButton>
+                <Stack direction="row" spacing={1} alignItems="center">
+                    <IconButton size={'small'} onClick={openSearchMenu}>
+                        {filter.searchString === initialMTGFilter.searchString ? (
+                            <Search style={{ width: 40, height: 40 }} />
+                        ) : (
+                            <FindReplace style={{ width: 40, height: 40 }} />
+                        )}
+                    </IconButton>
+                    <SavedFiltersPopover />
+                </Stack>
                 <Popover
                     anchorEl={searchAnchorEl}
                     open={searchOpen}
