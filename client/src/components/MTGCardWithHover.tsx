@@ -26,6 +26,8 @@ export type MTGCardWithHoverProps = {
           }
     hideHover?: boolean
     forceSize?: keyof Omit<MTG_Image, '__typename'>
+    forceImage?: keyof Omit<MTG_Image, '__typename'>
+    scale?: number
 }
 
 /**
@@ -34,7 +36,7 @@ export type MTGCardWithHoverProps = {
  * and integrates with drag-and-drop when used within the deck creator.
  */
 export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
-    const { data, hideHover, forceSize } = props
+    const { data, hideHover, forceSize, forceImage, scale = 1 } = props
     const { card, type, debugValue } = data
     const { viewMode } = useMTGDeckCreator()
     const { onDragStart, onDragEnd } = useDnD()
@@ -54,11 +56,10 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
     // Select a version based on the current filter's set constraints (if any)
     const randomVersion = useMemo(() => {
         if (type === 'card') {
-            return getRandomVersionFromFilter(filter.sets, card)
+            return getRandomVersionFromFilter(filter, card)
         }
         return undefined
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filter.sets])
+    }, [card, filter, type])
 
     const imageSizeFingerprint = forceSize ? forceSize : isMobileEffective ? 'large' : 'small'
 
@@ -69,7 +70,7 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
             version = randomVersion
         }
         if (!version) return null
-        smallImageUrl = getCorrectCardImage(version, imageSizeFingerprint)
+        smallImageUrl = getCorrectCardImage(version, forceImage ?? imageSizeFingerprint)
         if (!smallImageUrl) return null
         largeImageUrl = getCorrectCardImage(version, 'large')
         if (!largeImageUrl) return null
@@ -79,7 +80,7 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
         typeLine = cardTypeLine
         version = card
         try {
-            smallImageUrl = getCorrectCardImage(version, imageSizeFingerprint)
+            smallImageUrl = getCorrectCardImage(version, forceImage ?? imageSizeFingerprint)
             if (!smallImageUrl) return null
             largeImageUrl = getCorrectCardImage(version, 'large')
             if (!largeImageUrl) return null
@@ -92,9 +93,12 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
 
     const { height: displayHeight, width: displayWidth } = CARD_SIZE_VALUES[imageSizeFingerprint]
 
-    const scale = smVerticalScreen ? 0.5 : mdVerticalScreen ? 0.6 : 0.7
+    const hoverScale = smVerticalScreen ? 0.5 : mdVerticalScreen ? 0.6 : 0.7
+    const effectiveScale = isMobileEffective ? 1 : Math.max(scale, 0.01)
 
     const aspectRatio = displayWidth / displayHeight
+    const scaledWidth = displayWidth * effectiveScale
+    const scaledHeight = displayHeight * effectiveScale
 
     return (
         <>
@@ -102,8 +106,8 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
                 display={'flex'}
                 flexDirection={'row'}
                 position={'relative'}
-                width={isMobileEffective ? '100%' : displayWidth}
-                height={isMobileEffective ? 'auto' : displayHeight}
+                width={isMobileEffective ? '100%' : scaledWidth}
+                height={isMobileEffective ? 'auto' : scaledHeight}
                 onDragStart={
                     type === 'card'
                         ? (event) => onDragStart(event, 'cardNode', viewMode, { ...card, __typename: 'MTG_Card' })
@@ -122,12 +126,7 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
                     aspectRatio: imageSizeFingerprint === 'large' && isMobileEffective ? aspectRatio : undefined,
                 }}
             >
-                <ImageWithSkeleton
-                    img={smallImageUrl}
-                    setHover={setHover}
-                    height={displayHeight}
-                    width={displayWidth}
-                />
+                <ImageWithSkeleton img={smallImageUrl} setHover={setHover} height={scaledHeight} width={scaledWidth} />
                 {debugValue && (
                     <Box position={'absolute'} bottom={0} right={0} bgcolor={'white'}>
                         {type === 'card'
@@ -141,7 +140,7 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
                     visible={hover && (hideHover === false || hideHover === undefined)}
                     img={largeImageUrl}
                     height={CARD_SIZE_VALUES['large'].height}
-                    scale={scale}
+                    scale={hoverScale}
                     width={CARD_SIZE_VALUES['large'].width}
                     otherImg={
                         otherLargeImageUrl !== largeImageUrl ||

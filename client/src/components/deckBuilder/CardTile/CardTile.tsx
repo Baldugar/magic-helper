@@ -4,26 +4,28 @@ import { ButtonBase, Dialog, DialogContent, DialogTitle, Grid, useMediaQuery } f
 import { useReactFlow } from '@xyflow/react'
 import { useState } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { MTGCardWithHover } from '../../MTGCardWithHover'
 import { useDnD } from '../../../context/DnD/useDnD'
 import { useMTGCardPackages } from '../../../context/MTGA/CardPackages/useCardPackages'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGDeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
 import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
 import { MTGFunctions } from '../../../graphql/MTGA/functions'
-import { MainOrSide, MTG_Card, MTG_CardVersion } from '../../../graphql/types'
+import { MainOrSide, MTG_Card, MTG_CardVersion, MTG_Image } from '../../../graphql/types'
 import { getCorrectCardImage, isCardInDeck } from '../../../utils/functions/cardFunctions'
 import { singleSetSelected } from '../../../utils/functions/filterFunctions'
 import { NodeType, organizeNodes } from '../../../utils/functions/nodeFunctions'
 import { ContextMenu } from '../../../utils/hooks/ContextMenu/ContextMenu'
 import { ContextMenuOption } from '../../../utils/hooks/ContextMenu/types'
 import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
+import { MTGCardWithHover } from '../../MTGCardWithHover'
 import { PhantomNodeData } from '../FlowCanvas/Nodes/PhantomNode'
 import { VersionCard } from './VersionCard'
 
 export type CardTileProps = {
     card: MTG_Card
     onIgnore?: () => void
+    cardScale?: number
+    forceImage?: keyof Omit<MTG_Image, '__typename'>
 }
 
 /**
@@ -35,7 +37,7 @@ export type CardTileProps = {
  * - Shows version modal, integrates with DnD and deck graph updates
  */
 export const CardTile = (props: CardTileProps) => {
-    const { card, onIgnore } = props
+    const { card, onIgnore, cardScale = 1, forceImage } = props
     const { cardPackages, addMTGCardToCardPackage, removeMTGCardFromCardPackage, createCardPackage } =
         useMTGCardPackages()
 
@@ -409,7 +411,8 @@ export const CardTile = (props: CardTileProps) => {
                             '&:hover': !isMobile
                                 ? {
                                       filter: 'brightness(1.2)',
-                                      transform: 'scale(1.1)',
+                                      transform:
+                                          forceImage === 'large' || forceImage === 'PNG' ? 'scale(1)' : 'scale(1.1)',
                                       position: 'relative',
                                       '&::before': {
                                           content: '""',
@@ -438,7 +441,9 @@ export const CardTile = (props: CardTileProps) => {
                                     cardTypeLine: card.typeLine,
                                     layout: card.layout,
                                 }}
-                                hideHover={item !== null}
+                                hideHover={item !== null || forceImage === 'large' || forceImage === 'PNG'}
+                                scale={isMobile ? 1 : cardScale}
+                                forceImage={forceImage}
                             />
                         ) : (
                             <MTGCardWithHover
@@ -446,7 +451,9 @@ export const CardTile = (props: CardTileProps) => {
                                     card,
                                     type: 'card',
                                 }}
-                                hideHover={item !== null}
+                                hideHover={item !== null || forceImage === 'large' || forceImage === 'PNG'}
+                                scale={isMobile ? 1 : cardScale}
+                                forceImage={forceImage}
                             />
                         )}
                         {deck.ignoredCards.includes(card.ID) && (

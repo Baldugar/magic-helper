@@ -1,40 +1,151 @@
 import { Box, Grid, Typography, useMediaQuery } from '@mui/material'
 import { isEqual } from 'lodash'
-import { useCallback, useEffect, useRef, useState, WheelEvent } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, WheelEvent } from 'react'
 import { SwipeEventData, useSwipeable } from 'react-swipeable'
+import { CardTile } from '../../../components/deckBuilder/CardTile/CardTile'
 import { useMTGCards } from '../../../context/MTGA/Cards/useMTGCards'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
-import { PAGE_SIZE_DESKTOP, PAGE_SIZE_MOBILE } from '../../../utils/constants'
-import { CardTile } from '../../../components/deckBuilder/CardTile/CardTile'
+import { MTG_Image } from '../../../graphql/types'
+import { CARD_SIZE_VALUES, PAGE_SIZE_MOBILE } from '../../../utils/constants'
 
 export const CardsGrid = () => {
-    const { cards: filteredCards, totalCount } = useMTGCards()
-    const { filter, originalFilter, setFilter } = useMTGFilter()
+    const { cards: filteredCards, totalCount, goToPage } = useMTGCards()
+    const { filter, originalFilter } = useMTGFilter()
     const gridRef = useRef<HTMLDivElement | null>(null)
     const scrollDebounceTimeout = useRef<NodeJS.Timeout | null>(null)
+    const scrollAnimationFrameRef = useRef<number | null>(null)
+    const scrollRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const [gridSize, setGridSize] = useState({ width: 0, height: 0 })
+    const [cardScale, setCardScale] = useState(1)
+    const [forceImageSize, setForceImageSize] = useState<keyof Omit<MTG_Image, '__typename'> | undefined>(undefined)
     const { stickyCardsGrid } = useMTGDeckCreator()
     const [lastIgnoredIndex, setLastIgnoredIndex] = useState<number | null>(null)
     const lastPageChangeInteractionRef = useRef<'swipeUp' | 'swipeDown' | 'other'>('other')
 
     const isMobile = useMediaQuery('(max-width: 600px)')
-    const pageSize = isMobile ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP
+    useLayoutEffect(() => {
+        const node = gridRef.current
+        if (!node) {
+            return
+        }
+
+        if (typeof ResizeObserver === 'undefined') {
+            setGridSize({ width: node.clientWidth, height: node.clientHeight })
+            return
+        }
+
+        const observer = new ResizeObserver((entries) => {
+            const entry = entries[0]
+            if (entry) {
+                const { width, height } = entry.contentRect
+                setGridSize({ width, height })
+            }
+        })
+
+        observer.observe(node)
+        setGridSize({ width: node.clientWidth, height: node.clientHeight })
+
+        return () => observer.disconnect()
+    }, [])
+    const pageSize = isMobile ? PAGE_SIZE_MOBILE : filter.pageSize
+    const shouldFillAvailableSpace = !isMobile && filter.fillAvailableSpace
 
     const cardsToShow = filteredCards
+    const effectiveCardScale = shouldFillAvailableSpace ? cardScale : 1
     const totalPages = Math.ceil(totalCount / pageSize)
 
     // Spacing in px for MUI Grid (theme.spacing(2)), default is 8px * 2 = 16px
     const spacingPx = 16
+
+    useEffect(() => {
+        if (isMobile) {
+            setCardScale(1)
+            return
+        }
+
+        const node = gridRef.current
+        if (!node) {
+            return
+        }
+
+        if (cardsToShow.length === 0) {
+            setCardScale(1)
+            return
+        }
+
+        const style = window.getComputedStyle(node)
+        const paddingX = parseFloat(style.paddingLeft || '0') + parseFloat(style.paddingRight || '0')
+        const paddingY = parseFloat(style.paddingTop || '0') + parseFloat(style.paddingBottom || '0')
+        const availableWidth = Math.max(gridSize.width - paddingX, 0)
+        const availableHeight = Math.max(gridSize.height - paddingY, 0)
+
+        if (availableWidth <= 0 || availableHeight <= 0) {
+            setCardScale(1)
+            return
+        }
+
+        const baseWidth = CARD_SIZE_VALUES.small.width
+        const baseHeight = CARD_SIZE_VALUES.small.height
+        const cardCount = cardsToShow.length
+        let bestScale = 0
+
+        for (let columns = 1; columns <= cardCount; columns += 1) {
+            const rows = Math.ceil(cardCount / columns)
+            const horizontalSpacing = spacingPx * Math.max(columns - 1, 0)
+            const verticalSpacing = spacingPx * Math.max(rows - 1, 0)
+            const widthScale = (availableWidth - horizontalSpacing) / (columns * baseWidth)
+            if (!Number.isFinite(widthScale) || widthScale <= 0) {
+                continue
+            }
+
+            const heightNumerator = availableHeight - verticalSpacing
+            if (heightNumerator <= 0) {
+                continue
+            }
+
+            const heightScale = heightNumerator / (rows * baseHeight)
+            if (!Number.isFinite(heightScale) || heightScale <= 0) {
+                continue
+            }
+
+            const candidateScale = Math.min(widthScale, heightScale)
+
+            if (candidateScale > bestScale) {
+                bestScale = candidateScale
+            }
+        }
+
+        if (!Number.isFinite(bestScale) || bestScale <= 0) {
+            const widthOnlyScale = availableWidth / baseWidth
+            const heightOnlyScale = availableHeight / baseHeight
+            const fallbackScale = Math.min(widthOnlyScale, heightOnlyScale)
+            bestScale = Math.max(fallbackScale, 0.1)
+        }
+
+        const baseCardWidth = CARD_SIZE_VALUES.small.width
+        const cardWidth = CARD_SIZE_VALUES.small.width * bestScale
+        let bestFittingSize = 'small' as keyof Omit<MTG_Image, '__typename'>
+        if (cardWidth <= baseCardWidth) {
+            bestFittingSize = 'small'
+        } else if (cardWidth <= CARD_SIZE_VALUES.normal.width) {
+            bestFittingSize = 'normal'
+        } else {
+            bestFittingSize = 'large'
+        }
+        setForceImageSize(bestFittingSize)
+        setCardScale(bestScale)
+    }, [cardsToShow.length, gridSize.height, gridSize.width, shouldFillAvailableSpace, spacingPx, isMobile])
 
     const handleHorizontalSwipe = (direction: 'left' | 'right') => {
         if (!isMobile) return
 
         if (direction === 'left' && filter.page < totalPages - 1) {
             lastPageChangeInteractionRef.current = 'other'
-            setFilter((prev) => ({ ...prev, page: prev.page + 1 }))
+            void goToPage(filter.page + 1)
         } else if (direction === 'right' && filter.page > 0) {
             lastPageChangeInteractionRef.current = 'other'
-            setFilter((prev) => ({ ...prev, page: prev.page - 1 }))
+            void goToPage(filter.page - 1)
         }
     }
 
@@ -52,11 +163,11 @@ export const CardsGrid = () => {
         if (direction === 'down' && atBottom && filter.page < totalPages - 1) {
             // Finger swipe UP, go NEXT
             lastPageChangeInteractionRef.current = 'swipeUp'
-            setFilter((prev) => ({ ...prev, page: prev.page + 1 }))
+            void goToPage(filter.page + 1)
         } else if (direction === 'up' && atTop && filter.page > 0) {
             // Finger swipe DOWN, go PREVIOUS
             lastPageChangeInteractionRef.current = 'swipeDown'
-            setFilter((prev) => ({ ...prev, page: prev.page - 1 }))
+            void goToPage(filter.page - 1)
         }
     }
 
@@ -79,6 +190,29 @@ export const CardsGrid = () => {
         swipeDuration: 500,
         touchEventOptions: { passive: false },
     })
+
+    const applyScroll = useCallback((scrollAction: () => void) => {
+        if (!gridRef.current) return
+        scrollAction()
+        if (typeof window !== 'undefined') {
+            if (scrollAnimationFrameRef.current !== null) {
+                window.cancelAnimationFrame(scrollAnimationFrameRef.current)
+                scrollAnimationFrameRef.current = null
+            }
+            scrollAnimationFrameRef.current = window.requestAnimationFrame(() => {
+                scrollAction()
+                scrollAnimationFrameRef.current = null
+            })
+        }
+        if (scrollRetryTimeoutRef.current) {
+            clearTimeout(scrollRetryTimeoutRef.current)
+            scrollRetryTimeoutRef.current = null
+        }
+        scrollRetryTimeoutRef.current = setTimeout(() => {
+            scrollAction()
+            scrollRetryTimeoutRef.current = null
+        }, 160)
+    }, [])
 
     const scrollToCard = useCallback(
         (index: number) => {
@@ -111,43 +245,43 @@ export const CardsGrid = () => {
         }, 100) // 100ms debounce after scroll ends
     }
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!gridRef.current) {
             return
         }
 
         const interactionType = lastPageChangeInteractionRef.current
-        // Reset the ref immediately for subsequent interactions or unrelated re-renders.
-        // This ensures the special scroll logic is only applied once per causal interaction.
         lastPageChangeInteractionRef.current = 'other'
 
-        let scrolledToBottomForSwipeDown = false
-
-        // Condition: User swiped finger DOWN (interactionType === 'swipeDown'),
-        // navigating to the PREVIOUS page, on mobile with sticky grid.
-        if (isMobile && interactionType === 'swipeDown') {
-            if (cardsToShow.length > 0) {
-                setTimeout(() => scrollToCard(cardsToShow.length - 1), 100)
-                scrolledToBottomForSwipeDown = true
+        const scrollToBottom = () => {
+            if (!gridRef.current) {
+                return
+            }
+            if (stickyCardsGrid && cardsToShow.length > 0) {
+                scrollToCard(cardsToShow.length - 1)
             } else {
-                setTimeout(() => {
-                    if (gridRef.current) {
-                        gridRef.current.scrollTop = gridRef.current.scrollHeight
-                    }
-                }, 100)
-                scrolledToBottomForSwipeDown = true
+                gridRef.current.scrollTop = gridRef.current.scrollHeight
             }
         }
 
-        if (!scrolledToBottomForSwipeDown) {
-            // Default behavior: scroll to top for all other page changes or conditions.
-            if (stickyCardsGrid) {
+        const scrollToTop = () => {
+            if (!gridRef.current) {
+                return
+            }
+            if (stickyCardsGrid && cardsToShow.length > 0) {
                 scrollToCard(0)
             } else {
                 gridRef.current.scrollTop = 0
             }
         }
-    }, [filter.page, scrollToCard, isMobile, stickyCardsGrid, cardsToShow.length]) // Removed lastPageChangeInteraction from dependencies
+
+        if (isMobile && interactionType === 'swipeDown') {
+            applyScroll(scrollToBottom)
+            return
+        }
+
+        applyScroll(scrollToTop)
+    }, [applyScroll, cardsToShow.length, filter.page, isMobile, scrollToCard, stickyCardsGrid])
 
     // After cardsToShow changes (e.g., after ignore), scroll to the correct card
     useEffect(() => {
@@ -166,6 +300,14 @@ export const CardsGrid = () => {
         return () => {
             if (scrollDebounceTimeout.current) {
                 clearTimeout(scrollDebounceTimeout.current)
+            }
+            if (scrollRetryTimeoutRef.current) {
+                clearTimeout(scrollRetryTimeoutRef.current)
+                scrollRetryTimeoutRef.current = null
+            }
+            if (typeof window !== 'undefined' && scrollAnimationFrameRef.current !== null) {
+                window.cancelAnimationFrame(scrollAnimationFrameRef.current)
+                scrollAnimationFrameRef.current = null
             }
         }
     }, [])
@@ -194,11 +336,11 @@ export const CardsGrid = () => {
                     if (hasVerticalScrollbar && !e.shiftKey) return
                     if (e.deltaY > 0 && filter.page < totalPages - 1) {
                         lastPageChangeInteractionRef.current = 'other'
-                        setFilter((prev) => ({ ...prev, page: prev.page + 1 }))
+                        void goToPage(filter.page + 1)
                     }
                     if (e.deltaY < 0 && filter.page > 0) {
                         lastPageChangeInteractionRef.current = 'other'
-                        setFilter((prev) => ({ ...prev, page: prev.page - 1 }))
+                        void goToPage(filter.page - 1)
                     }
                 }
             }}
@@ -237,7 +379,13 @@ export const CardsGrid = () => {
                 </Box>
             )}
             {cardsToShow.map((card, idx) => (
-                <CardTile card={card} key={card.ID} onIgnore={() => setLastIgnoredIndex(idx)} />
+                <CardTile
+                    card={card}
+                    cardScale={effectiveCardScale}
+                    key={card.ID}
+                    onIgnore={() => setLastIgnoredIndex(idx)}
+                    forceImage={forceImageSize}
+                />
             ))}
         </Grid>
     )

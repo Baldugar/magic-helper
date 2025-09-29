@@ -10,8 +10,11 @@ import {
     Menu,
     MenuItem,
     Pagination,
+    TextField,
     Typography,
     useMediaQuery,
+    FormControlLabel,
+    Switch,
 } from '@mui/material'
 import { ReactFlowProvider, useReactFlow } from '@xyflow/react'
 import React, { useEffect, useState } from 'react'
@@ -36,7 +39,7 @@ import { MTGTagsProvider } from '../../context/MTGA/Tags/MTGTagsProvider'
 import { MTGFunctions } from '../../graphql/MTGA/functions'
 import { MTG_Deck, MTG_UpdateDeckInput } from '../../graphql/types'
 import { DeckCreatorView } from '../../types/deckCreatorView'
-import { DRAWER_WIDTH_DESKTOP, DRAWER_WIDTH_MOBILE, PAGE_SIZE_DESKTOP, PAGE_SIZE_MOBILE } from '../../utils/constants'
+import { DRAWER_WIDTH_DESKTOP, DRAWER_WIDTH_MOBILE, PAGE_SIZE_MOBILE } from '../../utils/constants'
 import { calculateNewDeck } from '../../utils/functions/deckFunctions'
 import { useLocalStoreFilter } from '../../utils/hooks/useLocalStoreFilter'
 import { CardDialog } from './Components/CardDialog'
@@ -53,7 +56,7 @@ import { Drawer } from './Components/Drawer'
  * - Responsive layout with a collapsible drawer for deck management
  */
 export const DeckCreator = () => {
-    const { cards, totalCount } = useMTGCards()
+    const { cards, totalCount, goToPage } = useMTGCards()
     const {
         deck,
         setDeck,
@@ -68,8 +71,6 @@ export const DeckCreator = () => {
     const { propagateChangesToDashboardDeck } = useMTGDecks()
     const { filter, setFilter } = useMTGFilter()
 
-    console.log(filter)
-
     const { loadLocalStoreFilter, saveLocalStoreFilter } = useLocalStoreFilter()
     const { clearFilter } = useMTGFilter()
     const { getNodes } = useReactFlow()
@@ -78,9 +79,40 @@ export const DeckCreator = () => {
     } = MTGFunctions
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
     const open = Boolean(anchorEl)
+    const [pageSizeInput, setPageSizeInput] = useState(String(filter.pageSize))
 
     const isMobile = useMediaQuery('(max-width: 600px)')
-    const pageSize = isMobile ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP
+    const pageSize = isMobile ? PAGE_SIZE_MOBILE : filter.pageSize
+    useEffect(() => {
+        setPageSizeInput(String(filter.pageSize))
+    }, [filter.pageSize])
+    const applyPageSize = (value: string) => {
+        if (value.trim() === '') {
+            setPageSizeInput(String(filter.pageSize))
+            return
+        }
+        const parsed = Number(value)
+        if (!Number.isFinite(parsed)) {
+            setPageSizeInput(String(filter.pageSize))
+            return
+        }
+        const normalized = Math.max(1, Math.floor(parsed))
+        setPageSizeInput(String(normalized))
+        setFilter((prev) => {
+            if (prev.pageSize === normalized) {
+                if (prev.page === 0) {
+                    return prev
+                }
+                return { ...prev, page: 0 }
+            }
+            return { ...prev, pageSize: normalized, page: 0 }
+        })
+    }
+
+    const handlePageSizeInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setPageSizeInput(event.target.value)
+    }
+
 
     const handleChangeView = (newViewMode: DeckCreatorView) => {
         if (viewMode === 'BOARD' || viewMode === 'CATALOGUE_BOARD') {
@@ -165,13 +197,56 @@ export const DeckCreator = () => {
                     {viewMode === 'CATALOGUE' && (
                         <>
                             <FilterBar />
+                    {!isMobile && (
+                        <Box
+                            display={'flex'}
+                            justifyContent={'space-between'}
+                            alignItems={'center'}
+                            paddingX={2}
+                            paddingY={1}
+                            columnGap={2}
+                            rowGap={1}
+                            flexWrap={'wrap'}
+                        >
+                            <TextField
+                                size='small'
+                                type='number'
+                                label='Cards per page'
+                                value={pageSizeInput}
+                                inputProps={{ min: 1 }}
+                                onChange={handlePageSizeInputChange}
+                                onBlur={() => applyPageSize(pageSizeInput)}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter') {
+                                        applyPageSize(pageSizeInput)
+                                    }
+                                }}
+                            />
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={filter.fillAvailableSpace}
+                                        onChange={(event) => {
+                                            const { checked } = event.target
+                                            setFilter((prev) => ({
+                                                ...prev,
+                                                fillAvailableSpace: checked,
+                                            }))
+                                        }}
+                                        color='primary'
+                                    />
+                                }
+                                label='Fill available space'
+                            />
+                        </Box>
+                    )}
                             <CardsGrid />
                             <Box mt={'auto'} display={'flex'} justifyContent={'center'} paddingTop={1}>
                                 <Pagination
-                                    count={Math.floor(totalCount / pageSize) + 1}
+                                    count={Math.max(1, Math.ceil(totalCount / pageSize))}
                                     page={filter.page + 1}
                                     onChange={(_, page) => {
-                                        setFilter((prev) => ({ ...prev, page: page - 1 }))
+                                        void goToPage(page - 1)
                                     }}
                                     showFirstButton
                                     showLastButton
@@ -362,3 +437,4 @@ export const DeckCreatorWrapper = () => {
         </MTGTagsProvider>
     )
 }
+
