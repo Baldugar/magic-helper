@@ -56,7 +56,7 @@ export const DeckCard = (props: DeckCardProps): JSX.Element | null => {
                     bgcolor={'rgba(0,0,0,0.2)'}
                 >
                     <Typography sx={{ color: 'white', fontSize: compact ? '0.95rem' : undefined }}>
-                        {deckCard.card.name}
+                        {selectedVersion.printedName}
                     </Typography>
                     <Box display={'flex'} alignItems={'center'} gap={1}>
                         {removeOne && (

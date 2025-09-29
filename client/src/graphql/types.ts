@@ -266,6 +266,7 @@ export type MTG_CardVersion = {
   isDefault: Scalars['Boolean']['output'];
   lang: Scalars['String']['output'];
   legalities: Scalars['Map']['output'];
+  printedName: Scalars['String']['output'];
   rarity: MTG_Rarity;
   releasedAt: Scalars['String']['output'];
   reprint: Scalars['Boolean']['output'];

@@ -507,6 +507,12 @@ func collectCards(ctx context.Context) {
 				IllustrationID:  card.IllustrationID,
 			}
 
+			if card.PrintedName != nil {
+				cardVersionDB.PrintedName = *card.PrintedName
+			} else {
+				cardVersionDB.PrintedName = card.Name
+			}
+
 			var cardFacesDB []scryfall.MTG_CardVersionFaceDB
 			if card.CardFaces != nil {
 				for _, face := range *card.CardFaces {

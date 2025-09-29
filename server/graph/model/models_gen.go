@@ -245,6 +245,7 @@ type MtgCardVersion struct {
 	Legalities  map[string]any `json:"legalities"`
 	Games       []MtgGame      `json:"games"`
 	ImageUris   *MtgImage      `json:"imageUris,omitempty"`
+	PrintedName string         `json:"printedName"`
 	Rarity      MtgRarity      `json:"rarity"`
 	ReleasedAt  string         `json:"releasedAt"`
 	Reprint     bool           `json:"reprint"`

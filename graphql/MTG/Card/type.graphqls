@@ -39,6 +39,7 @@ type MTG_CardVersion {
     legalities: Map!
     games: [MTG_Game!]!
     imageUris: MTG_Image
+    printedName: String!
     rarity: MTG_Rarity!
     releasedAt: String!
     reprint: Boolean!

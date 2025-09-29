@@ -195,6 +195,7 @@ type ComplexityRoot struct {
 		IsDefault   func(childComplexity int) int
 		Lang        func(childComplexity int) int
 		Legalities  func(childComplexity int) int
+		PrintedName func(childComplexity int) int
 		Rarity      func(childComplexity int) int
 		ReleasedAt  func(childComplexity int) int
 		Reprint     func(childComplexity int) int
@@ -1159,6 +1160,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MTG_CardVersion.Legalities(childComplexity), true
+
+	case "MTG_CardVersion.printedName":
+		if e.complexity.MTG_CardVersion.PrintedName == nil {
+			break
+		}
+
+		return e.complexity.MTG_CardVersion.PrintedName(childComplexity), true
 
 	case "MTG_CardVersion.rarity":
 		if e.complexity.MTG_CardVersion.Rarity == nil {
@@ -2400,6 +2408,7 @@ type MTG_CardVersion {
     legalities: Map!
     games: [MTG_Game!]!
     imageUris: MTG_Image
+    printedName: String!
     rarity: MTG_Rarity!
     releasedAt: String!
     reprint: Boolean!
@@ -7068,6 +7077,8 @@ func (ec *executionContext) fieldContext_MTG_Card_versions(_ context.Context, fi
 				return ec.fieldContext_MTG_CardVersion_games(ctx, field)
 			case "imageUris":
 				return ec.fieldContext_MTG_CardVersion_imageUris(ctx, field)
+			case "printedName":
+				return ec.fieldContext_MTG_CardVersion_printedName(ctx, field)
 			case "rarity":
 				return ec.fieldContext_MTG_CardVersion_rarity(ctx, field)
 			case "releasedAt":
@@ -9013,6 +9024,50 @@ func (ec *executionContext) fieldContext_MTG_CardVersion_imageUris(_ context.Con
 				return ec.fieldContext_MTG_Image_small(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTG_Image", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_CardVersion_printedName(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardVersion) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_CardVersion_printedName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PrintedName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_CardVersion_printedName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_CardVersion",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -18834,6 +18889,11 @@ func (ec *executionContext) _MTG_CardVersion(ctx context.Context, sel ast.Select
 			}
 		case "imageUris":
 			out.Values[i] = ec._MTG_CardVersion_imageUris(ctx, field, obj)
+		case "printedName":
+			out.Values[i] = ec._MTG_CardVersion_printedName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "rarity":
 			out.Values[i] = ec._MTG_CardVersion_rarity(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
