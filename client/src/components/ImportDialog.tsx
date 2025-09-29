@@ -1,412 +1,440 @@
-import { Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material'
+import { Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from '@mui/material'
+import { useEffect, useMemo, useState } from 'react'
 import { useMTGDeckCreator } from '../context/MTGA/DeckCreator/useMTGDeckCreator'
+import { MTGFunctions } from '../graphql/MTGA/functions'
+import { MainOrSide, MTG_Card, MTG_Deck, MTG_DeckCard, MTG_DeckCardType } from '../graphql/types'
+import { findNextAvailablePosition } from '../utils/functions/nodeFunctions'
 
-// type MTGA_ImportedCard = {
-//     card: MTG_Card
-//     number: number
-// }
+const ARENA_LINE_REGEX = /^(\d+)\s+(.+?)(?:\s+\([^)]*\)\s+\d+)?$/
+const SIMPLE_LINE_REGEX = /^(\d+)\s+(.+)$/
 
-// type MTGA_ImportedDeck = {
-//     commander: MTG_Card | null
-//     companion: MTG_Card | null
-//     deck: MTGA_ImportedCard[]
-//     sideboard: MTGA_ImportedCard[]
-//     totalCards: number
-// }
+const SECTION_MAP: Record<string, 'deck' | 'sideboard' | 'commander' | 'companion'> = {
+    deck: 'deck',
+    sideboard: 'sideboard',
+    commander: 'commander',
+    companion: 'companion',
+}
+
+type ParsedCardLine = {
+    name: string
+    count: number
+}
+
+type ParsedArenaDeck = {
+    commander: ParsedCardLine[]
+    companion: ParsedCardLine[]
+    deck: ParsedCardLine[]
+    sideboard: ParsedCardLine[]
+}
+
+type ParsedDeckResult = {
+    decks: ParsedArenaDeck[]
+    errors: string[]
+}
+
+const normalizeName = (value: string) =>
+    value
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[\u2019`]/g, "'")
+        .replace(/\u2212/g, '-')
+        .trim()
+        .toLowerCase()
+
+const parseArenaDecklists = (input: string): ParsedDeckResult => {
+    const decks: ParsedArenaDeck[] = []
+    const errors: string[] = []
+    const lines = input.replace(/\r\n/g, '\n').split('\n')
+
+    let currentDeck: ParsedArenaDeck | null = null
+    let currentSection: keyof ParsedArenaDeck = 'deck'
+
+    const ensureDeck = () => {
+        if (!currentDeck) {
+            currentDeck = { commander: [], companion: [], deck: [], sideboard: [] }
+            currentSection = 'deck'
+        }
+    }
+
+    const hasContent = (deck: ParsedArenaDeck | null) => {
+        if (!deck) return false
+        return deck.deck.length > 0 || deck.sideboard.length > 0 || deck.commander.length > 0 || deck.companion.length > 0
+    }
+
+    for (const rawLine of lines) {
+        const line = rawLine.trim()
+        if (!line) {
+            continue
+        }
+
+        const section = SECTION_MAP[line.toLowerCase()]
+        if (section) {
+            if (section === 'deck' && hasContent(currentDeck)) {
+                decks.push(currentDeck as ParsedArenaDeck)
+                currentDeck = { commander: [], companion: [], deck: [], sideboard: [] }
+            } else {
+                ensureDeck()
+            }
+            currentSection = section
+            continue
+        }
+
+        ensureDeck()
+        const match = line.match(ARENA_LINE_REGEX) ?? line.match(SIMPLE_LINE_REGEX)
+        if (!match) {
+            errors.push(line)
+            continue
+        }
+
+        const count = Number.parseInt(match[1], 10)
+        const name = match[2].trim()
+        if (!Number.isFinite(count) || count <= 0 || !name) {
+            errors.push(line)
+            continue
+        }
+
+        currentDeck![currentSection].push({ name, count })
+    }
+
+    if (hasContent(currentDeck)) {
+        decks.push(currentDeck as ParsedArenaDeck)
+    }
+
+    return { decks, errors }
+}
+
+const buildCardLookup = (cards: MTG_Card[]) => {
+    const lookup = new Map<string, MTG_Card>()
+
+    for (const card of cards) {
+        const names = new Set<string>([card.name])
+        if (card.name.includes('//')) {
+            card.name.split('//').forEach((part) => names.add(part.trim()))
+        }
+        if (card.name.startsWith('A-')) {
+            names.add(card.name.slice(2))
+        }
+
+        for (const version of card.versions) {
+            version.cardFaces?.forEach((face) => {
+                names.add(face.name)
+                if (face.name.includes('//')) {
+                    face.name.split('//').forEach((part) => names.add(part.trim()))
+                }
+            })
+        }
+
+        names.forEach((name) => {
+            const key = normalizeName(name)
+            if (!lookup.has(key)) {
+                lookup.set(key, card)
+            }
+        })
+    }
+
+    return lookup
+}
+
+const findCardByName = (name: string, lookup: Map<string, MTG_Card>) => {
+    const normalized = normalizeName(name)
+    const candidates = [normalized]
+
+    if (normalized.startsWith('a-')) {
+        candidates.push(normalized.slice(2))
+    }
+
+    if (normalized.includes('//')) {
+        const parts = normalized.split('//').map((part) => part.trim())
+        candidates.push(parts[0])
+        if (parts[1]) {
+            candidates.push(parts[1])
+        }
+    }
+
+    for (const candidate of candidates) {
+        const card = lookup.get(candidate)
+        if (card) {
+            return card
+        }
+    }
+
+    return undefined
+}
+
+const NUMBER_WORDS: Record<string, number> = {
+    one: 1,
+    two: 2,
+    three: 3,
+    four: 4,
+    five: 5,
+    six: 6,
+    seven: 7,
+    eight: 8,
+    nine: 9,
+    ten: 10,
+    eleven: 11,
+    twelve: 12,
+    thirteen: 13,
+    fourteen: 14,
+    fifteen: 15,
+    sixteen: 16,
+    seventeen: 17,
+    eighteen: 18,
+    nineteen: 19,
+    twenty: 20,
+}
+
+const getAllowedCopies = (card: MTG_Card): number => {
+    const oracle = card.oracleText?.toLowerCase() ?? ''
+    const typeLine = card.typeLine.toLowerCase()
+
+    if (typeLine.includes('basic') && typeLine.includes('land')) {
+        return Number.POSITIVE_INFINITY
+    }
+
+    if (oracle.includes('deck can have any number of cards named') || oracle.includes('deck may have any number of cards named')) {
+        return Number.POSITIVE_INFINITY
+    }
+
+    const upToMatch = oracle.match(/deck (?:can|may) have up to ([a-z0-9-]+) cards named/)
+    if (upToMatch) {
+        const token = upToMatch[1]
+        const numeric = Number.parseInt(token, 10)
+        if (!Number.isNaN(numeric)) {
+            return numeric
+        }
+        const cleaned = token.replace(/-/g, ' ')
+        const found = NUMBER_WORDS[cleaned] ?? cleaned.split(' ').map((part) => NUMBER_WORDS[part]).find((value) => value !== undefined)
+        if (found) {
+            return found
+        }
+    }
+
+    return 1
+}
+
+type AggregatedResult = {
+    commander: MTG_Card | undefined
+    cards: Map<string, { card: MTG_Card; count: number }>
+    unmatched: string[]
+}
+
+const aggregateDecks = (decks: ParsedArenaDeck[], lookup: Map<string, MTG_Card>): AggregatedResult => {
+    const cards = new Map<string, { card: MTG_Card; count: number }>()
+    const unmatched = new Set<string>()
+    let commander: MTG_Card | undefined
+
+    for (const deck of decks) {
+        for (const commanderLine of deck.commander) {
+            const commanderCard = findCardByName(commanderLine.name, lookup)
+            if (commanderCard) {
+                commander = commanderCard
+            } else {
+                unmatched.add(`Commander: ${commanderLine.name}`)
+            }
+        }
+
+        for (const entry of deck.deck) {
+            const card = findCardByName(entry.name, lookup)
+            if (!card) {
+                unmatched.add(entry.name)
+                continue
+            }
+
+            if (commander && card.ID === commander.ID) {
+                continue
+            }
+
+            const allowed = getAllowedCopies(card)
+            const existing = cards.get(card.ID)
+
+            if (!existing) {
+                const initialCount = allowed === Number.POSITIVE_INFINITY ? entry.count : allowed === 1 ? 1 : Math.min(allowed, entry.count)
+                cards.set(card.ID, {
+                    card,
+                    count: allowed === 1 ? 1 : initialCount,
+                })
+            } else if (allowed === 1) {
+                existing.count = 1
+            } else if (allowed === Number.POSITIVE_INFINITY) {
+                existing.count += entry.count
+            } else {
+                existing.count = Math.min(allowed, existing.count + entry.count)
+            }
+        }
+    }
+
+    return { commander, cards, unmatched: Array.from(unmatched) }
+}
+
+const sortCardsByName = (cards: MTG_DeckCard[]) =>
+    [...cards].sort((a, b) => a.card.name.localeCompare(b.card.name, undefined, { sensitivity: 'base' }))
+
+const applyImportToDeck = (deck: MTG_Deck, aggregated: AggregatedResult): MTG_Deck => {
+    const nextDeck = structuredClone(deck)
+    const preservedCards = nextDeck.cards.filter(
+        (card) => !(card.deckCardType === MTG_DeckCardType.NORMAL && card.mainOrSide === MainOrSide.MAIN),
+    )
+
+    let commanderPositionReference = preservedCards.find((card) => card.deckCardType === MTG_DeckCardType.COMMANDER)?.position
+
+    if (aggregated.commander) {
+        const commanderVersion =
+            aggregated.commander.versions.find((version) => version.isDefault) ?? aggregated.commander.versions[0]
+        const commanderIndex = preservedCards.findIndex((card) => card.deckCardType === MTG_DeckCardType.COMMANDER)
+
+        if (commanderIndex >= 0) {
+            preservedCards[commanderIndex] = {
+                ...preservedCards[commanderIndex],
+                card: aggregated.commander,
+                count: 1,
+                phantoms: [],
+                selectedVersionID: commanderVersion?.ID,
+            }
+            commanderPositionReference = preservedCards[commanderIndex].position
+        } else {
+            const commanderPosition = commanderPositionReference ?? findNextAvailablePosition(preservedCards)
+            preservedCards.push({
+                card: aggregated.commander,
+                count: 1,
+                deckCardType: MTG_DeckCardType.COMMANDER,
+                mainOrSide: MainOrSide.MAIN,
+                phantoms: [],
+                position: commanderPosition,
+                selectedVersionID: commanderVersion?.ID,
+            })
+        }
+    }
+
+    const cardsForPositioning: MTG_DeckCard[] = [...preservedCards]
+    const importedCards: MTG_DeckCard[] = []
+
+    aggregated.cards.forEach(({ card, count }) => {
+        if (aggregated.commander && card.ID === aggregated.commander.ID) {
+            return
+        }
+
+        const version = card.versions.find((v) => v.isDefault) ?? card.versions[0]
+        const position = findNextAvailablePosition(cardsForPositioning)
+        const deckCard: MTG_DeckCard = {
+            card,
+            count,
+            deckCardType: MTG_DeckCardType.NORMAL,
+            mainOrSide: MainOrSide.MAIN,
+            phantoms: [],
+            position,
+            selectedVersionID: version?.ID,
+        }
+        cardsForPositioning.push(deckCard)
+        importedCards.push(deckCard)
+    })
+
+    nextDeck.cards = sortCardsByName([...preservedCards, ...importedCards])
+    return nextDeck
+}
 
 export const ImportDialog = () => {
-    const { openImportDialog, setOpenImportDialog } = useMTGDeckCreator()
-    // const { cards } = useMTGCards()
-    // const { setDeck } = useMTGDeckCreator()
-    // const { handleDeleteZone, handleRenameZone, handleDeletePhantom } = useMTGDeckFlowCreator()
-    // const { setNodes } = useReactFlow<NodeType>()
+    const { openImportDialog, setOpenImportDialog, deck, setDeck } = useMTGDeckCreator()
+    const [inputValue, setInputValue] = useState('')
+    const [allCards, setAllCards] = useState<MTG_Card[]>([])
+    const [loadingCards, setLoadingCards] = useState(false)
+    const [cardsError, setCardsError] = useState<string | null>(null)
+    const [importing, setImporting] = useState(false)
+    const [parseError, setParseError] = useState<string | null>(null)
 
-    // const parseImportDeck = (copiedDeck: string, allCards: MTG_Card[]): MTGA_ImportedDeck => {
-    //     const lines = copiedDeck.split('\n').map((line) => line.trim())
-    //     const deck: MTGA_ImportedDeck = {
-    //         commander: null,
-    //         companion: null,
-    //         deck: [],
-    //         sideboard: [],
-    //         totalCards: 0,
-    //     }
-    //     const unmatched: string[] = []
-    //     let currentSection = 'deck' as 'deck' | 'sideboard' | 'commander' | 'companion'
-    //     let isArenaImport = false
-    //     const mtgArenaRegex = /^(\d+)\s(.+?)\s\((\w+)\)\s(\d+)$/ // e.g., "1 Llanowar Elves (DAR) 168"
-    //     const simpleRegex = /^(\d+)\s(.+)$/ // e.g., "1 Llanowar Elves"
+    useEffect(() => {
+        if (!openImportDialog || allCards.length > 0 || loadingCards) {
+            return
+        }
+        setLoadingCards(true)
+        setCardsError(null)
+        const {
+            queries: { getMTGCardsQuery },
+        } = MTGFunctions
+        getMTGCardsQuery()
+            .then((cards) => {
+                setAllCards(cards)
+            })
+            .catch(() => {
+                setCardsError('Failed to load card database. Please try again.')
+            })
+            .finally(() => {
+                setLoadingCards(false)
+            })
+    }, [allCards.length, loadingCards, openImportDialog])
 
-    //     lines.forEach((line, idx, arr) => {
-    //         // Detect section headers
-    //         if (line.toLowerCase() === 'companion') {
-    //             currentSection = 'companion'
-    //             return
-    //         } else if (line.toLowerCase() === 'deck') {
-    //             currentSection = 'deck'
-    //             return
-    //         } else if (line.toLowerCase() === 'sideboard') {
-    //             currentSection = 'sideboard'
-    //             return
-    //         } else if (line.toLowerCase() === 'commander') {
-    //             currentSection = 'commander'
-    //             return
-    //         }
-    //         // Parse card line
-    //         const arenaMatch = line.match(mtgArenaRegex)
-    //         const simpleMatch = line.match(simpleRegex)
+    useEffect(() => {
+        if (!openImportDialog) {
+            setInputValue('')
+            setParseError(null)
+        }
+    }, [openImportDialog])
 
-    //         if (arenaMatch) {
-    //             isArenaImport = true
-    //         }
+    const cardLookup = useMemo(() => buildCardLookup(allCards), [allCards])
 
-    //         if (!isArenaImport && line.length === 0) {
-    //             const lastCard = lines[idx + 1]
-    //             const lastCardMatch = lastCard.match(simpleRegex)
-    //             if (lastCardMatch) {
-    //                 const [, , name] = lastCardMatch
-    //                 const card = allCards.find(
-    //                     (c) => c.name === name || (c.cardFaces && c.cardFaces.some((f) => f.name === name)),
-    //                 )
-    //                 let isSideboard = false
-    //                 for (let i = 0; i < arr.length; i++) {
-    //                     const match = arr[i].match(simpleRegex)
-    //                     if (match) {
-    //                         const [, count, name] = match
-    //                         const amount = parseInt(count)
-    //                         const card = allCards.find(
-    //                             (c) => c.name === name || (c.cardFaces && c.cardFaces.some((f) => f.name === name)),
-    //                         )
-    //                         if (
-    //                             amount > 1 &&
-    //                             card &&
-    //                             !(
-    //                                 card.typeLine.toLowerCase().includes('basic') ||
-    //                                 (card.description && card.description.toLowerCase().includes('a deck can have'))
-    //                             )
-    //                         ) {
-    //                             isSideboard = true
-    //                             break
-    //                         }
-    //                     }
-    //                 }
-    //                 if (isSideboard) {
-    //                     currentSection = 'sideboard'
-    //                 } else if (card && card.typeLine.toLowerCase().includes('legendary')) {
-    //                     currentSection = 'commander'
-    //                 }
-    //             }
-    //         }
+    const handleClose = () => {
+        if (importing) return
+        setOpenImportDialog(false)
+    }
 
-    //         if (arenaMatch) {
-    //             const [, count, name, set, number] = arenaMatch
-    //             const parsedCard = { count: parseInt(count), name, set, number }
-    //             const card = allCards.find(
-    //                 (c) => c.name === name || (c.cardFaces && c.cardFaces.some((f) => f.name === name)),
-    //             )
-    //             if (currentSection === 'commander') {
-    //                 if (card && card.typeLine.toLowerCase().includes('legendary')) {
-    //                     deck.commander = card
-    //                 } else {
-    //                     unmatched.push('Commander: ' + line)
-    //                 }
-    //             } else if (currentSection === 'companion') {
-    //                 if (card) {
-    //                     deck.companion = card
-    //                 } else {
-    //                     unmatched.push('Companion: ' + line)
-    //                 }
-    //             } else {
-    //                 if (card) {
-    //                     deck[currentSection].push({ card, number: parsedCard.count })
-    //                 } else {
-    //                     unmatched.push('Deck - ' + currentSection + ': ' + line)
-    //                 }
-    //             }
-    //         } else if (simpleMatch) {
-    //             const [, count, name] = simpleMatch
-    //             const parsedCard = { count: parseInt(count), name }
-    //             const card = allCards.find(
-    //                 (c) => c.name === name || (c.cardFaces && c.cardFaces.some((f) => f.name === name)),
-    //             )
-    //             if (currentSection === 'commander') {
-    //                 if (card && card.typeLine.toLowerCase().includes('legendary')) {
-    //                     deck.commander = card
-    //                 } else {
-    //                     unmatched.push('Commander: ' + line)
-    //                 }
-    //             } else if (currentSection === 'companion') {
-    //                 if (card) {
-    //                     deck.companion = card
-    //                 } else {
-    //                     unmatched.push('Companion: ' + line)
-    //                 }
-    //             } else {
-    //                 if (card) {
-    //                     deck[currentSection].push({ card, number: parsedCard.count })
-    //                 } else {
-    //                     unmatched.push('Deck - ' + currentSection + ': ' + line)
-    //                 }
-    //             }
-    //         } else {
-    //             if (line.length > 0) unmatched.push(line)
-    //         }
-    //     })
+    const handleImport = () => {
+        if (!deck) return
+        if (!inputValue.trim()) {
+            setParseError('Paste at least one MTG Arena export before importing.')
+            return
+        }
+        if (cardsError) {
+            setParseError(cardsError)
+            return
+        }
+        if (loadingCards) {
+            setParseError('Still loading card data. Please wait a moment.')
+            return
+        }
 
-    //     deck.totalCards = deck.deck.reduce((acc, curr) => acc + curr.number, 0)
-    //     deck.totalCards += deck.sideboard.reduce((acc, curr) => acc + curr.number, 0)
-    //     if (deck.commander) deck.totalCards += 1
-    //     if (deck.companion) deck.totalCards += 1
+        setImporting(true)
+        setParseError(null)
 
-    //     const cardReport: Record<string, number> = {}
-    //     deck.deck.forEach((c) => {
-    //         cardReport[c.card.name] = c.number
-    //     })
-    //     deck.sideboard.forEach((c) => {
-    //         cardReport[c.card.name] = c.number
-    //     })
-    //     if (deck.commander) cardReport[deck.commander.name] = 1
-    //     if (deck.companion) cardReport[deck.companion.name] = 1
+        try {
+            const { decks: parsedDecks, errors } = parseArenaDecklists(inputValue)
+            if (parsedDecks.length === 0) {
+                setParseError('No deck sections were detected in the pasted text.')
+                setImporting(false)
+                return
+            }
 
-    //     return deck
-    // }
+            const aggregated = aggregateDecks(parsedDecks, cardLookup)
 
-    // const handleImport = (action: 'ADD' | 'REPLACE', keepZones: boolean) => {
-    //     const field = document.getElementById('pasteDeck') as HTMLInputElement
-    //     if (!field) return
-    //     const decklist = field.value
-    //     const importedDeck = parseImportDeck(decklist, cards)
-    //     setDeck((prevDeck) => {
-    //         const newDeck = structuredClone(prevDeck)
-    //         if (!newDeck) return undefined
-    //         if (importedDeck.commander) {
-    //             if (importedDeck.totalCards > 60) {
-    //                 newDeck.type = DeckType.BRAWL_100
-    //             } else {
-    //                 newDeck.type = DeckType.BRAWL_60
-    //             }
-    //             const currentCommanderIdx = newDeck.cards.findIndex(
-    //                 (c) => c.deckCardType === MTG_DeckCardType.COMMANDER,
-    //             )
-    //             if (currentCommanderIdx >= 0) {
-    //                 newDeck.cards.splice(currentCommanderIdx, 1, {
-    //                     card: importedDeck.commander,
-    //                     deckCardType: MTG_DeckCardType.COMMANDER,
-    //                     mainOrSide: MainOrSide.MAIN,
-    //                     count: 1,
-    //                     phantoms: [],
-    //                     position: {
-    //                         x: 0,
-    //                         y: 0,
-    //                     },
-    //                 })
-    //             } else {
-    //                 newDeck.cards.push({
-    //                     card: importedDeck.commander,
-    //                     deckCardType: MTG_DeckCardType.COMMANDER,
-    //                     mainOrSide: MainOrSide.MAIN,
-    //                     count: 1,
-    //                     phantoms: [],
-    //                     position: {
-    //                         x: 0,
-    //                         y: 0,
-    //                     },
-    //                 })
-    //             }
-    //         } else {
-    //             // TODO: Handle no commander
-    //         }
-    //         if (importedDeck.companion) {
-    //             const currentCompanionIdx = newDeck.cards.findIndex(
-    //                 (c) => c.deckCardType === MTG_DeckCardType.COMPANION,
-    //             )
-    //             if (currentCompanionIdx >= 0) {
-    //                 newDeck.cards.splice(currentCompanionIdx, 1, {
-    //                     card: importedDeck.companion,
-    //                     deckCardType: MTG_DeckCardType.COMPANION,
-    //                     mainOrSide: MainOrSide.MAIN,
-    //                     count: 1,
-    //                     phantoms: [],
-    //                     position: {
-    //                         x: 0,
-    //                         y: 0,
-    //                     },
-    //                 })
-    //             } else {
-    //                 newDeck.cards.push({
-    //                     card: importedDeck.companion,
-    //                     deckCardType: MTG_DeckCardType.COMPANION,
-    //                     mainOrSide: MainOrSide.MAIN,
-    //                     count: 1,
-    //                     phantoms: [],
-    //                     position: {
-    //                         x: 0,
-    //                         y: 0,
-    //                     },
-    //                 })
-    //             }
-    //         }
-    //         let x = 0
-    //         let y = 0
-    //         const cardsToRemoveLater = newDeck.cards.filter(
-    //             (c) => c.deckCardType === MTG_DeckCardType.NORMAL && c.mainOrSide === MainOrSide.MAIN,
-    //         )
-    //         const sideboardToRemoveLater = newDeck.cards.filter((c) => c.mainOrSide === MainOrSide.SIDEBOARD)
-    //         const order: string[] = [
-    //             'Creature',
-    //             'Artifact',
-    //             'Instant',
-    //             'Sorcery',
-    //             'Enchantment',
-    //             'Battle',
-    //             'Planeswalker',
-    //             'Land',
-    //         ]
-    //         importedDeck.deck
-    //             // Sort by type
-    //             .sort((a, b) => {
-    //                 const typeA = a.card.typeLine.split('—')[0].trim()
-    //                 const typeB = b.card.typeLine.split('—')[0].trim()
-    //                 let typeAIndex = order.findIndex((t) => typeA.includes(t))
-    //                 let typeBIndex = order.findIndex((t) => typeB.includes(t))
-    //                 if (typeAIndex === -1) typeAIndex = order.length
-    //                 if (typeBIndex === -1) typeBIndex = order.length
-    //                 return typeAIndex - typeBIndex
-    //             })
-    //             .forEach((c) => {
-    //                 const currentIdx = newDeck.cards.findIndex(
-    //                     (card) => card.card.ID === c.card.ID && card.mainOrSide === MainOrSide.MAIN,
-    //                 )
-    //                 if (currentIdx >= 0) {
-    //                     const toRemoveIdx = cardsToRemoveLater.findIndex(
-    //                         (card) => card.card.ID === c.card.ID && card.mainOrSide === MainOrSide.MAIN,
-    //                     )
-    //                     cardsToRemoveLater.splice(toRemoveIdx, 1)
-    //                     if (action === 'REPLACE') {
-    //                         newDeck.cards[currentIdx].count = c.number
-    //                         newDeck.cards[currentIdx].position = {
-    //                             x,
-    //                             y,
-    //                         }
-    //                     } else {
-    //                         newDeck.cards[currentIdx].count += c.number
-    //                         newDeck.cards[currentIdx].position = {
-    //                             x,
-    //                             y,
-    //                         }
-    //                     }
-    //                 } else {
-    //                     newDeck.cards.push({
-    //                         card: c.card,
-    //                         deckCardType: MTG_DeckCardType.NORMAL,
-    //                         mainOrSide: MainOrSide.MAIN,
-    //                         count: c.number,
-    //                         phantoms: [],
-    //                         position: {
-    //                             x,
-    //                             y,
-    //                         },
-    //                     })
-    //                 }
-    //                 x += 100
-    //                 if (x > 500) {
-    //                     x = 0
-    //                     y += 50
-    //                 }
-    //             })
-    //         if (action === 'REPLACE') {
-    //             for (const card of cardsToRemoveLater) {
-    //                 const idx = newDeck.cards.findIndex(
-    //                     (c) => c.card.ID === card.card.ID && c.mainOrSide === MainOrSide.MAIN,
-    //                 )
-    //                 newDeck.cards.splice(idx, 1)
-    //             }
-    //         }
-    //         x = 0
-    //         y = y + 250
-    //         importedDeck.sideboard
-    //             // Sort by type
-    //             .sort((a, b) => {
-    //                 const typeA = a.card.typeLine.split('—')[0].trim()
-    //                 const typeB = b.card.typeLine.split('—')[0].trim()
-    //                 let typeAIndex = order.findIndex((t) => typeA.includes(t))
-    //                 let typeBIndex = order.findIndex((t) => typeB.includes(t))
-    //                 if (typeAIndex === -1) typeAIndex = order.length
-    //                 if (typeBIndex === -1) typeBIndex = order.length
-    //                 return typeAIndex - typeBIndex
-    //             })
-    //             .forEach((c) => {
-    //                 const currentIdx = newDeck.cards.findIndex(
-    //                     (card) => card.card.ID === c.card.ID && card.mainOrSide === MainOrSide.SIDEBOARD,
-    //                 )
-    //                 if (currentIdx >= 0) {
-    //                     const toRemoveIdx = sideboardToRemoveLater.findIndex(
-    //                         (card) => card.card.ID === c.card.ID && card.mainOrSide === MainOrSide.SIDEBOARD,
-    //                     )
-    //                     sideboardToRemoveLater.splice(toRemoveIdx, 1)
-    //                     if (action === 'REPLACE') {
-    //                         newDeck.cards[currentIdx].count = c.number
-    //                     } else {
-    //                         newDeck.cards[currentIdx].count += c.number
-    //                     }
-    //                 } else {
-    //                     newDeck.cards.push({
-    //                         card: c.card,
-    //                         deckCardType: MTG_DeckCardType.NORMAL,
-    //                         mainOrSide: MainOrSide.SIDEBOARD,
-    //                         count: c.number,
-    //                         phantoms: [],
-    //                         position: {
-    //                             x,
-    //                             y,
-    //                         },
-    //                     })
-    //                     x += 100
-    //                     if (x > 500) {
-    //                         x = 0
-    //                         y += 50
-    //                     }
-    //                 }
-    //             })
-    //         if (action === 'REPLACE') {
-    //             for (const card of sideboardToRemoveLater) {
-    //                 const idx = newDeck.cards.findIndex((c) => c.card.ID === card.card.ID)
-    //                 newDeck.cards.splice(idx, 1)
-    //             }
-    //         }
-    //         if (!keepZones) {
-    //             newDeck.cards = newDeck.cards.map((c) => {
-    //                 const zone = newDeck.zones.find((z) => z.childrenIDs.includes(c.card.ID))
-    //                 let x = c.position.x
-    //                 let y = c.position.y
-    //                 if (zone) {
-    //                     x += zone.position.x
-    //                     y += zone.position.y
-    //                 }
-    //                 c.position = {
-    //                     x,
-    //                     y,
-    //                 }
-    //                 return c
-    //             })
-    //             newDeck.zones = []
-    //         } else if (action === 'REPLACE') {
-    //             newDeck.zones = newDeck.zones.map((z) => {
-    //                 return {
-    //                     ...z,
-    //                     childrenIDs: [],
-    //                 }
-    //             })
-    //         }
-    //         setNodes(organizeNodes(newDeck, handleDeleteZone, handleRenameZone, handleDeletePhantom))
-    //         return newDeck
-    //     })
-    //     setOpenImportDialog(false)
-    // }
+            if (!aggregated.commander && aggregated.cards.size === 0) {
+                setParseError('No matching cards were found in the pasted decklists.')
+                setImporting(false)
+                return
+            }
+
+            setDeck((prevDeck) => applyImportToDeck(prevDeck, aggregated))
+            setOpenImportDialog(false)
+
+            if (aggregated.unmatched.length > 0 || errors.length > 0) {
+                const warningLines: string[] = []
+                if (aggregated.unmatched.length > 0) {
+                    warningLines.push(`Unmatched cards: ${aggregated.unmatched.sort().join(', ')}`)
+                }
+                if (errors.length > 0) {
+                    warningLines.push(`Ignored lines: ${errors.join(', ')}`)
+                }
+                window.alert(['Deck import completed.', ...warningLines].join('\n'))
+            }
+        } catch (error) {
+            setParseError('Import failed. Please check the decklist format and try again.')
+        } finally {
+            setImporting(false)
+        }
+    }
 
     return (
         <Dialog
             open={openImportDialog}
-            onClose={() => setOpenImportDialog(false)}
+            onClose={handleClose}
             maxWidth={'xl'}
             PaperProps={{
                 style: {
@@ -414,22 +442,49 @@ export const ImportDialog = () => {
                 },
             }}
         >
-            <DialogTitle>Import Deck</DialogTitle>
+            <DialogTitle>Import MTG Arena Decks</DialogTitle>
             <DialogContent>
-                {/* Area textfield */}
-                <TextField
-                    id={'pasteDeck'}
-                    multiline
-                    fullWidth
-                    rows={10}
-                    variant="outlined"
-                    placeholder="Paste your decklist here"
-                />
+                <Stack spacing={2} sx={{ mt: 1 }}>
+                    <Typography variant="body2">
+                        Paste one or more MTG Arena deck exports below. Commanders will be merged, cards will be
+                        deduplicated unless they can legally appear in multiples (e.g., basic lands, Rat Colony).
+                    </Typography>
+                    <TextField
+                        id={'pasteDeck'}
+                        multiline
+                        fullWidth
+                        rows={12}
+                        variant="outlined"
+                        placeholder="Paste your decklist(s) here"
+                        value={inputValue}
+                        onChange={(event) => setInputValue(event.target.value)}
+                        disabled={importing}
+                    />
+                    {parseError && (
+                        <Typography variant="body2" color="error">
+                            {parseError}
+                        </Typography>
+                    )}
+                    {cardsError && !parseError && (
+                        <Typography variant="body2" color="error">
+                            {cardsError}
+                        </Typography>
+                    )}
+                    {loadingCards && (
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <CircularProgress size={20} />
+                            <Typography variant="body2">Loading card database...</Typography>
+                        </Stack>
+                    )}
+                </Stack>
             </DialogContent>
             <DialogActions>
-                {/* <Button onClick={() => handleImport('REPLACE', true)}>Import (REPLACE, KEEP ZONES)</Button>
-                <Button onClick={() => handleImport('REPLACE', false)}>Import (REPLACE, REMOVE ZONES)</Button>
-                <Button onClick={() => handleImport('ADD', true)}>Import (ADD)</Button> */}
+                <Button onClick={handleClose} disabled={importing}>
+                    Cancel
+                </Button>
+                <Button onClick={handleImport} variant="contained" disabled={importing || loadingCards || !!cardsError}>
+                    {importing ? <CircularProgress size={18} /> : 'Import'}
+                </Button>
             </DialogActions>
         </Dialog>
     )
