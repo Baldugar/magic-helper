@@ -136,9 +136,10 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
                     sortDirection: s.sortDirection,
                     enabled: true,
                 }))
+            const resolvedPageSize = isMobile ? PAGE_SIZE_MOBILE : (filter.pageSize ?? PAGE_SIZE_DESKTOP)
             toReturn.pagination = {
                 page: filter.page,
-                pageSize: isMobile ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP,
+                pageSize: resolvedPageSize,
             }
             const cardTypes = Object.entries(filter.cardTypes).filter(([_, value]) => isNotUnsetTB(value))
             toReturn.filter.cardTypes = cardTypes.map(([key, value]) => ({

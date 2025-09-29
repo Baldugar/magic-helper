@@ -8,6 +8,76 @@ import { PhantomNodeData } from '../../components/deckBuilder/FlowCanvas/Nodes/P
 
 export type NodeType = Node<CardNodeData | GroupNodeData | PhantomNodeData>
 
+const isGroupNode = (node: NodeType): node is Node<GroupNodeData> => node.type === 'groupNode'
+
+const getGroupData = (node: NodeType): GroupNodeData => {
+    const data = node.data as GroupNodeData
+    return {
+        ...data,
+        cardChildren: data.cardChildren ?? [],
+        zoneChildren: data.zoneChildren ?? [],
+    }
+}
+
+const ensureUnique = (values: string[]): string[] => Array.from(new Set(values))
+
+const buildNodeMap = (nodes: NodeType[]) => {
+    const map = new Map<string, NodeType>()
+    nodes.forEach((n) => {
+        map.set(n.id, n)
+    })
+    return map
+}
+
+const computeAbsolutePosition = (node: NodeType, nodeMap: Map<string, NodeType>): XYPosition => {
+    const position: XYPosition = { x: node.position.x, y: node.position.y }
+    let parentId = node.parentId
+    while (parentId) {
+        const parent = nodeMap.get(parentId)
+        if (!parent) break
+        position.x += parent.position.x
+        position.y += parent.position.y
+        parentId = parent.parentId
+    }
+    return position
+}
+
+const computeRelativePosition = (
+    absolute: XYPosition,
+    parentId: string | undefined,
+    nodeMap: Map<string, NodeType>,
+): XYPosition => {
+    if (!parentId) {
+        return { ...absolute }
+    }
+    let relX = absolute.x
+    let relY = absolute.y
+    let currentParentId: string | undefined = parentId
+    while (currentParentId) {
+        const parent = nodeMap.get(currentParentId)
+        if (!parent) break
+        relX -= parent.position.x
+        relY -= parent.position.y
+        currentParentId = parent.parentId
+    }
+    return { x: relX, y: relY }
+}
+
+const isDescendant = (nodeMap: Map<string, NodeType>, ancestorId: string, candidateId: string): boolean => {
+    const ancestor = nodeMap.get(ancestorId)
+    if (!ancestor || !isGroupNode(ancestor)) return false
+    const stack = [...getGroupData(ancestor).zoneChildren]
+    while (stack.length > 0) {
+        const currentId = stack.pop()!
+        if (currentId === candidateId) return true
+        const currentNode = nodeMap.get(currentId)
+        if (currentNode && isGroupNode(currentNode)) {
+            stack.push(...getGroupData(currentNode).zoneChildren)
+        }
+    }
+    return false
+}
+
 // Helper function to calculate depth of each node
 export const getDepth = (node: Node, allNodes: Record<string, Node>) => {
     let depth = 0
@@ -87,7 +157,57 @@ export const onNodeDragStop = (
     // We also need to update the group node's data to include the node's id in the childrenIDs array
     // We also need to update the original group- node's data to exclude the node's id from the childrenIDs array
 
-    if (node.type === 'groupNode') {
+    if (isGroupNode(node)) {
+        const nodeMap = buildNodeMap(nodes)
+        const currentParentId = node.parentId
+        const absolutePosition = computeAbsolutePosition(node, nodeMap)
+        const intersectingGroups = getIntersectingNodes(node)
+            .filter((n) => n.type === 'groupNode' && n.id !== node.id) as NodeType[]
+
+        const candidateParent = intersectingGroups.find((candidate) => !isDescendant(nodeMap, node.id, candidate.id))
+
+        if (!candidateParent && !currentParentId) {
+            return
+        }
+
+        if (candidateParent && candidateParent.id === currentParentId) {
+            return
+        }
+
+        const targetParentId = candidateParent?.id
+        const newNodes = nodes.map((n) => {
+            if (n.id === node.id) {
+                const relativePosition = computeRelativePosition(absolutePosition, targetParentId, nodeMap)
+                return {
+                    ...n,
+                    position: relativePosition,
+                    parentId: targetParentId,
+                }
+            }
+            if (targetParentId && n.id === targetParentId) {
+                const data = getGroupData(n)
+                return {
+                    ...n,
+                    data: {
+                        ...data,
+                        zoneChildren: ensureUnique([...data.zoneChildren, node.id]),
+                    },
+                }
+            }
+            if (currentParentId && n.id === currentParentId) {
+                const data = getGroupData(n)
+                return {
+                    ...n,
+                    data: {
+                        ...data,
+                        zoneChildren: data.zoneChildren.filter((id) => id !== node.id),
+                    },
+                }
+            }
+            return n
+        })
+
+        setNodes(sortNodesByNesting(newNodes))
         return
     }
 
@@ -120,7 +240,7 @@ export const onNodeDragStop = (
                     ...n,
                     data: {
                         ...n.data,
-                        childrenIDs: [...groupNodeData.childrenIDs, node.id],
+                        childrenIDs: ensureUnique([...groupNodeData.childrenIDs, node.id]),
                     },
                 }
             }
@@ -190,7 +310,7 @@ export const onNodeDragStop = (
                     ...n,
                     data: {
                         ...n.data,
-                        childrenIDs: [...groupNodeData.childrenIDs, node.id],
+                        childrenIDs: ensureUnique([...groupNodeData.childrenIDs, node.id]),
                     },
                 }
             }
@@ -218,6 +338,7 @@ export const organizeNodes = (
 ): NodeType[] => {
     const nodes: NodeType[] = []
     if (!deck) return nodes
+    const zoneParentRelations: Record<string, string | undefined> = {}
     for (const zone of deck.zones) {
         const data: GroupNodeData = {
             label: zone.name,
@@ -235,7 +356,18 @@ export const organizeNodes = (
             width: zone.width,
             height: zone.height,
         } as Node<GroupNodeData>)
+        zone.zoneChildren?.forEach((childId) => {
+            zoneParentRelations[childId] = zone.ID
+        })
     }
+
+    const zoneNodes = nodes.filter((n) => n.type === 'groupNode') as Node<GroupNodeData>[]
+    zoneNodes.forEach((zoneNode) => {
+        const parentId = zoneParentRelations[zoneNode.id]
+        if (parentId) {
+            zoneNode.parentId = parentId
+        }
+    })
 
     for (const card of deck.cards) {
         const cardData: CardNodeData = { card: card }

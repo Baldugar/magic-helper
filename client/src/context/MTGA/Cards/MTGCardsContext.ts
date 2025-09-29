@@ -6,6 +6,7 @@ type MTGCardsContextType = {
     totalCount: number
     loading: boolean
     setRatingForCard: (cardID: string, rating: number) => void
+    goToPage: (page: number) => Promise<void>
 }
 
 export const MTGCardsContext = createContext<MTGCardsContextType>({
@@ -13,4 +14,5 @@ export const MTGCardsContext = createContext<MTGCardsContextType>({
     totalCount: 0,
     loading: true,
     setRatingForCard: () => {},
+    goToPage: async () => {},
 })

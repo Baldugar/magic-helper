@@ -43,6 +43,8 @@ export interface MTGFilterType {
     commander: string | null
     isSelectingCommander: boolean
     page: number
+    fillAvailableSpace: boolean
+    pageSize: number
 }
 
 export interface MTGFilterContextType {
@@ -123,6 +125,8 @@ export const initialMTGFilter: MTGFilterType = {
     commander: null,
     isSelectingCommander: false,
     page: 0,
+    fillAvailableSpace: false,
+    pageSize: PAGE_SIZE_DESKTOP,
 }
 
 export const initialConvertedFilter: QuerygetMTGCardsFilteredArgs = {

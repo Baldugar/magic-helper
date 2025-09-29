@@ -157,6 +157,9 @@ export const useLocalStoreFilter = () => {
 
                 // filterToSet.searchString
                 filterToSet.searchString = newFilter.searchString
+                filterToSet.pageSize = newFilter.pageSize ?? filterToSet.pageSize
+                filterToSet.fillAvailableSpace =
+                    newFilter.fillAvailableSpace ?? filterToSet.fillAvailableSpace
 
                 setFilter((prev) => ({ ...prev, ...filterToSet, page }))
                 setSort(sort)

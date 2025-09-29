@@ -1,4 +1,4 @@
-import { Button } from '@mui/material'
+import { Box, Button } from '@mui/material'
 import {
     Background,
     BackgroundVariant,
@@ -11,7 +11,7 @@ import {
     useReactFlow,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { useCallback } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGDeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
 import { uuidv4 } from '../../../utils/functions/IDFunctions'
@@ -60,14 +60,22 @@ export const FlowCanvas = () => {
         [handleNodeDragStop, setDraggingGroupId],
     )
 
-    if (!deck) return null
+    const nodes = useMemo<NodeType[]>(() => {
+        if (!deck) return []
+        return organizeNodes(deck, handleDeleteZone, handleRenameZone, handleDeletePhantom)
+    }, [deck, handleDeleteZone, handleRenameZone, handleDeletePhantom])
 
-    const nodes = organizeNodes(deck, handleDeleteZone, handleRenameZone, handleDeletePhantom)
+    useEffect(() => {
+        if (!deck) return
+        setNodes(nodes)
+    }, [deck, nodes, setNodes])
+
+    if (!deck) return null
 
     const handleCreateZone = () => {
         const name = prompt('Enter the name of the zone')
         if (name) {
-            const nodes = getNodes()
+            const currentNodes = getNodes()
             const newNode = {
                 id: uuidv4(),
                 type: 'groupNode',
@@ -82,13 +90,13 @@ export const FlowCanvas = () => {
                 width: MIN_SIZE,
                 height: MIN_SIZE,
             } as Node<GroupNodeData>
-            const newNodes = sortNodesByNesting(nodes.concat(newNode))
-            setNodes(newNodes)
+            const updatedNodes = sortNodesByNesting(currentNodes.concat(newNode))
+            setNodes(updatedNodes)
         }
     }
 
     return (
-        <>
+        <Box sx={{ height: '100%', width: '100%' }}>
             <ReactFlow<NodeType>
                 nodeTypes={nodeTypes}
                 defaultNodes={nodes}
@@ -119,6 +127,6 @@ export const FlowCanvas = () => {
                     }}
                 />
             </ReactFlow>
-        </>
+        </Box>
     )
 }

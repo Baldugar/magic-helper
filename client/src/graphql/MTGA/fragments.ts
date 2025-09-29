@@ -63,6 +63,7 @@ export const MTG_CardFragments = gql`
         imageUris {
             ...MTG_ImageFragment
         }
+        printedName
         rarity
         releasedAt
         reprint

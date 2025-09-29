@@ -1,6 +1,6 @@
-import { MTGFilterType, SetFilter } from '../../context/MTGA/Filter/MTGFilterContext'
-import { MTG_Card, TernaryBoolean } from '../../graphql/types'
-import { isPositiveTB } from '../../types/ternaryBoolean'
+import { MTGFilterType } from '../../context/MTGA/Filter/MTGFilterContext'
+import { MTG_Card, MTG_CardVersion, MTG_Game, TernaryBoolean } from '../../graphql/types'
+import { isNegativeTB, isNotUnsetTB, isPositiveTB } from '../../types/ternaryBoolean'
 
 export const singleSetSelected = (filter: MTGFilterType) => {
     const setEntries = Object.entries(filter.sets)
@@ -15,28 +15,60 @@ export const singleSetSelected = (filter: MTGFilterType) => {
     return undefined
 }
 
-export const getRandomVersionFromFilter = (sets: Record<string, SetFilter>, card: MTG_Card) => {
-    const setEntries = Object.entries(sets)
-        .filter(([, value]) => isPositiveTB(value.value))
-        .map(([key]) => {
-            return key.toLowerCase()
-        })
+export const getCardVersionsMatchingFilter = (card: MTG_Card, filter: MTGFilterType): MTG_CardVersion[] => {
+    const allVersions = card.versions
 
-    if (setEntries.length === 0) {
-        const isDefault = card.versions.find((v) => v.isDefault)
-        if (isDefault) return isDefault
+    const setEntries = Object.entries(filter.sets)
+        .filter(([, value]) => isNotUnsetTB(value.value))
+        .map(([key, value]) => [key.toLowerCase(), value.value] as [string, TernaryBoolean])
+    const positiveSets = setEntries.filter(([, value]) => isPositiveTB(value)).map(([code]) => code)
+    const negativeSets = setEntries.filter(([, value]) => isNegativeTB(value)).map(([code]) => code)
+
+    const gameEntries = Object.entries(filter.games).filter(([, value]) => isNotUnsetTB(value)) as [
+        MTG_Game,
+        TernaryBoolean,
+    ][]
+    const positiveGames = gameEntries.filter(([, value]) => isPositiveTB(value)).map(([game]) => game)
+    const negativeGames = gameEntries.filter(([, value]) => isNegativeTB(value)).map(([game]) => game)
+
+    const matchingVersions = allVersions.filter((version) => {
+        const setCode = version.set.toLowerCase()
+
+        if (positiveSets.length > 0 && !positiveSets.includes(setCode)) {
+            return false
+        }
+
+        if (negativeSets.length > 0 && negativeSets.includes(setCode)) {
+            return false
+        }
+
+        if (positiveGames.length > 0 && !positiveGames.some((game) => version.games.includes(game))) {
+            return false
+        }
+
+        if (negativeGames.length > 0 && negativeGames.some((game) => version.games.includes(game))) {
+            return false
+        }
+
+        return true
+    })
+
+    return matchingVersions.length > 0 ? matchingVersions : allVersions
+}
+
+export const getRandomVersionFromFilter = (filter: MTGFilterType, card: MTG_Card) => {
+    const versions = getCardVersionsMatchingFilter(card, filter)
+    if (versions.length === 0) {
+        return undefined
+    }
+    if (versions.length === 1) {
+        return versions[0]
     }
 
-    const setsInCard = card.versions.filter((v) => setEntries.includes(v.set))
-    if (setsInCard.length === 0) {
-        const isDefault = card.versions.find((v) => v.isDefault)
-        if (isDefault) return isDefault
+    const defaultVersion = versions.find((v) => v.isDefault)
+    if (defaultVersion) {
+        return defaultVersion
     }
 
-    const version = setsInCard[Math.floor(Math.random() * setsInCard.length)]
-    if (!version) {
-        const isDefault = card.versions.find((v) => v.isDefault)
-        if (isDefault) return isDefault
-    }
-    return version
+    return versions[Math.floor(Math.random() * versions.length)]
 }

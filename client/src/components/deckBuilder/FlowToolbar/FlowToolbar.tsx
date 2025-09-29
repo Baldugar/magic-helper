@@ -201,38 +201,54 @@ export const FlowToolbar = () => {
 
         const selectedZoneIds = new Set(selected.filter((node) => node.type === 'groupNode').map((node) => node.id))
         const selectedNodeIds = new Set(selected.map((node) => node.id))
-        const zonePositions = new Map<string, { x: number; y: number }>()
-        nodes.forEach((node) => {
-            if (node.type === 'groupNode') {
-                zonePositions.set(node.id, node.position)
+
+        const nodeMap = new Map(nodes.map((node) => [node.id, node]))
+        const absolutePositions = new Map<string, { x: number; y: number }>()
+
+        const computeAbsolutePosition = (node: NodeType): { x: number; y: number } => {
+            let absX = node.position.x
+            let absY = node.position.y
+            let parentId = node.parentId
+            while (parentId) {
+                const parent = nodeMap.get(parentId)
+                if (!parent) break
+                absX += parent.position.x
+                absY += parent.position.y
+                parentId = parent.parentId
             }
+            return { x: absX, y: absY }
+        }
+
+        nodes.forEach((node) => {
+            absolutePositions.set(node.id, computeAbsolutePosition(node as NodeType))
         })
 
         const filtered = nodes
             .filter((node) => !selectedNodeIds.has(node.id))
             .map((node) => {
                 if (node.parentId && selectedZoneIds.has(node.parentId)) {
-                    const zonePos = zonePositions.get(node.parentId) ?? { x: 0, y: 0 }
                     return {
                         ...node,
                         parentId: undefined,
-                        position: {
-                            x: node.position.x + zonePos.x,
-                            y: node.position.y + zonePos.y,
-                        },
+                        position: absolutePositions.get(node.id) ?? node.position,
                     }
                 }
                 return node
             })
 
         const childMap = new Map<string, string[]>()
+        const zoneChildMap = new Map<string, string[]>()
         filtered.forEach((node) => {
-            if (node.parentId) {
-                if (node.type === 'cardNode') {
-                    const list = childMap.get(node.parentId) ?? []
-                    list.push(node.id)
-                    childMap.set(node.parentId, list)
-                }
+            if (!node.parentId) return
+            if (node.type === 'cardNode') {
+                const list = childMap.get(node.parentId) ?? []
+                list.push(node.id)
+                childMap.set(node.parentId, list)
+            }
+            if (node.type === 'groupNode') {
+                const list = zoneChildMap.get(node.parentId) ?? []
+                list.push(node.id)
+                zoneChildMap.set(node.parentId, list)
             }
         })
 
@@ -244,6 +260,7 @@ export const FlowToolbar = () => {
                     data: {
                         ...data,
                         cardChildren: childMap.get(node.id) ?? [],
+                        zoneChildren: zoneChildMap.get(node.id) ?? [],
                     },
                 }
             }
