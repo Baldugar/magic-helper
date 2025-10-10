@@ -156,9 +156,9 @@ func fetchIgnoredCards(filter model.MtgFilterSearchInput) ([]string, map[string]
 
 	ctx := context.Background()
 	aq := arango.NewQuery( /* aql */ `
-                        FOR card, edge IN 1..1 OUTBOUND CONCAT("MTG_Decks/", @deckID) MTG_Deck_Ignore_Card
-                        RETURN card._key
-                `)
+		FOR card, edge IN 1..1 OUTBOUND CONCAT("MTG_Decks/", @deckID) MTG_Deck_Ignore_Card
+		RETURN card._key
+	`)
 	aq.AddBindVar("deckID", *filter.DeckID)
 
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
@@ -399,7 +399,7 @@ func passesFilter(card *model.MtgCard, filter model.MtgFilterSearchInput, cards 
 		if len(card.ColorIdentity) > 0 {
 			// Check if the card has any colors outside the commander's color identity
 			for _, cardColor := range card.ColorIdentity {
-				colorAllowed := slices.Contains(commanderCard.ColorIdentity, cardColor)
+				colorAllowed := slices.Contains(commanderCard.ColorIdentity, cardColor) || cardColor == model.MtgColorC
 				if !colorAllowed {
 					return false // Card has a color not in commander's color identity
 				}

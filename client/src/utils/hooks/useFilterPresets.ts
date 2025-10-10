@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useMTGDeckCreator } from '../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
-import { MTG_Filter_SortBy, MTG_Filter_SortDirection } from '../../graphql/types'
+import { MTGFunctions } from '../../graphql/MTGA/functions'
+import { MTG_FilterPreset } from '../../graphql/types'
 
 type SortState = {
-    sortBy: MTG_Filter_SortBy
-    sortDirection: MTG_Filter_SortDirection
+    sortBy: ReturnType<typeof useMTGFilter>['sort'][number]['sortBy']
+    sortDirection: ReturnType<typeof useMTGFilter>['sort'][number]['sortDirection']
     enabled: boolean
 }
 
@@ -17,105 +19,161 @@ export type FilterPreset = {
     sort: SortState[]
 }
 
-const STORAGE_KEY = 'mtga_filter_presets'
-
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value))
 
-const loadFromStorage = (): FilterPreset[] => {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY)
-        if (!raw) return []
-        const parsed = JSON.parse(raw)
-        if (!Array.isArray(parsed)) return []
-        return parsed as FilterPreset[]
-    } catch (error) {
-        console.warn('Failed to load filter presets from storage', error)
-        return []
-    }
-}
-
-const persistToStorage = (presets: FilterPreset[]) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(presets))
-}
-
-const createId = () =>
-    typeof crypto !== 'undefined' && 'randomUUID' in crypto
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(16).slice(2)}`
-
-const createPreset = (
-    name: string,
-    page: number,
-    filter: FilterPreset['filter'],
-    sort: FilterPreset['sort'],
-): FilterPreset => ({
-    id: createId(),
-    name,
-    savedAt: new Date().toISOString(),
-    page,
-    filter,
-    sort,
+const mapPresetFromGraph = (preset: MTG_FilterPreset): FilterPreset => ({
+    id: preset.ID,
+    name: preset.name,
+    savedAt: preset.savedAt,
+    page: preset.page,
+    filter: clone(preset.filter) as unknown as FilterPreset['filter'],
+    sort: preset.sort.map((entry) => ({
+        sortBy: entry.sortBy,
+        sortDirection: entry.sortDirection,
+        enabled: entry.enabled,
+    })),
 })
 
 export const useFilterPresets = () => {
     const { filter, setFilter, sort, setSort } = useMTGFilter()
-    const [presets, setPresets] = useState<FilterPreset[]>(() => loadFromStorage())
+    const { deck } = useMTGDeckCreator()
+    const deckID = deck?.ID ?? null
+
+    const {
+        queries: { getMTGFilterPresetsQuery },
+        mutations: {
+            createMTGFilterPresetMutation,
+            updateMTGFilterPresetMutation,
+            deleteMTGFilterPresetMutation,
+        },
+    } = MTGFunctions
+
+    const [presets, setPresets] = useState<FilterPreset[]>([])
+    const [loading, setLoading] = useState(false)
 
     useEffect(() => {
-        persistToStorage(presets)
-    }, [presets])
+        let isActive = true
+        if (!deckID) {
+            setPresets([])
+            return
+        }
 
-    const savePreset = useCallback(
-        (name: string) => {
-            const trimmed = name.trim()
-            if (!trimmed) return { success: false as const, reason: 'empty-name' as const }
-            const preset = createPreset(trimmed, filter.page, clone(filter), clone(sort))
-            setPresets((prev) => [preset, ...prev])
-            return { success: true as const, preset }
-        },
-        [filter, sort],
-    )
+        setLoading(true)
+        getMTGFilterPresetsQuery(deckID)
+            .then((data) => {
+                if (!isActive) return
+                setPresets(data.map(mapPresetFromGraph))
+            })
+            .catch((error) => {
+                console.warn('Failed to fetch MTG filter presets', error)
+                if (isActive) setPresets([])
+            })
+            .finally(() => {
+                if (isActive) setLoading(false)
+            })
+
+        return () => {
+            isActive = false
+        }
+    }, [deckID, getMTGFilterPresetsQuery])
 
     const loadPreset = useCallback(
         (presetId: string) => {
             const preset = presets.find((p) => p.id === presetId)
             if (!preset) return false
-            setFilter((prev) => ({ ...prev, ...clone(preset.filter), page: preset.page }))
+            const clonedFilter = clone(preset.filter)
+            setFilter((prev) => ({ ...prev, ...clonedFilter, page: preset.page }))
             setSort(clone(preset.sort))
             return true
         },
         [presets, setFilter, setSort],
     )
 
-    const deletePreset = useCallback((presetId: string) => {
-        setPresets((prev) => prev.filter((preset) => preset.id !== presetId))
-    }, [])
+    const savePreset = useCallback(
+        async (name: string) => {
+            const trimmed = name.trim()
+            if (!trimmed) return { success: false as const, reason: 'empty-name' as const }
+            if (!deckID) return { success: false as const, reason: 'no-deck' as const }
 
-    const clearPresets = useCallback(() => {
+            try {
+                const serializedFilter = clone(filter) as unknown as Record<string, unknown>
+                const created = await createMTGFilterPresetMutation({
+                    deckID,
+                    name: trimmed,
+                    filter: serializedFilter,
+                    sort: clone(sort).map((entry) => ({
+                        enabled: entry.enabled,
+                        sortBy: entry.sortBy,
+                        sortDirection: entry.sortDirection,
+                    })),
+                    page: filter.page,
+                })
+
+                const mapped = mapPresetFromGraph(created)
+                setPresets((prev) => [mapped, ...prev.filter((preset) => preset.id !== mapped.id)])
+                return { success: true as const, preset: mapped }
+            } catch (error) {
+                console.warn('Failed to save filter preset', error)
+                return { success: false as const, reason: 'error' as const }
+            }
+        },
+        [createMTGFilterPresetMutation, deckID, filter, sort],
+    )
+
+    const deletePreset = useCallback(
+        async (presetId: string) => {
+            try {
+                await deleteMTGFilterPresetMutation({ presetID: presetId })
+                setPresets((prev) => prev.filter((preset) => preset.id !== presetId))
+            } catch (error) {
+                console.warn('Failed to delete filter preset', error)
+            }
+        },
+        [deleteMTGFilterPresetMutation],
+    )
+
+    const clearPresets = useCallback(async () => {
+        const ids = presets.map((preset) => preset.id)
         setPresets([])
-    }, [])
-
-    const renamePreset = useCallback((presetId: string, name: string) => {
-        const trimmed = name.trim()
-        if (!trimmed) return false
-        setPresets((prev) =>
-            prev.map((preset) =>
-                preset.id === presetId
-                    ? { ...preset, name: trimmed, savedAt: new Date().toISOString() }
-                    : preset,
+        await Promise.all(
+            ids.map((presetId) =>
+                deleteMTGFilterPresetMutation({ presetID: presetId }).catch((error) => {
+                    console.warn('Failed to delete filter preset', error)
+                }),
             ),
         )
-        return true
-    }, [])
+    }, [deleteMTGFilterPresetMutation, presets])
+
+    const renamePreset = useCallback(
+        async (presetId: string, name: string) => {
+            const trimmed = name.trim()
+            if (!trimmed) return false
+            try {
+                const updated = await updateMTGFilterPresetMutation({ presetID: presetId, name: trimmed })
+                const mapped = mapPresetFromGraph(updated)
+                setPresets((prev) =>
+                    prev.map((preset) => (preset.id === mapped.id ? mapped : preset)),
+                )
+                return true
+            } catch (error) {
+                console.warn('Failed to rename filter preset', error)
+                return false
+            }
+        },
+        [updateMTGFilterPresetMutation],
+    )
 
     const sortedPresets = useMemo(
         () =>
-            [...presets].sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime()),
+            [...presets].sort(
+                (a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime(),
+            ),
         [presets],
     )
 
     return {
         presets: sortedPresets,
+        loading,
         savePreset,
         loadPreset,
         deletePreset,

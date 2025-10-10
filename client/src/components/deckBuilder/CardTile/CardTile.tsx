@@ -1,8 +1,7 @@
-import { keyframes } from '@emotion/react'
 import { Close } from '@mui/icons-material'
 import { ButtonBase, Dialog, DialogContent, DialogTitle, Grid, useMediaQuery } from '@mui/material'
 import { useReactFlow } from '@xyflow/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { useDnD } from '../../../context/DnD/useDnD'
 import { useMTGCardPackages } from '../../../context/MTGA/CardPackages/useCardPackages'
@@ -38,8 +37,13 @@ export type CardTileProps = {
  */
 export const CardTile = (props: CardTileProps) => {
     const { card, onIgnore, cardScale = 1, forceImage } = props
-    const { cardPackages, addMTGCardToCardPackage, removeMTGCardFromCardPackage, createCardPackage } =
-        useMTGCardPackages()
+    const {
+        cardPackages,
+        addMTGCardToCardPackage,
+        removeMTGCardFromCardPackage,
+        createCardPackage,
+        refreshCardPackages,
+    } = useMTGCardPackages()
 
     const { onAddCard, deck, removeCard, setDeck, setOpenedCardDialog } = useMTGDeckCreator()
     const { handleDeleteZone, handleRenameZone, handleDeletePhantom } = useMTGDeckFlowCreator()
@@ -57,9 +61,44 @@ export const CardTile = (props: CardTileProps) => {
     const isMobile = useMediaQuery('(max-width: 600px)')
 
     const [showAllVersions, setShowAllVersions] = useState(false)
+    const [pendingPackageSnapshot, setPendingPackageSnapshot] = useState<string[] | null>(null)
+    const [pendingAddPackageId, setPendingAddPackageId] = useState<string | null>(null)
 
     // Track long-press position for mobile context menu
     const [mobilePosition, setMobilePosition] = useState<{ x: number; y: number } | undefined>(undefined)
+
+    useEffect(() => {
+        if (!pendingPackageSnapshot) return
+        const newPackage = cardPackages.find((pkg) => !pendingPackageSnapshot.includes(pkg.ID))
+        if (!newPackage) return
+        if (newPackage.cards.some((pkgCard) => pkgCard.card.ID === card.ID)) {
+            setPendingPackageSnapshot(null)
+            return
+        }
+        setPendingAddPackageId(newPackage.ID)
+        setPendingPackageSnapshot(null)
+    }, [pendingPackageSnapshot, cardPackages, card.ID])
+
+    useEffect(() => {
+        if (!pendingAddPackageId) return
+        let isActive = true
+
+        ;(async () => {
+            try {
+                await addMTGCardToCardPackage(pendingAddPackageId, card, MainOrSide.MAIN)
+            } catch (error) {
+                console.error('Failed to add card to the newly created card package', error)
+            } finally {
+                if (isActive) {
+                    setPendingAddPackageId(null)
+                }
+            }
+        })()
+
+        return () => {
+            isActive = false
+        }
+    }, [pendingAddPackageId, addMTGCardToCardPackage, card])
 
     const defaultVersion = card.versions.find((v) => v.isDefault)
 
@@ -68,6 +107,23 @@ export const CardTile = (props: CardTileProps) => {
     const handleAddCard = (card: MTG_Card, versionID?: string) => {
         const newDeck = onAddCard(card, undefined, versionID)
         setNodes(organizeNodes(newDeck, handleDeleteZone, handleRenameZone, handleDeletePhantom))
+    }
+
+    const handleCreateCardPackageOption = () => {
+        const rawName = prompt('Enter the name of the new card package')
+        if (!rawName) return
+        const name = rawName.trim()
+        if (!name) return
+        setPendingPackageSnapshot(cardPackages.map((pkg) => pkg.ID))
+        void (async () => {
+            try {
+                await createCardPackage(name, { card, mainOrSide: MainOrSide.MAIN })
+                await refreshCardPackages()
+            } catch (error) {
+                console.error('Failed to create card package from card tile', error)
+                setPendingPackageSnapshot(null)
+            }
+        })()
     }
 
     const handleRemoveCard = (card: MTG_Card) => {
@@ -284,11 +340,7 @@ export const CardTile = (props: CardTileProps) => {
                 {
                     label: 'Create new card package',
                     shouldKeepOpen: true,
-                    action: () => {
-                        const name = prompt('Enter the name of the new card package')
-                        if (!name) return
-                        createCardPackage(name, { card, mainOrSide: MainOrSide.MAIN })
-                    },
+                    action: handleCreateCardPackageOption,
                 },
                 ...cardPackages.map((cp) => {
                     const alreadyInDeck = cp.cards.find((c) => c.card.ID === card.ID)
@@ -389,6 +441,8 @@ export const CardTile = (props: CardTileProps) => {
         }
     }
 
+    const hideHover = item !== null || (forceImage !== undefined && forceImage !== 'small' && forceImage !== 'normal')
+
     return (
         <Grid item xs={12} sm={'auto'} md={'auto'} lg={'auto'}>
             <ErrorBoundary
@@ -410,21 +464,9 @@ export const CardTile = (props: CardTileProps) => {
                             opacity: deck.ignoredCards.includes(card.ID) ? 0.5 : 1,
                             '&:hover': !isMobile
                                 ? {
-                                      filter: 'brightness(1.2)',
-                                      transform:
-                                          forceImage === 'large' || forceImage === 'PNG' ? 'scale(1)' : 'scale(1.1)',
+                                      filter: hideHover ? 'brightness(1)' : 'brightness(1.2)',
+                                      transform: hideHover ? 'scale(1.05)' : 'scale(1.1)',
                                       position: 'relative',
-                                      '&::before': {
-                                          content: '""',
-                                          position: 'absolute',
-                                          top: '0px',
-                                          left: '0px',
-                                          right: '0px',
-                                          bottom: '0px',
-                                          borderRadius: '8px',
-                                          animation: `${colorCycle} 4s linear infinite`,
-                                          zIndex: -1,
-                                      },
                                   }
                                 : {},
                             '& img': {
@@ -441,9 +483,10 @@ export const CardTile = (props: CardTileProps) => {
                                     cardTypeLine: card.typeLine,
                                     layout: card.layout,
                                 }}
-                                hideHover={item !== null || forceImage === 'large' || forceImage === 'PNG'}
+                                hideHover={hideHover}
                                 scale={isMobile ? 1 : cardScale}
                                 forceImage={forceImage}
+                                enableGlow={!isMobile}
                             />
                         ) : (
                             <MTGCardWithHover
@@ -451,9 +494,10 @@ export const CardTile = (props: CardTileProps) => {
                                     card,
                                     type: 'card',
                                 }}
-                                hideHover={item !== null || forceImage === 'large' || forceImage === 'PNG'}
+                                hideHover={hideHover}
                                 scale={isMobile ? 1 : cardScale}
                                 forceImage={forceImage}
+                                enableGlow={!isMobile}
                             />
                         )}
                         {deck.ignoredCards.includes(card.ID) && (
@@ -551,22 +595,3 @@ export const CardTile = (props: CardTileProps) => {
         </Grid>
     )
 }
-
-// Define a keyframe animation for rotating colors
-const colorCycle = keyframes`
-    0% {
-        box-shadow: 0 0 15px #ff0000, 0 0 20px #ff0000;
-    }
-    25% {
-        box-shadow: 0 0 15px #ff7f00, 0 0 20px #ff7f00;
-    }
-    50% {
-        box-shadow: 0 0 15px #ffff00, 0 0 20px #ffff00;
-    }
-    75% {
-        box-shadow: 0 0 15px #00ff00, 0 0 20px #00ff00;
-    }
-    100% {
-        box-shadow: 0 0 15px #ff0000, 0 0 20px #ff0000;
-    }
-`

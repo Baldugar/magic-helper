@@ -44,6 +44,19 @@ type Mutation {
     Remove a card from a package (edge delete).
     """
     removeMTGCardFromCardPackage(input: MTG_RemoveCardFromCardPackageInput!): Response!
+    # Filter Presets
+    """
+    Save a new filter preset for a deck.
+    """
+    createMTGFilterPreset(input: MTG_CreateFilterPresetInput!): MTG_FilterPreset!
+    """
+    Update an existing filter preset.
+    """
+    updateMTGFilterPreset(input: MTG_UpdateFilterPresetInput!): MTG_FilterPreset!
+    """
+    Delete a filter preset.
+    """
+    deleteMTGFilterPreset(input: MTG_DeleteFilterPresetInput!): Response!
     # Tags
     """
     Create a tag and optionally link to a card.

@@ -2,6 +2,7 @@ import { Bookmark, Delete } from '@mui/icons-material'
 import {
     Box,
     Button,
+    CircularProgress,
     IconButton,
     List,
     ListItem,
@@ -17,7 +18,8 @@ import { useState } from 'react'
 import { useFilterPresets } from '../../../utils/hooks/useFilterPresets'
 
 export const SavedFiltersPopover = () => {
-    const { presets, savePreset, loadPreset, deletePreset, clearPresets, renamePreset } = useFilterPresets()
+    const { presets, savePreset, loadPreset, deletePreset, clearPresets, renamePreset, loading } =
+        useFilterPresets()
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
     const [presetName, setPresetName] = useState('')
     const [renameTarget, setRenameTarget] = useState<string | null>(null)
@@ -35,17 +37,24 @@ export const SavedFiltersPopover = () => {
         setRenameValue('')
     }
 
-    const handleSave = () => {
-        const result = savePreset(presetName)
+    const handleSave = async () => {
+        const result = await savePreset(presetName)
         if (result.success) {
             setPresetName('')
+            return
+        }
+        if (result.reason === 'no-deck') {
+            alert('Necesitas guardar el mazo antes de crear presets de filtros.')
         }
     }
 
-    const handleRename = (presetId: string) => {
+    const handleRename = async (presetId: string) => {
         if (renameTarget === presetId) {
             if (renameValue.trim()) {
-                renamePreset(presetId, renameValue)
+                const success = await renamePreset(presetId, renameValue)
+                if (!success) {
+                    return
+                }
             }
             setRenameTarget(null)
             setRenameValue('')
@@ -55,6 +64,10 @@ export const SavedFiltersPopover = () => {
             setRenameTarget(presetId)
             setRenameValue(preset.name)
         }
+    }
+
+    const handleClear = async () => {
+        await clearPresets()
     }
 
     return (
@@ -82,14 +95,24 @@ export const SavedFiltersPopover = () => {
                             value={presetName}
                             onChange={(event) => setPresetName(event.target.value)}
                             fullWidth
+                            disabled={loading}
                         />
-                        <Button variant="contained" size="small" onClick={handleSave} disabled={!presetName.trim()}>
+                        <Button
+                            variant="contained"
+                            size="small"
+                            onClick={handleSave}
+                            disabled={!presetName.trim() || loading}
+                        >
                             Guardar
                         </Button>
                     </Stack>
-                    {presets.length === 0 ? (
+                    {loading ? (
+                        <Box display="flex" justifyContent="center" alignItems="center" py={3}>
+                            <CircularProgress size={24} />
+                        </Box>
+                    ) : presets.length === 0 ? (
                         <Typography variant="body2" color="text.secondary">
-                            No tienes presets guardados todavÃ­a.
+                            No tienes presets guardados todavía.
                         </Typography>
                     ) : (
                         <List dense sx={{ maxHeight: 240, overflowY: 'auto' }}>
@@ -104,7 +127,7 @@ export const SavedFiltersPopover = () => {
                                                 onChange={(event) => setRenameValue(event.target.value)}
                                                 onKeyUp={(event) => {
                                                     if (event.key === 'Enter') {
-                                                        handleRename(preset.id)
+                                                        void handleRename(preset.id)
                                                     }
                                                 }}
                                                 autoFocus
@@ -120,13 +143,16 @@ export const SavedFiltersPopover = () => {
                                         <ListItemSecondaryAction>
                                             {isRenaming ? (
                                                 <Stack direction="row" spacing={1}>
-                                                    <Button size="small" onClick={() => handleRename(preset.id)}>
+                                                    <Button size="small" onClick={() => void handleRename(preset.id)}>
                                                         Guardar
                                                     </Button>
                                                     <Button
                                                         size="small"
                                                         color="secondary"
-                                                        onClick={() => setRenameTarget(null)}
+                                                        onClick={() => {
+                                                            setRenameTarget(null)
+                                                            setRenameValue('')
+                                                        }}
                                                     >
                                                         Cancelar
                                                     </Button>
@@ -136,10 +162,10 @@ export const SavedFiltersPopover = () => {
                                                     <Button size="small" onClick={() => loadPreset(preset.id)}>
                                                         Aplicar
                                                     </Button>
-                                                    <Button size="small" onClick={() => handleRename(preset.id)}>
+                                                    <Button size="small" onClick={() => void handleRename(preset.id)}>
                                                         Renombrar
                                                     </Button>
-                                                    <IconButton size="small" onClick={() => deletePreset(preset.id)}>
+                                                    <IconButton size="small" onClick={() => void deletePreset(preset.id)}>
                                                         <Delete fontSize="small" />
                                                     </IconButton>
                                                 </Stack>
@@ -150,12 +176,12 @@ export const SavedFiltersPopover = () => {
                             })}
                         </List>
                     )}
-                    {presets.length > 0 && (
+                    {presets.length > 0 && !loading && (
                         <Box mt={2} display="flex" justifyContent="space-between" alignItems="center">
                             <Typography variant="caption" color="text.secondary">
                                 {presets.length} presets guardados
                             </Typography>
-                            <Button size="small" color="error" onClick={clearPresets}>
+                            <Button size="small" color="error" onClick={handleClear}>
                                 Limpiar todos
                             </Button>
                         </Box>

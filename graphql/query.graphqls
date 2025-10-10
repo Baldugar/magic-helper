@@ -25,6 +25,11 @@ type Query {
     Return a single deck by ID with cards and metadata.
     """
     getMTGDeck(deckID: ID!): MTG_Deck!
+    # Filter Presets
+    """
+    List saved filter presets for a deck.
+    """
+    getMTGFilterPresets(deckID: ID!): [MTG_FilterPreset!]!
     # Card Packages
     """
     List card packages or fetch one by ID.

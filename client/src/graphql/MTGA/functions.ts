@@ -7,22 +7,28 @@ import {
     MTG_Card,
     MTG_CardPackage,
     MTG_CreateCardPackageInput,
+    MTG_CreateFilterPresetInput,
     MTG_CreateDeckInput,
     MTG_Deck,
     MTG_DeckDashboard,
     MTG_EditCardPackageNameInput,
     MTG_EditCardPackageVisibilityInput,
     MTG_Filter_Search,
+    MTG_FilterPreset,
     MTG_RemoveCardFromCardPackageInput,
+    MTG_DeleteFilterPresetInput,
     MTG_UpdateDeckInput,
+    MTG_UpdateFilterPresetInput,
     Mutation,
     MutationaddIgnoredCardArgs,
     MutationaddMTGCardToCardPackageArgs,
     MutationassignTagArgs,
     MutationcreateMTGCardPackageArgs,
+    MutationcreateMTGFilterPresetArgs,
     MutationcreateMTGDeckArgs,
     MutationcreateTagArgs,
     MutationdeleteMTGCardPackageArgs,
+    MutationdeleteMTGFilterPresetArgs,
     MutationdeleteMTGDeckArgs,
     MutationdeleteTagArgs,
     MutationeditMTGCardPackageNameArgs,
@@ -32,9 +38,11 @@ import {
     MutationremoveMTGCardFromCardPackageArgs,
     MutationunassignTagArgs,
     MutationupdateMTGDeckArgs,
+    MutationupdateMTGFilterPresetArgs,
     MutationupdateTagArgs,
     Query,
     QuerygetMTGCardPackagesArgs,
+    QuerygetMTGFilterPresetsArgs,
     QuerygetMTGCardsFilteredArgs,
     QuerygetMTGDeckArgs,
     RateInput,
@@ -48,9 +56,11 @@ import addIgnoredCard from './mutations/addIgnoredCard'
 import addMTGCardToCardPackage from './mutations/addMTGCardToCardPackage'
 import { assignTag } from './mutations/assignTag'
 import createMTGCardPackage from './mutations/createMTGCardPackage'
+import createMTGFilterPreset from './mutations/createMTGFilterPreset'
 import createMTGDeck from './mutations/createMTGDeck'
 import { createTag } from './mutations/createTag'
 import deleteMTGCardPackage from './mutations/deleteMTGCardPackage'
+import deleteMTGFilterPreset from './mutations/deleteMTGFilterPreset'
 import deleteMTGADeck from './mutations/deleteMTGDeck'
 import { deleteTag } from './mutations/deleteTag'
 import editMTGCardPackageName from './mutations/editMTGCardPackageName'
@@ -59,10 +69,12 @@ import { rate } from './mutations/rate'
 import removeIgnoredCard from './mutations/removeIgnoredCard'
 import removeMTGCardFromCardPackage from './mutations/removeMTGCardFromCardPackage'
 import saveMTGDeckAsCopy from './mutations/saveMTGDeckAsCopy'
+import updateMTGFilterPreset from './mutations/updateMTGFilterPreset'
 import { unassignTag } from './mutations/unassignTag'
 import updateMTGDeck from './mutations/updateMTGDeck'
 import { updateTag } from './mutations/updateTag'
 import getMTGCardPackages from './queries/getMTGCardPackages'
+import getMTGFilterPresets from './queries/getMTGFilterPresets'
 import getMTGCards from './queries/getMTGCards'
 import getMTGCardsFiltered from './queries/getMTGCardsFiltered'
 import getMTGDeck from './queries/getMTGDeck'
@@ -142,6 +154,18 @@ const getMTGCardPackagesQuery = async (options?: { ID?: string; includePublic?: 
                 resolve(response.data.getMTGCardPackages)
             } else {
                 reject('Failed to fetch MTG card packages')
+            }
+        })
+    })
+
+
+const getMTGFilterPresetsQuery = async (deckID: string): Promise<MTG_FilterPreset[]> =>
+    new Promise((resolve, reject) => {
+        fetchData<Query, QuerygetMTGFilterPresetsArgs>(getMTGFilterPresets, { deckID }).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.getMTGFilterPresets)
+            } else {
+                reject('Failed to fetch MTG filter presets')
             }
         })
     })
@@ -285,6 +309,42 @@ const removeMTGCardFromCardPackageMutation = async (input: MTG_RemoveCardFromCar
         )
     })
 
+/** Create a filter preset bound to a deck. */
+const createMTGFilterPresetMutation = async (input: MTG_CreateFilterPresetInput): Promise<MTG_FilterPreset> =>
+    new Promise((resolve, reject) => {
+        fetchData<Mutation, MutationcreateMTGFilterPresetArgs>(createMTGFilterPreset, { input }).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.createMTGFilterPreset)
+            } else {
+                reject('Failed to create MTG filter preset')
+            }
+        })
+    })
+
+/** Update an existing filter preset. */
+const updateMTGFilterPresetMutation = async (input: MTG_UpdateFilterPresetInput): Promise<MTG_FilterPreset> =>
+    new Promise((resolve, reject) => {
+        fetchData<Mutation, MutationupdateMTGFilterPresetArgs>(updateMTGFilterPreset, { input }).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.updateMTGFilterPreset)
+            } else {
+                reject('Failed to update MTG filter preset')
+            }
+        })
+    })
+
+/** Delete a filter preset by ID. */
+const deleteMTGFilterPresetMutation = async (input: MTG_DeleteFilterPresetInput): Promise<Response> =>
+    new Promise((resolve, reject) => {
+        fetchData<Mutation, MutationdeleteMTGFilterPresetArgs>(deleteMTGFilterPreset, { input }).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.deleteMTGFilterPreset)
+            } else {
+                reject('Failed to delete MTG filter preset')
+            }
+        })
+    })
+
 /** Create a tag; optionally links to a card. */
 const createTagMutation = async (input: CreateTagInput): Promise<Response> =>
     new Promise((resolve, reject) => {
@@ -388,6 +448,7 @@ export const MTGFunctions = {
         getMTGDecksQuery,
         getMTGDeckQuery,
         getMTGCardPackagesQuery,
+        getMTGFilterPresetsQuery,
         getMTGTagsQuery,
     },
     mutations: {
@@ -401,6 +462,9 @@ export const MTGFunctions = {
         editMTGCardPackageVisibilityMutation,
         addMTGCardToCardPackageMutation,
         removeMTGCardFromCardPackageMutation,
+        createMTGFilterPresetMutation,
+        updateMTGFilterPresetMutation,
+        deleteMTGFilterPresetMutation,
         createTagMutation,
         updateTagMutation,
         deleteTagMutation,

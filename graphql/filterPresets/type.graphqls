@@ -1,0 +1,22 @@
+"""
+Saved filter preset tied to a deck.
+"""
+type MTG_FilterPreset {
+    ID: ID!
+    deckID: ID!
+    ownerID: ID
+    name: String!
+    savedAt: String!
+    filter: Map!
+    sort: [MTG_Filter_SortState!]!
+    page: Int!
+}
+
+"""
+Sort configuration snapshot stored with a filter preset.
+"""
+type MTG_Filter_SortState {
+    sortBy: MTG_Filter_SortBy!
+    sortDirection: MTG_Filter_SortDirection!
+    enabled: Boolean!
+}

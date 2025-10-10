@@ -19,7 +19,7 @@ export const CardsGrid = () => {
     const [gridSize, setGridSize] = useState({ width: 0, height: 0 })
     const [cardScale, setCardScale] = useState(1)
     const [forceImageSize, setForceImageSize] = useState<keyof Omit<MTG_Image, '__typename'> | undefined>(undefined)
-    const { stickyCardsGrid } = useMTGDeckCreator()
+    const { stickyCardsGrid, openDrawer } = useMTGDeckCreator()
     const [lastIgnoredIndex, setLastIgnoredIndex] = useState<number | null>(null)
     const lastPageChangeInteractionRef = useRef<'swipeUp' | 'swipeDown' | 'other'>('other')
 
@@ -129,13 +129,17 @@ export const CardsGrid = () => {
         if (cardWidth <= baseCardWidth) {
             bestFittingSize = 'small'
         } else if (cardWidth <= CARD_SIZE_VALUES.normal.width) {
-            bestFittingSize = 'normal'
+            // bestFittingSize = 'normal'
+            bestFittingSize = 'PNG'
         } else {
-            bestFittingSize = 'large'
+            // bestFittingSize = 'large'
+            bestFittingSize = 'PNG'
         }
-        setForceImageSize(bestFittingSize)
-        setCardScale(bestScale)
-    }, [cardsToShow.length, gridSize.height, gridSize.width, shouldFillAvailableSpace, spacingPx, isMobile])
+        requestAnimationFrame(() => {
+            setForceImageSize(bestFittingSize)
+            setCardScale(bestScale)
+        })
+    }, [cardsToShow.length, gridSize.height, gridSize.width, shouldFillAvailableSpace, spacingPx, isMobile, openDrawer])
 
     const handleHorizontalSwipe = (direction: 'left' | 'right') => {
         if (!isMobile) return

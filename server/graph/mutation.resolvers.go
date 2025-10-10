@@ -66,6 +66,21 @@ func (r *mutationResolver) RemoveMTGCardFromCardPackage(ctx context.Context, inp
 	return mtg.RemoveMTGCardFromCardPackage(ctx, input)
 }
 
+// CreateMTGFilterPreset is the resolver for the createMTGFilterPreset field.
+func (r *mutationResolver) CreateMTGFilterPreset(ctx context.Context, input model.MtgCreateFilterPresetInput) (*model.MtgFilterPreset, error) {
+	return mtg.CreateMTGFilterPreset(ctx, input)
+}
+
+// UpdateMTGFilterPreset is the resolver for the updateMTGFilterPreset field.
+func (r *mutationResolver) UpdateMTGFilterPreset(ctx context.Context, input model.MtgUpdateFilterPresetInput) (*model.MtgFilterPreset, error) {
+	return mtg.UpdateMTGFilterPreset(ctx, input)
+}
+
+// DeleteMTGFilterPreset is the resolver for the deleteMTGFilterPreset field.
+func (r *mutationResolver) DeleteMTGFilterPreset(ctx context.Context, input model.MtgDeleteFilterPresetInput) (*model.Response, error) {
+	return mtg.DeleteMTGFilterPreset(ctx, input)
+}
+
 // CreateTag is the resolver for the createTag field.
 func (r *mutationResolver) CreateTag(ctx context.Context, input model.CreateTagInput) (*model.Response, error) {
 	return mtg.CreateTag(ctx, input)

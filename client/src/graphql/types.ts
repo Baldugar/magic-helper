@@ -316,6 +316,15 @@ export type MTG_CreateDeckInput = {
   name: Scalars['String']['input'];
 };
 
+/** Input payload to create a new filter preset. */
+export type MTG_CreateFilterPresetInput = {
+  deckID: Scalars['ID']['input'];
+  filter: Scalars['Map']['input'];
+  name: Scalars['String']['input'];
+  page: Scalars['Int']['input'];
+  sort: Array<MTG_Filter_SortInput>;
+};
+
 /** A user deck with cards, positions, zones and optional front image. */
 export type MTG_Deck = {
   __typename?: 'MTG_Deck';
@@ -397,6 +406,11 @@ export type MTG_DeleteDeckInput = {
   deckID: Scalars['ID']['input'];
 };
 
+/** Identifier wrapper for deleting a filter preset. */
+export type MTG_DeleteFilterPresetInput = {
+  presetID: Scalars['ID']['input'];
+};
+
 /** Edit a card package name. */
 export type MTG_EditCardPackageNameInput = {
   cardPackageID: Scalars['ID']['input'];
@@ -407,6 +421,19 @@ export type MTG_EditCardPackageNameInput = {
 export type MTG_EditCardPackageVisibilityInput = {
   cardPackageID: Scalars['ID']['input'];
   isPublic: Scalars['Boolean']['input'];
+};
+
+/** Saved filter preset tied to a deck. */
+export type MTG_FilterPreset = {
+  __typename?: 'MTG_FilterPreset';
+  ID: Scalars['ID']['output'];
+  deckID: Scalars['ID']['output'];
+  filter: Scalars['Map']['output'];
+  name: Scalars['String']['output'];
+  ownerID?: Maybe<Scalars['ID']['output']>;
+  page: Scalars['Int']['output'];
+  savedAt: Scalars['String']['output'];
+  sort: Array<MTG_Filter_SortState>;
 };
 
 /** Card type filter entry with ternary state. */
@@ -561,6 +588,14 @@ export type MTG_Filter_SortInput = {
   sortDirection: MTG_Filter_SortDirection;
 };
 
+/** Sort configuration snapshot stored with a filter preset. */
+export type MTG_Filter_SortState = {
+  __typename?: 'MTG_Filter_SortState';
+  enabled: Scalars['Boolean']['output'];
+  sortBy: MTG_Filter_SortBy;
+  sortDirection: MTG_Filter_SortDirection;
+};
+
 /** Subtype filter entry with ternary state. */
 export type MTG_Filter_SubtypeInput = {
   subtype: Scalars['String']['input'];
@@ -642,6 +677,15 @@ export type MTG_UpdateDeckInput = {
   zones: Array<FlowZoneInput>;
 };
 
+/** Fields allowed when updating an existing filter preset. */
+export type MTG_UpdateFilterPresetInput = {
+  filter?: InputMaybe<Scalars['Map']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+  presetID: Scalars['ID']['input'];
+  sort?: InputMaybe<Array<MTG_Filter_SortInput>>;
+};
+
 /** Indicates whether a card is in main or sideboard. */
 export enum MainOrSide {
   MAIN = 'MAIN',
@@ -665,12 +709,16 @@ export type Mutation = {
   createMTGCardPackage: Response;
   /** Create a new deck and return its ID in Response.message. */
   createMTGDeck: Response;
+  /** Save a new filter preset for a deck. */
+  createMTGFilterPreset: MTG_FilterPreset;
   /** Create a tag and optionally link to a card. */
   createTag: Response;
   /** Delete a card package and its edges. */
   deleteMTGCardPackage: Response;
   /** Delete a deck by ID. */
   deleteMTGDeck: Response;
+  /** Delete a filter preset. */
+  deleteMTGFilterPreset: Response;
   /** Delete a tag and its edges. */
   deleteTag: Response;
   /** Edit a card package name. */
@@ -689,6 +737,8 @@ export type Mutation = {
   unassignTag: Response;
   /** Replace deck fields and card edges. */
   updateMTGDeck: Response;
+  /** Update an existing filter preset. */
+  updateMTGFilterPreset: MTG_FilterPreset;
   /** Update tag name/description/colors. */
   updateTag: Response;
 };
@@ -737,6 +787,12 @@ export type MutationcreateMTGDeckArgs = {
 
 
 /** Root-level write operations. */
+export type MutationcreateMTGFilterPresetArgs = {
+  input: MTG_CreateFilterPresetInput;
+};
+
+
+/** Root-level write operations. */
 export type MutationcreateTagArgs = {
   input: CreateTagInput;
 };
@@ -751,6 +807,12 @@ export type MutationdeleteMTGCardPackageArgs = {
 /** Root-level write operations. */
 export type MutationdeleteMTGDeckArgs = {
   input: MTG_DeleteDeckInput;
+};
+
+
+/** Root-level write operations. */
+export type MutationdeleteMTGFilterPresetArgs = {
+  input: MTG_DeleteFilterPresetInput;
 };
 
 
@@ -809,6 +871,12 @@ export type MutationupdateMTGDeckArgs = {
 
 
 /** Root-level write operations. */
+export type MutationupdateMTGFilterPresetArgs = {
+  input: MTG_UpdateFilterPresetInput;
+};
+
+
+/** Root-level write operations. */
 export type MutationupdateTagArgs = {
   input: UpdateTagInput;
 };
@@ -861,6 +929,8 @@ export type Query = {
   getMTGDeck: MTG_Deck;
   /** List all decks for dashboard view. */
   getMTGDecks: Array<MTG_DeckDashboard>;
+  /** List saved filter presets for a deck. */
+  getMTGFilterPresets: Array<MTG_FilterPreset>;
   /** Return available filter options (types, layouts, expansions, legalities). */
   getMTGFilters: MTG_Filter_Entries;
   /** Fetch a tag by ID (CardTag or DeckTag). */
@@ -900,6 +970,12 @@ export type QuerygetMTGCardsFilteredArgs = {
 
 /** Root-level read operations. */
 export type QuerygetMTGDeckArgs = {
+  deckID: Scalars['ID']['input'];
+};
+
+
+/** Root-level read operations. */
+export type QuerygetMTGFilterPresetsArgs = {
   deckID: Scalars['ID']['input'];
 };
 

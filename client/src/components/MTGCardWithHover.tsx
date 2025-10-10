@@ -28,6 +28,7 @@ export type MTGCardWithHoverProps = {
     forceSize?: keyof Omit<MTG_Image, '__typename'>
     forceImage?: keyof Omit<MTG_Image, '__typename'>
     scale?: number
+    enableGlow?: boolean
 }
 
 /**
@@ -36,7 +37,7 @@ export type MTGCardWithHoverProps = {
  * and integrates with drag-and-drop when used within the deck creator.
  */
 export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
-    const { data, hideHover, forceSize, forceImage, scale = 1 } = props
+    const { data, hideHover, forceSize, forceImage, scale = 1, enableGlow = false } = props
     const { card, type, debugValue } = data
     const { viewMode } = useMTGDeckCreator()
     const { onDragStart, onDragEnd } = useDnD()
@@ -52,6 +53,7 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
     const smVerticalScreen = useMediaQuery('(max-height: 1000px)')
     const isMobileQuery = useMediaQuery('(max-width: 600px)')
     const isMobileEffective = !forceSize && isMobileQuery
+    const shouldGlow = enableGlow && !isMobileEffective
 
     // Select a version based on the current filter's set constraints (if any)
     const randomVersion = useMemo(() => {
@@ -126,7 +128,14 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
                     aspectRatio: imageSizeFingerprint === 'large' && isMobileEffective ? aspectRatio : undefined,
                 }}
             >
-                <ImageWithSkeleton img={smallImageUrl} setHover={setHover} height={scaledHeight} width={scaledWidth} />
+                <ImageWithSkeleton
+                    img={smallImageUrl}
+                    hover={hover}
+                    setHover={setHover}
+                    height={scaledHeight}
+                    width={scaledWidth}
+                    enableGlow={shouldGlow}
+                />
                 {debugValue && (
                     <Box position={'absolute'} bottom={0} right={0} bgcolor={'white'}>
                         {type === 'card'

@@ -283,6 +283,15 @@ type MtgCreateDeckInput struct {
 	Name string `json:"name"`
 }
 
+// Input payload to create a new filter preset.
+type MtgCreateFilterPresetInput struct {
+	DeckID string                `json:"deckID"`
+	Name   string                `json:"name"`
+	Filter map[string]any        `json:"filter"`
+	Sort   []*MtgFilterSortInput `json:"sort"`
+	Page   int                   `json:"page"`
+}
+
 // A user deck with cards, positions, zones and optional front image.
 type MtgDeck struct {
 	ID             string                 `json:"_key"`
@@ -353,6 +362,11 @@ type MtgDeleteDeckInput struct {
 	DeckID string `json:"deckID"`
 }
 
+// Identifier wrapper for deleting a filter preset.
+type MtgDeleteFilterPresetInput struct {
+	PresetID string `json:"presetID"`
+}
+
 // Edit a card package name.
 type MtgEditCardPackageNameInput struct {
 	CardPackageID string `json:"cardPackageID"`
@@ -363,6 +377,18 @@ type MtgEditCardPackageNameInput struct {
 type MtgEditCardPackageVisibilityInput struct {
 	CardPackageID string `json:"cardPackageID"`
 	IsPublic      bool   `json:"isPublic"`
+}
+
+// Saved filter preset tied to a deck.
+type MtgFilterPreset struct {
+	ID      string                `json:"ID"`
+	DeckID  string                `json:"deckID"`
+	OwnerID *string               `json:"ownerID,omitempty"`
+	Name    string                `json:"name"`
+	SavedAt string                `json:"savedAt"`
+	Filter  map[string]any        `json:"filter"`
+	Sort    []*MtgFilterSortState `json:"sort"`
+	Page    int                   `json:"page"`
 }
 
 // Card type filter entry with ternary state.
@@ -495,6 +521,13 @@ type MtgFilterSortInput struct {
 	Enabled       bool                   `json:"enabled"`
 }
 
+// Sort configuration snapshot stored with a filter preset.
+type MtgFilterSortState struct {
+	SortBy        MtgFilterSortBy        `json:"sortBy"`
+	SortDirection MtgFilterSortDirection `json:"sortDirection"`
+	Enabled       bool                   `json:"enabled"`
+}
+
 // Subtype filter entry with ternary state.
 type MtgFilterSubtypeInput struct {
 	Subtype string         `json:"subtype"`
@@ -530,6 +563,15 @@ type MtgUpdateDeckInput struct {
 	CardFrontImage *MtgDeckCardFrontImageInput `json:"cardFrontImage,omitempty"`
 	Cards          []*MtgDeckCardInput         `json:"cards"`
 	Zones          []*FlowZoneInput            `json:"zones"`
+}
+
+// Fields allowed when updating an existing filter preset.
+type MtgUpdateFilterPresetInput struct {
+	PresetID string                `json:"presetID"`
+	Name     *string               `json:"name,omitempty"`
+	Filter   map[string]any        `json:"filter,omitempty"`
+	Sort     []*MtgFilterSortInput `json:"sort,omitempty"`
+	Page     *int                  `json:"page,omitempty"`
 }
 
 // Root-level write operations.

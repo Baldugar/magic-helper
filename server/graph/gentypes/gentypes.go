@@ -257,6 +257,17 @@ type ComplexityRoot struct {
 		VersionID func(childComplexity int) int
 	}
 
+	MTG_FilterPreset struct {
+		DeckID  func(childComplexity int) int
+		Filter  func(childComplexity int) int
+		ID      func(childComplexity int) int
+		Name    func(childComplexity int) int
+		OwnerID func(childComplexity int) int
+		Page    func(childComplexity int) int
+		SavedAt func(childComplexity int) int
+		Sort    func(childComplexity int) int
+	}
+
 	MTG_Filter_CardTypes struct {
 		CardType func(childComplexity int) int
 		Subtypes func(childComplexity int) int
@@ -288,6 +299,12 @@ type ComplexityRoot struct {
 		TotalCount func(childComplexity int) int
 	}
 
+	MTG_Filter_SortState struct {
+		Enabled       func(childComplexity int) int
+		SortBy        func(childComplexity int) int
+		SortDirection func(childComplexity int) int
+	}
+
 	MTG_Image struct {
 		ArtCrop    func(childComplexity int) int
 		BorderCrop func(childComplexity int) int
@@ -305,9 +322,11 @@ type ComplexityRoot struct {
 		AssignTag                    func(childComplexity int, input model.AssignTagInput) int
 		CreateMTGCardPackage         func(childComplexity int, input model.MtgCreateCardPackageInput) int
 		CreateMTGDeck                func(childComplexity int, input model.MtgCreateDeckInput) int
+		CreateMTGFilterPreset        func(childComplexity int, input model.MtgCreateFilterPresetInput) int
 		CreateTag                    func(childComplexity int, input model.CreateTagInput) int
 		DeleteMTGCardPackage         func(childComplexity int, input model.MtgDeleteCardPackageInput) int
 		DeleteMTGDeck                func(childComplexity int, input model.MtgDeleteDeckInput) int
+		DeleteMTGFilterPreset        func(childComplexity int, input model.MtgDeleteFilterPresetInput) int
 		DeleteTag                    func(childComplexity int, tagID string) int
 		EditMTGCardPackageName       func(childComplexity int, input model.MtgEditCardPackageNameInput) int
 		EditMTGCardPackageVisibility func(childComplexity int, input model.MtgEditCardPackageVisibilityInput) int
@@ -317,6 +336,7 @@ type ComplexityRoot struct {
 		SaveMTGDeckAsCopy            func(childComplexity int, input model.MtgUpdateDeckInput) int
 		UnassignTag                  func(childComplexity int, input model.UnassignTagInput) int
 		UpdateMTGDeck                func(childComplexity int, input model.MtgUpdateDeckInput) int
+		UpdateMTGFilterPreset        func(childComplexity int, input model.MtgUpdateFilterPresetInput) int
 		UpdateTag                    func(childComplexity int, input model.UpdateTagInput) int
 	}
 
@@ -341,6 +361,7 @@ type ComplexityRoot struct {
 		GetMTGCardsFiltered func(childComplexity int, filter model.MtgFilterSearchInput, pagination model.MtgFilterPaginationInput, sort []*model.MtgFilterSortInput) int
 		GetMTGDeck          func(childComplexity int, deckID string) int
 		GetMTGDecks         func(childComplexity int) int
+		GetMTGFilterPresets func(childComplexity int, deckID string) int
 		GetMTGFilters       func(childComplexity int) int
 		Tag                 func(childComplexity int, id string) int
 		Tags                func(childComplexity int) int
@@ -373,6 +394,9 @@ type MutationResolver interface {
 	EditMTGCardPackageVisibility(ctx context.Context, input model.MtgEditCardPackageVisibilityInput) (*model.Response, error)
 	AddMTGCardToCardPackage(ctx context.Context, input model.MtgAddCardToCardPackageInput) (*model.Response, error)
 	RemoveMTGCardFromCardPackage(ctx context.Context, input model.MtgRemoveCardFromCardPackageInput) (*model.Response, error)
+	CreateMTGFilterPreset(ctx context.Context, input model.MtgCreateFilterPresetInput) (*model.MtgFilterPreset, error)
+	UpdateMTGFilterPreset(ctx context.Context, input model.MtgUpdateFilterPresetInput) (*model.MtgFilterPreset, error)
+	DeleteMTGFilterPreset(ctx context.Context, input model.MtgDeleteFilterPresetInput) (*model.Response, error)
 	CreateTag(ctx context.Context, input model.CreateTagInput) (*model.Response, error)
 	UpdateTag(ctx context.Context, input model.UpdateTagInput) (*model.Response, error)
 	DeleteTag(ctx context.Context, tagID string) (*model.Response, error)
@@ -390,6 +414,7 @@ type QueryResolver interface {
 	GetMTGFilters(ctx context.Context) (*model.MtgFilterEntries, error)
 	GetMTGDecks(ctx context.Context) ([]*model.MtgDeckDashboard, error)
 	GetMTGDeck(ctx context.Context, deckID string) (*model.MtgDeck, error)
+	GetMTGFilterPresets(ctx context.Context, deckID string) ([]*model.MtgFilterPreset, error)
 	GetMTGCardPackages(ctx context.Context, cardPackageID *string, includePublic *bool) ([]*model.MtgCardPackage, error)
 	Tags(ctx context.Context) ([]model.Tag, error)
 	CardTags(ctx context.Context) ([]*model.CardTag, error)
@@ -1434,6 +1459,62 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MTG_Deck_CardFrontImage.VersionID(childComplexity), true
 
+	case "MTG_FilterPreset.deckID":
+		if e.complexity.MTG_FilterPreset.DeckID == nil {
+			break
+		}
+
+		return e.complexity.MTG_FilterPreset.DeckID(childComplexity), true
+
+	case "MTG_FilterPreset.filter":
+		if e.complexity.MTG_FilterPreset.Filter == nil {
+			break
+		}
+
+		return e.complexity.MTG_FilterPreset.Filter(childComplexity), true
+
+	case "MTG_FilterPreset.ID":
+		if e.complexity.MTG_FilterPreset.ID == nil {
+			break
+		}
+
+		return e.complexity.MTG_FilterPreset.ID(childComplexity), true
+
+	case "MTG_FilterPreset.name":
+		if e.complexity.MTG_FilterPreset.Name == nil {
+			break
+		}
+
+		return e.complexity.MTG_FilterPreset.Name(childComplexity), true
+
+	case "MTG_FilterPreset.ownerID":
+		if e.complexity.MTG_FilterPreset.OwnerID == nil {
+			break
+		}
+
+		return e.complexity.MTG_FilterPreset.OwnerID(childComplexity), true
+
+	case "MTG_FilterPreset.page":
+		if e.complexity.MTG_FilterPreset.Page == nil {
+			break
+		}
+
+		return e.complexity.MTG_FilterPreset.Page(childComplexity), true
+
+	case "MTG_FilterPreset.savedAt":
+		if e.complexity.MTG_FilterPreset.SavedAt == nil {
+			break
+		}
+
+		return e.complexity.MTG_FilterPreset.SavedAt(childComplexity), true
+
+	case "MTG_FilterPreset.sort":
+		if e.complexity.MTG_FilterPreset.Sort == nil {
+			break
+		}
+
+		return e.complexity.MTG_FilterPreset.Sort(childComplexity), true
+
 	case "MTG_Filter_CardTypes.cardType":
 		if e.complexity.MTG_Filter_CardTypes.CardType == nil {
 			break
@@ -1545,6 +1626,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MTG_Filter_Search.TotalCount(childComplexity), true
+
+	case "MTG_Filter_SortState.enabled":
+		if e.complexity.MTG_Filter_SortState.Enabled == nil {
+			break
+		}
+
+		return e.complexity.MTG_Filter_SortState.Enabled(childComplexity), true
+
+	case "MTG_Filter_SortState.sortBy":
+		if e.complexity.MTG_Filter_SortState.SortBy == nil {
+			break
+		}
+
+		return e.complexity.MTG_Filter_SortState.SortBy(childComplexity), true
+
+	case "MTG_Filter_SortState.sortDirection":
+		if e.complexity.MTG_Filter_SortState.SortDirection == nil {
+			break
+		}
+
+		return e.complexity.MTG_Filter_SortState.SortDirection(childComplexity), true
 
 	case "MTG_Image.artCrop":
 		if e.complexity.MTG_Image.ArtCrop == nil {
@@ -1672,6 +1774,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateMTGDeck(childComplexity, args["input"].(model.MtgCreateDeckInput)), true
 
+	case "Mutation.createMTGFilterPreset":
+		if e.complexity.Mutation.CreateMTGFilterPreset == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createMTGFilterPreset_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateMTGFilterPreset(childComplexity, args["input"].(model.MtgCreateFilterPresetInput)), true
+
 	case "Mutation.createTag":
 		if e.complexity.Mutation.CreateTag == nil {
 			break
@@ -1707,6 +1821,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteMTGDeck(childComplexity, args["input"].(model.MtgDeleteDeckInput)), true
+
+	case "Mutation.deleteMTGFilterPreset":
+		if e.complexity.Mutation.DeleteMTGFilterPreset == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteMTGFilterPreset_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteMTGFilterPreset(childComplexity, args["input"].(model.MtgDeleteFilterPresetInput)), true
 
 	case "Mutation.deleteTag":
 		if e.complexity.Mutation.DeleteTag == nil {
@@ -1815,6 +1941,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateMTGDeck(childComplexity, args["input"].(model.MtgUpdateDeckInput)), true
+
+	case "Mutation.updateMTGFilterPreset":
+		if e.complexity.Mutation.UpdateMTGFilterPreset == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateMTGFilterPreset_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateMTGFilterPreset(childComplexity, args["input"].(model.MtgUpdateFilterPresetInput)), true
 
 	case "Mutation.updateTag":
 		if e.complexity.Mutation.UpdateTag == nil {
@@ -1951,6 +2089,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetMTGDecks(childComplexity), true
 
+	case "Query.getMTGFilterPresets":
+		if e.complexity.Query.GetMTGFilterPresets == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getMTGFilterPresets_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetMTGFilterPresets(childComplexity, args["deckID"].(string)), true
+
 	case "Query.getMTGFilters":
 		if e.complexity.Query.GetMTGFilters == nil {
 			break
@@ -2036,10 +2186,12 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputMTG_CardPackageCardInput,
 		ec.unmarshalInputMTG_CreateCardPackageInput,
 		ec.unmarshalInputMTG_CreateDeckInput,
+		ec.unmarshalInputMTG_CreateFilterPresetInput,
 		ec.unmarshalInputMTG_DeckCardFrontImageInput,
 		ec.unmarshalInputMTG_DeckCardInput,
 		ec.unmarshalInputMTG_DeleteCardPackageInput,
 		ec.unmarshalInputMTG_DeleteDeckInput,
+		ec.unmarshalInputMTG_DeleteFilterPresetInput,
 		ec.unmarshalInputMTG_EditCardPackageNameInput,
 		ec.unmarshalInputMTG_EditCardPackageVisibilityInput,
 		ec.unmarshalInputMTG_Filter_CardTypeInput,
@@ -2059,6 +2211,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputMTG_Filter_TagInput,
 		ec.unmarshalInputMTG_RemoveCardFromCardPackageInput,
 		ec.unmarshalInputMTG_UpdateDeckInput,
+		ec.unmarshalInputMTG_UpdateFilterPresetInput,
 		ec.unmarshalInputPhantomInput,
 		ec.unmarshalInputPositionInput,
 		ec.unmarshalInputRateInput,
@@ -2262,6 +2415,58 @@ type AdminLegalitiesDiff {
     importId: ID!
     jobName: AdminJob!
     entries: [AdminLegalitiesDiffEntry!]!
+}
+`, BuiltIn: false},
+	{Name: "../../../graphql/filterPresets/input.graphqls", Input: `"""
+Input payload to create a new filter preset.
+"""
+input MTG_CreateFilterPresetInput {
+    deckID: ID!
+    name: String!
+    filter: Map!
+    sort: [MTG_Filter_SortInput!]!
+    page: Int!
+}
+
+"""
+Fields allowed when updating an existing filter preset.
+"""
+input MTG_UpdateFilterPresetInput {
+    presetID: ID!
+    name: String
+    filter: Map
+    sort: [MTG_Filter_SortInput!]
+    page: Int
+}
+
+"""
+Identifier wrapper for deleting a filter preset.
+"""
+input MTG_DeleteFilterPresetInput {
+    presetID: ID!
+}
+`, BuiltIn: false},
+	{Name: "../../../graphql/filterPresets/type.graphqls", Input: `"""
+Saved filter preset tied to a deck.
+"""
+type MTG_FilterPreset {
+    ID: ID!
+    deckID: ID!
+    ownerID: ID
+    name: String!
+    savedAt: String!
+    filter: Map!
+    sort: [MTG_Filter_SortState!]!
+    page: Int!
+}
+
+"""
+Sort configuration snapshot stored with a filter preset.
+"""
+type MTG_Filter_SortState {
+    sortBy: MTG_Filter_SortBy!
+    sortDirection: MTG_Filter_SortDirection!
+    enabled: Boolean!
 }
 `, BuiltIn: false},
 	{Name: "../../../graphql/Flow/input.graphqls", Input: `"""
@@ -2985,6 +3190,19 @@ type Mutation {
     Remove a card from a package (edge delete).
     """
     removeMTGCardFromCardPackage(input: MTG_RemoveCardFromCardPackageInput!): Response!
+    # Filter Presets
+    """
+    Save a new filter preset for a deck.
+    """
+    createMTGFilterPreset(input: MTG_CreateFilterPresetInput!): MTG_FilterPreset!
+    """
+    Update an existing filter preset.
+    """
+    updateMTGFilterPreset(input: MTG_UpdateFilterPresetInput!): MTG_FilterPreset!
+    """
+    Delete a filter preset.
+    """
+    deleteMTGFilterPreset(input: MTG_DeleteFilterPresetInput!): Response!
     # Tags
     """
     Create a tag and optionally link to a card.
@@ -3058,6 +3276,11 @@ type Query {
     Return a single deck by ID with cards and metadata.
     """
     getMTGDeck(deckID: ID!): MTG_Deck!
+    # Filter Presets
+    """
+    List saved filter presets for a deck.
+    """
+    getMTGFilterPresets(deckID: ID!): [MTG_FilterPreset!]!
     # Card Packages
     """
     List card packages or fetch one by ID.
@@ -3410,6 +3633,34 @@ func (ec *executionContext) field_Mutation_createMTGDeck_argsInput(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Mutation_createMTGFilterPreset_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_createMTGFilterPreset_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_createMTGFilterPreset_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (model.MtgCreateFilterPresetInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal model.MtgCreateFilterPresetInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNMTG_CreateFilterPresetInput2magicᚑhelperᚋgraphᚋmodelᚐMtgCreateFilterPresetInput(ctx, tmp)
+	}
+
+	var zeroVal model.MtgCreateFilterPresetInput
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_createTag_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -3491,6 +3742,34 @@ func (ec *executionContext) field_Mutation_deleteMTGDeck_argsInput(
 	}
 
 	var zeroVal model.MtgDeleteDeckInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteMTGFilterPreset_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_deleteMTGFilterPreset_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_deleteMTGFilterPreset_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (model.MtgDeleteFilterPresetInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal model.MtgDeleteFilterPresetInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNMTG_DeleteFilterPresetInput2magicᚑhelperᚋgraphᚋmodelᚐMtgDeleteFilterPresetInput(ctx, tmp)
+	}
+
+	var zeroVal model.MtgDeleteFilterPresetInput
 	return zeroVal, nil
 }
 
@@ -3743,6 +4022,34 @@ func (ec *executionContext) field_Mutation_updateMTGDeck_argsInput(
 	}
 
 	var zeroVal model.MtgUpdateDeckInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateMTGFilterPreset_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_updateMTGFilterPreset_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_updateMTGFilterPreset_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (model.MtgUpdateFilterPresetInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal model.MtgUpdateFilterPresetInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNMTG_UpdateFilterPresetInput2magicᚑhelperᚋgraphᚋmodelᚐMtgUpdateFilterPresetInput(ctx, tmp)
+	}
+
+	var zeroVal model.MtgUpdateFilterPresetInput
 	return zeroVal, nil
 }
 
@@ -4017,6 +4324,34 @@ func (ec *executionContext) field_Query_getMTGDeck_args(ctx context.Context, raw
 	return args, nil
 }
 func (ec *executionContext) field_Query_getMTGDeck_argsDeckID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["deckID"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("deckID"))
+	if tmp, ok := rawArgs["deckID"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_getMTGFilterPresets_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_getMTGFilterPresets_argsDeckID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["deckID"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Query_getMTGFilterPresets_argsDeckID(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (string, error) {
@@ -10871,6 +11206,363 @@ func (ec *executionContext) fieldContext_MTG_Deck_CardFrontImage_image(_ context
 	return fc, nil
 }
 
+func (ec *executionContext) _MTG_FilterPreset_ID(ctx context.Context, field graphql.CollectedField, obj *model.MtgFilterPreset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_FilterPreset_ID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_FilterPreset_ID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_FilterPreset",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_FilterPreset_deckID(ctx context.Context, field graphql.CollectedField, obj *model.MtgFilterPreset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_FilterPreset_deckID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DeckID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_FilterPreset_deckID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_FilterPreset",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_FilterPreset_ownerID(ctx context.Context, field graphql.CollectedField, obj *model.MtgFilterPreset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_FilterPreset_ownerID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OwnerID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_FilterPreset_ownerID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_FilterPreset",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_FilterPreset_name(ctx context.Context, field graphql.CollectedField, obj *model.MtgFilterPreset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_FilterPreset_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_FilterPreset_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_FilterPreset",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_FilterPreset_savedAt(ctx context.Context, field graphql.CollectedField, obj *model.MtgFilterPreset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_FilterPreset_savedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SavedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_FilterPreset_savedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_FilterPreset",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_FilterPreset_filter(ctx context.Context, field graphql.CollectedField, obj *model.MtgFilterPreset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_FilterPreset_filter(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Filter, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(map[string]any)
+	fc.Result = res
+	return ec.marshalNMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_FilterPreset_filter(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_FilterPreset",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_FilterPreset_sort(ctx context.Context, field graphql.CollectedField, obj *model.MtgFilterPreset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_FilterPreset_sort(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Sort, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.MtgFilterSortState)
+	fc.Result = res
+	return ec.marshalNMTG_Filter_SortState2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortStateᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_FilterPreset_sort(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_FilterPreset",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "sortBy":
+				return ec.fieldContext_MTG_Filter_SortState_sortBy(ctx, field)
+			case "sortDirection":
+				return ec.fieldContext_MTG_Filter_SortState_sortDirection(ctx, field)
+			case "enabled":
+				return ec.fieldContext_MTG_Filter_SortState_enabled(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTG_Filter_SortState", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_FilterPreset_page(ctx context.Context, field graphql.CollectedField, obj *model.MtgFilterPreset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_FilterPreset_page(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Page, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_FilterPreset_page(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_FilterPreset",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MTG_Filter_CardTypes_cardType(ctx context.Context, field graphql.CollectedField, obj *model.MtgFilterCardTypes) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MTG_Filter_CardTypes_cardType(ctx, field)
 	if err != nil {
@@ -11638,6 +12330,138 @@ func (ec *executionContext) fieldContext_MTG_Filter_Search_totalCount(_ context.
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_Filter_SortState_sortBy(ctx context.Context, field graphql.CollectedField, obj *model.MtgFilterSortState) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_Filter_SortState_sortBy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SortBy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.MtgFilterSortBy)
+	fc.Result = res
+	return ec.marshalNMTG_Filter_SortBy2magicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortBy(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_Filter_SortState_sortBy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_Filter_SortState",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MTG_Filter_SortBy does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_Filter_SortState_sortDirection(ctx context.Context, field graphql.CollectedField, obj *model.MtgFilterSortState) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_Filter_SortState_sortDirection(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SortDirection, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.MtgFilterSortDirection)
+	fc.Result = res
+	return ec.marshalNMTG_Filter_SortDirection2magicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortDirection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_Filter_SortState_sortDirection(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_Filter_SortState",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MTG_Filter_SortDirection does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_Filter_SortState_enabled(ctx context.Context, field graphql.CollectedField, obj *model.MtgFilterSortState) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_Filter_SortState_enabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Enabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_Filter_SortState_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_Filter_SortState",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -12511,6 +13335,213 @@ func (ec *executionContext) fieldContext_Mutation_removeMTGCardFromCardPackage(c
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_removeMTGCardFromCardPackage_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createMTGFilterPreset(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createMTGFilterPreset(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateMTGFilterPreset(rctx, fc.Args["input"].(model.MtgCreateFilterPresetInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.MtgFilterPreset)
+	fc.Result = res
+	return ec.marshalNMTG_FilterPreset2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterPreset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createMTGFilterPreset(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ID":
+				return ec.fieldContext_MTG_FilterPreset_ID(ctx, field)
+			case "deckID":
+				return ec.fieldContext_MTG_FilterPreset_deckID(ctx, field)
+			case "ownerID":
+				return ec.fieldContext_MTG_FilterPreset_ownerID(ctx, field)
+			case "name":
+				return ec.fieldContext_MTG_FilterPreset_name(ctx, field)
+			case "savedAt":
+				return ec.fieldContext_MTG_FilterPreset_savedAt(ctx, field)
+			case "filter":
+				return ec.fieldContext_MTG_FilterPreset_filter(ctx, field)
+			case "sort":
+				return ec.fieldContext_MTG_FilterPreset_sort(ctx, field)
+			case "page":
+				return ec.fieldContext_MTG_FilterPreset_page(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTG_FilterPreset", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createMTGFilterPreset_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateMTGFilterPreset(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateMTGFilterPreset(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateMTGFilterPreset(rctx, fc.Args["input"].(model.MtgUpdateFilterPresetInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.MtgFilterPreset)
+	fc.Result = res
+	return ec.marshalNMTG_FilterPreset2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterPreset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateMTGFilterPreset(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ID":
+				return ec.fieldContext_MTG_FilterPreset_ID(ctx, field)
+			case "deckID":
+				return ec.fieldContext_MTG_FilterPreset_deckID(ctx, field)
+			case "ownerID":
+				return ec.fieldContext_MTG_FilterPreset_ownerID(ctx, field)
+			case "name":
+				return ec.fieldContext_MTG_FilterPreset_name(ctx, field)
+			case "savedAt":
+				return ec.fieldContext_MTG_FilterPreset_savedAt(ctx, field)
+			case "filter":
+				return ec.fieldContext_MTG_FilterPreset_filter(ctx, field)
+			case "sort":
+				return ec.fieldContext_MTG_FilterPreset_sort(ctx, field)
+			case "page":
+				return ec.fieldContext_MTG_FilterPreset_page(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTG_FilterPreset", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateMTGFilterPreset_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteMTGFilterPreset(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteMTGFilterPreset(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteMTGFilterPreset(rctx, fc.Args["input"].(model.MtgDeleteFilterPresetInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Response)
+	fc.Result = res
+	return ec.marshalNResponse2ᚖmagicᚑhelperᚋgraphᚋmodelᚐResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteMTGFilterPreset(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "status":
+				return ec.fieldContext_Response_status(ctx, field)
+			case "message":
+				return ec.fieldContext_Response_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Response", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteMTGFilterPreset_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -13627,6 +14658,79 @@ func (ec *executionContext) fieldContext_Query_getMTGDeck(ctx context.Context, f
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_getMTGDeck_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getMTGFilterPresets(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getMTGFilterPresets(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetMTGFilterPresets(rctx, fc.Args["deckID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.MtgFilterPreset)
+	fc.Result = res
+	return ec.marshalNMTG_FilterPreset2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterPresetᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getMTGFilterPresets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ID":
+				return ec.fieldContext_MTG_FilterPreset_ID(ctx, field)
+			case "deckID":
+				return ec.fieldContext_MTG_FilterPreset_deckID(ctx, field)
+			case "ownerID":
+				return ec.fieldContext_MTG_FilterPreset_ownerID(ctx, field)
+			case "name":
+				return ec.fieldContext_MTG_FilterPreset_name(ctx, field)
+			case "savedAt":
+				return ec.fieldContext_MTG_FilterPreset_savedAt(ctx, field)
+			case "filter":
+				return ec.fieldContext_MTG_FilterPreset_filter(ctx, field)
+			case "sort":
+				return ec.fieldContext_MTG_FilterPreset_sort(ctx, field)
+			case "page":
+				return ec.fieldContext_MTG_FilterPreset_page(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTG_FilterPreset", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getMTGFilterPresets_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -16826,6 +17930,61 @@ func (ec *executionContext) unmarshalInputMTG_CreateDeckInput(ctx context.Contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputMTG_CreateFilterPresetInput(ctx context.Context, obj any) (model.MtgCreateFilterPresetInput, error) {
+	var it model.MtgCreateFilterPresetInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"deckID", "name", "filter", "sort", "page"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "deckID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("deckID"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DeckID = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "filter":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+			data, err := ec.unmarshalNMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Filter = data
+		case "sort":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sort"))
+			data, err := ec.unmarshalNMTG_Filter_SortInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Sort = data
+		case "page":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Page = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputMTG_DeckCardFrontImageInput(ctx context.Context, obj any) (model.MtgDeckCardFrontImageInput, error) {
 	var it model.MtgDeckCardFrontImageInput
 	asMap := map[string]any{}
@@ -16984,6 +18143,33 @@ func (ec *executionContext) unmarshalInputMTG_DeleteDeckInput(ctx context.Contex
 				return it, err
 			}
 			it.DeckID = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTG_DeleteFilterPresetInput(ctx context.Context, obj any) (model.MtgDeleteFilterPresetInput, error) {
+	var it model.MtgDeleteFilterPresetInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"presetID"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "presetID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("presetID"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PresetID = data
 		}
 	}
 
@@ -17763,6 +18949,61 @@ func (ec *executionContext) unmarshalInputMTG_UpdateDeckInput(ctx context.Contex
 				return it, err
 			}
 			it.Zones = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTG_UpdateFilterPresetInput(ctx context.Context, obj any) (model.MtgUpdateFilterPresetInput, error) {
+	var it model.MtgUpdateFilterPresetInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"presetID", "name", "filter", "sort", "page"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "presetID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("presetID"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PresetID = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "filter":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+			data, err := ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Filter = data
+		case "sort":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sort"))
+			data, err := ec.unmarshalOMTG_Filter_SortInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Sort = data
+		case "page":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Page = data
 		}
 	}
 
@@ -19327,6 +20568,77 @@ func (ec *executionContext) _MTG_Deck_CardFrontImage(ctx context.Context, sel as
 	return out
 }
 
+var mTG_FilterPresetImplementors = []string{"MTG_FilterPreset"}
+
+func (ec *executionContext) _MTG_FilterPreset(ctx context.Context, sel ast.SelectionSet, obj *model.MtgFilterPreset) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mTG_FilterPresetImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MTG_FilterPreset")
+		case "ID":
+			out.Values[i] = ec._MTG_FilterPreset_ID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deckID":
+			out.Values[i] = ec._MTG_FilterPreset_deckID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "ownerID":
+			out.Values[i] = ec._MTG_FilterPreset_ownerID(ctx, field, obj)
+		case "name":
+			out.Values[i] = ec._MTG_FilterPreset_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "savedAt":
+			out.Values[i] = ec._MTG_FilterPreset_savedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "filter":
+			out.Values[i] = ec._MTG_FilterPreset_filter(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sort":
+			out.Values[i] = ec._MTG_FilterPreset_sort(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "page":
+			out.Values[i] = ec._MTG_FilterPreset_page(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var mTG_Filter_CardTypesImplementors = []string{"MTG_Filter_CardTypes"}
 
 func (ec *executionContext) _MTG_Filter_CardTypes(ctx context.Context, sel ast.SelectionSet, obj *model.MtgFilterCardTypes) graphql.Marshaler {
@@ -19577,6 +20889,55 @@ func (ec *executionContext) _MTG_Filter_Search(ctx context.Context, sel ast.Sele
 	return out
 }
 
+var mTG_Filter_SortStateImplementors = []string{"MTG_Filter_SortState"}
+
+func (ec *executionContext) _MTG_Filter_SortState(ctx context.Context, sel ast.SelectionSet, obj *model.MtgFilterSortState) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mTG_Filter_SortStateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MTG_Filter_SortState")
+		case "sortBy":
+			out.Values[i] = ec._MTG_Filter_SortState_sortBy(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sortDirection":
+			out.Values[i] = ec._MTG_Filter_SortState_sortDirection(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "enabled":
+			out.Values[i] = ec._MTG_Filter_SortState_enabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var mTG_ImageImplementors = []string{"MTG_Image"}
 
 func (ec *executionContext) _MTG_Image(ctx context.Context, sel ast.SelectionSet, obj *model.MtgImage) graphql.Marshaler {
@@ -19726,6 +21087,27 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "removeMTGCardFromCardPackage":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_removeMTGCardFromCardPackage(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createMTGFilterPreset":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createMTGFilterPreset(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateMTGFilterPreset":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateMTGFilterPreset(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteMTGFilterPreset":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteMTGFilterPreset(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -20028,6 +21410,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_getMTGDeck(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getMTGFilterPresets":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getMTGFilterPresets(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -21637,6 +23041,11 @@ func (ec *executionContext) unmarshalNMTG_CreateDeckInput2magicᚑhelperᚋgraph
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNMTG_CreateFilterPresetInput2magicᚑhelperᚋgraphᚋmodelᚐMtgCreateFilterPresetInput(ctx context.Context, v any) (model.MtgCreateFilterPresetInput, error) {
+	res, err := ec.unmarshalInputMTG_CreateFilterPresetInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNMTG_Deck2magicᚑhelperᚋgraphᚋmodelᚐMtgDeck(ctx context.Context, sel ast.SelectionSet, v model.MtgDeck) graphql.Marshaler {
 	return ec._MTG_Deck(ctx, sel, &v)
 }
@@ -21855,6 +23264,11 @@ func (ec *executionContext) unmarshalNMTG_DeleteDeckInput2magicᚑhelperᚋgraph
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNMTG_DeleteFilterPresetInput2magicᚑhelperᚋgraphᚋmodelᚐMtgDeleteFilterPresetInput(ctx context.Context, v any) (model.MtgDeleteFilterPresetInput, error) {
+	res, err := ec.unmarshalInputMTG_DeleteFilterPresetInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNMTG_EditCardPackageNameInput2magicᚑhelperᚋgraphᚋmodelᚐMtgEditCardPackageNameInput(ctx context.Context, v any) (model.MtgEditCardPackageNameInput, error) {
 	res, err := ec.unmarshalInputMTG_EditCardPackageNameInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -21863,6 +23277,64 @@ func (ec *executionContext) unmarshalNMTG_EditCardPackageNameInput2magicᚑhelpe
 func (ec *executionContext) unmarshalNMTG_EditCardPackageVisibilityInput2magicᚑhelperᚋgraphᚋmodelᚐMtgEditCardPackageVisibilityInput(ctx context.Context, v any) (model.MtgEditCardPackageVisibilityInput, error) {
 	res, err := ec.unmarshalInputMTG_EditCardPackageVisibilityInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMTG_FilterPreset2magicᚑhelperᚋgraphᚋmodelᚐMtgFilterPreset(ctx context.Context, sel ast.SelectionSet, v model.MtgFilterPreset) graphql.Marshaler {
+	return ec._MTG_FilterPreset(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMTG_FilterPreset2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterPresetᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MtgFilterPreset) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMTG_FilterPreset2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterPreset(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNMTG_FilterPreset2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterPreset(ctx context.Context, sel ast.SelectionSet, v *model.MtgFilterPreset) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MTG_FilterPreset(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNMTG_Filter_CardTypeInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterCardTypeInputᚄ(ctx context.Context, v any) ([]*model.MtgFilterCardTypeInput, error) {
@@ -22266,6 +23738,60 @@ func (ec *executionContext) unmarshalNMTG_Filter_SortInput2ᚖmagicᚑhelperᚋg
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNMTG_Filter_SortState2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortStateᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MtgFilterSortState) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMTG_Filter_SortState2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortState(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNMTG_Filter_SortState2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortState(ctx context.Context, sel ast.SelectionSet, v *model.MtgFilterSortState) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MTG_Filter_SortState(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNMTG_Filter_SubtypeInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSubtypeInputᚄ(ctx context.Context, v any) ([]*model.MtgFilterSubtypeInput, error) {
 	var vSlice []any
 	if v != nil {
@@ -22469,6 +23995,11 @@ func (ec *executionContext) unmarshalNMTG_RemoveCardFromCardPackageInput2magic�
 
 func (ec *executionContext) unmarshalNMTG_UpdateDeckInput2magicᚑhelperᚋgraphᚋmodelᚐMtgUpdateDeckInput(ctx context.Context, v any) (model.MtgUpdateDeckInput, error) {
 	res, err := ec.unmarshalInputMTG_UpdateDeckInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNMTG_UpdateFilterPresetInput2magicᚑhelperᚋgraphᚋmodelᚐMtgUpdateFilterPresetInput(ctx context.Context, v any) (model.MtgUpdateFilterPresetInput, error) {
+	res, err := ec.unmarshalInputMTG_UpdateFilterPresetInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -23308,6 +24839,26 @@ func (ec *executionContext) marshalOMTG_Deck_CardFrontImage2ᚖmagicᚑhelperᚋ
 		return graphql.Null
 	}
 	return ec._MTG_Deck_CardFrontImage(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOMTG_Filter_SortInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortInputᚄ(ctx context.Context, v any) ([]*model.MtgFilterSortInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.MtgFilterSortInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNMTG_Filter_SortInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) marshalOMTG_Image2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgImage(ctx context.Context, sel ast.SelectionSet, v *model.MtgImage) graphql.Marshaler {

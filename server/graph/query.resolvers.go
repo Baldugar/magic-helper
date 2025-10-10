@@ -41,6 +41,11 @@ func (r *queryResolver) GetMTGDeck(ctx context.Context, deckID string) (*model.M
 	return mtg.GetMTGDeck(ctx, deckID)
 }
 
+// GetMTGFilterPresets is the resolver for the getMTGFilterPresets field.
+func (r *queryResolver) GetMTGFilterPresets(ctx context.Context, deckID string) ([]*model.MtgFilterPreset, error) {
+	return mtg.GetMTGFilterPresets(ctx, deckID)
+}
+
 // GetMTGCardPackages is the resolver for the getMTGCardPackages field.
 func (r *queryResolver) GetMTGCardPackages(ctx context.Context, cardPackageID *string, includePublic *bool) ([]*model.MtgCardPackage, error) {
 	include := false

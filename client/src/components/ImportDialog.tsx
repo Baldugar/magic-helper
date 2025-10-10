@@ -1,4 +1,14 @@
-import { Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from '@mui/material'
+import {
+    Button,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Stack,
+    TextField,
+    Typography,
+} from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
 import { useMTGDeckCreator } from '../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { MTGFunctions } from '../graphql/MTGA/functions'
@@ -58,7 +68,9 @@ const parseArenaDecklists = (input: string): ParsedDeckResult => {
 
     const hasContent = (deck: ParsedArenaDeck | null) => {
         if (!deck) return false
-        return deck.deck.length > 0 || deck.sideboard.length > 0 || deck.commander.length > 0 || deck.companion.length > 0
+        return (
+            deck.deck.length > 0 || deck.sideboard.length > 0 || deck.commander.length > 0 || deck.companion.length > 0
+        )
     }
 
     for (const rawLine of lines) {
@@ -107,7 +119,7 @@ const buildCardLookup = (cards: MTG_Card[]) => {
     const lookup = new Map<string, MTG_Card>()
 
     for (const card of cards) {
-        const names = new Set<string>([card.name])
+        const names = new Set<string>([card.name, ...card.versions.map((v) => v.printedName)])
         if (card.name.includes('//')) {
             card.name.split('//').forEach((part) => names.add(part.trim()))
         }
@@ -192,7 +204,10 @@ const getAllowedCopies = (card: MTG_Card): number => {
         return Number.POSITIVE_INFINITY
     }
 
-    if (oracle.includes('deck can have any number of cards named') || oracle.includes('deck may have any number of cards named')) {
+    if (
+        oracle.includes('deck can have any number of cards named') ||
+        oracle.includes('deck may have any number of cards named')
+    ) {
         return Number.POSITIVE_INFINITY
     }
 
@@ -204,7 +219,12 @@ const getAllowedCopies = (card: MTG_Card): number => {
             return numeric
         }
         const cleaned = token.replace(/-/g, ' ')
-        const found = NUMBER_WORDS[cleaned] ?? cleaned.split(' ').map((part) => NUMBER_WORDS[part]).find((value) => value !== undefined)
+        const found =
+            NUMBER_WORDS[cleaned] ??
+            cleaned
+                .split(' ')
+                .map((part) => NUMBER_WORDS[part])
+                .find((value) => value !== undefined)
         if (found) {
             return found
         }
@@ -249,7 +269,12 @@ const aggregateDecks = (decks: ParsedArenaDeck[], lookup: Map<string, MTG_Card>)
             const existing = cards.get(card.ID)
 
             if (!existing) {
-                const initialCount = allowed === Number.POSITIVE_INFINITY ? entry.count : allowed === 1 ? 1 : Math.min(allowed, entry.count)
+                const initialCount =
+                    allowed === Number.POSITIVE_INFINITY
+                        ? entry.count
+                        : allowed === 1
+                        ? 1
+                        : Math.min(allowed, entry.count)
                 cards.set(card.ID, {
                     card,
                     count: allowed === 1 ? 1 : initialCount,
@@ -276,7 +301,9 @@ const applyImportToDeck = (deck: MTG_Deck, aggregated: AggregatedResult): MTG_De
         (card) => !(card.deckCardType === MTG_DeckCardType.NORMAL && card.mainOrSide === MainOrSide.MAIN),
     )
 
-    let commanderPositionReference = preservedCards.find((card) => card.deckCardType === MTG_DeckCardType.COMMANDER)?.position
+    let commanderPositionReference = preservedCards.find(
+        (card) => card.deckCardType === MTG_DeckCardType.COMMANDER,
+    )?.position
 
     if (aggregated.commander) {
         const commanderVersion =
