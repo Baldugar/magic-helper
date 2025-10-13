@@ -125,7 +125,7 @@ export const initialMTGFilter: MTGFilterType = {
     commander: null,
     isSelectingCommander: false,
     page: 0,
-    fillAvailableSpace: false,
+    fillAvailableSpace: true,
     pageSize: PAGE_SIZE_DESKTOP,
 }
 

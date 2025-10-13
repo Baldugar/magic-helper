@@ -10,7 +10,7 @@ export const MTGDecksProvider = ({ children }: { children: ReactNode }) => {
 
     const {
         queries: { getMTGDecksQuery },
-        mutations: { createMTGDeckMutation, deleteMTGDeckMutation },
+        mutations: { createMTGDeckMutation, deleteMTGDeckMutation, updateMTGDeckMutation },
     } = MTGFunctions
 
     /**
@@ -39,39 +39,41 @@ export const MTGDecksProvider = ({ children }: { children: ReactNode }) => {
      *
      * @param name Deck name
      */
-    const createDeck = (name: string, type?: DeckType) => {
-        createMTGDeckMutation({
-            name,
-            type: type ?? DeckType.UNKNOWN,
-        }).then((response) => {
-            if (response.status) {
-                // Optimistically append new deck to dashboard list
-                setDecks([
-                    ...decks,
-                    {
-                        cards: [],
-                        ID: response.message ?? '',
-                        type: type ?? DeckType.UNKNOWN,
-                        name,
-                        cardFrontImage: undefined,
-                    },
-                ])
-            }
-        })
-    }
+    const createDeck = (name: string, type?: DeckType) =>
+        new Promise<string>((resolve) =>
+            createMTGDeckMutation({
+                name,
+                type: type ?? DeckType.UNKNOWN,
+            }).then((response) => {
+                if (response.status) {
+                    // Optimistically append new deck to dashboard list
+                    const newDeckID = response.message ?? ''
+                    setDecks([
+                        ...decks,
+                        {
+                            cards: [],
+                            ID: newDeckID,
+                            type: type ?? DeckType.UNKNOWN,
+                            name,
+                            cardFrontImage: undefined,
+                        },
+                    ])
+                    resolve(newDeckID)
+                }
+            }),
+        )
 
     /**
      * Delete an existing deck by ID and remove it from dashboard state.
      *
      * @param deckID Deck identifier
      */
-    const deleteDeck = (deckID: string) => {
+    const deleteDeck = (deckID: string) =>
         deleteMTGDeckMutation(deckID).then((response) => {
             if (response.status) {
                 setDecks(decks.filter((d) => d.ID !== deckID))
             }
         })
-    }
 
     /**
      * Convert a full deck card to its dashboard-friendly shape (images only).
@@ -103,20 +105,47 @@ export const MTGDecksProvider = ({ children }: { children: ReactNode }) => {
      *
      * @param deck The updated full deck
      */
-    const propagateChangesToDashboardDeck = (deck: MTG_Deck) => {
-        setDecks(
-            decks.map((d) =>
-                d.ID === deck.ID
-                    ? {
-                          ID: deck.ID,
-                          name: deck.name,
-                          type: deck.type,
-                          cardFrontImage: deck.cardFrontImage,
-                          cards: deck.cards.map(convertDeckCardToDashboardDeckCard),
-                      }
-                    : d,
-            ),
-        )
+    const propagateChangesToDashboardDeck = (deck: MTG_Deck, shouldUpdate: boolean = true) => {
+        if (shouldUpdate) {
+            updateMTGDeckMutation({
+                cards: deck.cards.map((c) => ({
+                    card: c.card.ID,
+                    count: c.count,
+                    deckCardType: c.deckCardType,
+                    mainOrSide: c.mainOrSide,
+                    phantoms: c.phantoms,
+                    position: c.position,
+                    ID: c.card.ID,
+                })),
+                deckID: deck.ID,
+                name: deck.name,
+                type: deck.type,
+                zones: deck.zones,
+                cardFrontImage: deck.cardFrontImage,
+            })
+                .then((response) => {
+                    if (response.status) {
+                        reload()
+                    }
+                })
+                .catch((error) => {
+                    console.error(error)
+                })
+        } else {
+            setDecks(
+                decks.map((d) =>
+                    d.ID === deck.ID
+                        ? {
+                              ID: deck.ID,
+                              name: deck.name,
+                              type: deck.type,
+                              cardFrontImage: deck.cardFrontImage,
+                              cards: deck.cards.map(convertDeckCardToDashboardDeckCard),
+                          }
+                        : d,
+                ),
+            )
+        }
     }
 
     /**

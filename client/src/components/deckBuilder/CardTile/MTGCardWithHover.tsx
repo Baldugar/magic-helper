@@ -22,7 +22,6 @@ export type MTGCardWithHoverProps = {
               cardTypeLine: string
               debugValue?: keyof MTG_CardVersion
           }
-    hideHover?: boolean
     forceSize?: keyof Omit<MTG_Image, '__typename'>
     forceImage?: keyof Omit<MTG_Image, '__typename'>
     scale?: number
@@ -35,7 +34,7 @@ export type MTGCardWithHoverProps = {
  * and integrates with drag-and-drop when used within the deck creator.
  */
 export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
-    const { data, hideHover, forceSize, forceImage, scale = 1, enableGlow = false } = props
+    const { data, forceSize, forceImage, scale = 1, enableGlow = false } = props
     const { card, type, debugValue } = data
     const { filter } = useMTGFilter()
     let smallImageUrl: string | undefined = undefined
@@ -98,6 +97,8 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
     const scaledWidth = displayWidth * effectiveScale
     const scaledHeight = displayHeight * effectiveScale
 
+    const hideHover = scaledWidth > CARD_SIZE_VALUES['large'].width * hoverScale
+
     return (
         <>
             <Box
@@ -126,9 +127,9 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
                     </Box>
                 )}
             </Box>
-            {largeImageUrl && hover && !isMobileEffective && (
+            {largeImageUrl && !isMobileEffective && !hideHover && (
                 <HoverMouseComponent
-                    visible={hover && (hideHover === false || hideHover === undefined)}
+                    visible={hover}
                     img={largeImageUrl}
                     height={CARD_SIZE_VALUES['large'].height}
                     scale={hoverScale}

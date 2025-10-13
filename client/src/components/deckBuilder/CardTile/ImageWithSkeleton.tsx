@@ -25,11 +25,6 @@ export const ImageWithSkeleton: FC<ImageWithSkeletonProps> = (props) => {
     const isMobile = useMediaQuery('(max-width: 600px)')
 
     useEffect(() => {
-        setLoaded(false)
-        setHover(false)
-    }, [img, setHover])
-
-    useEffect(() => {
         const current = imageRef.current
         if (current && current.complete && current.naturalWidth > 0 && current.naturalHeight > 0) {
             setLoaded(true)
