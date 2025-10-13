@@ -4,9 +4,9 @@ import Box from '@mui/material/Box'
 import Slider from '@mui/material/Slider'
 import Typography from '@mui/material/Typography'
 import { CSSProperties, useState } from 'react'
-import { MTG_DeckDashboard } from '../graphql/types'
-import { getCorrectCardImage } from '../utils/functions/cardFunctions'
-import { getUniqueRandomIntegers } from '../utils/functions/deckFunctions'
+import { MTG_DeckDashboard } from '../../../graphql/types'
+import { getCorrectCardImage } from '../../../utils/functions/cardFunctions'
+import { getUniqueRandomIntegers } from '../../../utils/functions/deckFunctions'
 
 /**
  * Props for the low-level 3D deck box primitive.
@@ -139,7 +139,7 @@ const HDeckBox = ({
                 >
                     {deck.cardFrontImage && (
                         <img
-                            src={deck.cardFrontImage.image}
+                            src={getCorrectCardImage(deck.cardFrontImage.image, 'artCrop')}
                             alt={deck.name}
                             width={width}
                             height={height}
@@ -267,7 +267,10 @@ const HDeckBox = ({
                                 transformStyle: 'preserve-3d',
                                 backfaceVisibility: 'hidden',
                                 background: deck.cardFrontImage
-                                    ? `url(${deck.cardFrontImage.image}) center/cover no-repeat`
+                                    ? `url(${getCorrectCardImage(
+                                          deck.cardFrontImage.image,
+                                          'artCrop',
+                                      )}) center/cover no-repeat`
                                     : commonFaceStyle.background,
                                 backgroundPosition: 'center right',
                                 backgroundSize: `${width}px ${height}px`,

@@ -27,10 +27,8 @@ import LayoutSelector from './controls/LayoutSelector'
 import LegalitySelector from './controls/LegalitySelector'
 import ManaSelector from './controls/ManaSelector'
 import RaritySelector from './controls/RaritySelector'
-import RatingSelector from './controls/RatingSelector'
 import SetSelector from './controls/SetSelector'
 import { SortBuilder } from './controls/SortBuilder'
-import { TagSelector } from './controls/TagSelector'
 import TypeSelector from './controls/TypeSelector'
 import { SavedFiltersPopover } from './SavedFiltersPopover'
 
@@ -287,56 +285,6 @@ export const FilterBar = () => {
             <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
             <SortBuilder />
             <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
-            <RatingSelector
-                onSetMax={(max) => {
-                    setFilter((prev) => ({
-                        ...prev,
-                        rating: {
-                            ...prev.rating,
-                            max,
-                        },
-                        page: 0,
-                    }))
-                }}
-                onSetMin={(min) => {
-                    setFilter((prev) => ({
-                        ...prev,
-                        rating: {
-                            ...prev.rating,
-                            min,
-                        },
-                        page: 0,
-                    }))
-                }}
-                selected={{
-                    min: filter.rating.min ?? 0,
-                    max: filter.rating.max ?? 0,
-                }}
-            />
-            <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
-            <TagSelector
-                selected={filter.tags}
-                onNext={(tag) => {
-                    setFilter((prev) => ({
-                        ...prev,
-                        tags: {
-                            ...prev.tags,
-                            [tag]: nextTB(prev.tags[tag]),
-                        },
-                        page: 0,
-                    }))
-                }}
-                onPrev={(tag) => {
-                    setFilter((prev) => ({
-                        ...prev,
-                        tags: {
-                            ...prev.tags,
-                            [tag]: prevTB(prev.tags[tag]),
-                        },
-                        page: 0,
-                    }))
-                }}
-            />
             <FormControlLabel
                 value={filter.hideIgnored}
                 control={<Switch color="primary" />}

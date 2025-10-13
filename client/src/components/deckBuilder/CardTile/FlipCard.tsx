@@ -1,9 +1,9 @@
 import { Flip } from '@mui/icons-material'
 import { Box, ButtonBase, styled } from '@mui/material'
 import { useEffect, useState } from 'react'
-import { MTG_Card, MTG_Layout } from '../graphql/types'
-import { applyRotate, nextRotate } from '../utils/cardRotation'
-import { CARD_SIZE_VALUES } from '../utils/constants'
+import { MTG_Card, MTG_Layout } from '../../../graphql/types'
+import { applyRotate, nextRotate } from '../../../utils/cardRotation'
+import { CARD_SIZE_VALUES } from '../../../utils/constants'
 import { ImageWithSkeleton } from './ImageWithSkeleton'
 
 export interface FlipCardProps {

@@ -4,7 +4,6 @@ Saved filter preset tied to a deck.
 type MTG_FilterPreset {
     ID: ID!
     deckID: ID!
-    ownerID: ID
     name: String!
     savedAt: String!
     filter: Map!

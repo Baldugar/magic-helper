@@ -19,44 +19,34 @@ import (
 func PeriodicFetchMTGSets() {
 	log.Info().Msg("Starting periodic fetch sets daemon")
 	for {
-		runMTGSetsCycle(false)
+		runMTGSetsCycle()
 		time.Sleep(24 * time.Hour)
 	}
 }
 
-func runMTGSetsCycle(force bool) {
+func runMTGSetsCycle() {
 	ctx := context.Background()
-	if fetchSets(ctx, force) {
+	if fetchSets(ctx) {
 		updateDatabaseSets()
 	}
 }
 
 // fetchSets downloads all paginated Scryfall sets, stores originals, downloads icons,
 // and updates the last-fetched timestamp.
-func fetchSets(ctx context.Context, force bool) bool {
+func fetchSets(ctx context.Context) bool {
 	log.Info().Msg("Fetching sets from Scryfall")
 	url := "https://api.scryfall.com/sets"
-
-	report := newImportReportBuilder("MTG_sets")
-	defer report.Complete(ctx)
-	report.AddMetadata("source", url)
 
 	// Check if we should fetch sets
 	shouldFetch := true
 	var err error
-	if !force {
-		shouldFetch, err = shouldDownloadStart("MTG_sets")
-		if err != nil {
-			log.Error().Err(err).Msgf("Error checking if we should fetch sets")
-			report.MarkFailed(err)
-			return false
-		}
-	} else {
-		report.AddMetadata("forced", true)
+	shouldFetch, err = shouldDownloadStart("MTG_sets")
+	if err != nil {
+		log.Error().Err(err).Msgf("Error checking if we should fetch sets")
+		return false
 	}
 
-	if !shouldFetch && !force {
-		report.MarkSkipped("fetched in the last 24 hours")
+	if !shouldFetch {
 		return false
 	}
 
@@ -69,20 +59,17 @@ func fetchSets(ctx context.Context, force bool) bool {
 		req, err := createScryfallRequest(url)
 		if err != nil {
 			log.Error().Err(err).Msgf("Error creating request to Scryfall")
-			report.MarkFailed(err)
 			return false
 		}
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			log.Error().Err(err).Msgf("Error fetching sets from Scryfall")
-			report.MarkFailed(err)
 			return false
 		}
 
 		if resp.StatusCode != http.StatusOK {
 			log.Error().Msgf("Error fetching sets from Scryfall: %v", resp.Status)
-			report.MarkFailed(fmt.Errorf("unexpected status: %s", resp.Status))
 			return false
 		}
 
@@ -90,7 +77,6 @@ func fetchSets(ctx context.Context, force bool) bool {
 		resp.Body.Close()
 		if err != nil {
 			log.Error().Err(err).Msgf("Error reading response body")
-			report.MarkFailed(err)
 			return false
 		}
 
@@ -99,7 +85,6 @@ func fetchSets(ctx context.Context, force bool) bool {
 		err = json.Unmarshal(body, &response)
 		if err != nil {
 			log.Error().Err(err).Msgf("Error unmarshalling response body")
-			report.MarkFailed(err)
 			return false
 		}
 
@@ -124,15 +109,12 @@ func fetchSets(ctx context.Context, force bool) bool {
 		err := json.Unmarshal(set, &setMap)
 		if err != nil {
 			log.Error().Err(err).Str("set", string(set)).Msgf("Error unmarshalling set")
-			report.MarkFailed(err)
 			return false
 		}
 		sets = append(sets, setMap)
 	}
 
 	log.Info().Msgf("Unmarshalled %v sets", len(sets))
-	report.SetRecordsProcessed(len(sets))
-	report.AddMetadata("pages_fetched", pagesFetched)
 	log.Info().Msgf("Inserting sets into database")
 
 	// Insert the data into the database
@@ -149,7 +131,6 @@ func fetchSets(ctx context.Context, force bool) bool {
 	_, err = arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {
 		log.Error().Err(err).Msgf("Error inserting sets into database")
-		report.MarkFailed(err)
 		return false
 	}
 
@@ -163,13 +144,11 @@ func fetchSets(ctx context.Context, force bool) bool {
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
-	report.AddMetadata("icon_download_errors", iconErrors)
 
 	// Update the last time we fetched sets
 	err = updateLastTimeFetched("MTG_sets")
 	if err != nil {
 		log.Error().Err(err).Msgf("Error updating last time fetched")
-		report.MarkFailed(err)
 		return false
 	}
 
@@ -364,13 +343,4 @@ func updateDatabaseSets() {
 
 	log.Info().Msgf("Updated database sets")
 	log.Info().Msgf("Done")
-}
-func RunMTGSetsImport(ctx context.Context, force bool) {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	log.Info().Bool("force", force).Msg("Manual MTG sets import triggered")
-	if fetchSets(ctx, force) {
-		updateDatabaseSets()
-	}
 }

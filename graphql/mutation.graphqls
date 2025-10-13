@@ -19,31 +19,6 @@ type Mutation {
     Create a new deck by copying another deck's data.
     """
     saveMTGDeckAsCopy(input: MTG_UpdateDeckInput!): Response!
-    # Card Packages
-    """
-    Create a card package container.
-    """
-    createMTGCardPackage(input: MTG_CreateCardPackageInput!): Response!
-    """
-    Delete a card package and its edges.
-    """
-    deleteMTGCardPackage(input: MTG_DeleteCardPackageInput!): Response!
-    """
-    Edit a card package name.
-    """
-    editMTGCardPackageName(input: MTG_EditCardPackageNameInput!): Response!
-    """
-    Update a card package visibility flag.
-    """
-    editMTGCardPackageVisibility(input: MTG_EditCardPackageVisibilityInput!): Response!
-    """
-    Add a card to a package (edge insert).
-    """
-    addMTGCardToCardPackage(input: MTG_AddCardToCardPackageInput!): Response!
-    """
-    Remove a card from a package (edge delete).
-    """
-    removeMTGCardFromCardPackage(input: MTG_RemoveCardFromCardPackageInput!): Response!
     # Filter Presets
     """
     Save a new filter preset for a deck.
@@ -57,32 +32,6 @@ type Mutation {
     Delete a filter preset.
     """
     deleteMTGFilterPreset(input: MTG_DeleteFilterPresetInput!): Response!
-    # Tags
-    """
-    Create a tag and optionally link to a card.
-    """
-    createTag(input: CreateTagInput!): Response!
-    """
-    Update tag name/description/colors.
-    """
-    updateTag(input: UpdateTagInput!): Response!
-    """
-    Delete a tag and its edges.
-    """
-    deleteTag(tagID: ID!): Response!
-    """
-    Link a tag to a card.
-    """
-    assignTag(input: AssignTagInput!): Response!
-    """
-    Unlink a tag from a card.
-    """
-    unassignTag(input: UnassignTagInput!): Response!
-    # Ratings
-    """
-    Rate a card or tag.
-    """
-    rate(input: RateInput!): Response!
     # Ignored Cards
     """
     Mark a card as ignored for a deck.
@@ -92,13 +41,4 @@ type Mutation {
     Remove ignored mark from a deck/card pair.
     """
     removeIgnoredCard(input: RemoveIgnoredCardInput!): Response!
-    """
-    Trigger a retry of an import job.
-    """
-    adminRetryImport(input: AdminImportActionInput!): Response!
-    """
-    Force a backfill import run ignoring scheduling safeguards.
-    """
-    adminBackfillImport(input: AdminImportActionInput!): Response!
 }
-

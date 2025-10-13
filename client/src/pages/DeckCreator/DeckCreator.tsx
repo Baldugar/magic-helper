@@ -5,28 +5,23 @@ import {
     Button,
     Collapse,
     Divider,
+    FormControlLabel,
     Grid,
     IconButton,
     Menu,
     MenuItem,
     Pagination,
+    Switch,
     TextField,
     Typography,
     useMediaQuery,
-    FormControlLabel,
-    Switch,
 } from '@mui/material'
 import { ReactFlowProvider, useReactFlow } from '@xyflow/react'
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { DeckCoverPicker } from '../../components/deckBuilder/DeckCoverPicker'
 import { FilterBar } from '../../components/deckBuilder/FilterBar/FilterBar'
-import { FlowToolbar } from '../../components/deckBuilder/FlowToolbar'
-import { PackagesDialog } from '../../components/deckBuilder/PackagesDialog/PackagesDialog'
-import { WarningsFab } from '../../components/deckBuilder/WarningsFab'
-import { ExportDialog } from '../../components/ExportDialog'
-import { ImportDialog } from '../../components/ImportDialog'
-import { DndProvider } from '../../context/DnD/DnDProvider'
+import { ExportDialog } from '../../components/deckBuilder/ImportExportDialog/ExportDialog'
+import { ImportDialog } from '../../components/deckBuilder/ImportExportDialog/ImportDialog'
 import { MTGCardsProvider } from '../../context/MTGA/Cards/MTGCardsProvider'
 import { useMTGCards } from '../../context/MTGA/Cards/useMTGCards'
 import { MTGDeckCreatorProvider } from '../../context/MTGA/DeckCreator/MTGDeckCreatorProvider'
@@ -35,13 +30,11 @@ import { MTGDeckCreatorFlowProvider } from '../../context/MTGA/DeckCreatorFlow/M
 import { useMTGDecks } from '../../context/MTGA/Decks/useMTGDecks'
 import { MTGAFilterProvider } from '../../context/MTGA/Filter/MTGFilterProvider'
 import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
-import { MTGTagsProvider } from '../../context/MTGA/Tags/MTGTagsProvider'
 import { MTGFunctions } from '../../graphql/MTGA/functions'
 import { MTG_Deck, MTG_UpdateDeckInput } from '../../graphql/types'
 import { DeckCreatorView } from '../../types/deckCreatorView'
 import { DRAWER_WIDTH_DESKTOP, DRAWER_WIDTH_MOBILE, PAGE_SIZE_MOBILE } from '../../utils/constants'
 import { calculateNewDeck } from '../../utils/functions/deckFunctions'
-import { useLocalStoreFilter } from '../../utils/hooks/useLocalStoreFilter'
 import { CardDialog } from './Components/CardDialog'
 import { CardsGrid } from './Components/CardsGrid'
 import { Drawer } from './Components/Drawer'
@@ -66,12 +59,10 @@ export const DeckCreator = () => {
         viewMode,
         setOpenImportDialog,
         setOpenExportDialog,
-        setOpenImportCardPackageDialog,
     } = useMTGDeckCreator()
     const { propagateChangesToDashboardDeck } = useMTGDecks()
     const { filter, setFilter } = useMTGFilter()
 
-    const { loadLocalStoreFilter, saveLocalStoreFilter } = useLocalStoreFilter()
     const { clearFilter } = useMTGFilter()
     const { getNodes } = useReactFlow()
     const {
@@ -113,7 +104,6 @@ export const DeckCreator = () => {
         setPageSizeInput(event.target.value)
     }
 
-
     const handleChangeView = (newViewMode: DeckCreatorView) => {
         if (viewMode === 'BOARD' || viewMode === 'CATALOGUE_BOARD') {
             calculateNewDeck(cards, deck, getNodes, setDeck)
@@ -137,6 +127,7 @@ export const DeckCreator = () => {
             })),
             deckID: deck.ID,
             name: deck.name,
+            type: deck.type,
             zones: deck.zones,
             cardFrontImage: deck.cardFrontImage,
         }
@@ -191,55 +182,61 @@ export const DeckCreator = () => {
                             >
                                 <Edit />
                             </IconButton>
-                            <DeckCoverPicker />
                         </Box>
                     </Box>
                     {viewMode === 'CATALOGUE' && (
                         <>
                             <FilterBar />
-                    {!isMobile && (
-                        <Box
-                            display={'flex'}
-                            justifyContent={'space-between'}
-                            alignItems={'center'}
-                            paddingX={2}
-                            paddingY={1}
-                            columnGap={2}
-                            rowGap={1}
-                            flexWrap={'wrap'}
-                        >
-                            <TextField
-                                size='small'
-                                type='number'
-                                label='Cards per page'
-                                value={pageSizeInput}
-                                inputProps={{ min: 1 }}
-                                onChange={handlePageSizeInputChange}
-                                onBlur={() => applyPageSize(pageSizeInput)}
-                                onKeyDown={(event) => {
-                                    if (event.key === 'Enter') {
-                                        applyPageSize(pageSizeInput)
-                                    }
-                                }}
-                            />
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        checked={filter.fillAvailableSpace}
-                                        onChange={(event) => {
-                                            const { checked } = event.target
-                                            setFilter((prev) => ({
-                                                ...prev,
-                                                fillAvailableSpace: checked,
-                                            }))
+                            {!isMobile && (
+                                <Box
+                                    display={'flex'}
+                                    justifyContent={'space-between'}
+                                    alignItems={'center'}
+                                    paddingX={2}
+                                    paddingY={1}
+                                    columnGap={2}
+                                    rowGap={1}
+                                    flexWrap={'wrap'}
+                                >
+                                    <TextField
+                                        size="small"
+                                        type="number"
+                                        label="Cards per page"
+                                        value={pageSizeInput}
+                                        inputProps={{ min: 1 }}
+                                        onChange={handlePageSizeInputChange}
+                                        onBlur={() => {
+                                            if (
+                                                pageSizeInput.trim() !== '' &&
+                                                Number(pageSizeInput) !== filter.pageSize
+                                            ) {
+                                                applyPageSize(pageSizeInput)
+                                            }
                                         }}
-                                        color='primary'
+                                        onKeyDown={(event) => {
+                                            if (event.key === 'Enter') {
+                                                applyPageSize(pageSizeInput)
+                                            }
+                                        }}
                                     />
-                                }
-                                label='Fill available space'
-                            />
-                        </Box>
-                    )}
+                                    <FormControlLabel
+                                        control={
+                                            <Switch
+                                                checked={filter.fillAvailableSpace}
+                                                onChange={(event) => {
+                                                    const { checked } = event.target
+                                                    setFilter((prev) => ({
+                                                        ...prev,
+                                                        fillAvailableSpace: checked,
+                                                    }))
+                                                }}
+                                                color="primary"
+                                            />
+                                        }
+                                        label="Fill available space"
+                                    />
+                                </Box>
+                            )}
                             <CardsGrid />
                             <Box mt={'auto'} display={'flex'} justifyContent={'center'} paddingTop={1}>
                                 <Pagination
@@ -254,7 +251,6 @@ export const DeckCreator = () => {
                             </Box>
                         </>
                     )}
-                    {viewMode === 'BOARD' && <FlowToolbar />}
                     <Box position={'absolute'} top={10} right={10} display={'flex'} gap={1}>
                         <IconButton
                             size="large"
@@ -352,31 +348,6 @@ export const DeckCreator = () => {
                             >
                                 Clear filter
                             </MenuItem>
-                            <MenuItem
-                                onClick={() => {
-                                    saveLocalStoreFilter()
-                                    handleMenuClose()
-                                }}
-                            >
-                                Save filter
-                            </MenuItem>
-                            <MenuItem
-                                onClick={() => {
-                                    loadLocalStoreFilter()
-                                    handleMenuClose()
-                                }}
-                            >
-                                Load filter
-                            </MenuItem>
-                            <Divider />
-                            <MenuItem
-                                onClick={() => {
-                                    setOpenImportCardPackageDialog(true)
-                                    handleMenuClose()
-                                }}
-                            >
-                                Import Card Package
-                            </MenuItem>
                         </Menu>
                         <Button variant={'contained'} color={'primary'} onClick={() => setOpenDrawer(!openDrawer)}>
                             Open Drawer
@@ -388,9 +359,7 @@ export const DeckCreator = () => {
                 </Collapse>
                 <ImportDialog />
                 <ExportDialog />
-                <PackagesDialog />
                 <CardDialog />
-                <WarningsFab />
             </Box>
         </MTGDeckCreatorFlowProvider>
     )
@@ -422,19 +391,14 @@ export const DeckCreatorWrapper = () => {
     if (!deck) return null
 
     return (
-        <MTGTagsProvider>
-            <MTGAFilterProvider>
-                <MTGCardsProvider>
-                    <ReactFlowProvider>
-                        <MTGDeckCreatorProvider initialDeck={deck}>
-                            <DndProvider>
-                                <DeckCreator />
-                            </DndProvider>
-                        </MTGDeckCreatorProvider>
-                    </ReactFlowProvider>
-                </MTGCardsProvider>
-            </MTGAFilterProvider>
-        </MTGTagsProvider>
+        <MTGAFilterProvider>
+            <MTGCardsProvider>
+                <ReactFlowProvider>
+                    <MTGDeckCreatorProvider initialDeck={deck}>
+                        <DeckCreator />
+                    </MTGDeckCreatorProvider>
+                </ReactFlowProvider>
+            </MTGCardsProvider>
+        </MTGAFilterProvider>
     )
 }
-

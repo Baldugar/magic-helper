@@ -1,20 +1,12 @@
 import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MTGFunctions } from '../../../graphql/MTGA/functions'
-import { MTG_Card, RatableEntityType } from '../../../graphql/types'
+import { MTG_Card } from '../../../graphql/types'
 import { useMTGFilter } from '../Filter/useMTGFilter'
 import { MTGCardsContext } from './MTGCardsContext'
 
 const PREFETCH_RADIUS = 2
 
 type PageCache = Record<number, MTG_Card[]>
-
-const ratingPayload = (rating: number) => ({
-    user: {
-        ID: 'USER_ID',
-        roles: [],
-    },
-    value: rating,
-})
 
 export const MTGCardsProvider = ({ children }: { children: ReactNode }) => {
     const [totalCount, setTotalCount] = useState(0)
@@ -29,7 +21,6 @@ export const MTGCardsProvider = ({ children }: { children: ReactNode }) => {
 
     const {
         queries: { getMTGCardsFilteredQuery },
-        mutations: { rateMutation },
     } = MTGFunctions
 
     const filterArgs = convertedFilters.filter
@@ -186,43 +177,9 @@ export const MTGCardsProvider = ({ children }: { children: ReactNode }) => {
         [activePage, fetchPage, pageSize, setFilter, totalCount],
     )
 
-    const setRatingForCard = (cardID: string, rating: number) => {
-        setPageCache((prevPages) => {
-            let updatedPage: number | null = null
-            const nextPages: PageCache = { ...prevPages }
-
-            for (const [key, cards] of Object.entries(prevPages)) {
-                const pageIndex = Number(key)
-                const cardIndex = cards.findIndex((card) => card.ID === cardID)
-                if (cardIndex === -1) {
-                    continue
-                }
-
-                const updatedCards = [...cards]
-                updatedCards[cardIndex] = {
-                    ...updatedCards[cardIndex],
-                    myRating: ratingPayload(rating),
-                }
-                nextPages[pageIndex] = updatedCards
-                updatedPage = pageIndex
-                break
-            }
-
-            if (updatedPage === null) {
-                return prevPages
-            }
-
-            return nextPages
-        })
-
-        rateMutation({ entityID: cardID, entityType: RatableEntityType.CARD, value: rating })
-    }
-
     const cards = pageCache[activePage] ?? []
 
     return (
-        <MTGCardsContext.Provider value={{ cards, loading, setRatingForCard, totalCount, goToPage }}>
-            {children}
-        </MTGCardsContext.Provider>
+        <MTGCardsContext.Provider value={{ cards, loading, totalCount, goToPage }}>{children}</MTGCardsContext.Provider>
     )
 }

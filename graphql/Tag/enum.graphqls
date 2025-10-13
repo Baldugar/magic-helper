@@ -1,7 +1,0 @@
-"""
-Union discriminator for tag concrete types.
-"""
-enum TagType {
-    CardTag
-    DeckTag
-}

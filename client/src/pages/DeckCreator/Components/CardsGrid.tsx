@@ -2,7 +2,7 @@ import { Box, Grid, Typography, useMediaQuery } from '@mui/material'
 import { isEqual } from 'lodash'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, WheelEvent } from 'react'
 import { SwipeEventData, useSwipeable } from 'react-swipeable'
-import { CardTile } from '../../../components/deckBuilder/CardTile/CardTile'
+import { CatalogueCard } from '../../../components/deckBuilder/CardTile/CatalogueCard'
 import { useMTGCards } from '../../../context/MTGA/Cards/useMTGCards'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
@@ -383,7 +383,7 @@ export const CardsGrid = () => {
                 </Box>
             )}
             {cardsToShow.map((card, idx) => (
-                <CardTile
+                <CatalogueCard
                     card={card}
                     cardScale={effectiveCardScale}
                     key={card.ID}

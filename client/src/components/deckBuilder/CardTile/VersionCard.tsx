@@ -1,14 +1,14 @@
 import { ButtonBase } from '@mui/material'
 import { useReactFlow } from '@xyflow/react'
-import { MTGCardWithHover } from '../../MTGCardWithHover'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGDeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
 import { MTG_Card, MTG_CardVersion } from '../../../graphql/types'
-import { getCorrectCardImage, isCardInDeck } from '../../../utils/functions/cardFunctions'
+import { isCardInDeck } from '../../../utils/functions/cardFunctions'
 import { NodeType, organizeNodes } from '../../../utils/functions/nodeFunctions'
 import { ContextMenu } from '../../../utils/hooks/ContextMenu/ContextMenu'
 import { ContextMenuOption } from '../../../utils/hooks/ContextMenu/types'
 import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
+import { MTGCardWithHover } from './MTGCardWithHover'
 
 export type VersionCardProps = {
     card: MTG_Card
@@ -48,7 +48,7 @@ export const VersionCard = (props: VersionCardProps) => {
                         ...prev,
                         cardFrontImage: {
                             cardID: card.ID,
-                            image: getCorrectCardImage(version, 'artCrop') ?? '',
+                            image: version.imageUris!,
                             versionID: version.ID,
                         },
                     }

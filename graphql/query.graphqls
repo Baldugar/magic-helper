@@ -30,39 +30,4 @@ type Query {
     List saved filter presets for a deck.
     """
     getMTGFilterPresets(deckID: ID!): [MTG_FilterPreset!]!
-    # Card Packages
-    """
-    List card packages or fetch one by ID.
-    """
-    getMTGCardPackages(cardPackageID: ID, includePublic: Boolean = false): [MTG_CardPackage!]!
-    # Tags
-    """
-    Return all tags (card and deck).
-    """
-    tags: [Tag!]!
-    """
-    Return only CardTag items.
-    """
-    cardTags: [CardTag!]!
-    """
-    Return only DeckTag items.
-    """
-    deckTags: [DeckTag!]!
-    """
-    Fetch a tag by ID (CardTag or DeckTag).
-    """
-    tag(id: ID!): Tag
-    """
-    Admin dashboard data with import status, metrics, and legality diffs.
-    """
-    adminDashboard: AdminDashboard!
-    """
-    Fetch a specific legality diff by import ID.
-    """
-    adminLegalitiesDiff(importId: ID!): AdminLegalitiesDiff
-    """
-    List recent import reports for the given job.
-    """
-    adminImportReports(job: AdminJob!, limit: Int = 25): [AdminImportReport!]!
 }
-

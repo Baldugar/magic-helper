@@ -24,8 +24,8 @@ func GetMTGDecks(ctx context.Context) ([]*model.MtgDeckDashboard, error) {
 					FILTER imageVersion != null
 					RETURN {
 						image: imageVersion.cardFaces != null && LENGTH(imageVersion.cardFaces) > 0 && imageVersion.cardFaces[0].imageUris != null 
-						? imageVersion.cardFaces[0].imageUris.artCrop 
-						: imageVersion.imageUris.artCrop,
+						? imageVersion.cardFaces[0].imageUris 
+						: imageVersion.imageUris,
 						cardID: card.ID,
 						versionID: imageVersion.ID
 					}
@@ -81,56 +81,17 @@ func GetMTGDeck(ctx context.Context, deckID string) (*model.MtgDeck, error) {
 					FILTER imageVersion != null
 					RETURN {
 						image: imageVersion.cardFaces != null && LENGTH(imageVersion.cardFaces) > 0 && imageVersion.cardFaces[0].imageUris != null 
-						? imageVersion.cardFaces[0].imageUris.artCrop 
-						: imageVersion.imageUris.artCrop,
+						? imageVersion.cardFaces[0].imageUris 
+						: imageVersion.imageUris,
 						cardID: card.ID,
 						versionID: imageVersion.ID
 					}
 			)
 			LET cards = (
 				FOR card, edge IN 1..1 INBOUND doc MTG_Card_Deck
-				LET rating = FIRST( // Remove FIRST when we get multiaccount
-					FOR node, ratingEdge IN 1..1 INBOUND card MTG_User_Rating
-					RETURN {
-						user: node,
-						value: ratingEdge.value
-					}
-				)
-				LET cardTags = (
-					FOR tag, tagEdge IN 1..1 INBOUND card MTG_Tag_CardDeck
-					FILTER tag.type == "CardTag"
-					LET cardTagRating = FIRST( // Remove FIRST when we get multiaccount
-						FOR node, ratingEdge IN 1..1 INBOUND tag MTG_User_Rating
-						RETURN {
-							user: node,
-							value: ratingEdge.value
-						}
-					)
-					RETURN MERGE(tag, {
-						myRating: cardTagRating
-					})
-				)
-				LET deckTags = (
-					FOR tag, tagEdge IN 1..1 INBOUND card MTG_Tag_CardDeck
-					FILTER tag.type == "DeckTag"
-					LET cardTagRating = FIRST( // Remove FIRST when we get multiaccount
-						FOR node, ratingEdge IN 1..1 INBOUND tag MTG_User_Rating
-						RETURN {
-							user: node,
-							value: ratingEdge.value
-						}
-					)
-					RETURN MERGE(tag, {
-						myRating: cardTagRating
-					})
-				)
 				SORT edge.position.x ASC, edge.position.y ASC
 				RETURN MERGE(edge, {					
-					card: MERGE(card, {
-						myRating: rating,
-						cardTags: cardTags,
-						deckTags: deckTags
-					}),
+					card,
 					count: edge.count,
 					position: edge.position,
 					mainOrSide: edge.mainOrSide,

@@ -1,26 +1,24 @@
 import { Close } from '@mui/icons-material'
 import { ButtonBase, Dialog, DialogContent, DialogTitle, Grid, useMediaQuery } from '@mui/material'
 import { useReactFlow } from '@xyflow/react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { useDnD } from '../../../context/DnD/useDnD'
-import { useMTGCardPackages } from '../../../context/MTGA/CardPackages/useCardPackages'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGDeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
 import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
 import { MTGFunctions } from '../../../graphql/MTGA/functions'
-import { MainOrSide, MTG_Card, MTG_CardVersion, MTG_Image } from '../../../graphql/types'
-import { getCorrectCardImage, isCardInDeck } from '../../../utils/functions/cardFunctions'
+import { MTG_Card, MTG_CardVersion, MTG_Image } from '../../../graphql/types'
+import { isCardInDeck } from '../../../utils/functions/cardFunctions'
 import { singleSetSelected } from '../../../utils/functions/filterFunctions'
 import { NodeType, organizeNodes } from '../../../utils/functions/nodeFunctions'
 import { ContextMenu } from '../../../utils/hooks/ContextMenu/ContextMenu'
 import { ContextMenuOption } from '../../../utils/hooks/ContextMenu/types'
 import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
-import { MTGCardWithHover } from '../../MTGCardWithHover'
 import { PhantomNodeData } from '../FlowCanvas/Nodes/PhantomNode'
+import { MTGCardWithHover } from './MTGCardWithHover'
 import { VersionCard } from './VersionCard'
 
-export type CardTileProps = {
+export type CatalogueCardProps = {
     card: MTG_Card
     onIgnore?: () => void
     cardScale?: number
@@ -28,27 +26,19 @@ export type CardTileProps = {
 }
 
 /**
- * CardTile renders a single card tile within the catalogue grid.
+ * CatalogueCard renders a single card tile within the catalogue grid.
  *
  * Capabilities
  * - Left click to add to the deck
  * - Context menu with actions (add/remove, ignore, add to package, set as deck image)
  * - Shows version modal, integrates with DnD and deck graph updates
  */
-export const CardTile = (props: CardTileProps) => {
+export const CatalogueCard = (props: CatalogueCardProps) => {
     const { card, onIgnore, cardScale = 1, forceImage } = props
-    const {
-        cardPackages,
-        addMTGCardToCardPackage,
-        removeMTGCardFromCardPackage,
-        createCardPackage,
-        refreshCardPackages,
-    } = useMTGCardPackages()
 
     const { onAddCard, deck, removeCard, setDeck, setOpenedCardDialog } = useMTGDeckCreator()
     const { handleDeleteZone, handleRenameZone, handleDeletePhantom } = useMTGDeckFlowCreator()
     const { setNodes } = useReactFlow<NodeType>()
-    const { item } = useDnD()
     const { filter, setFilter } = useMTGFilter()
     const {
         anchorRef: mainCardAnchorRef,
@@ -61,44 +51,9 @@ export const CardTile = (props: CardTileProps) => {
     const isMobile = useMediaQuery('(max-width: 600px)')
 
     const [showAllVersions, setShowAllVersions] = useState(false)
-    const [pendingPackageSnapshot, setPendingPackageSnapshot] = useState<string[] | null>(null)
-    const [pendingAddPackageId, setPendingAddPackageId] = useState<string | null>(null)
 
     // Track long-press position for mobile context menu
     const [mobilePosition, setMobilePosition] = useState<{ x: number; y: number } | undefined>(undefined)
-
-    useEffect(() => {
-        if (!pendingPackageSnapshot) return
-        const newPackage = cardPackages.find((pkg) => !pendingPackageSnapshot.includes(pkg.ID))
-        if (!newPackage) return
-        if (newPackage.cards.some((pkgCard) => pkgCard.card.ID === card.ID)) {
-            setPendingPackageSnapshot(null)
-            return
-        }
-        setPendingAddPackageId(newPackage.ID)
-        setPendingPackageSnapshot(null)
-    }, [pendingPackageSnapshot, cardPackages, card.ID])
-
-    useEffect(() => {
-        if (!pendingAddPackageId) return
-        let isActive = true
-
-        ;(async () => {
-            try {
-                await addMTGCardToCardPackage(pendingAddPackageId, card, MainOrSide.MAIN)
-            } catch (error) {
-                console.error('Failed to add card to the newly created card package', error)
-            } finally {
-                if (isActive) {
-                    setPendingAddPackageId(null)
-                }
-            }
-        })()
-
-        return () => {
-            isActive = false
-        }
-    }, [pendingAddPackageId, addMTGCardToCardPackage, card])
 
     const defaultVersion = card.versions.find((v) => v.isDefault)
 
@@ -107,23 +62,6 @@ export const CardTile = (props: CardTileProps) => {
     const handleAddCard = (card: MTG_Card, versionID?: string) => {
         const newDeck = onAddCard(card, undefined, versionID)
         setNodes(organizeNodes(newDeck, handleDeleteZone, handleRenameZone, handleDeletePhantom))
-    }
-
-    const handleCreateCardPackageOption = () => {
-        const rawName = prompt('Enter the name of the new card package')
-        if (!rawName) return
-        const name = rawName.trim()
-        if (!name) return
-        setPendingPackageSnapshot(cardPackages.map((pkg) => pkg.ID))
-        void (async () => {
-            try {
-                await createCardPackage(name, { card, mainOrSide: MainOrSide.MAIN })
-                await refreshCardPackages()
-            } catch (error) {
-                console.error('Failed to create card package from card tile', error)
-                setPendingPackageSnapshot(null)
-            }
-        })()
     }
 
     const handleRemoveCard = (card: MTG_Card) => {
@@ -332,33 +270,6 @@ export const CardTile = (props: CardTileProps) => {
         //             }),
         //     ],
         // },
-        {
-            id: 'addToCardPackage',
-            label: 'Add to card package',
-            shouldKeepOpen: true,
-            subMenu: [
-                {
-                    label: 'Create new card package',
-                    shouldKeepOpen: true,
-                    action: handleCreateCardPackageOption,
-                },
-                ...cardPackages.map((cp) => {
-                    const alreadyInDeck = cp.cards.find((c) => c.card.ID === card.ID)
-                    return {
-                        label: cp.name,
-                        selected: alreadyInDeck ? true : false,
-                        shouldKeepOpen: true,
-                        action: !alreadyInDeck
-                            ? () => {
-                                  addMTGCardToCardPackage(cp.ID, card, MainOrSide.MAIN)
-                              }
-                            : () => {
-                                  removeMTGCardFromCardPackage(cp.ID, card)
-                              },
-                    } as ContextMenuOption
-                }),
-            ],
-        },
 
         {
             label: 'Add as deck image',
@@ -377,7 +288,7 @@ export const CardTile = (props: CardTileProps) => {
                         ...prev,
                         cardFrontImage: {
                             cardID: card.ID,
-                            image: getCorrectCardImage(version, 'artCrop') ?? '',
+                            image: version.imageUris!,
                             versionID: version.ID,
                         },
                     }
@@ -441,7 +352,7 @@ export const CardTile = (props: CardTileProps) => {
         }
     }
 
-    const hideHover = item !== null || (forceImage !== undefined && forceImage !== 'small' && forceImage !== 'normal')
+    const hideHover = forceImage !== undefined && forceImage !== 'small' && forceImage !== 'normal'
 
     return (
         <Grid item xs={12} sm={'auto'} md={'auto'} lg={'auto'}>

@@ -19,9 +19,6 @@ type MTG_Card {
     toughness: String
     typeLine: String!
     versions: [MTG_CardVersion!]!
-    myRating: UserRating
-    cardTags: [CardTag!]!
-    deckTags: [DeckTag!]!
 }
 
 """

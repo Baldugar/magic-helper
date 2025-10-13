@@ -5,7 +5,6 @@ import (
 
 	"magic-helper/arango"
 	"magic-helper/graph/model"
-	"magic-helper/util/auth"
 
 	"github.com/rs/zerolog/log"
 )
@@ -19,21 +18,14 @@ func GetMTGFilterPresets(ctx context.Context, deckID string) ([]*model.MtgFilter
 		return []*model.MtgFilterPreset{}, nil
 	}
 
-	user, _ := auth.UserFromContext(ctx)
-	if user == nil || user.ID == "" {
-		log.Warn().Msg("GetMTGFilterPresets: Missing user in context")
-		return []*model.MtgFilterPreset{}, nil
-	}
-
 	aq := arango.NewQuery( /* aql */ `
         FOR preset IN MTG_Filter_Presets
-            FILTER preset.deckID == @deckID AND preset.ownerID == @ownerID
+            FILTER preset.deckID == @deckID
             SORT preset.savedAt DESC
             RETURN preset
     `)
 
 	aq.AddBindVar("deckID", deckID)
-	aq.AddBindVar("ownerID", user.ID)
 
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {
@@ -44,7 +36,7 @@ func GetMTGFilterPresets(ctx context.Context, deckID string) ([]*model.MtgFilter
 
 	presets := []*model.MtgFilterPreset{}
 	for cursor.HasMore() {
-		var presetDB MTGFilterPresetDB
+		var presetDB model.MTGFilterPresetDB
 		_, err := cursor.ReadDocument(ctx, &presetDB)
 		if err != nil {
 			log.Error().Err(err).Msg("GetMTGFilterPresets: Error reading document")

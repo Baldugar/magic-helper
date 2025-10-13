@@ -26,12 +26,8 @@ const mapPresetFromGraph = (preset: MTG_FilterPreset): FilterPreset => ({
     name: preset.name,
     savedAt: preset.savedAt,
     page: preset.page,
-    filter: clone(preset.filter) as unknown as FilterPreset['filter'],
-    sort: preset.sort.map((entry) => ({
-        sortBy: entry.sortBy,
-        sortDirection: entry.sortDirection,
-        enabled: entry.enabled,
-    })),
+    filter: preset.filter as unknown as FilterPreset['filter'],
+    sort: preset.sort,
 })
 
 export const useFilterPresets = () => {
@@ -41,11 +37,7 @@ export const useFilterPresets = () => {
 
     const {
         queries: { getMTGFilterPresetsQuery },
-        mutations: {
-            createMTGFilterPresetMutation,
-            updateMTGFilterPresetMutation,
-            deleteMTGFilterPresetMutation,
-        },
+        mutations: { createMTGFilterPresetMutation, updateMTGFilterPresetMutation, deleteMTGFilterPresetMutation },
     } = MTGFunctions
 
     const [presets, setPresets] = useState<FilterPreset[]>([])
@@ -151,9 +143,7 @@ export const useFilterPresets = () => {
             try {
                 const updated = await updateMTGFilterPresetMutation({ presetID: presetId, name: trimmed })
                 const mapped = mapPresetFromGraph(updated)
-                setPresets((prev) =>
-                    prev.map((preset) => (preset.id === mapped.id ? mapped : preset)),
-                )
+                setPresets((prev) => prev.map((preset) => (preset.id === mapped.id ? mapped : preset)))
                 return true
             } catch (error) {
                 console.warn('Failed to rename filter preset', error)
@@ -164,10 +154,7 @@ export const useFilterPresets = () => {
     )
 
     const sortedPresets = useMemo(
-        () =>
-            [...presets].sort(
-                (a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime(),
-            ),
+        () => [...presets].sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime()),
         [presets],
     )
 

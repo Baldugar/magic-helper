@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from 'react'
 import { MTGFunctions } from '../../../graphql/MTGA/functions'
-import { MTG_Deck, MTG_DeckCard, MTG_DeckDashboard } from '../../../graphql/types'
+import { DeckType, MTG_Deck, MTG_DeckCard, MTG_DeckDashboard } from '../../../graphql/types'
 import { MTGDecksContext } from './MTGDecksContext'
 
 export const MTGDecksProvider = ({ children }: { children: ReactNode }) => {
@@ -39,9 +39,10 @@ export const MTGDecksProvider = ({ children }: { children: ReactNode }) => {
      *
      * @param name Deck name
      */
-    const createDeck = (name: string) => {
+    const createDeck = (name: string, type?: DeckType) => {
         createMTGDeckMutation({
             name,
+            type: type ?? DeckType.UNKNOWN,
         }).then((response) => {
             if (response.status) {
                 // Optimistically append new deck to dashboard list
@@ -50,6 +51,7 @@ export const MTGDecksProvider = ({ children }: { children: ReactNode }) => {
                     {
                         cards: [],
                         ID: response.message ?? '',
+                        type: type ?? DeckType.UNKNOWN,
                         name,
                         cardFrontImage: undefined,
                     },
@@ -108,6 +110,7 @@ export const MTGDecksProvider = ({ children }: { children: ReactNode }) => {
                     ? {
                           ID: deck.ID,
                           name: deck.name,
+                          type: deck.type,
                           cardFrontImage: deck.cardFrontImage,
                           cards: deck.cards.map(convertDeckCardToDashboardDeckCard),
                       }

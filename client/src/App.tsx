@@ -1,18 +1,14 @@
 import { Suspense } from 'react'
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import './App.css'
-import { MTGCardPackagesProvider } from './context/MTGA/CardPackages/CardPackagesProvider'
 import { MTGDecksProvider } from './context/MTGA/Decks/MTGDecksProvider'
-import AdminDashboardPage from './pages/Admin/AdminDashboardPage'
 import Dashboard from './pages/Dashboard/Dashboard'
 import { DeckCreatorWrapper } from './pages/DeckCreator/DeckCreator'
 
 function MTGDataProviders() {
     return (
         <MTGDecksProvider>
-            <MTGCardPackagesProvider>
-                <Outlet />
-            </MTGCardPackagesProvider>
+            <Outlet />
         </MTGDecksProvider>
     )
 }
@@ -31,7 +27,6 @@ function WrappedApp() {
                         <Route path={'/'} element={<Navigate to={'/dashboard'} />} />
                         <Route path={'/dashboard'} element={<Dashboard />} />
                     </Route>
-                    <Route path={'/admin'} element={<AdminDashboardPage />} />
                 </Routes>
             </Suspense>
         </BrowserRouter>

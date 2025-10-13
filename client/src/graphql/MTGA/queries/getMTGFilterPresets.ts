@@ -5,7 +5,6 @@ export default gql`
         getMTGFilterPresets(deckID: $deckID) {
             ID
             deckID
-            ownerID
             name
             savedAt
             page

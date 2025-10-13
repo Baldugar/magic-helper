@@ -1,11 +1,9 @@
 import { OnNodeDrag } from '@xyflow/react'
-import { createContext, DragEventHandler, Dispatch, SetStateAction } from 'react'
+import { createContext, Dispatch, SetStateAction } from 'react'
 import { MTG_Card, MTG_DeckCard, Position } from '../../../graphql/types'
 import { NodeType } from '../../../utils/functions/nodeFunctions'
 
 type MTGDeckCreatorFlowContextType = {
-    onDrop: DragEventHandler<HTMLDivElement>
-    onDragOver: DragEventHandler<HTMLDivElement>
     handleNodeDragStop: OnNodeDrag<NodeType>
     handleDeleteZone: (nodeID: string, deleteNodes: boolean) => void
     handleRenameZone: (nodeID: string, newName: string) => void
@@ -23,8 +21,6 @@ export const MTGDeckCreatorFlowContext = createContext<MTGDeckCreatorFlowContext
     handleDeleteZone: () => {},
     handleRenameZone: () => {},
     handleNodeDragStop: () => {},
-    onDragOver: () => {},
-    onDrop: () => {},
     handleDeletePhantom: () => {},
     onAddCard: () => undefined,
     draggingGroupId: null,

@@ -48,24 +48,6 @@ func EnsureDocumentCollection(ctx context.Context, collection ArangoDocument) (a
 		return nil, err
 	}
 	log.Info().Msgf("Document collection %s already exists", c.Name())
-	// Special case: for USERS_COLLECTION, it also ensures a bootstrap doc with key "USER_ID".
-	// #TODO: Remove this once we have a proper way to create users
-	if collection == USERS_COLLECTION {
-		// Check if we have user with ID = USER_ID, if not create it
-		exists, err := c.DocumentExists(ctx, "USER_ID")
-		if err != nil {
-			log.Fatal().Err(err).Msg("Failed to check if user exists")
-			return nil, err
-		}
-		if !exists {
-			_, err := c.CreateDocument(ctx, map[string]interface{}{"_key": "USER_ID"})
-			if err != nil {
-				log.Fatal().Err(err).Msg("Failed to create user")
-				return nil, err
-			}
-			log.Info().Msgf("Created user with ID USER_ID")
-		}
-	}
 	return c, nil
 }
 

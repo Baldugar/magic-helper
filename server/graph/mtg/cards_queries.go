@@ -24,46 +24,7 @@ func GetMTGCards(ctx context.Context) ([]*model.MtgCard, error) {
 				indexHint: "MTG_Cards_Buildup"
 			}
 			FILTER (doc.manaCost == "" AND doc.layout != "meld") OR doc.manaCost != ""
-			LET rating = FIRST( // Remove FIRST when we get multiaccount
-				FOR node, ratingEdge IN 1..1 INBOUND doc MTG_User_Rating
-				RETURN {
-					user: node,
-					value: ratingEdge.value
-				}
-			)
-			LET cardTags = (
-				FOR tag, tagEdge IN 1..1 INBOUND doc MTG_Tag_CardDeck
-				FILTER tag.type == "CardTag"
-				LET cardTagRating = FIRST( // Remove FIRST when we get multiaccount
-					FOR node, ratingEdge IN 1..1 INBOUND tag MTG_User_Rating
-					RETURN {
-						user: node,
-						value: ratingEdge.value
-					}
-				)
-				RETURN MERGE(tag, {
-					myRating: cardTagRating
-				})
-			)
-			LET deckTags = (
-				FOR tag, tagEdge IN 1..1 INBOUND doc MTG_Tag_CardDeck
-				FILTER tag.type == "DeckTag"
-				LET cardTagRating = FIRST( // Remove FIRST when we get multiaccount
-					FOR node, ratingEdge IN 1..1 INBOUND tag MTG_User_Rating
-					RETURN {
-						user: node,
-						value: ratingEdge.value
-					}
-				)
-				RETURN MERGE(tag, {
-					myRating: cardTagRating
-				})
-			)
-			RETURN MERGE(doc, {
-				myRating: rating,
-				cardTags: cardTags,
-				deckTags: deckTags
-			})
+			RETURN doc
 	`)
 
 	// Build the query

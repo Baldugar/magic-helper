@@ -11,34 +11,6 @@ export const MTG_ImageFragments = gql`
     }
 `
 
-export const MTG_TagFragments = gql`
-    fragment UserRatingFragment on UserRating {
-        user {
-            ID
-        }
-        value
-    }
-
-    fragment CardTagFragment on CardTag {
-        ID
-        name
-        description
-        myRating {
-            ...UserRatingFragment
-        }
-    }
-
-    fragment DeckTagFragment on DeckTag {
-        ID
-        name
-        description
-        colors
-        myRating {
-            ...UserRatingFragment
-        }
-    }
-`
-
 export const MTG_CardFragments = gql`
     fragment MTG_CardFaceFragment on MTG_CardFace {
         imageUris {
@@ -107,18 +79,8 @@ export const MTG_CardFragments = gql`
         keywords
         loyalty
         manaCost
-        myRating {
-            ...UserRatingFragment
-        }
-        cardTags {
-            ...CardTagFragment
-        }
-        deckTags {
-            ...DeckTagFragment
-        }
     }
     ${MTG_ImageFragments}
-    ${MTG_TagFragments}
 `
 
 export const MTG_DeckFragments = gql`
@@ -130,10 +92,13 @@ export const MTG_DeckFragments = gql`
     fragment MTG_DeckFragment on MTG_Deck {
         ID
         name
+        type
         cardFrontImage {
             cardID
             versionID
-            image
+            image {
+                ...MTG_ImageFragment
+            }
         }
         cards {
             card {
@@ -165,23 +130,6 @@ export const MTG_DeckFragments = gql`
             zoneChildren
         }
         ignoredCards
-    }
-    ${MTG_CardFragments}
-`
-
-export const MTG_CardPackageFragments = gql`
-    fragment MTG_CardPackageFragment on MTG_CardPackage {
-        ID
-        name
-        isPublic
-        cards {
-            card {
-                ...MTG_CardFragment
-            }
-            selectedVersionID
-            count
-            mainOrSide
-        }
     }
     ${MTG_CardFragments}
 `

@@ -29,8 +29,6 @@ const nodeTypes: NodeTypes = {
 export const FlowCanvas = () => {
     const {
         handleNodeDragStop,
-        onDragOver,
-        onDrop,
         handleDeleteZone,
         handleRenameZone,
         handleDeletePhantom,
@@ -102,8 +100,6 @@ export const FlowCanvas = () => {
                 defaultNodes={nodes}
                 onNodeDragStart={handleNodeDragStart}
                 onNodeDragStop={handleNodeDragStopWrapper}
-                onDragOver={onDragOver}
-                onDrop={onDrop}
                 fitView
                 minZoom={0.1}
                 maxZoom={4}

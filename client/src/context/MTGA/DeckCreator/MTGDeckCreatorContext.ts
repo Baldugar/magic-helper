@@ -1,5 +1,5 @@
 import { createContext, Dispatch, SetStateAction } from 'react'
-import { MainOrSide, MTG_Card, MTG_CardPackage, MTG_Deck, MTG_DeckCard, Position } from '../../../graphql/types'
+import { DeckType, MainOrSide, MTG_Card, MTG_Deck, MTG_DeckCard, Position } from '../../../graphql/types'
 import { DeckCreatorView } from '../../../types/deckCreatorView'
 
 type MTGDeckCreatorContextType = {
@@ -28,10 +28,6 @@ type MTGDeckCreatorContextType = {
     openExportDialog: boolean
     setOpenExportDialog: Dispatch<SetStateAction<boolean>>
 
-    // Import Card Package Dialog
-    openImportCardPackageDialog: boolean
-    setOpenImportCardPackageDialog: Dispatch<SetStateAction<boolean>>
-    importCardPackage: (cardPackage: MTG_CardPackage) => void
     // Sticky CardsGrid
     stickyCardsGrid: boolean
     setStickyCardsGrid: Dispatch<SetStateAction<boolean>>
@@ -47,6 +43,7 @@ export const MTGDeckCreatorContext = createContext<MTGDeckCreatorContextType>({
         cards: [],
         ignoredCards: [],
         name: '',
+        type: DeckType.UNKNOWN,
         zones: [],
         ID: '',
     },
@@ -55,6 +52,7 @@ export const MTGDeckCreatorContext = createContext<MTGDeckCreatorContextType>({
         cards: [],
         ignoredCards: [],
         name: '',
+        type: DeckType.UNKNOWN,
         zones: [],
         ID: '',
     }),
@@ -78,10 +76,6 @@ export const MTGDeckCreatorContext = createContext<MTGDeckCreatorContextType>({
     openExportDialog: false,
     setOpenExportDialog: () => {},
 
-    // Import Card Package Dialog
-    openImportCardPackageDialog: false,
-    setOpenImportCardPackageDialog: () => {},
-    importCardPackage: () => {},
     // Sticky CardsGrid
     stickyCardsGrid: true,
     setStickyCardsGrid: () => {},

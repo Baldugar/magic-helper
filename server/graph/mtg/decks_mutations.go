@@ -12,49 +12,41 @@ import (
 func CreateMTGDeck(ctx context.Context, input model.MtgCreateDeckInput) (*model.Response, error) {
 	log.Info().Msg("CreateMTGDeck: Started")
 
-	aq := arango.NewQuery( /* aql */ `
-		INSERT {
-			name: @name,
-		} INTO MTG_Decks
-		RETURN NEW
-	`)
-
-	aq.AddBindVar("name", input.Name)
-
-	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
+	col, err := arango.EnsureDocumentCollection(ctx, arango.MTG_DECKS_COLLECTION)
 	if err != nil {
-		log.Error().Err(err).Msgf("CreateMTGDeck: Error inserting deck")
-		errMsg := err.Error()
+		log.Error().Err(err).Msgf("CreateMTGDeck: Error ensuring document collection")
+		return nil, err
+	}
+
+	exists, err := col.DocumentExists(ctx, input.Name)
+	if err != nil {
+		log.Error().Err(err).Msgf("CreateMTGDeck: Error checking if document exists")
+		return nil, err
+	}
+	if exists {
+		log.Error().Msgf("CreateMTGDeck: Deck already exists")
+		err := "Deck already exists"
 		return &model.Response{
 			Status:  false,
-			Message: &errMsg,
-		}, err
+			Message: &err,
+		}, nil
 	}
 
-	var deckDB model.MTGDeckDB
-	defer cursor.Close()
-	for cursor.HasMore() {
-		_, err := cursor.ReadDocument(ctx, &deckDB)
-		if err != nil {
-			log.Error().Err(err).Msgf("CreateMTGDeck: Error reading document")
-			errMsg := err.Error()
-			return &model.Response{
-				Status:  false,
-				Message: &errMsg,
-			}, err
-		}
+	deckDB := model.MTGDeckDB{
+		ID:   nil,
+		Name: input.Name,
+		Type: input.Type,
 	}
-
-	log.Info().Msg("CreateMTGDeck: Inserted deck")
-
-	deck := model.MtgDeckDashboard{
-		ID: deckDB.ID,
+	meta, err := col.CreateDocument(ctx, deckDB)
+	if err != nil {
+		log.Error().Err(err).Msgf("CreateMTGDeck: Error creating document")
+		return nil, err
 	}
 
 	log.Info().Msg("CreateMTGDeck: Finished")
 	return &model.Response{
 		Status:  true,
-		Message: &deck.ID,
+		Message: &meta.Key,
 	}, nil
 }
 
@@ -75,12 +67,25 @@ func DeleteMTGDeck(ctx context.Context, input model.MtgDeleteDeckInput) (*model.
 				REMOVE cardDeckEdge IN MTG_Card_Deck
 		)
 
+		LET ignoredCardsDelete = (
+			FOR ignoredCardEdge IN MTG_Deck_Ignore_Card
+				FILTER ignoredCardEdge._to == CONCAT("MTG_Decks", "/", @deckID)
+				REMOVE ignoredCardEdge IN MTG_Deck_Ignore_Card
+		)
+
+		Let filterPresetsDelete = (
+			FOR filterPresetEdge IN MTG_Filter_Preset_Deck
+				FILTER filterPresetEdge._to == CONCAT("MTG_Decks", "/", @deckID)
+				REMOVE filterPresetEdge IN MTG_Filter_Preset_Deck
+		)
+
 		LET docDelete = (
 			FOR doc IN MTG_Decks
 				FILTER doc._key == @deckID
 				REMOVE doc IN MTG_Decks
 				RETURN OLD
 		)
+
 
 		RETURN docDelete
 	`)
@@ -111,6 +116,7 @@ func UpdateMTGDeck(ctx context.Context, input model.MtgUpdateDeckInput) (*model.
 	aq := arango.NewQuery( /* aql */ `
 		UPDATE @deckID WITH {
 			name: @name,
+			type: @type,
 			zones: @zones,
 		} IN MTG_Decks
 		RETURN NEW
@@ -121,6 +127,7 @@ func UpdateMTGDeck(ctx context.Context, input model.MtgUpdateDeckInput) (*model.
 
 	aq.AddBindVar("deckID", input.DeckID)
 	aq.AddBindVar("name", input.Name)
+	aq.AddBindVar("type", input.Type)
 	aq.AddBindVar("zones", input.Zones)
 
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
@@ -148,6 +155,7 @@ func UpdateMTGDeck(ctx context.Context, input model.MtgUpdateDeckInput) (*model.
 		}
 	}
 
+	// TODO: REFACTOR THIS SO IT DOESN'T DELETE AND ADD ALL CARDS AGAIN
 	// Remove all cards from the deck
 	aq = arango.NewQuery( /* aql */ `
 		FOR edge IN MTG_Card_Deck
@@ -303,16 +311,10 @@ func SaveMTGDeckAsCopy(ctx context.Context, input model.MtgUpdateDeckInput) (*mo
 		return nil, err
 	}
 
-	deck, err := GetMTGDeck(ctx, deckID)
-	if err != nil {
-		log.Error().Err(err).Msgf("SaveDeckAsCopy: Error getting deck")
-		return nil, err
-	}
-
 	log.Info().Msg("SaveDeckAsCopy: Finished")
 	return &model.Response{
 		Status:  true,
-		Message: &deck.ID,
+		Message: &deckID,
 	}, nil
 }
 

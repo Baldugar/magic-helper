@@ -15,13 +15,7 @@ const (
 	MTG_CARDS_COLLECTION          ArangoDocument = "MTG_Cards"
 	MTG_ORIGINAL_CARDS_COLLECTION ArangoDocument = "MTG_Original_Cards"
 	MTG_DECKS_COLLECTION          ArangoDocument = "MTG_Decks"
-	MTG_CARD_PACKAGES_COLLECTION  ArangoDocument = "MTG_Card_Packages"
 	MTG_FILTER_PRESETS_COLLECTION ArangoDocument = "MTG_Filter_Presets"
-	MTG_TAGS_COLLECTION           ArangoDocument = "MTG_Tags"
-	MTG_IMPORT_REPORTS_COLLECTION ArangoDocument = "MTG_Import_Reports"
-	MTG_LEGALITY_DIFFS_COLLECTION ArangoDocument = "MTG_Legality_Diffs"
-	// User collections
-	USERS_COLLECTION ArangoDocument = "Users"
 )
 
 func (d ArangoDocument) String() string {
@@ -35,10 +29,7 @@ const (
 	// MTG edge collections
 	MTG_CARD_DECK_EDGE                ArangoEdge = "MTG_Card_Deck"
 	MTG_DECK_FRONT_CARD_IMAGE_EDGE    ArangoEdge = "MTG_Deck_Front_Card_Image"
-	MTG_CARD_CARD_PACKAGE_EDGE        ArangoEdge = "MTG_Card_Card_Package"
 	MTG_FILTER_PRESET_DECK_EDGE       ArangoEdge = "MTG_Filter_Preset_Deck"
-	MTG_TAG_EDGE_COLLECTION           ArangoEdge = "MTG_Tag_CardDeck"
-	MTG_USER_RATING_EDGE_COLLECTION   ArangoEdge = "MTG_User_Rating"
 	MTG_IGNORED_CARDS_EDGE_COLLECTION ArangoEdge = "MTG_Deck_Ignore_Card"
 )
 
@@ -66,12 +57,7 @@ var DOCUMENT_COLLECTIONS = []ArangoDocument{
 	MTG_CARDS_COLLECTION,
 	MTG_ORIGINAL_CARDS_COLLECTION,
 	MTG_DECKS_COLLECTION,
-	MTG_CARD_PACKAGES_COLLECTION,
 	MTG_FILTER_PRESETS_COLLECTION,
-	MTG_TAGS_COLLECTION,
-	MTG_IMPORT_REPORTS_COLLECTION,
-	MTG_LEGALITY_DIFFS_COLLECTION,
-	USERS_COLLECTION,
 }
 
 // EDGE_COLLECTIONS lists all edge collections that must exist.
@@ -79,10 +65,7 @@ var EDGE_COLLECTIONS = []ArangoEdge{
 	// MTG edge collections
 	MTG_CARD_DECK_EDGE,
 	MTG_DECK_FRONT_CARD_IMAGE_EDGE,
-	MTG_CARD_CARD_PACKAGE_EDGE,
 	MTG_FILTER_PRESET_DECK_EDGE,
-	MTG_TAG_EDGE_COLLECTION,
-	MTG_USER_RATING_EDGE_COLLECTION,
 	MTG_IGNORED_CARDS_EDGE_COLLECTION,
 }
 

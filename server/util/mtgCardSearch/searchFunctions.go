@@ -460,16 +460,6 @@ func passesFilter(card *model.MtgCard, filter model.MtgFilterSearchInput, cards 
 		return false
 	}
 
-	// Tag filtering
-	if !passesTagFilter(card, filter.Tags) {
-		return false
-	}
-
-	// Rating filtering
-	if !passesRatingFilter(card, filter.Rating) {
-		return false
-	}
-
 	return true
 }
 
@@ -1080,98 +1070,6 @@ func passesGameFilter(card *model.MtgCard, gameFilters []*model.MtgFilterGameInp
 				}
 			}
 		}
-	}
-
-	return true
-}
-
-// passesTagFilter checks if a card passes the tag filtering criteria.
-func passesTagFilter(card *model.MtgCard, tagFilters []*model.MtgFilterTagInput) bool {
-	if len(tagFilters) == 0 {
-		return true
-	}
-
-	positiveTags := make([]string, 0)
-	negativeTags := make([]string, 0)
-
-	for _, tagFilter := range tagFilters {
-		switch tagFilter.Value {
-		case model.TernaryBooleanTrue:
-			positiveTags = append(positiveTags, tagFilter.Tag)
-		case model.TernaryBooleanFalse:
-			negativeTags = append(negativeTags, tagFilter.Tag)
-		}
-	}
-
-	// Check positive tags
-	if len(positiveTags) > 0 {
-		hasPositiveTag := false
-		for _, posTag := range positiveTags {
-			// Check CardTags
-			for _, cardTag := range card.CardTags {
-				if strings.EqualFold(cardTag.Name, posTag) || strings.EqualFold(cardTag.ID, posTag) {
-					hasPositiveTag = true
-					break
-				}
-			}
-			if hasPositiveTag {
-				break
-			}
-			// Check DeckTags
-			for _, deckTag := range card.DeckTags {
-				if strings.EqualFold(deckTag.Name, posTag) || strings.EqualFold(deckTag.ID, posTag) {
-					hasPositiveTag = true
-					break
-				}
-			}
-			if hasPositiveTag {
-				break
-			}
-		}
-		if !hasPositiveTag {
-			return false
-		}
-	}
-
-	// Check negative tags
-	for _, negTag := range negativeTags {
-		// Check CardTags
-		for _, cardTag := range card.CardTags {
-			if strings.EqualFold(cardTag.Name, negTag) || strings.EqualFold(cardTag.ID, negTag) {
-				return false
-			}
-		}
-		// Check DeckTags
-		for _, deckTag := range card.DeckTags {
-			if strings.EqualFold(deckTag.Name, negTag) || strings.EqualFold(deckTag.ID, negTag) {
-				return false
-			}
-		}
-	}
-
-	return true
-}
-
-// passesRatingFilter checks if a card passes the rating filtering criteria.
-func passesRatingFilter(card *model.MtgCard, ratingFilter *model.MtgFilterRatingInput) bool {
-	if ratingFilter == nil {
-		return true
-	}
-
-	// Treat missing ratings the same as a zero rating.
-	rating := 0
-	if card.MyRating != nil {
-		rating = card.MyRating.Value
-	}
-
-	// Check minimum rating
-	if ratingFilter.Min != nil && rating < *ratingFilter.Min {
-		return false
-	}
-
-	// Check maximum rating
-	if ratingFilter.Max != nil && rating > *ratingFilter.Max {
-		return false
 	}
 
 	return true

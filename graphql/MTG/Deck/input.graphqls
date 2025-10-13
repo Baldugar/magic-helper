@@ -3,6 +3,7 @@ Input to create a new deck.
 """
 input MTG_CreateDeckInput {
     name: String!
+    type: DeckType!
 }
 
 """
@@ -19,6 +20,7 @@ input MTG_UpdateDeckInput {
     deckID: ID!
     name: String!
     cardFrontImage: MTG_DeckCardFrontImageInput
+    type: DeckType!
     cards: [MTG_DeckCardInput!]!
     zones: [FlowZoneInput!]!
 }

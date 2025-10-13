@@ -9,7 +9,9 @@ export default gql`
             cardFrontImage {
                 cardID
                 versionID
-                image
+                image {
+                    ...MTG_ImageFragment
+                }
             }
             cards {
                 selectedVersionID

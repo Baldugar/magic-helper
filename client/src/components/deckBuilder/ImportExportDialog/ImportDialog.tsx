@@ -10,10 +10,10 @@ import {
     Typography,
 } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
-import { useMTGDeckCreator } from '../context/MTGA/DeckCreator/useMTGDeckCreator'
-import { MTGFunctions } from '../graphql/MTGA/functions'
-import { MainOrSide, MTG_Card, MTG_Deck, MTG_DeckCard, MTG_DeckCardType } from '../graphql/types'
-import { findNextAvailablePosition } from '../utils/functions/nodeFunctions'
+import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
+import { MTGFunctions } from '../../../graphql/MTGA/functions'
+import { MainOrSide, MTG_Card, MTG_Deck, MTG_DeckCard, MTG_DeckCardType } from '../../../graphql/types'
+import { findNextAvailablePosition } from '../../../utils/functions/nodeFunctions'
 
 const ARENA_LINE_REGEX = /^(\d+)\s+(.+?)(?:\s+\([^)]*\)\s+\d+)?$/
 const SIMPLE_LINE_REGEX = /^(\d+)\s+(.+)$/

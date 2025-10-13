@@ -1,13 +1,5 @@
 import { ReactNode, useEffect, useState } from 'react'
-import {
-    MainOrSide,
-    MTG_Card,
-    MTG_CardPackage,
-    MTG_Deck,
-    MTG_DeckCard,
-    MTG_DeckCardType,
-    Position,
-} from '../../../graphql/types'
+import { MainOrSide, MTG_Card, MTG_Deck, MTG_DeckCard, MTG_DeckCardType, Position } from '../../../graphql/types'
 import { DeckCreatorView } from '../../../types/deckCreatorView'
 import { singleSetSelected } from '../../../utils/functions/filterFunctions'
 import { uuidv4 } from '../../../utils/functions/IDFunctions'
@@ -25,7 +17,6 @@ export const MTGDeckCreatorProvider = ({ children, initialDeck }: { children: Re
     const [deckTab, setDeckTab] = useState<MainOrSide>(MainOrSide.MAIN)
     const [openImportDialog, setOpenImportDialog] = useState(false)
     const [openExportDialog, setOpenExportDialog] = useState(false)
-    const [openImportCardPackageDialog, setOpenImportCardPackageDialog] = useState(false)
     // Sticky CardsGrid
     const [stickyCardsGrid, setStickyCardsGrid] = useState(true)
 
@@ -200,38 +191,6 @@ export const MTGDeckCreatorProvider = ({ children, initialDeck }: { children: Re
         setDeck(newDeck)
     }
 
-    const importCardPackage = (cardPackage: MTG_CardPackage) => {
-        const newDeck = structuredClone(deck)
-        if (!newDeck) return
-        for (const card of cardPackage.cards) {
-            const index = newDeck.cards.findIndex((c) => c.card.ID === card.card.ID)
-            if (index !== -1) {
-                newDeck.cards[index].count += card.count
-            } else {
-                const ID = card.card.ID
-                const index = newDeck.cards.findIndex((c) => c.card.ID === ID && c.mainOrSide === deckTab)
-                const nextAvailableSpot = findNextAvailablePosition(newDeck.cards)
-                // If the card is already in the deck, add a phantom
-                if (index !== -1) {
-                    newDeck.cards[index].phantoms.push({ ID: uuidv4(), position: nextAvailableSpot })
-                } else {
-                    const setVersion = card.card.versions.find((v) => v.ID === card.selectedVersionID || v.set === set)
-                    const cardToReturn: MTG_DeckCard = {
-                        card: card.card,
-                        count: 1,
-                        deckCardType: MTG_DeckCardType.NORMAL,
-                        mainOrSide: deckTab,
-                        position: nextAvailableSpot,
-                        phantoms: [],
-                        selectedVersionID: setVersion?.ID,
-                    }
-                    newDeck.cards.push(cardToReturn)
-                }
-            }
-        }
-        setDeck(newDeck)
-    }
-
     const setCardVersion = (cardID: string, versionID: string) => {
         if (!deck) return
         const newDeck = structuredClone(deck)
@@ -261,9 +220,6 @@ export const MTGDeckCreatorProvider = ({ children, initialDeck }: { children: Re
                 setOpenImportDialog,
                 openExportDialog,
                 setOpenExportDialog,
-                openImportCardPackageDialog,
-                setOpenImportCardPackageDialog,
-                importCardPackage,
                 setCardVersion,
                 // Sticky CardsGrid
                 stickyCardsGrid,

@@ -2,9 +2,11 @@
 Supported deck archetypes.
 """
 enum DeckType {
-    # STANDARD
-    BRAWL_60
-    BRAWL_100
+    UNKNOWN
+    STANDARD
+    HISTORIC
+    STANDARD_BRAWL
+    BRAWL
 }
 
 """

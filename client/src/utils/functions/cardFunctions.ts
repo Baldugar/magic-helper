@@ -8,13 +8,16 @@ import {
 } from '../../graphql/types'
 
 export const getCorrectCardImage = (
-    card: MTG_CardVersion | MTG_CardVersion_Dashboard,
+    card: MTG_CardVersion | MTG_CardVersion_Dashboard | MTG_Image,
     size: keyof MTG_Image,
     other?: boolean,
 ) => {
-    const cardFaces = card.cardFaces
+    if (size in card) {
+        return card[size as keyof typeof card]
+    }
+    const cardFaces = 'cardFaces' in card ? card.cardFaces : []
     if (!cardFaces || cardFaces.length === 0) {
-        return other ? undefined : card.imageUris![size]
+        return other ? undefined : 'imageUris' in card ? card.imageUris![size] : undefined
     }
     if (other && cardFaces.length > 1) {
         if (cardFaces[1].imageUris) {
@@ -23,12 +26,12 @@ export const getCorrectCardImage = (
         if (cardFaces[0].imageUris) {
             return cardFaces[0].imageUris![size]
         }
-        return card.imageUris![size]
+        return 'imageUris' in card ? card.imageUris![size] : undefined
     }
     if (cardFaces[0].imageUris) {
         return cardFaces[0].imageUris![size]
     }
-    return card.imageUris![size]
+    return 'imageUris' in card ? card.imageUris![size] : undefined
 }
 
 export const getCorrectVersionImage = (card: MTG_CardVersion, size: keyof MTG_Image) => {

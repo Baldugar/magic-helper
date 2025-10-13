@@ -4,6 +4,7 @@ A user deck with cards, positions, zones and optional front image.
 type MTG_Deck {
     ID: ID! @goTag(key: "json", value: "_key")
     name: String!
+    type: DeckType!
     cardFrontImage: MTG_Deck_CardFrontImage
     cards: [MTG_DeckCard!]!
     zones: [FlowZone!]!
@@ -37,6 +38,7 @@ Deck summary for dashboard listings.
 type MTG_DeckDashboard {
     ID: ID! @goTag(key: "json", value: "_key")
     name: String!
+    type: DeckType!
     cardFrontImage: MTG_Deck_CardFrontImage
     cards: [MTG_DeckCard_Dashboard!]!
 }
@@ -47,7 +49,7 @@ Selected front image for a deck, referencing a card version.
 type MTG_Deck_CardFrontImage {
     cardID: ID!
     versionID: ID!
-    image: String!
+    image: MTG_Image!
 }
 
 """

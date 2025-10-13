@@ -1,7 +1,7 @@
 import { Add, Delete, Remove } from '@mui/icons-material'
 import { Box, IconButton, Typography } from '@mui/material'
 import { useState } from 'react'
-import { HoverMouseComponent } from '../../../components/HoverMouseComponent'
+import { HoverMouseComponent } from '../../../components/deckBuilder/CardTile/HoverMouseComponent'
 import { MTG_DeckCard } from '../../../graphql/types'
 import { CARD_SIZE_VALUES } from '../../../utils/constants'
 import { getCorrectCardImage, matchesCommanderColorIdentity } from '../../../utils/functions/cardFunctions'

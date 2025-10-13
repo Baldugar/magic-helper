@@ -50,8 +50,6 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
         fetchData<Query>(getMTGAFilters).then((data) => {
             if (!data) throw new Error('No data from getMTGFilters')
             const result = data.data.getMTGFilters
-            const cardTags = data.data.cardTags
-            const deckTags = data.data.deckTags
             setFilter((prev) => {
                 // prev = cloneDeep(initialMTGFilter) IS THIS NEEDED??
                 for (const key of result.types) {
@@ -79,12 +77,6 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
                 }
                 for (const layout of result.layouts) {
                     prev.layouts[layout] = TernaryBoolean.UNSET
-                }
-                for (const tag of cardTags || []) {
-                    prev.tags[tag.name] = TernaryBoolean.UNSET
-                }
-                for (const tag of deckTags || []) {
-                    prev.tags[tag.name] = TernaryBoolean.UNSET
                 }
                 prev.page = 0
                 setOriginalFilter({ ...prev })
@@ -136,7 +128,7 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
                     sortDirection: s.sortDirection,
                     enabled: true,
                 }))
-            const resolvedPageSize = isMobile ? PAGE_SIZE_MOBILE : (filter.pageSize ?? PAGE_SIZE_DESKTOP)
+            const resolvedPageSize = isMobile ? PAGE_SIZE_MOBILE : filter.pageSize ?? PAGE_SIZE_DESKTOP
             toReturn.pagination = {
                 page: filter.page,
                 pageSize: resolvedPageSize,
@@ -186,10 +178,6 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
                 rarity: key as MTG_Rarity,
                 value,
             }))
-            toReturn.filter.rating = {
-                max: filter.rating.max,
-                min: filter.rating.min,
-            }
             toReturn.filter.searchString = filter.searchString
             const sets = Object.entries(filter.sets).filter(([_, value]) => isNotUnsetTB(value.value))
             toReturn.filter.sets = sets.map(([key, value]) => ({
@@ -199,12 +187,6 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
             // const subtypes = Object.entries(filter.subtypes).filter(([_, value]) => Object.values(value).some(isNotUnsetTB))
             // TODO: Add subtypes
             toReturn.filter.subtypes = []
-            toReturn.filter.tags = Object.entries(filter.tags)
-                .filter(([_, value]) => isNotUnsetTB(value))
-                .map(([key, value]) => ({
-                    tag: key,
-                    value,
-                }))
 
             toReturn.filter.deckID = filter.deckID
             toReturn.filter.commander = filter.commander

@@ -3,6 +3,7 @@ import { Box, Button, Divider, Grid, IconButton, Paper, Typography, useMediaQuer
 import { useReactFlow } from '@xyflow/react'
 import { sortBy } from 'lodash'
 import { useMemo } from 'react'
+import { PhantomNodeData } from '../../../components/deckBuilder/FlowCanvas/Nodes/PhantomNode'
 import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
 import { useMTGDecks } from '../../../context/MTGA/Decks/useMTGDecks'
 import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
@@ -11,7 +12,6 @@ import { MainOrSide, MTG_DeckCard, MTG_DeckCardType, MTG_UpdateDeckInput } from 
 import { DRAWER_WIDTH_DESKTOP, DRAWER_WIDTH_MOBILE } from '../../../utils/constants'
 import { calculateCardsFromNodes, calculateZonesFromNodes, NodeType } from '../../../utils/functions/nodeFunctions'
 import { DeckCard } from './DeckCard'
-import { PhantomNodeData } from '../../../components/deckBuilder/FlowCanvas/Nodes/PhantomNode'
 
 /**
  * Drawer shows and manages the current deck list with commander, main, and sideboard.
@@ -40,6 +40,7 @@ export const Drawer = () => {
             cards: calculateCardsFromNodes(nodes, deck.cards),
             deckID: deck.ID,
             name: deck.name,
+            type: deck.type,
             zones: calculateZonesFromNodes(nodes),
             cardFrontImage: deck.cardFrontImage
                 ? {
@@ -62,6 +63,7 @@ export const Drawer = () => {
             cards: calculateCardsFromNodes(nodes, deck.cards),
             deckID: deck.ID,
             name: deck.name,
+            type: deck.type,
             zones: calculateZonesFromNodes(nodes),
             cardFrontImage: deck.cardFrontImage
                 ? {

@@ -6,12 +6,9 @@ package graph
 
 import (
 	"context"
-	"fmt"
-	"magic-helper/graph/admin"
 	"magic-helper/graph/gentypes"
 	"magic-helper/graph/model"
 	"magic-helper/graph/mtg"
-	"magic-helper/util/auth"
 )
 
 // Mutation resolvers delegate to the mtg package which holds domain logic.
@@ -36,36 +33,6 @@ func (r *mutationResolver) SaveMTGDeckAsCopy(ctx context.Context, input model.Mt
 	return mtg.SaveMTGDeckAsCopy(ctx, input)
 }
 
-// CreateMTGCardPackage is the resolver for the createMTGCardPackage field.
-func (r *mutationResolver) CreateMTGCardPackage(ctx context.Context, input model.MtgCreateCardPackageInput) (*model.Response, error) {
-	return mtg.CreateMTGCardPackage(ctx, input)
-}
-
-// DeleteMTGCardPackage is the resolver for the deleteMTGCardPackage field.
-func (r *mutationResolver) DeleteMTGCardPackage(ctx context.Context, input model.MtgDeleteCardPackageInput) (*model.Response, error) {
-	return mtg.DeleteMTGCardPackage(ctx, input)
-}
-
-// EditMTGCardPackageName is the resolver for the editMTGCardPackageName field.
-func (r *mutationResolver) EditMTGCardPackageName(ctx context.Context, input model.MtgEditCardPackageNameInput) (*model.Response, error) {
-	panic(fmt.Errorf("not implemented: EditMTGCardPackageName - editMTGCardPackageName"))
-}
-
-// EditMTGCardPackageVisibility is the resolver for the editMTGCardPackageVisibility field.
-func (r *mutationResolver) EditMTGCardPackageVisibility(ctx context.Context, input model.MtgEditCardPackageVisibilityInput) (*model.Response, error) {
-	return mtg.EditMTGCardPackageVisibility(ctx, input)
-}
-
-// AddMTGCardToCardPackage is the resolver for the addMTGCardToCardPackage field.
-func (r *mutationResolver) AddMTGCardToCardPackage(ctx context.Context, input model.MtgAddCardToCardPackageInput) (*model.Response, error) {
-	return mtg.AddMTGCardToCardPackage(ctx, input)
-}
-
-// RemoveMTGCardFromCardPackage is the resolver for the removeMTGCardFromCardPackage field.
-func (r *mutationResolver) RemoveMTGCardFromCardPackage(ctx context.Context, input model.MtgRemoveCardFromCardPackageInput) (*model.Response, error) {
-	return mtg.RemoveMTGCardFromCardPackage(ctx, input)
-}
-
 // CreateMTGFilterPreset is the resolver for the createMTGFilterPreset field.
 func (r *mutationResolver) CreateMTGFilterPreset(ctx context.Context, input model.MtgCreateFilterPresetInput) (*model.MtgFilterPreset, error) {
 	return mtg.CreateMTGFilterPreset(ctx, input)
@@ -81,36 +48,6 @@ func (r *mutationResolver) DeleteMTGFilterPreset(ctx context.Context, input mode
 	return mtg.DeleteMTGFilterPreset(ctx, input)
 }
 
-// CreateTag is the resolver for the createTag field.
-func (r *mutationResolver) CreateTag(ctx context.Context, input model.CreateTagInput) (*model.Response, error) {
-	return mtg.CreateTag(ctx, input)
-}
-
-// UpdateTag is the resolver for the updateTag field.
-func (r *mutationResolver) UpdateTag(ctx context.Context, input model.UpdateTagInput) (*model.Response, error) {
-	return mtg.UpdateTag(ctx, input)
-}
-
-// DeleteTag is the resolver for the deleteTag field.
-func (r *mutationResolver) DeleteTag(ctx context.Context, tagID string) (*model.Response, error) {
-	return mtg.DeleteTag(ctx, tagID)
-}
-
-// AssignTag is the resolver for the assignTag field.
-func (r *mutationResolver) AssignTag(ctx context.Context, input model.AssignTagInput) (*model.Response, error) {
-	return mtg.AssignTag(ctx, input)
-}
-
-// UnassignTag is the resolver for the unassignTag field.
-func (r *mutationResolver) UnassignTag(ctx context.Context, input model.UnassignTagInput) (*model.Response, error) {
-	return mtg.UnassignTag(ctx, input)
-}
-
-// Rate is the resolver for the rate field.
-func (r *mutationResolver) Rate(ctx context.Context, input model.RateInput) (*model.Response, error) {
-	return mtg.Rate(ctx, input)
-}
-
 // AddIgnoredCard is the resolver for the addIgnoredCard field.
 func (r *mutationResolver) AddIgnoredCard(ctx context.Context, input model.AddIgnoredCardInput) (*model.Response, error) {
 	return mtg.AddIgnoredCard(ctx, input)
@@ -119,22 +56,6 @@ func (r *mutationResolver) AddIgnoredCard(ctx context.Context, input model.AddIg
 // RemoveIgnoredCard is the resolver for the removeIgnoredCard field.
 func (r *mutationResolver) RemoveIgnoredCard(ctx context.Context, input model.RemoveIgnoredCardInput) (*model.Response, error) {
 	return mtg.RemoveIgnoredCard(ctx, input)
-}
-
-// AdminRetryImport is the resolver for the adminRetryImport field.
-func (r *mutationResolver) AdminRetryImport(ctx context.Context, input model.AdminImportActionInput) (*model.Response, error) {
-	if err := auth.RequireRole(ctx, auth.RoleAdmin); err != nil {
-		return nil, err
-	}
-	return admin.RetryImport(ctx, input)
-}
-
-// AdminBackfillImport is the resolver for the adminBackfillImport field.
-func (r *mutationResolver) AdminBackfillImport(ctx context.Context, input model.AdminImportActionInput) (*model.Response, error) {
-	if err := auth.RequireRole(ctx, auth.RoleAdmin); err != nil {
-		return nil, err
-	}
-	return admin.BackfillImport(ctx, input)
 }
 
 // Mutation returns gentypes.MutationResolver implementation.

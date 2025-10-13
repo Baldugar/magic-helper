@@ -1,8 +1,0 @@
-"""
-Rate a card or tag by ID.
-"""
-input RateInput {
-    entityID: ID!
-    entityType: RatableEntityType!
-    value: Int!
-}

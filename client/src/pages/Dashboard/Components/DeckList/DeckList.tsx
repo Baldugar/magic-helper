@@ -1,7 +1,7 @@
 import { Box, Button, Grid, Paper, Popover, Stack, TextField, Typography } from '@mui/material'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import RotatingHDeckBox from '../../../../components/HDeckBox'
+import RotatingHDeckBox from '../../../../components/dashboard/DeckBox/HDeckBox'
 import { useMTGDecks } from '../../../../context/MTGA/Decks/useMTGDecks'
 
 /**

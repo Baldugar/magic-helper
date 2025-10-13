@@ -14,8 +14,6 @@ input MTG_Filter_SearchInput {
     layouts: [MTG_Filter_LayoutInput!]!
     games: [MTG_Filter_GameInput!]!
     hideIgnored: Boolean!
-    tags: [MTG_Filter_TagInput!]!
-    rating: MTG_Filter_RatingInput!
     commander: ID
     deckID: ID
     isSelectingCommander: Boolean!
@@ -99,22 +97,6 @@ Game platform filter entry with ternary state.
 input MTG_Filter_GameInput {
     game: MTG_Game!
     value: TernaryBoolean!
-}
-
-"""
-Tag filter entry by name or id with ternary state.
-"""
-input MTG_Filter_TagInput {
-    tag: String!
-    value: TernaryBoolean!
-}
-
-"""
-Min/max rating bounds for filtering.
-"""
-input MTG_Filter_RatingInput {
-    min: Int
-    max: Int
 }
 
 """

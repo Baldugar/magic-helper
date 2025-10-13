@@ -8,7 +8,6 @@ import (
 
 	"magic-helper/arango"
 	"magic-helper/graph/model"
-	"magic-helper/util/auth"
 
 	"github.com/rs/zerolog/log"
 )
@@ -21,12 +20,6 @@ var (
 // CreateMTGFilterPreset persists a new preset and links it to the target deck.
 func CreateMTGFilterPreset(ctx context.Context, input model.MtgCreateFilterPresetInput) (*model.MtgFilterPreset, error) {
 	log.Info().Str("deckID", input.DeckID).Msg("CreateMTGFilterPreset: Started")
-
-	user, _ := auth.UserFromContext(ctx)
-	if user == nil || user.ID == "" {
-		log.Error().Msg("CreateMTGFilterPreset: Missing user in context")
-		return nil, errFilterPresetUnauthorized
-	}
 
 	deckID := strings.TrimSpace(input.DeckID)
 	if deckID == "" {
@@ -43,7 +36,7 @@ func CreateMTGFilterPreset(ctx context.Context, input model.MtgCreateFilterPrese
 		filterData = map[string]any{}
 	}
 
-	sortState := sortInputToState(input.Sort)
+	sortState := model.SortInputToState(input.Sort)
 	if sortState == nil {
 		sortState = []*model.MtgFilterSortState{}
 	}
@@ -53,7 +46,6 @@ func CreateMTGFilterPreset(ctx context.Context, input model.MtgCreateFilterPrese
 	aq := arango.NewQuery( /* aql */ `
         INSERT {
             deckID: @deckID,
-            ownerID: @ownerID,
             name: @name,
             savedAt: @savedAt,
             filter: @filter,
@@ -64,7 +56,6 @@ func CreateMTGFilterPreset(ctx context.Context, input model.MtgCreateFilterPrese
     `)
 
 	aq.AddBindVar("deckID", deckID)
-	aq.AddBindVar("ownerID", user.ID)
 	aq.AddBindVar("name", name)
 	aq.AddBindVar("savedAt", savedAt)
 	aq.AddBindVar("filter", filterData)
@@ -78,7 +69,7 @@ func CreateMTGFilterPreset(ctx context.Context, input model.MtgCreateFilterPrese
 	}
 	defer cursor.Close()
 
-	var presetDB MTGFilterPresetDB
+	var presetDB model.MTGFilterPresetDB
 	for cursor.HasMore() {
 		_, err := cursor.ReadDocument(ctx, &presetDB)
 		if err != nil {
@@ -87,7 +78,7 @@ func CreateMTGFilterPreset(ctx context.Context, input model.MtgCreateFilterPrese
 		}
 	}
 
-	if presetDB.ID == "" {
+	if presetDB.ID == nil {
 		log.Error().Msg("CreateMTGFilterPreset: Insert returned empty preset")
 		return nil, errors.New("failed to create filter preset")
 	}
@@ -102,14 +93,14 @@ func CreateMTGFilterPreset(ctx context.Context, input model.MtgCreateFilterPrese
 	edgeQuery.AddBindVar("deckCollection", arango.MTG_DECKS_COLLECTION.String())
 	edgeQuery.AddBindVar("presetCollection", arango.MTG_FILTER_PRESETS_COLLECTION.String())
 	edgeQuery.AddBindVar("deckID", deckID)
-	edgeQuery.AddBindVar("presetID", presetDB.ID)
+	edgeQuery.AddBindVar("presetID", *presetDB.ID)
 
 	if _, err := arango.DB.Query(ctx, edgeQuery.Query, edgeQuery.BindVars); err != nil {
 		log.Error().Err(err).Msg("CreateMTGFilterPreset: Error creating deck edge")
 		return nil, err
 	}
 
-	log.Info().Str("presetID", presetDB.ID).Msg("CreateMTGFilterPreset: Finished")
+	log.Info().Str("presetID", *presetDB.ID).Msg("CreateMTGFilterPreset: Finished")
 	return presetDB.ToModel(), nil
 }
 
@@ -117,17 +108,11 @@ func CreateMTGFilterPreset(ctx context.Context, input model.MtgCreateFilterPrese
 func UpdateMTGFilterPreset(ctx context.Context, input model.MtgUpdateFilterPresetInput) (*model.MtgFilterPreset, error) {
 	log.Info().Str("presetID", input.PresetID).Msg("UpdateMTGFilterPreset: Started")
 
-	user, _ := auth.UserFromContext(ctx)
-	if user == nil || user.ID == "" {
-		log.Error().Msg("UpdateMTGFilterPreset: Missing user in context")
-		return nil, errFilterPresetUnauthorized
-	}
-
 	presetDB, err := getFilterPresetByID(ctx, input.PresetID)
 	if err != nil {
 		return nil, err
 	}
-	if presetDB == nil || presetDB.OwnerID == nil || *presetDB.OwnerID != user.ID {
+	if presetDB == nil {
 		return nil, errFilterPresetNotFound
 	}
 
@@ -146,7 +131,7 @@ func UpdateMTGFilterPreset(ctx context.Context, input model.MtgUpdateFilterPrese
 	}
 
 	if input.Sort != nil {
-		updateFields["sort"] = sortInputToState(input.Sort)
+		updateFields["sort"] = model.SortInputToState(input.Sort)
 	}
 
 	if input.Page != nil {
@@ -172,7 +157,7 @@ func UpdateMTGFilterPreset(ctx context.Context, input model.MtgUpdateFilterPrese
 	}
 	defer cursor.Close()
 
-	var updatedPreset MTGFilterPresetDB
+	var updatedPreset model.MTGFilterPresetDB
 	for cursor.HasMore() {
 		_, err := cursor.ReadDocument(ctx, &updatedPreset)
 		if err != nil {
@@ -181,11 +166,11 @@ func UpdateMTGFilterPreset(ctx context.Context, input model.MtgUpdateFilterPrese
 		}
 	}
 
-	if updatedPreset.ID == "" {
+	if updatedPreset.ID == nil {
 		return nil, errFilterPresetNotFound
 	}
 
-	log.Info().Str("presetID", updatedPreset.ID).Msg("UpdateMTGFilterPreset: Finished")
+	log.Info().Str("presetID", *updatedPreset.ID).Msg("UpdateMTGFilterPreset: Finished")
 	return updatedPreset.ToModel(), nil
 }
 
@@ -193,17 +178,11 @@ func UpdateMTGFilterPreset(ctx context.Context, input model.MtgUpdateFilterPrese
 func DeleteMTGFilterPreset(ctx context.Context, input model.MtgDeleteFilterPresetInput) (*model.Response, error) {
 	log.Info().Str("presetID", input.PresetID).Msg("DeleteMTGFilterPreset: Started")
 
-	user, _ := auth.UserFromContext(ctx)
-	if user == nil || user.ID == "" {
-		log.Error().Msg("DeleteMTGFilterPreset: Missing user in context")
-		return nil, errFilterPresetUnauthorized
-	}
-
 	presetDB, err := getFilterPresetByID(ctx, input.PresetID)
 	if err != nil {
 		return nil, err
 	}
-	if presetDB == nil || presetDB.OwnerID == nil || *presetDB.OwnerID != user.ID {
+	if presetDB == nil {
 		return nil, errFilterPresetNotFound
 	}
 
@@ -236,7 +215,7 @@ func DeleteMTGFilterPreset(ctx context.Context, input model.MtgDeleteFilterPrese
 	return &model.Response{Status: true}, nil
 }
 
-func getFilterPresetByID(ctx context.Context, presetID string) (*MTGFilterPresetDB, error) {
+func getFilterPresetByID(ctx context.Context, presetID string) (*model.MTGFilterPresetDB, error) {
 	aq := arango.NewQuery( /* aql */ `
         FOR preset IN MTG_Filter_Presets
             FILTER preset._key == @presetID
@@ -257,7 +236,7 @@ func getFilterPresetByID(ctx context.Context, presetID string) (*MTGFilterPreset
 		return nil, nil
 	}
 
-	var presetDB MTGFilterPresetDB
+	var presetDB model.MTGFilterPresetDB
 	_, err = cursor.ReadDocument(ctx, &presetDB)
 	if err != nil {
 		log.Error().Err(err).Msg("getFilterPresetByID: Error reading preset")

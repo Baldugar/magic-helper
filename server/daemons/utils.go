@@ -106,63 +106,6 @@ func createScryfallRequest(url string) (*http.Request, error) {
 	return req, nil
 }
 
-// DownloadScryfallJSONFile downloads a JSON file to disk and returns its path.
-func DownloadScryfallJSONFile(url string, fileName *string) (string, error) {
-	log.Info().Msgf("Downloading JSON file from %v", url)
-
-	// Fetch the data from the API
-	req, err := createScryfallRequest(url)
-	if err != nil {
-		log.Error().Err(err).Msgf("Error creating request to Scryfall")
-		return "", err
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		log.Error().Err(err).Msgf("Error fetching cards from Scryfall")
-		return "", err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		log.Error().Msgf("Error fetching cards from Scryfall: %v", resp.Status)
-		return "", err
-	}
-
-	// Create a temporary file
-	name := "file.json"
-	if fileName != nil {
-		name = *fileName
-	}
-	file, err := os.Create(name)
-	if err != nil {
-		log.Error().Err(err).Msgf("Error creating temporary file")
-		return "", err
-	}
-
-	// Write the response body to the file
-	_, err = io.Copy(file, resp.Body)
-	if err != nil {
-		log.Error().Err(err).Msgf("Error writing response body to file")
-		return "", err
-	}
-
-	// Close the file
-	err = file.Close()
-	if err != nil {
-		log.Error().Err(err).Msgf("Error closing file")
-		return "", err
-	}
-
-	// Close the response body
-	err = resp.Body.Close()
-	if err != nil {
-		log.Error().Err(err).Msgf("Error closing response body")
-		return "", err
-	}
-
-	return file.Name(), nil
-}
-
 // parseCardsFromRaw converts raw JSON items into generic card maps for upsert.
 func parseCardsFromRaw(allCards []json.RawMessage) ([]map[string]any, error) {
 	cards := []map[string]any{}

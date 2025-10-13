@@ -48,26 +48,3 @@ func CleanFinalSubtypes(gatheredTypes map[string]struct{}, subtypes []string) []
 	}
 	return cleanedSubtypes
 }
-
-// CleanSubtypes removes subtypes that are also types or separators like "//".
-func CleanSubtypes(types []string, subtypes []string) []string {
-	// Create a map to quickly check for types
-	typeSet := make(map[string]struct{})
-	for _, t := range types {
-		typeSet[t] = struct{}{}
-	}
-
-	var cleanedSubtypes []string
-	for _, subtype := range subtypes {
-		// Skip any subtype that is "//" or is also a type
-		if subtype == "//" {
-			continue
-		}
-		if _, exists := typeSet[subtype]; exists {
-			continue
-		}
-		cleanedSubtypes = append(cleanedSubtypes, subtype)
-	}
-
-	return cleanedSubtypes
-}

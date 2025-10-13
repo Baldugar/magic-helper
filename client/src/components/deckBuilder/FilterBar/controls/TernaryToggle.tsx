@@ -5,7 +5,6 @@ import {
     ButtonProps,
     Checkbox,
     CheckboxProps,
-    FormControl,
     FormControlLabel,
     FormControlLabelProps,
     IconButton,
@@ -18,7 +17,6 @@ import {
 import { DetailedHTMLProps, ImgHTMLAttributes } from 'react'
 import { TernaryBoolean } from '../../../../graphql/types'
 import { isNegativeTB, isNotUnsetTB, isPositiveTB } from '../../../../types/ternaryBoolean'
-import TagPill, { TagPillProps } from '../../../TagPill'
 
 export type TernaryToggleProps =
     | {
@@ -47,11 +45,6 @@ export type TernaryToggleProps =
           value: TernaryBoolean
           type: 'textButton'
           textButtonProps: ButtonProps
-      }
-    | {
-          value: TernaryBoolean
-          type: 'tag'
-          tagProps: TagPillProps & { onClick: () => void; onContextMenu: () => void }
       }
 
 export const TernaryToggle = (props: TernaryToggleProps): JSX.Element => {
@@ -253,40 +246,6 @@ export const TernaryToggle = (props: TernaryToggleProps): JSX.Element => {
                         <Close fontSize="small" />
                     </NegativeToggleButton>
                 </ToggleButtonGroup>
-            )
-        }
-        case 'tag': {
-            const { tagProps, value } = props
-            const indeterminate = value === TernaryBoolean.UNSET
-            const checked = value === TernaryBoolean.TRUE
-            return (
-                <Box display={'flex'} alignItems={'flex-start'}>
-                    <FormControl
-                        onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            if (tagProps?.onClick) {
-                                tagProps.onClick()
-                            }
-                        }}
-                        onContextMenu={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            if (tagProps?.onContextMenu) {
-                                tagProps.onContextMenu()
-                            }
-                        }}
-                    >
-                        <Checkbox
-                            indeterminate={indeterminate}
-                            checked={checked}
-                            icon={<IndeterminateCheckBox />}
-                            checkedIcon={<CheckBox />}
-                            indeterminateIcon={<CheckBoxOutlineBlank />}
-                        />
-                    </FormControl>
-                    <TagPill {...tagProps} />
-                </Box>
             )
         }
     }

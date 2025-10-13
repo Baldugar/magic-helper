@@ -1,6 +1,6 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material'
-import { useMTGDeckCreator } from '../context/MTGA/DeckCreator/useMTGDeckCreator'
-import { MTG_DeckCardType } from '../graphql/types'
+import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
+import { MTG_DeckCardType } from '../../../graphql/types'
 
 export const ExportDialog = () => {
     const { openExportDialog, setOpenExportDialog, deck } = useMTGDeckCreator()

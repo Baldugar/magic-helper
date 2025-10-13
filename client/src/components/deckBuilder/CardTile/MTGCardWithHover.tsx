@@ -1,12 +1,10 @@
 import { Box, useMediaQuery } from '@mui/material'
 import { FC, useMemo, useState } from 'react'
-import { useDnD } from '../context/DnD/useDnD'
-import { useMTGDeckCreator } from '../context/MTGA/DeckCreator/useMTGDeckCreator'
-import { useMTGFilter } from '../context/MTGA/Filter/useMTGFilter'
-import { MTG_Card, MTG_CardVersion, MTG_Image, MTG_Layout } from '../graphql/types'
-import { CARD_SIZE_VALUES } from '../utils/constants'
-import { getCorrectCardImage } from '../utils/functions/cardFunctions'
-import { getRandomVersionFromFilter } from '../utils/functions/filterFunctions'
+import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
+import { MTG_Card, MTG_CardVersion, MTG_Image, MTG_Layout } from '../../../graphql/types'
+import { CARD_SIZE_VALUES } from '../../../utils/constants'
+import { getCorrectCardImage } from '../../../utils/functions/cardFunctions'
+import { getRandomVersionFromFilter } from '../../../utils/functions/filterFunctions'
 import { HoverMouseComponent } from './HoverMouseComponent'
 import { ImageWithSkeleton } from './ImageWithSkeleton'
 
@@ -39,8 +37,6 @@ export type MTGCardWithHoverProps = {
 export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
     const { data, hideHover, forceSize, forceImage, scale = 1, enableGlow = false } = props
     const { card, type, debugValue } = data
-    const { viewMode } = useMTGDeckCreator()
-    const { onDragStart, onDragEnd } = useDnD()
     const { filter } = useMTGFilter()
     let smallImageUrl: string | undefined = undefined
     let largeImageUrl: string | undefined = undefined
@@ -110,20 +106,6 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
                 position={'relative'}
                 width={isMobileEffective ? '100%' : scaledWidth}
                 height={isMobileEffective ? 'auto' : scaledHeight}
-                onDragStart={
-                    type === 'card'
-                        ? (event) => onDragStart(event, 'cardNode', viewMode, { ...card, __typename: 'MTG_Card' })
-                        : undefined
-                }
-                onDragEnd={
-                    type === 'card'
-                        ? () => {
-                              setHover(false)
-                              if (onDragEnd) onDragEnd()
-                          }
-                        : undefined
-                }
-                draggable
                 sx={{
                     aspectRatio: imageSizeFingerprint === 'large' && isMobileEffective ? aspectRatio : undefined,
                 }}

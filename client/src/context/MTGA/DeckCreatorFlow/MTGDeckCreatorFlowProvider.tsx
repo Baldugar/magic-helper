@@ -1,7 +1,7 @@
 import { Node, OnNodeDrag, useReactFlow } from '@xyflow/react'
-import { DragEventHandler, ReactNode, SetStateAction, useCallback, useState } from 'react'
+import { ReactNode, SetStateAction, useCallback, useState } from 'react'
 import { CardNodeData } from '../../../components/deckBuilder/FlowCanvas/Nodes/CardNode'
-import { GroupNodeData, MIN_SIZE } from '../../../components/deckBuilder/FlowCanvas/Nodes/GroupNode'
+import { GroupNodeData } from '../../../components/deckBuilder/FlowCanvas/Nodes/GroupNode'
 import { PhantomNodeData } from '../../../components/deckBuilder/FlowCanvas/Nodes/PhantomNode'
 import { MainOrSide, MTG_Card, MTG_Deck, MTG_DeckCard, MTG_DeckCardType, Position } from '../../../graphql/types'
 import { singleSetSelected } from '../../../utils/functions/filterFunctions'
@@ -14,17 +14,15 @@ import {
     onNodeDragStop,
     sortNodesByNesting,
 } from '../../../utils/functions/nodeFunctions'
-import { useDnD } from '../../DnD/useDnD'
 import { useMTGDeckCreator } from '../DeckCreator/useMTGDeckCreator'
 import { useMTGFilter } from '../Filter/useMTGFilter'
 import { MTGDeckCreatorFlowContext } from './MTGDeckCreatorFlowContext'
 
 export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: ReactNode; deck: MTG_Deck }) => {
-    const { item, type } = useDnD()
     const { deckTab, setDeck, removeCard } = useMTGDeckCreator()
     const [readOnly, setReadOnly] = useState(false)
     const [moveMode, setMoveMode] = useState(false)
-    const { screenToFlowPosition, getIntersectingNodes, getNodes } = useReactFlow<NodeType>()
+    const { getIntersectingNodes, getNodes } = useReactFlow<NodeType>()
 
     const { filter, setFilter } = useMTGFilter()
     const set = singleSetSelected(filter)
@@ -461,89 +459,6 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
         return cardToReturn
     }
 
-    // This function is called when a card is dragged over the flow view
-    const onDragOver: DragEventHandler<HTMLDivElement> = (event) => {
-        if (readOnly) return
-        event.preventDefault()
-        event.dataTransfer.dropEffect = 'move'
-    }
-
-    // This function is called when a card is dropped on the flow view and should add a new node to the flow, then call the onAddCard function to add the card to the deck
-    const onDrop: DragEventHandler<HTMLDivElement> = (event) => {
-        if (readOnly) return
-        event.preventDefault()
-        console.log('onDrop', type, item)
-        // check if the dropped element is valid
-        if (!type || !item) {
-            return
-        }
-
-        // project was renamed to screenToFlowPosition
-        // and you don't need to subtract the reactFlowBounds.left/top anymore
-        // details: https://reactflow.dev/whats-new/2023-11-10
-        const position = screenToFlowPosition({
-            x: event.clientX,
-            y: event.clientY,
-        })
-        let newNode: NodeType | null = null
-        if (type === 'groupNode') {
-            const groupData: GroupNodeData = {
-                label: `${type} node`,
-                cardChildren: [],
-                zoneChildren: [],
-                onDelete: handleDeleteZone,
-                onNameChange: handleRenameZone,
-            }
-            newNode = {
-                id: uuidv4(),
-                type: type,
-                position,
-                data: groupData,
-                width: MIN_SIZE,
-                height: MIN_SIZE,
-            } as Node<GroupNodeData>
-            return
-        }
-
-        if (item.__typename !== 'MTG_Card') {
-            return
-        }
-
-        const deckCard = onAddCard(item, position)
-
-        const cardID = item.ID
-        const nodes = getNodes()
-        const idx = nodes.findIndex((n) => n.id === cardID)
-        // If the card is already in the deck, add a phantom
-        if (idx !== -1) {
-            if (deckCard) {
-                const phantomData: PhantomNodeData = {
-                    card: deckCard,
-                    phantomOf: cardID,
-                    position,
-                    onDelete: handleDeletePhantom,
-                }
-                newNode = {
-                    data: phantomData,
-                    id: uuidv4(),
-                    position,
-                    type: 'phantomNode',
-                } as Node<PhantomNodeData>
-            }
-        } else if (deckCard) {
-            const cardData: CardNodeData = { card: deckCard }
-            newNode = {
-                id: cardID,
-                type: 'cardNode',
-                position,
-                data: cardData,
-            } as Node<CardNodeData>
-        }
-        if (!newNode) return
-        const newNodes = sortNodesByNesting(nodes.concat(newNode))
-        applyNodesUpdate(newNodes)
-    }
-
     // This function is called when a node is dragged and dropped inside the flow view
     const handleNodeDragStop: OnNodeDrag<NodeType> = (_, node) => {
         if (readOnly) return
@@ -569,8 +484,6 @@ export const MTGDeckCreatorFlowProvider = ({ children, deck }: { children: React
     return (
         <MTGDeckCreatorFlowContext.Provider
             value={{
-                onDrop,
-                onDragOver,
                 handleNodeDragStop,
                 handleDeleteZone,
                 handleRenameZone,
