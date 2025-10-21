@@ -106,7 +106,6 @@ export const MTG_DeckFragments = gql`
             }
             selectedVersionID
             count
-            mainOrSide
             deckCardType
             position {
                 ...PositionFragment
