@@ -4,11 +4,12 @@ import { useReactFlow } from '@xyflow/react'
 import { sortBy } from 'lodash'
 import { useMemo } from 'react'
 import { PhantomNodeData } from '../../../components/deckBuilder/FlowCanvas/Nodes/PhantomNode'
-import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
+import { useMTGDeckCreatorLogic } from '../../../context/MTGA/DeckCreator/Logic/useMTGDeckCreatorLogic'
+import { useMTGDeckCreatorUI } from '../../../context/MTGA/DeckCreator/UI/useMTGDeckCreatorUI'
 import { useMTGDecks } from '../../../context/MTGA/Decks/useMTGDecks'
 import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
 import { MTGFunctions } from '../../../graphql/MTGA/functions'
-import { MainOrSide, MTG_DeckCard, MTG_DeckCardType, MTG_UpdateDeckInput } from '../../../graphql/types'
+import { MTG_DeckCard, MTG_DeckCardType, MTG_UpdateDeckInput } from '../../../graphql/types'
 import { DRAWER_WIDTH_DESKTOP, DRAWER_WIDTH_MOBILE } from '../../../utils/constants'
 import { calculateCardsFromNodes, calculateZonesFromNodes, NodeType } from '../../../utils/functions/nodeFunctions'
 import { DeckCard } from './DeckCard'
@@ -23,7 +24,8 @@ import { DeckCard } from './DeckCard'
  * - Responsive fixed overlay on mobile
  */
 export const Drawer = () => {
-    const { deckTab, setDeckTab, deck, removeCard, addOne, removeOne, setOpenDrawer } = useMTGDeckCreator()
+    const { setOpenDrawer } = useMTGDeckCreatorUI()
+    const { deck, removeCard, addOne, removeOne } = useMTGDeckCreatorLogic()
     const { filter, setFilter } = useMTGFilter()
     const { getNodes, setNodes } = useReactFlow<NodeType>()
     const { reload: reloadDecks } = useMTGDecks()
@@ -89,15 +91,10 @@ export const Drawer = () => {
             )
     }
     const mainDeck = useMemo(
-        () =>
-            deck?.cards.filter(
-                (c) => c.mainOrSide === MainOrSide.MAIN && c.deckCardType !== MTG_DeckCardType.COMMANDER,
-            ) || [],
+        () => deck?.cards.filter((c) => c.deckCardType !== MTG_DeckCardType.COMMANDER) || [],
         [deck],
     )
-    const sideboard = useMemo(() => deck?.cards.filter((c) => c.mainOrSide === MainOrSide.SIDEBOARD) || [], [deck])
     const sortedMainDeck = sortBy(mainDeck, (c) => c.card.name)
-    const sortedSideboard = sortBy(sideboard, (c) => c.card.name)
 
     if (!deck) return null
 
@@ -132,22 +129,10 @@ export const Drawer = () => {
             >
                 {isMobile ? (
                     <>
-                        <Typography variant="subtitle1" component="div" sx={{ fontSize: '1.05rem' }}>
-                            {deck.name}
-                        </Typography>
                         <Box display="flex" alignItems="center" gap={1}>
-                            <Button
-                                size="small"
-                                variant="text"
-                                onClick={() =>
-                                    setDeckTab((prev) =>
-                                        prev === MainOrSide.MAIN ? MainOrSide.SIDEBOARD : MainOrSide.MAIN,
-                                    )
-                                }
-                                sx={{ fontSize: '0.9rem', minWidth: 'auto' }}
-                            >
-                                {deckTab === MainOrSide.MAIN ? 'Sideboard' : 'Main'}
-                            </Button>
+                            <Typography variant="subtitle1" component="div" sx={{ fontSize: '1.05rem' }}>
+                                {deck.name}
+                            </Typography>
                             <IconButton onClick={() => setOpenDrawer(false)} size="small">
                                 <Close fontSize="small" />
                             </IconButton>
@@ -159,31 +144,8 @@ export const Drawer = () => {
                             {deck.name}
                         </Typography>
                         <Typography variant="subtitle1" color="text.secondary">
-                            —{' '}
-                            {deck.cards.reduce(
-                                (acc, c) =>
-                                    acc +
-                                    (c.mainOrSide ===
-                                    (deckTab === MainOrSide.MAIN ? MainOrSide.MAIN : MainOrSide.SIDEBOARD)
-                                        ? c.count
-                                        : 0),
-                                0,
-                            )}{' '}
-                            cards
+                            — {deck.cards.reduce((acc, c) => acc + c.count, 0)} cards
                         </Typography>
-                        <Box sx={{ ml: 'auto' }}>
-                            <Button
-                                size="small"
-                                variant="outlined"
-                                onClick={() =>
-                                    setDeckTab((prev) =>
-                                        prev === MainOrSide.MAIN ? MainOrSide.SIDEBOARD : MainOrSide.MAIN,
-                                    )
-                                }
-                            >
-                                {deckTab === MainOrSide.MAIN ? 'Go to Sideboard' : 'Go to Main Deck'}
-                            </Button>
-                        </Box>
                     </Box>
                 )}
             </Paper>
@@ -192,16 +154,7 @@ export const Drawer = () => {
             {isMobile && (
                 <Paper elevation={0} sx={{ p: 0.5, mb: 0.5, mt: 0 }}>
                     <Typography variant="body2" gutterBottom sx={{ fontSize: '0.98rem' }}>
-                        {deckTab === MainOrSide.MAIN ? 'Main Deck' : 'Sideboard'} -{' '}
-                        {deck.cards.reduce(
-                            (acc, c) =>
-                                acc +
-                                (c.mainOrSide === (deckTab === MainOrSide.MAIN ? MainOrSide.MAIN : MainOrSide.SIDEBOARD)
-                                    ? c.count
-                                    : 0),
-                            0,
-                        )}{' '}
-                        cards
+                        Main Deck - {deck.cards.reduce((acc, c) => acc + c.count, 0)} cards
                     </Typography>
                 </Paper>
             )}
@@ -237,7 +190,7 @@ export const Drawer = () => {
             {/* Cards List */}
             <Box sx={{ overflowY: 'auto', flex: 1 }}>
                 <Grid container spacing={1}>
-                    {(deckTab === MainOrSide.MAIN ? sortedMainDeck : sortedSideboard).map((c) => (
+                    {sortedMainDeck.map((c) => (
                         <Grid xs={12} item key={c.card.ID}>
                             <DeckCard
                                 deckCard={c}

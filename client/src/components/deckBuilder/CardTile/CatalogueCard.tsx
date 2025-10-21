@@ -4,15 +4,15 @@ import { useReactFlow } from '@xyflow/react'
 import { clone } from 'lodash'
 import { useState } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
-import { useMTGDeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
+import { useMTGDeckCreatorLogic } from '../../../context/MTGA/DeckCreator/Logic/useMTGDeckCreatorLogic'
+import { useMTGDeckCreatorUI } from '../../../context/MTGA/DeckCreator/UI/useMTGDeckCreatorUI'
 import { useMTGDecks } from '../../../context/MTGA/Decks/useMTGDecks'
 import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
 import { MTGFunctions } from '../../../graphql/MTGA/functions'
-import { MainOrSide, MTG_Card, MTG_CardVersion, MTG_DeckCardType, MTG_Image } from '../../../graphql/types'
+import { MTG_Card, MTG_CardVersion, MTG_DeckCardType, MTG_Image } from '../../../graphql/types'
 import { isCardInDeck } from '../../../utils/functions/cardFunctions'
 import { singleSetSelected } from '../../../utils/functions/filterFunctions'
-import { findNextAvailablePosition, NodeType, organizeNodes } from '../../../utils/functions/nodeFunctions'
+import { findNextAvailablePosition, NodeType } from '../../../utils/functions/nodeFunctions'
 import { ContextMenu } from '../../../utils/hooks/ContextMenu/ContextMenu'
 import { ContextMenuOption } from '../../../utils/hooks/ContextMenu/types'
 import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
@@ -39,8 +39,8 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
     const { card, onIgnore, cardScale = 1, forceImage } = props
 
     const { decks, createDeck, propagateChangesToDashboardDeck } = useMTGDecks()
-    const { onAddCard, deck, removeCard, setDeck, setOpenedCardDialog } = useMTGDeckCreator()
-    const { handleDeleteZone, handleRenameZone, handleDeletePhantom } = useMTGDeckFlowCreator()
+    const { onAddCard, deck, removeCard, setDeck } = useMTGDeckCreatorLogic()
+    const { setOpenedCardDialog } = useMTGDeckCreatorUI()
     const { setNodes } = useReactFlow<NodeType>()
     const { filter, setFilter } = useMTGFilter()
     const {
@@ -63,8 +63,7 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
     if (!defaultVersion) return null
 
     const handleAddCard = (card: MTG_Card, versionID?: string) => {
-        const newDeck = onAddCard(card, undefined, versionID)
-        setNodes(organizeNodes(newDeck, handleDeleteZone, handleRenameZone, handleDeletePhantom))
+        onAddCard(card, undefined, versionID)
     }
 
     const handleRemoveCard = (card: MTG_Card) => {
@@ -81,11 +80,11 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
             )
     }
 
-    const deckCardIDs = deck?.cards.map((c) => c.card.ID) || []
+    if (!deck) return null
+
+    const deckCardIDs = deck.cards.map((c) => c.card.ID)
 
     const cardIsInDeck = isCardInDeck(card, deck)
-
-    if (!deck) return null
 
     const selectedVersion = deckCardIDs.includes(card.ID)
         ? card.versions.find((v) => v.ID === deck.cards.find((c) => c.card.ID === card.ID)?.selectedVersionID)
@@ -169,7 +168,6 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
                                     card,
                                     count: 1,
                                     deckCardType: MTG_DeckCardType.NORMAL,
-                                    mainOrSide: MainOrSide.MAIN,
                                     phantoms: [],
                                     position: { x: 0, y: 0 },
                                 })
@@ -204,7 +202,6 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
                                               card,
                                               count: 1,
                                               deckCardType: MTG_DeckCardType.NORMAL,
-                                              mainOrSide: MainOrSide.MAIN,
                                               phantoms: [],
                                               position: findNextAvailablePosition(loadedDeck.cards),
                                               selectedVersionID: version?.ID,
@@ -329,7 +326,7 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
                             '&:hover': !isMobile
                                 ? {
                                       filter: 'brightness(1.2)',
-                                      transform: 'scale(1.1)',
+                                      transform: 'scale(1.01)',
                                       position: 'relative',
                                   }
                                 : {},

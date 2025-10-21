@@ -186,7 +186,6 @@ export type MTG_DeckCard = {
   card: MTG_Card;
   count: Scalars['Int']['output'];
   deckCardType: MTG_DeckCardType;
-  mainOrSide: MainOrSide;
   phantoms: Array<Phantom>;
   position: Position;
   selectedVersionID?: Maybe<Scalars['String']['output']>;
@@ -200,11 +199,9 @@ export type MTG_DeckCardFrontImageInput = {
 
 /** Deck card entry with position and selection metadata. */
 export type MTG_DeckCardInput = {
-  ID: Scalars['ID']['input'];
   card: Scalars['ID']['input'];
   count: Scalars['Int']['input'];
   deckCardType: MTG_DeckCardType;
-  mainOrSide: MainOrSide;
   phantoms: Array<PhantomInput>;
   position: PositionInput;
   selectedVersionID?: InputMaybe<Scalars['String']['input']>;
@@ -493,12 +490,6 @@ export type MTG_UpdateFilterPresetInput = {
   presetID: Scalars['ID']['input'];
   sort?: InputMaybe<Array<MTG_Filter_SortInput>>;
 };
-
-/** Indicates whether a card is in main or sideboard. */
-export enum MainOrSide {
-  MAIN = 'MAIN',
-  SIDEBOARD = 'SIDEBOARD'
-}
 
 /** Root-level write operations. */
 export type Mutation = {

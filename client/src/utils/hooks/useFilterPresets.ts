@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useMTGDeckCreator } from '../../context/MTGA/DeckCreator/useMTGDeckCreator'
+import { useMTGDeckCreatorLogic } from '../../context/MTGA/DeckCreator/Logic/useMTGDeckCreatorLogic'
 import { useMTGFilter } from '../../context/MTGA/Filter/useMTGFilter'
 import { MTGFunctions } from '../../graphql/MTGA/functions'
 import { MTG_FilterPreset } from '../../graphql/types'
@@ -32,7 +32,7 @@ const mapPresetFromGraph = (preset: MTG_FilterPreset): FilterPreset => ({
 
 export const useFilterPresets = () => {
     const { filter, setFilter, sort, setSort } = useMTGFilter()
-    const { deck } = useMTGDeckCreator()
+    const { deck } = useMTGDeckCreatorLogic()
     const deckID = deck?.ID ?? null
 
     const {

@@ -1,10 +1,7 @@
 import { ButtonBase } from '@mui/material'
-import { useReactFlow } from '@xyflow/react'
-import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
-import { useMTGDeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
+import { useMTGDeckCreatorLogic } from '../../../context/MTGA/DeckCreator/Logic/useMTGDeckCreatorLogic'
 import { MTG_Card, MTG_CardVersion } from '../../../graphql/types'
 import { isCardInDeck } from '../../../utils/functions/cardFunctions'
-import { NodeType, organizeNodes } from '../../../utils/functions/nodeFunctions'
 import { ContextMenu } from '../../../utils/hooks/ContextMenu/ContextMenu'
 import { ContextMenuOption } from '../../../utils/hooks/ContextMenu/types'
 import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
@@ -19,14 +16,10 @@ export type VersionCardProps = {
 export const VersionCard = (props: VersionCardProps) => {
     const { card, version, closeDialog } = props
 
-    const { setNodes } = useReactFlow<NodeType>()
-    const { handleDeleteZone, handleRenameZone, handleDeletePhantom } = useMTGDeckFlowCreator()
-    const { onAddCard, deck, setDeck, setCardVersion } = useMTGDeckCreator()
+    const { onAddCard, deck, setDeck, setCardVersion } = useMTGDeckCreatorLogic()
 
     const handleAddCard = (card: MTG_Card, versionID?: string) => {
-        const newDeck = onAddCard(card, undefined, versionID)
-        if (!newDeck) return
-        setNodes(organizeNodes(newDeck, handleDeleteZone, handleRenameZone, handleDeletePhantom))
+        onAddCard(card, undefined, versionID)
     }
 
     const {

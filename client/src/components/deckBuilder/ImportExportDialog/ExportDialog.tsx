@@ -1,9 +1,11 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material'
-import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
+import { useMTGDeckCreatorLogic } from '../../../context/MTGA/DeckCreator/Logic/useMTGDeckCreatorLogic'
+import { useMTGDeckCreatorUI } from '../../../context/MTGA/DeckCreator/UI/useMTGDeckCreatorUI'
 import { MTG_DeckCardType } from '../../../graphql/types'
 
 export const ExportDialog = () => {
-    const { openExportDialog, setOpenExportDialog, deck } = useMTGDeckCreator()
+    const { openExportDialog, setOpenExportDialog } = useMTGDeckCreatorUI()
+    const { deck } = useMTGDeckCreatorLogic()
 
     const nameForExport = (name: string) => {
         return name.split('//')[0].trim()

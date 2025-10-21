@@ -10,7 +10,6 @@ export type PhantomNodeData = {
     phantomOf: string
     position: NodePosition
     card: MTG_DeckCard
-    onDelete: (id: string) => void
 }
 
 export type PhantomNodeProps = NodeProps & {
@@ -19,7 +18,7 @@ export type PhantomNodeProps = NodeProps & {
 
 export const PhantomNode = (props: PhantomNodeProps) => {
     const { data, id, parentId } = props
-    const { card, onDelete } = data
+    const { card } = data
     const { draggingGroupId } = useMTGDeckFlowCreator()
 
     const { anchorRef, handleClick, handleClose, handleContextMenu, open } = useContextMenu<HTMLDivElement>()
@@ -45,17 +44,7 @@ export const PhantomNode = (props: PhantomNodeProps) => {
         )
     }
 
-    const options: ContextMenuOption[] = [
-        {
-            label: 'Delete',
-            action: () => {
-                const respZone = confirm(`Are you sure you want to delete this phantom?`)
-                if (respZone) {
-                    onDelete(id)
-                }
-            },
-        },
-    ]
+    const options: ContextMenuOption[] = []
 
     return (
         <>

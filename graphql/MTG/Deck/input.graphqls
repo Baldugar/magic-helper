@@ -37,12 +37,10 @@ input MTG_DeckCardFrontImageInput {
 Deck card entry with position and selection metadata.
 """
 input MTG_DeckCardInput {
-    ID: ID!
     card: ID!
     selectedVersionID: String
     count: Int!
     position: PositionInput!
-    mainOrSide: MainOrSide!
     deckCardType: MTG_DeckCardType!
     phantoms: [PhantomInput!]!
 }

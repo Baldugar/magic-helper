@@ -19,7 +19,6 @@ type MTG_DeckCard {
     selectedVersionID: String
     count: Int!
     position: Position!
-    mainOrSide: MainOrSide!
     deckCardType: MTG_DeckCardType!
     phantoms: [Phantom!]!
 }

@@ -10,14 +10,6 @@ enum DeckType {
 }
 
 """
-Indicates whether a card is in main or sideboard.
-"""
-enum MainOrSide {
-    MAIN
-    SIDEBOARD
-}
-
-"""
 Card role in deck (normal or commander).
 """
 enum MTG_DeckCardType {

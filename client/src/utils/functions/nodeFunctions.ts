@@ -1,10 +1,10 @@
 import { Node, Rect, XYPosition } from '@xyflow/react'
 import { cloneDeep } from 'lodash'
 import { SetStateAction } from 'react'
-import { FlowZone, MTG_Deck, MTG_DeckCard, MTG_DeckCardInput, Position } from '../../graphql/types'
 import { CardNodeData } from '../../components/deckBuilder/FlowCanvas/Nodes/CardNode'
 import { GroupNodeData } from '../../components/deckBuilder/FlowCanvas/Nodes/GroupNode'
 import { PhantomNodeData } from '../../components/deckBuilder/FlowCanvas/Nodes/PhantomNode'
+import { FlowZone, MTG_Deck, MTG_DeckCard, MTG_DeckCardInput, Position } from '../../graphql/types'
 
 export type NodeType = Node<CardNodeData | GroupNodeData | PhantomNodeData>
 
@@ -161,8 +161,9 @@ export const onNodeDragStop = (
         const nodeMap = buildNodeMap(nodes)
         const currentParentId = node.parentId
         const absolutePosition = computeAbsolutePosition(node, nodeMap)
-        const intersectingGroups = getIntersectingNodes(node)
-            .filter((n) => n.type === 'groupNode' && n.id !== node.id) as NodeType[]
+        const intersectingGroups = getIntersectingNodes(node).filter(
+            (n) => n.type === 'groupNode' && n.id !== node.id,
+        ) as NodeType[]
 
         const candidateParent = intersectingGroups.find((candidate) => !isDescendant(nodeMap, node.id, candidate.id))
 
@@ -330,71 +331,107 @@ export const onNodeDragStop = (
     }
 }
 
-export const organizeNodes = (
-    deck: MTG_Deck | undefined,
-    onDeleteZone: (zoneID: string, deleteNodes: boolean) => void,
-    onNameChange: (zoneID: string, newName: string) => void,
-    onDeletePhantom: (id: string) => void,
-): NodeType[] => {
-    const nodes: NodeType[] = []
-    if (!deck) return nodes
+export const organizeNodes = (deck: MTG_Deck | undefined, getNodes: () => NodeType[]): NodeType[] => {
+    if (!deck) return getNodes()
+
+    const existingMap = new Map(getNodes().map((n) => [n.id, n]))
+    const nextNodes: NodeType[] = []
+    const seenIDs = new Set<string>()
+
+    // 🔹 Helper para crear nodos (manteniendo posición previa si existe)
+    const ensureNode = <T extends NodeType>(
+        ID: string,
+        type: string,
+        data: T['data'],
+        position: { x: number; y: number },
+        parentID?: string,
+        width?: number,
+        height?: number,
+    ) => {
+        const existing = existingMap.get(ID)
+        seenIDs.add(ID)
+
+        // Si ya existía, actualizamos solo si el data cambió
+        if (existing) {
+            const dataChanged = JSON.stringify(existing.data) !== JSON.stringify(data)
+            nextNodes.push({
+                ...existing,
+                data: dataChanged ? data : existing.data,
+                type,
+                parentId: parentID ?? existing.parentId,
+                width: width ?? existing.width,
+                height: height ?? existing.height,
+            })
+        } else {
+            nextNodes.push({
+                id: ID,
+                type,
+                data,
+                position,
+                parentId: parentID,
+                width,
+                height,
+            } as NodeType)
+        }
+    }
+
+    // =====================================================
+    // 🔹 ZONES
+    // =====================================================
     const zoneParentRelations: Record<string, string | undefined> = {}
     for (const zone of deck.zones) {
         const data: GroupNodeData = {
             label: zone.name,
             cardChildren: zone.cardChildren,
             zoneChildren: zone.zoneChildren,
-            onDelete: onDeleteZone,
-            onNameChange,
         }
-        nodes.push({
-            id: zone.ID,
-            position: zone.position,
-            data,
-            type: 'groupNode',
-            // style: { width: zone.width, height: zone.height },
-            width: zone.width,
-            height: zone.height,
-        } as Node<GroupNodeData>)
-        zone.zoneChildren?.forEach((childId) => {
-            zoneParentRelations[childId] = zone.ID
+        ensureNode(zone.ID, 'groupNode', data, zone.position, undefined, zone.width, zone.height)
+
+        // Registrar relaciones entre zonas
+        zone.zoneChildren?.forEach((childID) => {
+            zoneParentRelations[childID] = zone.ID
         })
     }
 
-    const zoneNodes = nodes.filter((n) => n.type === 'groupNode') as Node<GroupNodeData>[]
-    zoneNodes.forEach((zoneNode) => {
-        const parentId = zoneParentRelations[zoneNode.id]
-        if (parentId) {
-            zoneNode.parentId = parentId
-        }
-    })
-
-    for (const card of deck.cards) {
-        const cardData: CardNodeData = { card: card }
-        nodes.push({
-            id: card.card.ID,
-            position: card.position,
-            data: cardData,
-            type: 'cardNode',
-            parentId: deck.zones.find((z) => z.cardChildren.includes(card.card.ID))?.ID,
-        } as Node<CardNodeData>)
-        for (const p of card.phantoms) {
-            const phantomNodeData: PhantomNodeData = {
-                card: card,
-                phantomOf: card.card.ID,
-                position: p.position,
-                onDelete: onDeletePhantom,
-            }
-            nodes.push({
-                id: p.ID,
-                position: p.position,
-                data: phantomNodeData,
-                type: 'phantomNode',
-                parentId: deck.zones.find((z) => z.cardChildren.includes(p.ID))?.ID,
-            } as Node<PhantomNodeData>)
+    // Asignar padres a las zonas hijas
+    for (const zone of deck.zones) {
+        const parentID = zoneParentRelations[zone.ID]
+        if (parentID) {
+            const node = nextNodes.find((n) => n.id === zone.ID)
+            if (node) node.parentId = parentID
         }
     }
-    return nodes
+
+    // =====================================================
+    // 🔹 CARDS
+    // =====================================================
+    for (const card of deck.cards) {
+        const parentID = deck.zones.find((z) => z.cardChildren.includes(card.card.ID))?.ID
+        const data: CardNodeData = { card: card.card, selectedVersionID: card.selectedVersionID }
+        ensureNode(card.card.ID, 'cardNode', data, card.position, parentID)
+
+        // 🔹 Phantoms
+        for (const p of card.phantoms) {
+            const phantomParentID = deck.zones.find((z) => z.cardChildren.includes(p.ID))?.ID
+            const phantomData: PhantomNodeData = {
+                card,
+                phantomOf: card.card.ID,
+                position: p.position,
+            }
+            ensureNode(p.ID, 'phantomNode', phantomData, p.position, phantomParentID)
+        }
+    }
+
+    // =====================================================
+    // 🔹 MANTENER nodos existentes no eliminados
+    // =====================================================
+    const resultNodes = [
+        ...nextNodes,
+        // conservamos nodos antiguos que sigan siendo válidos
+        ...getNodes().filter((n) => !seenIDs.has(n.id) && existingMap.has(n.id)),
+    ]
+
+    return resultNodes
 }
 
 export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTG_DeckCard[]): MTG_DeckCardInput[] => {
@@ -420,8 +457,9 @@ export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTG_DeckCar
 
     // Procesamos los cardNodes para crear objetos con la info de cada card
     for (const node of cardNodes) {
-        const card = node.data.card
-        const cardId = card.card.ID
+        const cardId = node.id
+        const deckCard = currentCards.find((c) => c.card.ID === cardId)
+        if (!deckCard) continue
         const position = { x: node.position.x, y: node.position.y }
 
         // Obtenemos los phantoms asociados a este card
@@ -434,13 +472,11 @@ export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTG_DeckCar
 
         cardMap.set(cardId, {
             card: cardId,
-            selectedVersionID: card.selectedVersionID,
+            selectedVersionID: node.data.selectedVersionID,
             count: currentCard?.count || 1,
             position,
             phantoms,
-            deckCardType: card.deckCardType,
-            ID: cardId,
-            mainOrSide: card.mainOrSide,
+            deckCardType: deckCard.deckCardType,
         })
     }
 
@@ -456,8 +492,6 @@ export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTG_DeckCar
                 position: currentCard.position ?? { x: 0, y: 0 },
                 phantoms: currentCard.phantoms ?? [],
                 deckCardType: currentCard.deckCardType,
-                ID: cardId,
-                mainOrSide: currentCard.mainOrSide,
             })
         }
     }

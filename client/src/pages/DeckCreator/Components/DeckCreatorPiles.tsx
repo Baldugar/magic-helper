@@ -13,7 +13,7 @@ import { Box, Button, IconButton, Typography, useMediaQuery } from '@mui/materia
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { FixedSizeList, ListChildComponentProps } from 'react-window'
 import { MTGCardWithHover } from '../../../components/deckBuilder/CardTile/MTGCardWithHover'
-import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
+import { useMTGDeckCreatorLogic } from '../../../context/MTGA/DeckCreator/Logic/useMTGDeckCreatorLogic'
 import { FlowZone, MTG_Card } from '../../../graphql/types'
 import { CARD_SIZE_VALUES } from '../../../utils/constants'
 
@@ -54,11 +54,7 @@ const CardRow = ({ index, style, data }: ListChildComponentProps<CardRowData>) =
                         alignItems: 'center',
                     }}
                 >
-                    <MTGCardWithHover
-                        data={{ type: 'card', card: cardInPile }}
-                        hideHover={snapshotDraggable.isDragging}
-                        forceSize="small"
-                    />
+                    <MTGCardWithHover data={{ type: 'card', card: cardInPile }} forceSize="small" />
                 </div>
             )}
         </Draggable>
@@ -66,7 +62,7 @@ const CardRow = ({ index, style, data }: ListChildComponentProps<CardRowData>) =
 }
 
 export const DeckCreatorPiles: React.FC<DeckCreatorPilesProps> = () => {
-    const { deck, setDeck } = useMTGDeckCreator()
+    const { deck, setDeck } = useMTGDeckCreatorLogic()
     const isMobile = useMediaQuery('(max-width: 600px)')
     const pilesAreaRef = useRef<HTMLDivElement | null>(null)
     const [listHeight, setListHeight] = useState(300)
@@ -392,11 +388,7 @@ export const DeckCreatorPiles: React.FC<DeckCreatorPilesProps> = () => {
                                     alignItems: 'center',
                                 }}
                             >
-                                <MTGCardWithHover
-                                    data={{ type: 'card', card: card }}
-                                    hideHover={true}
-                                    forceSize="small"
-                                />
+                                <MTGCardWithHover data={{ type: 'card', card: card }} forceSize="small" />
                             </Box>
                         )
                     }}

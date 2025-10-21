@@ -112,7 +112,6 @@ export const MTGDecksProvider = ({ children }: { children: ReactNode }) => {
                     card: c.card.ID,
                     count: c.count,
                     deckCardType: c.deckCardType,
-                    mainOrSide: c.mainOrSide,
                     phantoms: c.phantoms,
                     position: c.position,
                     ID: c.card.ID,

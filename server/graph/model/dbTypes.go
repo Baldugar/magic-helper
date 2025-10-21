@@ -28,7 +28,6 @@ type MTGCardDeckDB struct {
 	To                string          `json:"_to"`
 	Count             int             `json:"count"`
 	Position          Position        `json:"position"`
-	MainOrSide        MainOrSide      `json:"mainOrSide"`
 	DeckCardType      MtgDeckCardType `json:"deckCardType"`
 	Phantoms          []Phantom       `json:"phantoms"`
 	SelectedVersionID *string         `json:"selectedVersionID"`

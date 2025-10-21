@@ -152,7 +152,6 @@ type MtgDeckCard struct {
 	SelectedVersionID *string         `json:"selectedVersionID,omitempty"`
 	Count             int             `json:"count"`
 	Position          *Position       `json:"position"`
-	MainOrSide        MainOrSide      `json:"mainOrSide"`
 	DeckCardType      MtgDeckCardType `json:"deckCardType"`
 	Phantoms          []*Phantom      `json:"phantoms"`
 }
@@ -165,12 +164,10 @@ type MtgDeckCardFrontImageInput struct {
 
 // Deck card entry with position and selection metadata.
 type MtgDeckCardInput struct {
-	ID                string          `json:"ID"`
 	Card              string          `json:"card"`
 	SelectedVersionID *string         `json:"selectedVersionID,omitempty"`
 	Count             int             `json:"count"`
 	Position          *PositionInput  `json:"position"`
-	MainOrSide        MainOrSide      `json:"mainOrSide"`
 	DeckCardType      MtgDeckCardType `json:"deckCardType"`
 	Phantoms          []*PhantomInput `json:"phantoms"`
 }
@@ -211,7 +208,6 @@ type MtgDeleteFilterPresetInput struct {
 type MtgFilterPreset struct {
 	ID      string                `json:"ID"`
 	DeckID  string                `json:"deckID"`
-	OwnerID *string               `json:"ownerID,omitempty"`
 	Name    string                `json:"name"`
 	SavedAt string                `json:"savedAt"`
 	Filter  map[string]any        `json:"filter"`
@@ -834,48 +830,6 @@ func (e *MtgRarity) UnmarshalGQL(v any) error {
 }
 
 func (e MtgRarity) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-// Indicates whether a card is in main or sideboard.
-type MainOrSide string
-
-const (
-	MainOrSideMain      MainOrSide = "MAIN"
-	MainOrSideSideboard MainOrSide = "SIDEBOARD"
-)
-
-var AllMainOrSide = []MainOrSide{
-	MainOrSideMain,
-	MainOrSideSideboard,
-}
-
-func (e MainOrSide) IsValid() bool {
-	switch e {
-	case MainOrSideMain, MainOrSideSideboard:
-		return true
-	}
-	return false
-}
-
-func (e MainOrSide) String() string {
-	return string(e)
-}
-
-func (e *MainOrSide) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = MainOrSide(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid MainOrSide", str)
-	}
-	return nil
-}
-
-func (e MainOrSide) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

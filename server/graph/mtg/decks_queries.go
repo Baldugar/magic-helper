@@ -94,7 +94,6 @@ func GetMTGDeck(ctx context.Context, deckID string) (*model.MtgDeck, error) {
 					card,
 					count: edge.count,
 					position: edge.position,
-					mainOrSide: edge.mainOrSide,
 					deckCardType: edge.deckCardType,
 					phantoms: edge.phantoms
 				})

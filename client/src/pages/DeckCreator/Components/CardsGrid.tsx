@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, WheelEvent }
 import { SwipeEventData, useSwipeable } from 'react-swipeable'
 import { CatalogueCard } from '../../../components/deckBuilder/CardTile/CatalogueCard'
 import { useMTGCards } from '../../../context/MTGA/Cards/useMTGCards'
-import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
+import { useMTGDeckCreatorUI } from '../../../context/MTGA/DeckCreator/UI/useMTGDeckCreatorUI'
 import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
 import { MTG_Image } from '../../../graphql/types'
 import { CARD_SIZE_VALUES, PAGE_SIZE_MOBILE } from '../../../utils/constants'
@@ -19,7 +19,7 @@ export const CardsGrid = () => {
     const [gridSize, setGridSize] = useState({ width: 0, height: 0 })
     const [cardScale, setCardScale] = useState(1)
     const [forceImageSize, setForceImageSize] = useState<keyof Omit<MTG_Image, '__typename'> | undefined>(undefined)
-    const { stickyCardsGrid, openDrawer } = useMTGDeckCreator()
+    const { stickyCardsGrid, openDrawer } = useMTGDeckCreatorUI()
     const [lastIgnoredIndex, setLastIgnoredIndex] = useState<number | null>(null)
     const lastPageChangeInteractionRef = useRef<'swipeUp' | 'swipeDown' | 'other'>('other')
 

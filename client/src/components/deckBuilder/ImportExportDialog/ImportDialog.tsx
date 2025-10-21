@@ -10,9 +10,10 @@ import {
     Typography,
 } from '@mui/material'
 import { useEffect, useMemo, useState } from 'react'
-import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
+import { useMTGDeckCreatorLogic } from '../../../context/MTGA/DeckCreator/Logic/useMTGDeckCreatorLogic'
+import { useMTGDeckCreatorUI } from '../../../context/MTGA/DeckCreator/UI/useMTGDeckCreatorUI'
 import { MTGFunctions } from '../../../graphql/MTGA/functions'
-import { MainOrSide, MTG_Card, MTG_Deck, MTG_DeckCard, MTG_DeckCardType } from '../../../graphql/types'
+import { MTG_Card, MTG_Deck, MTG_DeckCard, MTG_DeckCardType } from '../../../graphql/types'
 import { findNextAvailablePosition } from '../../../utils/functions/nodeFunctions'
 
 const ARENA_LINE_REGEX = /^(\d+)\s+(.+?)(?:\s+\([^)]*\)\s+\d+)?$/
@@ -297,9 +298,7 @@ const sortCardsByName = (cards: MTG_DeckCard[]) =>
 
 const applyImportToDeck = (deck: MTG_Deck, aggregated: AggregatedResult): MTG_Deck => {
     const nextDeck = structuredClone(deck)
-    const preservedCards = nextDeck.cards.filter(
-        (card) => !(card.deckCardType === MTG_DeckCardType.NORMAL && card.mainOrSide === MainOrSide.MAIN),
-    )
+    const preservedCards = nextDeck.cards.filter((card) => !(card.deckCardType === MTG_DeckCardType.NORMAL))
 
     let commanderPositionReference = preservedCards.find(
         (card) => card.deckCardType === MTG_DeckCardType.COMMANDER,
@@ -325,7 +324,6 @@ const applyImportToDeck = (deck: MTG_Deck, aggregated: AggregatedResult): MTG_De
                 card: aggregated.commander,
                 count: 1,
                 deckCardType: MTG_DeckCardType.COMMANDER,
-                mainOrSide: MainOrSide.MAIN,
                 phantoms: [],
                 position: commanderPosition,
                 selectedVersionID: commanderVersion?.ID,
@@ -347,7 +345,6 @@ const applyImportToDeck = (deck: MTG_Deck, aggregated: AggregatedResult): MTG_De
             card,
             count,
             deckCardType: MTG_DeckCardType.NORMAL,
-            mainOrSide: MainOrSide.MAIN,
             phantoms: [],
             position,
             selectedVersionID: version?.ID,
@@ -361,7 +358,8 @@ const applyImportToDeck = (deck: MTG_Deck, aggregated: AggregatedResult): MTG_De
 }
 
 export const ImportDialog = () => {
-    const { openImportDialog, setOpenImportDialog, deck, setDeck } = useMTGDeckCreator()
+    const { openImportDialog, setOpenImportDialog } = useMTGDeckCreatorUI()
+    const { deck, setDeck } = useMTGDeckCreatorLogic()
     const [inputValue, setInputValue] = useState('')
     const [allCards, setAllCards] = useState<MTG_Card[]>([])
     const [loadingCards, setLoadingCards] = useState(false)

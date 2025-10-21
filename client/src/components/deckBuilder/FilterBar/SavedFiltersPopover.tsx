@@ -18,8 +18,7 @@ import { useState } from 'react'
 import { useFilterPresets } from '../../../utils/hooks/useFilterPresets'
 
 export const SavedFiltersPopover = () => {
-    const { presets, savePreset, loadPreset, deletePreset, clearPresets, renamePreset, loading } =
-        useFilterPresets()
+    const { presets, savePreset, loadPreset, deletePreset, clearPresets, renamePreset, loading } = useFilterPresets()
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
     const [presetName, setPresetName] = useState('')
     const [renameTarget, setRenameTarget] = useState<string | null>(null)
@@ -112,7 +111,7 @@ export const SavedFiltersPopover = () => {
                         </Box>
                     ) : presets.length === 0 ? (
                         <Typography variant="body2" color="text.secondary">
-                            No tienes presets guardados todavía.
+                            No tienes presets guardados todavÃ­a.
                         </Typography>
                     ) : (
                         <List dense sx={{ maxHeight: 240, overflowY: 'auto' }}>
@@ -165,7 +164,10 @@ export const SavedFiltersPopover = () => {
                                                     <Button size="small" onClick={() => void handleRename(preset.id)}>
                                                         Renombrar
                                                     </Button>
-                                                    <IconButton size="small" onClick={() => void deletePreset(preset.id)}>
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => void deletePreset(preset.id)}
+                                                    >
                                                         <Delete fontSize="small" />
                                                     </IconButton>
                                                 </Stack>

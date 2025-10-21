@@ -4,11 +4,11 @@
         "logLevel": "debug"
     },
     "domain": "localhost",
-    "httpListen": "8080",
+    "httpListen": "8081",
     "graphQLPlayground": true,
     "arangoDB": {
         "addr": "localhost",
-        "port": "8529",
+        "port": "8530",
         "name": "MagicHelper",
         "user": "root",
         "password": "arangodb"

@@ -186,7 +186,6 @@ func UpdateMTGDeck(ctx context.Context, input model.MtgUpdateDeckInput) (*model.
 				X: card.Position.X,
 				Y: card.Position.Y,
 			},
-			MainOrSide:        card.MainOrSide,
 			DeckCardType:      card.DeckCardType,
 			SelectedVersionID: card.SelectedVersionID,
 		}

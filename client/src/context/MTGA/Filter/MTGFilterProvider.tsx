@@ -42,10 +42,6 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
     )
     const [zoom, setZoom] = useState<'IN' | 'OUT'>('OUT')
 
-    // useEffect(() => {
-    //     setPage(0)
-    // }, [filter, isMobile])
-
     useEffect(() => {
         fetchData<Query>(getMTGAFilters).then((data) => {
             if (!data) throw new Error('No data from getMTGFilters')
@@ -84,35 +80,6 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
             })
         })
     }, [])
-
-    // This useEffect is used to only show sets that are relevant to the selected games
-    // useEffect(() => {
-    //     const games = filter.games
-    //     const positiveGames = Object.entries(games)
-    //         .filter(([_, value]) => isPositiveTB(value))
-    //         .map(([key]) => key as MTG_Game)
-    //     const negativeGames = Object.entries(games)
-    //         .filter(([_, value]) => isNegativeTB(value))
-    //         .map(([key]) => key as MTG_Game)
-    //     const gameFilterIsNotSet = Object.values(games).every((value) => value === TernaryBoolean.UNSET)
-    //     if (gameFilterIsNotSet) return
-    //     setFilter((prev) => {
-    //         const newSets = Object.entries(prev.sets).reduce<Record<string, SetFilter>>((acc, [code, set]) => {
-    //             let shouldAdd = false
-    //             if (positiveGames.length > 0) {
-    //                 shouldAdd = positiveGames.some((game) => set.games.includes(game))
-    //             }
-    //             if (negativeGames.length > 0) {
-    //                 shouldAdd = !negativeGames.some((game) => set.games.includes(game))
-    //             }
-    //             if (!shouldAdd) {
-    //                 acc[code] = { ...set, value: TernaryBoolean.UNSET }
-    //             }
-    //             return acc
-    //         }, prev.sets)
-    //         return { ...prev, sets: newSets }
-    //     })
-    // }, [filter.games])
 
     const clearFilter = () => {
         setFilter(originalFilter)

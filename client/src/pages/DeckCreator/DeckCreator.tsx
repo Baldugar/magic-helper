@@ -20,12 +20,15 @@ import { ReactFlowProvider, useReactFlow } from '@xyflow/react'
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FilterBar } from '../../components/deckBuilder/FilterBar/FilterBar'
+import { FlowCanvas } from '../../components/deckBuilder/FlowCanvas/FlowCanvas'
 import { ExportDialog } from '../../components/deckBuilder/ImportExportDialog/ExportDialog'
 import { ImportDialog } from '../../components/deckBuilder/ImportExportDialog/ImportDialog'
 import { MTGCardsProvider } from '../../context/MTGA/Cards/MTGCardsProvider'
 import { useMTGCards } from '../../context/MTGA/Cards/useMTGCards'
-import { MTGDeckCreatorProvider } from '../../context/MTGA/DeckCreator/MTGDeckCreatorProvider'
-import { useMTGDeckCreator } from '../../context/MTGA/DeckCreator/useMTGDeckCreator'
+import { MTGDeckCreatorLogicProvider } from '../../context/MTGA/DeckCreator/Logic/MTGDeckCreatorLogicProvider'
+import { useMTGDeckCreatorLogic } from '../../context/MTGA/DeckCreator/Logic/useMTGDeckCreatorLogic'
+import { MTGDeckCreatorUIProvider } from '../../context/MTGA/DeckCreator/UI/MTGDeckCreatorUIProvider'
+import { useMTGDeckCreatorUI } from '../../context/MTGA/DeckCreator/UI/useMTGDeckCreatorUI'
 import { MTGDeckCreatorFlowProvider } from '../../context/MTGA/DeckCreatorFlow/MTGDeckCreatorFlowProvider'
 import { useMTGDecks } from '../../context/MTGA/Decks/useMTGDecks'
 import { MTGAFilterProvider } from '../../context/MTGA/Filter/MTGFilterProvider'
@@ -50,16 +53,9 @@ import { Drawer } from './Components/Drawer'
  */
 export const DeckCreator = () => {
     const { cards, totalCount, goToPage } = useMTGCards()
-    const {
-        deck,
-        setDeck,
-        openDrawer,
-        setOpenDrawer,
-        setViewMode,
-        viewMode,
-        setOpenImportDialog,
-        setOpenExportDialog,
-    } = useMTGDeckCreator()
+    const { deck, setDeck } = useMTGDeckCreatorLogic()
+    const { openDrawer, setOpenDrawer, setViewMode, viewMode, setOpenImportDialog, setOpenExportDialog } =
+        useMTGDeckCreatorUI()
     const { propagateChangesToDashboardDeck } = useMTGDecks()
     const { filter, setFilter } = useMTGFilter()
 
@@ -120,7 +116,6 @@ export const DeckCreator = () => {
                 card: c.card.ID,
                 count: c.count,
                 deckCardType: c.deckCardType,
-                mainOrSide: c.mainOrSide,
                 phantoms: c.phantoms,
                 position: c.position,
                 ID: c.card.ID,
@@ -149,219 +144,205 @@ export const DeckCreator = () => {
     if (!deck) return null
 
     return (
-        <MTGDeckCreatorFlowProvider deck={deck}>
-            <Box display={'flex'}>
+        <Box display={'flex'}>
+            <Box
+                position={'relative'}
+                flex={1}
+                display={'flex'}
+                flexDirection={'column'}
+                height={viewMode === 'BOARD' ? '100vh' : { xs: '150vh', lg: '100vh' }}
+                width={isMobile ? DRAWER_WIDTH_MOBILE : `calc(100vw - ${DRAWER_WIDTH_DESKTOP}px)`}
+            >
                 <Box
-                    position={'relative'}
-                    flex={1}
                     display={'flex'}
-                    flexDirection={'column'}
-                    height={viewMode === 'BOARD' ? '100vh' : { xs: '150vh', lg: '100vh' }}
-                    width={isMobile ? DRAWER_WIDTH_MOBILE : `calc(100vw - ${DRAWER_WIDTH_DESKTOP}px)`}
+                    gap={1}
+                    alignItems={isMobile ? 'flex-start' : 'center'}
+                    paddingLeft={1}
+                    flexDirection={isMobile ? 'column' : 'row'}
                 >
-                    <Box
-                        display={'flex'}
-                        gap={1}
-                        alignItems={isMobile ? 'flex-start' : 'center'}
-                        paddingLeft={1}
-                        flexDirection={isMobile ? 'column' : 'row'}
-                    >
-                        <Button variant={'contained'} color={'primary'} onClick={() => navigate(-1)}>
-                            <ArrowLeft fontSize={'large'} />
-                        </Button>
-                        <Box display={'flex'} gap={1} alignItems={'center'}>
-                            <h1>
-                                Deck Creator - {viewMode} - {deck.name}
-                            </h1>
-                            <IconButton
-                                onClick={() => {
-                                    const prompt = window.prompt('Enter a new name for the deck')
-                                    if (!prompt) return
-                                    setDeck({ ...deck, name: prompt })
-                                }}
-                            >
-                                <Edit />
-                            </IconButton>
-                        </Box>
-                    </Box>
-                    {viewMode === 'CATALOGUE' && (
-                        <>
-                            <FilterBar />
-                            {!isMobile && (
-                                <Box
-                                    display={'flex'}
-                                    justifyContent={'space-between'}
-                                    alignItems={'center'}
-                                    paddingX={2}
-                                    paddingY={1}
-                                    columnGap={2}
-                                    rowGap={1}
-                                    flexWrap={'wrap'}
-                                >
-                                    <TextField
-                                        size="small"
-                                        type="number"
-                                        label="Cards per page"
-                                        value={pageSizeInput}
-                                        inputProps={{ min: 1 }}
-                                        onChange={handlePageSizeInputChange}
-                                        onBlur={() => {
-                                            if (
-                                                pageSizeInput.trim() !== '' &&
-                                                Number(pageSizeInput) !== filter.pageSize
-                                            ) {
-                                                applyPageSize(pageSizeInput)
-                                            }
-                                        }}
-                                        onKeyDown={(event) => {
-                                            if (event.key === 'Enter') {
-                                                applyPageSize(pageSizeInput)
-                                            }
-                                        }}
-                                    />
-                                    <FormControlLabel
-                                        control={
-                                            <Switch
-                                                checked={filter.fillAvailableSpace}
-                                                onChange={(event) => {
-                                                    const { checked } = event.target
-                                                    setFilter((prev) => ({
-                                                        ...prev,
-                                                        fillAvailableSpace: checked,
-                                                    }))
-                                                }}
-                                                color="primary"
-                                            />
-                                        }
-                                        label="Fill available space"
-                                    />
-                                </Box>
-                            )}
-                            <CardsGrid />
-                            <Box mt={'auto'} display={'flex'} justifyContent={'center'} paddingTop={1}>
-                                <Pagination
-                                    count={Math.max(1, Math.ceil(totalCount / pageSize))}
-                                    page={filter.page + 1}
-                                    onChange={(_, page) => {
-                                        void goToPage(page - 1)
-                                    }}
-                                    showFirstButton
-                                    showLastButton
-                                />
-                            </Box>
-                        </>
-                    )}
-                    <Box position={'absolute'} top={10} right={10} display={'flex'} gap={1}>
+                    <Button variant={'contained'} color={'primary'} onClick={() => navigate(-1)}>
+                        <ArrowLeft fontSize={'large'} />
+                    </Button>
+                    <Box display={'flex'} gap={1} alignItems={'center'}>
+                        <h1>
+                            Deck Creator - {viewMode} - {deck.name}
+                        </h1>
                         <IconButton
-                            size="large"
-                            edge="start"
-                            color="inherit"
-                            aria-label="menu"
-                            onClick={handleMenuClick}
+                            onClick={() => {
+                                const prompt = window.prompt('Enter a new name for the deck')
+                                if (!prompt) return
+                                setDeck({ ...deck, name: prompt })
+                            }}
                         >
-                            <MenuIcon />
+                            <Edit />
                         </IconButton>
-                        <Menu
-                            anchorEl={anchorEl}
-                            open={open}
-                            onClose={handleMenuClose}
-                            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-                            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                        >
-                            <Typography variant="caption" display="block" gutterBottom>
-                                View Options
-                            </Typography>
-                            <Grid container spacing={1}>
-                                <Grid item xs={6} md={'auto'}>
-                                    <Box display={'flex'} justifyContent={'center'}>
-                                        <IconButton onClick={() => handleChangeView('CATALOGUE')}>
-                                            <ViewCompact />
-                                        </IconButton>
-                                    </Box>
-                                </Grid>
-                                <Grid item xs={6} md={'auto'}>
-                                    <Box display={'flex'} justifyContent={'center'}>
-                                        <IconButton onClick={() => handleChangeView('CATALOGUE_BOARD')}>
-                                            <VerticalSplit />
-                                        </IconButton>
-                                    </Box>
-                                </Grid>
-                                <Grid item xs={6} md={'auto'}>
-                                    <Box display={'flex'} justifyContent={'center'}>
-                                        <IconButton onClick={() => handleChangeView('BOARD')}>
-                                            <DashboardCustomize />
-                                        </IconButton>
-                                    </Box>
-                                </Grid>
-                                {/* <Grid item xs={6} md={'auto'}>
-                                    <Box display={'flex'} justifyContent={'center'}>
-                                        <IconButton onClick={() => handleChangeView('CATALOGUE_PILES')}>
-                                            <VerticalSplit />
-                                        </IconButton>
-                                    </Box>
-                                </Grid>
-                                <Grid item xs={6} md={'auto'}>
-                                    <Box display={'flex'} justifyContent={'center'}>
-                                        <IconButton onClick={() => handleChangeView('PILES')}>
-                                            <BarChart />
-                                        </IconButton>
-                                    </Box>
-                                </Grid> */}
-                            </Grid>
-                            <Divider />
-                            <Typography variant="caption" display="block" gutterBottom>
-                                Deck Operations
-                            </Typography>
-                            <MenuItem
-                                onClick={() => {
-                                    saveDeck()
-                                    handleMenuClose()
-                                }}
-                            >
-                                Save Deck
-                            </MenuItem>
-                            <MenuItem
-                                onClick={() => {
-                                    setOpenImportDialog(true)
-                                    handleMenuClose()
-                                }}
-                            >
-                                Import Deck
-                            </MenuItem>
-                            <MenuItem
-                                onClick={() => {
-                                    setOpenExportDialog(true)
-                                    handleMenuClose()
-                                }}
-                            >
-                                Export Deck
-                            </MenuItem>
-                            <Divider />
-                            <Typography variant="caption" display="block" gutterBottom>
-                                Filter Operations
-                            </Typography>
-                            <MenuItem
-                                onClick={() => {
-                                    clearFilter()
-                                    handleMenuClose()
-                                }}
-                            >
-                                Clear filter
-                            </MenuItem>
-                        </Menu>
-                        <Button variant={'contained'} color={'primary'} onClick={() => setOpenDrawer(!openDrawer)}>
-                            Open Drawer
-                        </Button>
                     </Box>
                 </Box>
-                <Collapse in={openDrawer} orientation={'horizontal'} mountOnEnter unmountOnExit>
-                    <Drawer />
-                </Collapse>
-                <ImportDialog />
-                <ExportDialog />
-                <CardDialog />
+                {viewMode === 'CATALOGUE' && (
+                    <>
+                        <FilterBar />
+                        {!isMobile && (
+                            <Box
+                                display={'flex'}
+                                justifyContent={'space-between'}
+                                alignItems={'center'}
+                                paddingX={2}
+                                paddingY={1}
+                                columnGap={2}
+                                rowGap={1}
+                                flexWrap={'wrap'}
+                            >
+                                <TextField
+                                    size="small"
+                                    type="number"
+                                    label="Cards per page"
+                                    value={pageSizeInput}
+                                    inputProps={{ min: 1 }}
+                                    onChange={handlePageSizeInputChange}
+                                    onBlur={() => {
+                                        if (pageSizeInput.trim() !== '' && Number(pageSizeInput) !== filter.pageSize) {
+                                            applyPageSize(pageSizeInput)
+                                        }
+                                    }}
+                                    onKeyDown={(event) => {
+                                        if (event.key === 'Enter') {
+                                            applyPageSize(pageSizeInput)
+                                        }
+                                    }}
+                                />
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={filter.fillAvailableSpace}
+                                            onChange={(event) => {
+                                                const { checked } = event.target
+                                                setFilter((prev) => ({
+                                                    ...prev,
+                                                    fillAvailableSpace: checked,
+                                                }))
+                                            }}
+                                            color="primary"
+                                        />
+                                    }
+                                    label="Fill available space"
+                                />
+                            </Box>
+                        )}
+                        <CardsGrid />
+                        <Box mt={'auto'} display={'flex'} justifyContent={'center'} paddingTop={1}>
+                            <TextField
+                                size="small"
+                                type="number"
+                                label="Page"
+                                value={filter.page + 1}
+                                onChange={(event) => {
+                                    void goToPage(Number(event.target.value) - 1)
+                                }}
+                                sx={{ width: 100 }}
+                            />
+                            <Pagination
+                                count={Math.max(1, Math.ceil(totalCount / pageSize))}
+                                page={filter.page + 1}
+                                onChange={(_, page) => {
+                                    void goToPage(page - 1)
+                                }}
+                                showFirstButton
+                                showLastButton
+                            />
+                        </Box>
+                    </>
+                )}
+                {(viewMode === 'BOARD' || viewMode === 'CATALOGUE_BOARD') && <FlowCanvas />}
+                <Box position={'absolute'} top={10} right={10} display={'flex'} gap={1}>
+                    <IconButton size="large" edge="start" color="inherit" aria-label="menu" onClick={handleMenuClick}>
+                        <MenuIcon />
+                    </IconButton>
+                    <Menu
+                        anchorEl={anchorEl}
+                        open={open}
+                        onClose={handleMenuClose}
+                        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                    >
+                        <Typography variant="caption" display="block" gutterBottom>
+                            View Options
+                        </Typography>
+                        <Grid container spacing={1}>
+                            <Grid item xs={6} md={'auto'}>
+                                <Box display={'flex'} justifyContent={'center'}>
+                                    <IconButton onClick={() => handleChangeView('CATALOGUE')}>
+                                        <ViewCompact />
+                                    </IconButton>
+                                </Box>
+                            </Grid>
+                            <Grid item xs={6} md={'auto'}>
+                                <Box display={'flex'} justifyContent={'center'}>
+                                    <IconButton onClick={() => handleChangeView('CATALOGUE_BOARD')}>
+                                        <VerticalSplit />
+                                    </IconButton>
+                                </Box>
+                            </Grid>
+                            <Grid item xs={6} md={'auto'}>
+                                <Box display={'flex'} justifyContent={'center'}>
+                                    <IconButton onClick={() => handleChangeView('BOARD')}>
+                                        <DashboardCustomize />
+                                    </IconButton>
+                                </Box>
+                            </Grid>
+                        </Grid>
+                        <Divider />
+                        <Typography variant="caption" display="block" gutterBottom>
+                            Deck Operations
+                        </Typography>
+                        <MenuItem
+                            onClick={() => {
+                                saveDeck()
+                                handleMenuClose()
+                            }}
+                        >
+                            Save Deck
+                        </MenuItem>
+                        <MenuItem
+                            onClick={() => {
+                                setOpenImportDialog(true)
+                                handleMenuClose()
+                            }}
+                        >
+                            Import Deck
+                        </MenuItem>
+                        <MenuItem
+                            onClick={() => {
+                                setOpenExportDialog(true)
+                                handleMenuClose()
+                            }}
+                        >
+                            Export Deck
+                        </MenuItem>
+                        <Divider />
+                        <Typography variant="caption" display="block" gutterBottom>
+                            Filter Operations
+                        </Typography>
+                        <MenuItem
+                            onClick={() => {
+                                clearFilter()
+                                handleMenuClose()
+                            }}
+                        >
+                            Clear filter
+                        </MenuItem>
+                    </Menu>
+                    <Button variant={'contained'} color={'primary'} onClick={() => setOpenDrawer(!openDrawer)}>
+                        Open Drawer
+                    </Button>
+                </Box>
             </Box>
-        </MTGDeckCreatorFlowProvider>
+            <Collapse in={openDrawer} orientation={'horizontal'} mountOnEnter unmountOnExit>
+                <Drawer />
+            </Collapse>
+            <ImportDialog />
+            <ExportDialog />
+            <CardDialog />
+        </Box>
     )
 }
 
@@ -394,9 +375,13 @@ export const DeckCreatorWrapper = () => {
         <MTGAFilterProvider>
             <MTGCardsProvider>
                 <ReactFlowProvider>
-                    <MTGDeckCreatorProvider initialDeck={deck}>
-                        <DeckCreator />
-                    </MTGDeckCreatorProvider>
+                    <MTGDeckCreatorFlowProvider>
+                        <MTGDeckCreatorUIProvider>
+                            <MTGDeckCreatorLogicProvider initialDeck={deck}>
+                                <DeckCreator />
+                            </MTGDeckCreatorLogicProvider>
+                        </MTGDeckCreatorUIProvider>
+                    </MTGDeckCreatorFlowProvider>
                 </ReactFlowProvider>
             </MTGCardsProvider>
         </MTGAFilterProvider>

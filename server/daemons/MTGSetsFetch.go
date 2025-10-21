@@ -3,12 +3,10 @@ package daemons
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"magic-helper/arango"
 	"magic-helper/graph/model/scryfall"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -134,17 +132,6 @@ func fetchSets(ctx context.Context) bool {
 		return false
 	}
 
-	// Download the icons
-	iconErrors := 0
-	for _, set := range sets {
-		err := downloadSetIconIfNeeded(ctx, set)
-		if err != nil {
-			log.Error().Err(err).Msgf("Error downloading set icon for %s", set.Code)
-			iconErrors++
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-
 	// Update the last time we fetched sets
 	err = updateLastTimeFetched("MTG_sets")
 	if err != nil {
@@ -156,116 +143,6 @@ func fetchSets(ctx context.Context) bool {
 	log.Info().Msgf("Done")
 
 	return true
-}
-
-// downloadSetIconIfNeeded checks the current ETag via HEAD and only downloads
-// the set icon if it changed. On success, it updates the stored ETag.
-func downloadSetIconIfNeeded(ctx context.Context, set scryfall.Set) error {
-	if set.IconSVGURI == "" {
-		// If there's no icon URL, nothing to do
-		return nil
-	}
-
-	// 1) Ensure local images folder exists
-	err := os.MkdirAll("public/images/sets", 0755)
-	if err != nil {
-		return fmt.Errorf("error creating set icon folder: %w", err)
-	}
-
-	// 2) Make a HEAD request
-	headReq, err := http.NewRequest(http.MethodHead, set.IconSVGURI, nil)
-	if err != nil {
-		return fmt.Errorf("error creating HEAD request: %w", err)
-	}
-
-	// If we have an ETag stored, send If-None-Match
-	if set.ETag != "" {
-		headReq.Header.Set("If-None-Match", set.ETag)
-	}
-
-	headResp, err := http.DefaultClient.Do(headReq)
-	if err != nil {
-		return fmt.Errorf("HEAD request failed for %s: %w", set.Code, err)
-	}
-	defer headResp.Body.Close()
-
-	if headResp.StatusCode == http.StatusNotModified {
-		// ETag is the same; skip re-download
-		return nil
-	}
-
-	if headResp.StatusCode != http.StatusOK {
-		// If we get anything else (404, 500, etc.) treat as error
-		return fmt.Errorf("HEAD for set %s returned status %d", set.Code, headResp.StatusCode)
-	}
-
-	newETag := headResp.Header.Get("ETag")
-	// log.Info().Msgf("HEAD for set %s returned ETag: %q (old ETag: %q)", set.Code, newETag, set.ETag)
-
-	// 3) If ETag is empty or changed, do the actual GET
-	if newETag == "" || newETag != set.ETag {
-		err := doDownloadAndSave(ctx, set, newETag)
-		if err != nil {
-			return err
-		}
-	} else {
-		// Sometimes servers return 200 but same ETag anyway
-		log.Info().Msgf("Icon for set %s is unchanged (same ETag), skipping.", set.Code)
-	}
-
-	return nil
-}
-
-// doDownloadAndSave performs the GET request, saves the icon, and updates the ETag in DB.
-func doDownloadAndSave(ctx context.Context, set scryfall.Set, newETag string) error {
-	resp, err := http.Get(set.IconSVGURI)
-	if err != nil {
-		return fmt.Errorf("GET request failed for %s: %w", set.Code, err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("GET for set %s returned status %d", set.Code, resp.StatusCode)
-	}
-
-	iconFile, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("reading response body for %s: %w", set.Code, err)
-	}
-
-	iconPath := "public/images/sets/" + set.Code + ".svg"
-	err = os.WriteFile(iconPath, iconFile, 0644)
-	if err != nil {
-		return fmt.Errorf("writing set icon for %s: %w", set.Code, err)
-	}
-
-	// log.Info().Msgf("Downloaded set icon: %s (new ETag: %q)", iconPath, newETag)
-
-	// Also update the ETag in Arango
-	if err := updateSetETagInDB(ctx, set.Code, newETag); err != nil {
-		return fmt.Errorf("updating ETag in DB for %s: %w", set.Code, err)
-	}
-
-	return nil
-}
-
-// updateSetETagInDB stores the latest ETag for a set code in MTG_Original_Sets.
-func updateSetETagInDB(ctx context.Context, code, newETag string) error {
-	aq := arango.NewQuery( /* aql */ `
-		FOR s IN MTG_Original_Sets
-			FILTER s._key == @key
-			UPDATE s WITH { eTag: @etag } IN MTG_Original_Sets
-	`)
-
-	aq.AddBindVar("key", code)
-	aq.AddBindVar("etag", newETag)
-
-	_, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
-	if err != nil {
-		return fmt.Errorf("arango query error: %w", err)
-	}
-
-	return nil
 }
 
 // updateDatabaseSets transforms original sets to the app schema and upserts into MTG_Sets.

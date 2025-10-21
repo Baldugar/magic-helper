@@ -9,8 +9,6 @@ export type GroupNodeData = {
     label: string
     cardChildren: string[]
     zoneChildren: string[]
-    onDelete: (nodeID: string, deleteNodes: boolean) => void
-    onNameChange: (nodeID: string, newName: string) => void
 }
 
 export type GroupNodeProps = NodeProps & {
@@ -19,7 +17,7 @@ export type GroupNodeProps = NodeProps & {
 
 export const GroupNode = (props: GroupNodeProps) => {
     const { data, id } = props
-    const { label, cardChildren, onDelete, onNameChange } = data
+    const { label, cardChildren } = data
     const { draggingGroupId } = useMTGDeckFlowCreator()
     const [resizable, setResizable] = useState(false)
     const [lockedChildren, setLockedChildren] = useState(true)
@@ -110,24 +108,6 @@ export const GroupNode = (props: GroupNodeProps) => {
         setLockedChildren(evt.target.checked)
     }, [])
 
-    const handleDelete = useCallback(() => {
-        const respZone = confirm(`Are you sure you want to delete the zone "${label}"?`)
-        if (respZone) {
-            let respNodes = false
-            if (cardChildren.length > 0) {
-                respNodes = confirm('Do you want to delete the nodes inside the zone?')
-            }
-            onDelete(id, respNodes)
-        }
-    }, [label, cardChildren, id, onDelete])
-
-    const handleNameChange = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => {
-            onNameChange(id, e.target.value)
-        },
-        [id, onNameChange],
-    )
-
     // Placeholder rendering logic
     if (draggingGroupId && id === draggingGroupId) {
         // This is the group node being dragged, render placeholder
@@ -151,7 +131,6 @@ export const GroupNode = (props: GroupNodeProps) => {
                     <input
                         type="text"
                         value={label}
-                        onChange={handleNameChange}
                         style={{
                             width: '100%',
                             minWidth: 120,
@@ -175,9 +154,6 @@ export const GroupNode = (props: GroupNodeProps) => {
                         <input type="checkbox" checked={lockedChildren} onChange={handleLockedChildrenChange} />
                         locked children
                     </label>
-                    <button onClick={handleDelete} style={{ marginBottom: 8 }}>
-                        Delete
-                    </button>
                     <button onClick={handleAutosort} style={{ marginBottom: 8 }}>
                         Autosort by Name
                     </button>

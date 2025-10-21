@@ -394,7 +394,7 @@ const SetItem: React.FC<SetItemProps> = ({ set, value, onNext, onPrev, iconSize 
                             loading="lazy"
                         />
                         <Typography variant="body2" noWrap sx={{ marginLeft: 1 }}>
-                            {set.setName} ({new Date(set.releasedAt).toLocaleDateString()}){' '}
+                            ({set.code}) {set.setName} ({new Date(set.releasedAt).toLocaleDateString()}){' '}
                             {set.games
                                 .sort(
                                     (a, b) =>

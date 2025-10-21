@@ -16,7 +16,8 @@ import {
     useMediaQuery,
 } from '@mui/material'
 import { MouseEvent, useState } from 'react'
-import { useMTGDeckCreator } from '../../../context/MTGA/DeckCreator/useMTGDeckCreator'
+import { useMTGDeckCreatorLogic } from '../../../context/MTGA/DeckCreator/Logic/useMTGDeckCreatorLogic'
+import { useMTGDeckCreatorUI } from '../../../context/MTGA/DeckCreator/UI/useMTGDeckCreatorUI'
 import { initialMTGFilter } from '../../../context/MTGA/Filter/MTGFilterContext'
 import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
 import { TernaryBoolean } from '../../../graphql/types'
@@ -34,7 +35,8 @@ import { SavedFiltersPopover } from './SavedFiltersPopover'
 
 export const FilterBar = () => {
     const { filter, setFilter, setIgnoredCardIDs } = useMTGFilter()
-    const { stickyCardsGrid, setStickyCardsGrid, deck } = useMTGDeckCreator()
+    const { stickyCardsGrid, setStickyCardsGrid } = useMTGDeckCreatorUI()
+    const { deck } = useMTGDeckCreatorLogic()
     const isMobile = useMediaQuery('(max-width: 600px)')
     const [searchAnchorEl, setSearchAnchorEl] = useState<null | HTMLElement>(null)
     const [search, setSearch] = useState<string>('')

@@ -150,7 +150,6 @@ query GetDeck($deckID: ID!) {
                 x
                 y
             }
-            mainOrSide
             deckCardType
         }
         zones {
@@ -184,7 +183,6 @@ query GetCardPackages($cardPackageID: ID) {
                 name
             }
             count
-            mainOrSide
         }
     }
 }
@@ -420,7 +418,6 @@ type MTG_DeckCard {
     selectedVersionID: String # Which version to display
     count: Int! # Number of copies
     position: Position! # Position in deck builder
-    mainOrSide: MainOrSide! # Mainboard or sideboard
     deckCardType: MTG_DeckCardType!
     phantoms: [Phantom!]! # Visual placeholder cards
 }
@@ -514,7 +511,6 @@ input MTG_DeckCardInput {
     selectedVersionID: String
     count: Int!
     position: PositionInput!
-    mainOrSide: MainOrSide!
     deckCardType: MTG_DeckCardType!
     phantoms: [PhantomInput!]!
 }
@@ -554,7 +550,6 @@ query GetCompleteDeck($deckID: ID!) {
                 x
                 y
             }
-            mainOrSide
             deckCardType
         }
         zones {
