@@ -56,33 +56,33 @@ func DeleteMTGDeck(ctx context.Context, input model.MtgDeleteDeckInput) (*model.
 
 	aq := arango.NewQuery( /* aql */ `
 		LET frontCardImageDelete = (
-			FOR frontCardImageEdge IN MTG_Deck_Front_Card_Image
-				FILTER frontCardImageEdge._from == CONCAT("MTG_Decks", "/", @deckID)
-				REMOVE frontCardImageEdge IN MTG_Deck_Front_Card_Image
+			FOR frontCardImageEdge IN mtg_deck_front_image
+				FILTER frontCardImageEdge._from == CONCAT("mtg_decks", "/", @deckID)
+				REMOVE frontCardImageEdge IN mtg_deck_front_image
 		)
 		
 		LET cardDeckDelete = (
-			FOR cardDeckEdge IN MTG_Card_Deck
-				FILTER cardDeckEdge._to == CONCAT("MTG_Decks", "/", @deckID)
-				REMOVE cardDeckEdge IN MTG_Card_Deck
+			FOR cardDeckEdge IN mtg_card_deck
+				FILTER cardDeckEdge._to == CONCAT("mtg_decks", "/", @deckID)
+				REMOVE cardDeckEdge IN mtg_card_deck
 		)
 
 		LET ignoredCardsDelete = (
-			FOR ignoredCardEdge IN MTG_Deck_Ignore_Card
-				FILTER ignoredCardEdge._to == CONCAT("MTG_Decks", "/", @deckID)
-				REMOVE ignoredCardEdge IN MTG_Deck_Ignore_Card
+			FOR ignoredCardEdge IN mtg_deck_ignore_card
+				FILTER ignoredCardEdge._to == CONCAT("mtg_decks", "/", @deckID)
+				REMOVE ignoredCardEdge IN mtg_deck_ignore_card
 		)
 
 		Let filterPresetsDelete = (
-			FOR filterPresetEdge IN MTG_Filter_Preset_Deck
-				FILTER filterPresetEdge._to == CONCAT("MTG_Decks", "/", @deckID)
-				REMOVE filterPresetEdge IN MTG_Filter_Preset_Deck
+			FOR filterPresetEdge IN mtg_filter_preset_for_deck
+				FILTER filterPresetEdge._to == CONCAT("mtg_decks", "/", @deckID)
+				REMOVE filterPresetEdge IN mtg_filter_preset_for_deck
 		)
 
 		LET docDelete = (
-			FOR doc IN MTG_Decks
+			FOR doc IN mtg_decks
 				FILTER doc._key == @deckID
-				REMOVE doc IN MTG_Decks
+				REMOVE doc IN mtg_decks
 				RETURN OLD
 		)
 
@@ -118,7 +118,7 @@ func UpdateMTGDeck(ctx context.Context, input model.MtgUpdateDeckInput) (*model.
 			name: @name,
 			type: @type,
 			zones: @zones,
-		} IN MTG_Decks
+		} IN mtg_decks
 		RETURN NEW
 	`)
 
@@ -158,9 +158,9 @@ func UpdateMTGDeck(ctx context.Context, input model.MtgUpdateDeckInput) (*model.
 	// TODO: REFACTOR THIS SO IT DOESN'T DELETE AND ADD ALL CARDS AGAIN
 	// Remove all cards from the deck
 	aq = arango.NewQuery( /* aql */ `
-		FOR edge IN MTG_Card_Deck
-			FILTER edge._to == CONCAT("MTG_Decks", "/", @deckID)
-			REMOVE edge IN MTG_Card_Deck
+		FOR edge IN mtg_card_deck
+			FILTER edge._to == CONCAT("mtg_decks", "/", @deckID)
+			REMOVE edge IN mtg_card_deck
 	`)
 
 	aq.AddBindVar("deckID", input.DeckID)
@@ -205,7 +205,7 @@ func UpdateMTGDeck(ctx context.Context, input model.MtgUpdateDeckInput) (*model.
 
 	aq = arango.NewQuery( /* aql */ `
 		FOR card IN @cards
-			INSERT card INTO MTG_Card_Deck
+			INSERT card INTO mtg_card_deck
 	`)
 	aq.AddBindVar("cards", allCards)
 
@@ -223,9 +223,9 @@ func UpdateMTGDeck(ctx context.Context, input model.MtgUpdateDeckInput) (*model.
 	if input.CardFrontImage == nil {
 		// Remove the front card image
 		aq = arango.NewQuery( /* aql */ `
-			FOR edge IN MTG_Deck_Front_Card_Image
-				FILTER edge._from == CONCAT("MTG_Decks", "/", @deckID)
-				REMOVE edge IN MTG_Deck_Front_Card_Image
+			FOR edge IN mtg_deck_front_image
+				FILTER edge._from == CONCAT("mtg_decks", "/", @deckID)
+				REMOVE edge IN mtg_deck_front_image
 		`)
 		aq.AddBindVar("deckID", input.DeckID)
 		_, err = arango.DB.Query(ctx, aq.Query, aq.BindVars)
@@ -249,7 +249,7 @@ func UpdateMTGDeck(ctx context.Context, input model.MtgUpdateDeckInput) (*model.
 					_to: @imageID,
 					versionID: @versionID
 				}
-				IN MTG_Deck_Front_Card_Image
+				IN mtg_deck_front_image
 		`)
 
 		aq.AddBindVar("deckID", col.String()+"/"+input.DeckID)
@@ -323,9 +323,9 @@ func AddIgnoredCard(ctx context.Context, input model.AddIgnoredCardInput) (*mode
 
 	aq := arango.NewQuery( /* aql */ `
 		INSERT {
-			_from: CONCAT("MTG_Decks", "/", @deckID),
-			_to: CONCAT("MTG_Cards", "/", @cardID),
-		} INTO MTG_Deck_Ignore_Card
+			_from: CONCAT("mtg_decks", "/", @deckID),
+			_to: CONCAT("mtg_cards", "/", @cardID),
+		} INTO mtg_deck_ignore_card
 		RETURN NEW
 	`)
 
@@ -352,9 +352,9 @@ func RemoveIgnoredCard(ctx context.Context, input model.RemoveIgnoredCardInput) 
 	log.Info().Msg("RemoveIgnoredCard: Started")
 
 	aq := arango.NewQuery( /* aql */ `
-		FOR card, edge IN 1..1 OUTBOUND CONCAT("MTG_Decks", "/", @deckID) MTG_Deck_Ignore_Card
-		FILTER edge._to == CONCAT("MTG_Cards", "/", @cardID)
-		REMOVE edge IN MTG_Deck_Ignore_Card
+		FOR card, edge IN 1..1 OUTBOUND CONCAT("mtg_decks", "/", @deckID) mtg_deck_ignore_card
+		FILTER edge._to == CONCAT("mtg_cards", "/", @cardID)
+		REMOVE edge IN mtg_deck_ignore_card
 	`)
 
 	aq.AddBindVar("cardID", input.CardID)

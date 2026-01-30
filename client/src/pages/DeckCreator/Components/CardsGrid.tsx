@@ -127,7 +127,7 @@ export const CardsGrid = () => {
         const cardWidth = CARD_SIZE_VALUES.small.width * bestScale
         let bestFittingSize = 'small' as keyof Omit<MTG_Image, '__typename'>
         if (cardWidth <= baseCardWidth) {
-            bestFittingSize = 'small'
+            bestFittingSize = 'normal'
         } else if (cardWidth <= CARD_SIZE_VALUES.normal.width) {
             // bestFittingSize = 'normal'
             bestFittingSize = 'PNG'

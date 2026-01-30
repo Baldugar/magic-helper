@@ -19,7 +19,7 @@ export type PhantomNodeProps = NodeProps & {
 export const PhantomNode = (props: PhantomNodeProps) => {
     const { data, id, parentId } = props
     const { card } = data
-    const { draggingGroupId } = useMTGDeckFlowCreator()
+    const { draggingZoneIDs } = useMTGDeckFlowCreator()
 
     const { anchorRef, handleClick, handleClose, handleContextMenu, open } = useContextMenu<HTMLDivElement>()
 
@@ -28,8 +28,8 @@ export const PhantomNode = (props: PhantomNodeProps) => {
     if (!selectedVersion) return null
 
     // Placeholder rendering logic
-    if (draggingGroupId && (parentId === draggingGroupId || id === draggingGroupId)) {
-        // This is a group node or its child, render placeholder
+    if ((parentId && draggingZoneIDs.includes(parentId)) || draggingZoneIDs.includes(id)) {
+        // This is a zone node or its child, render placeholder
         return (
             <div
                 style={{

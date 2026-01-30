@@ -58,7 +58,8 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
     // Track long-press position for mobile context menu
     const [mobilePosition, setMobilePosition] = useState<{ x: number; y: number } | undefined>(undefined)
 
-    const defaultVersion = card.versions.find((v) => v.isDefault)
+    // Use default-marked version, or first version when filter (e.g. games) leaves none marked default
+    const defaultVersion = card.versions.find((v) => v.isDefault) ?? card.versions[0]
 
     if (!defaultVersion) return null
 
@@ -336,29 +337,17 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
                         }}
                         id={`card-${card.ID}`}
                     >
-                        {selectedVersion ? (
-                            <MTGCardWithHover
-                                data={{
-                                    card: selectedVersion,
-                                    type: 'cardVersion',
-                                    cardTypeLine: card.typeLine,
-                                    layout: card.layout,
-                                }}
-                                scale={isMobile ? 1 : cardScale}
-                                forceImage={forceImage}
-                                enableGlow={!isMobile}
-                            />
-                        ) : (
-                            <MTGCardWithHover
-                                data={{
-                                    card,
-                                    type: 'card',
-                                }}
-                                scale={isMobile ? 1 : cardScale}
-                                forceImage={forceImage}
-                                enableGlow={!isMobile}
-                            />
-                        )}
+                        <MTGCardWithHover
+                            data={{
+                                card: selectedVersion ?? defaultVersion,
+                                type: 'cardVersion',
+                                cardTypeLine: card.typeLine,
+                                layout: card.layout,
+                            }}
+                            scale={isMobile ? 1 : cardScale}
+                            forceImage={forceImage}
+                            enableGlow={!isMobile}
+                        />
                         {deck.ignoredCards.includes(card.ID) && (
                             <Close
                                 sx={{

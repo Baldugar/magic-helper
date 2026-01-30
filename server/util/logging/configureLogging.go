@@ -16,8 +16,8 @@ func Configure(settings settings.Settings) {
 	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 	zerolog.TimestampFieldName = "t"
 	zerolog.LevelFieldName = "l"
-	zerolog.MessageFieldName = "m"
-	zerolog.ErrorFieldName = "e"
+	zerolog.MessageFieldName = "msg"
+	zerolog.ErrorFieldName = "err"
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	zerolog.DurationFieldUnit = time.Duration(zerolog.DurationFieldUnit.Milliseconds())
 	zerolog.DurationFieldInteger = true

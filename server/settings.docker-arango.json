@@ -8,7 +8,7 @@
     "graphQLPlayground": true,
     "arangoDB": {
         "addr": "localhost",
-        "port": "8529",
+        "port": "8530",
         "name": "MagicHelper",
         "user": "root",
         "password": "arangodb"

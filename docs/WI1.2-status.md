@@ -53,11 +53,11 @@
 -   Reorganizacion de componentes FE bajo `client/src/components/deckBuilder/`:
     -   `CardTile` y `VersionCard` reutilizables.
     -   `FilterBar` consolidada con controles en `controls/` (incluye `SortBuilder`).
-    -   `FlowCanvas` y nodos (`CardNode`, `GroupNode`, `PhantomNode`) centralizados.
+    -   `FlowCanvas` y nodos (`CardNode`, `ZoneNode`, `PhantomNode`) centralizados.
     -   `PackagesDialog` y `PackageCard` compartidos.
 -   Deck creator consume nuevos modulos (`FilterBar`, `CardTile`, `PackagesDialog`).
 -   Dashboard apunta al nuevo `PackageCard`.
--   `SortBuilder` cumple multi-sort; `GroupNode` soporta autosort de cartas; contexto de flujo mantiene phantoms y zonas.
+-   `SortBuilder` cumple multi-sort; `ZoneNode` soporta autosort de cartas; contexto de flujo mantiene phantoms y zonas.
 -   Pendientes principales: ampliacion de context menus y playground/Storybook.
 
 ## Ultima Validacion

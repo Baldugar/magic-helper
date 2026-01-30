@@ -13,9 +13,9 @@ func GetMTGDecks(ctx context.Context) ([]*model.MtgDeckDashboard, error) {
 	log.Info().Msg("GetMTGADecks: Started")
 
 	aq := arango.NewQuery( /* aql */ `
-		FOR doc IN MTG_Decks
+		FOR doc IN mtg_decks
 			LET cardFrontImage = FIRST(
-				FOR card, edge IN 1..1 OUTBOUND doc MTG_Deck_Front_Card_Image
+				FOR card, edge IN 1..1 OUTBOUND doc mtg_deck_front_image
 					LET imageVersion = FIRST(
 						FOR v IN card.versions
 							FILTER v.ID == edge.versionID
@@ -31,7 +31,7 @@ func GetMTGDecks(ctx context.Context) ([]*model.MtgDeckDashboard, error) {
 					}
 			)
 			LET cards = (
-				FOR card, edge IN 1..1 INBOUND doc MTG_Card_Deck
+				FOR card, edge IN 1..1 INBOUND doc mtg_card_deck
 				FILTER card != null
 				SORT edge.position.x ASC, edge.position.y ASC
 				RETURN MERGE(edge, {card})
@@ -69,10 +69,10 @@ func GetMTGDeck(ctx context.Context, deckID string) (*model.MtgDeck, error) {
 	log.Info().Msg("GetMTGDeck: Started")
 
 	aq := arango.NewQuery( /* aql */ `
-		FOR doc IN MTG_Decks
+		FOR doc IN mtg_decks
 			FILTER doc._key == @deckID			
 			LET cardFrontImage = FIRST(
-				FOR card, edge IN 1..1 OUTBOUND doc MTG_Deck_Front_Card_Image
+				FOR card, edge IN 1..1 OUTBOUND doc mtg_deck_front_image
 					LET imageVersion = FIRST(
 						FOR v IN card.versions
 							FILTER v.ID == edge.versionID
@@ -88,7 +88,7 @@ func GetMTGDeck(ctx context.Context, deckID string) (*model.MtgDeck, error) {
 					}
 			)
 			LET cards = (
-				FOR card, edge IN 1..1 INBOUND doc MTG_Card_Deck
+				FOR card, edge IN 1..1 INBOUND doc mtg_card_deck
 				SORT edge.position.x ASC, edge.position.y ASC
 				RETURN MERGE(edge, {					
 					card,
@@ -99,7 +99,7 @@ func GetMTGDeck(ctx context.Context, deckID string) (*model.MtgDeck, error) {
 				})
 			)
 			LET ignoredCards = (
-				FOR card, edge IN 1..1 OUTBOUND CONCAT("MTG_Decks/", doc._key) MTG_Deck_Ignore_Card
+				FOR card, edge IN 1..1 OUTBOUND CONCAT("mtg_decks/", doc._key) mtg_deck_ignore_card
 				RETURN card._key
 			)
 		RETURN MERGE(doc, {cardFrontImage, cards, ignoredCards})

@@ -31,12 +31,12 @@ func CreateMTGFilterPreset(ctx context.Context, input model.MtgCreateFilterPrese
 		return nil, errors.New("name is required")
 	}
 
-	filterData := input.Filter
+	filterData := input.FilterState
 	if filterData == nil {
 		filterData = map[string]any{}
 	}
 
-	sortState := model.SortInputToState(input.Sort)
+	sortState := model.SortInputToState(input.SortState)
 	if sortState == nil {
 		sortState = []*model.MtgFilterSortState{}
 	}
@@ -48,18 +48,18 @@ func CreateMTGFilterPreset(ctx context.Context, input model.MtgCreateFilterPrese
             deckID: @deckID,
             name: @name,
             savedAt: @savedAt,
-            filter: @filter,
-            sort: @sort,
+            filterState: @filterState,
+            sortState: @sortState,
             page: @page
-        } INTO MTG_Filter_Presets
+        } INTO mtg_filter_presets
         RETURN NEW
     `)
 
 	aq.AddBindVar("deckID", deckID)
 	aq.AddBindVar("name", name)
 	aq.AddBindVar("savedAt", savedAt)
-	aq.AddBindVar("filter", filterData)
-	aq.AddBindVar("sort", sortState)
+	aq.AddBindVar("filterState", filterData)
+	aq.AddBindVar("sortState", sortState)
 	aq.AddBindVar("page", input.Page)
 
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
@@ -87,7 +87,7 @@ func CreateMTGFilterPreset(ctx context.Context, input model.MtgCreateFilterPrese
         INSERT {
             _from: CONCAT(@deckCollection, "/", @deckID),
             _to: CONCAT(@presetCollection, "/", @presetID)
-        } INTO MTG_Filter_Preset_Deck
+        } INTO mtg_filter_preset_for_deck
     `)
 
 	edgeQuery.AddBindVar("deckCollection", arango.MTG_DECKS_COLLECTION.String())
@@ -126,12 +126,12 @@ func UpdateMTGFilterPreset(ctx context.Context, input model.MtgUpdateFilterPrese
 		updateFields["name"] = trimmed
 	}
 
-	if input.Filter != nil {
-		updateFields["filter"] = input.Filter
+	if input.FilterState != nil {
+		updateFields["filterState"] = input.FilterState
 	}
 
-	if input.Sort != nil {
-		updateFields["sort"] = model.SortInputToState(input.Sort)
+	if input.SortState != nil {
+		updateFields["sortState"] = model.SortInputToState(input.SortState)
 	}
 
 	if input.Page != nil {
@@ -143,7 +143,7 @@ func UpdateMTGFilterPreset(ctx context.Context, input model.MtgUpdateFilterPrese
 	aq := arango.NewQuery( /* aql */ `
         UPDATE {
             _key: @presetID
-        } WITH @updates IN MTG_Filter_Presets
+        } WITH @updates IN mtg_filter_presets
         RETURN NEW
     `)
 
@@ -189,7 +189,7 @@ func DeleteMTGFilterPreset(ctx context.Context, input model.MtgDeleteFilterPrese
 	removePreset := arango.NewQuery( /* aql */ `
         REMOVE {
             _key: @presetID
-        } IN MTG_Filter_Presets
+        } IN mtg_filter_presets
     `)
 	removePreset.AddBindVar("presetID", input.PresetID)
 
@@ -199,9 +199,9 @@ func DeleteMTGFilterPreset(ctx context.Context, input model.MtgDeleteFilterPrese
 	}
 
 	removeEdge := arango.NewQuery( /* aql */ `
-        FOR edge IN MTG_Filter_Preset_Deck
+        FOR edge IN mtg_filter_preset_for_deck
             FILTER edge._to == CONCAT(@presetCollection, "/", @presetID)
-            REMOVE edge IN MTG_Filter_Preset_Deck
+            REMOVE edge IN mtg_filter_preset_for_deck
     `)
 	removeEdge.AddBindVar("presetCollection", arango.MTG_FILTER_PRESETS_COLLECTION.String())
 	removeEdge.AddBindVar("presetID", input.PresetID)
@@ -217,7 +217,7 @@ func DeleteMTGFilterPreset(ctx context.Context, input model.MtgDeleteFilterPrese
 
 func getFilterPresetByID(ctx context.Context, presetID string) (*model.MTGFilterPresetDB, error) {
 	aq := arango.NewQuery( /* aql */ `
-        FOR preset IN MTG_Filter_Presets
+        FOR preset IN mtg_filter_presets
             FILTER preset._key == @presetID
             LIMIT 1
             RETURN preset

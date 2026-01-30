@@ -67,35 +67,35 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
     }, [open, scrollPosition])
 
     const { filter } = useMTGFilter()
-    const { sets, games } = filter
+    const { sets,/* games */} = filter
 
-    const positiveGames = useMemo(
-        () =>
-            Object.entries(games)
-                .filter(([_, v]) => isPositiveTB(v))
-                .map(([k]) => k as MTG_Game),
-        [games],
-    )
-    const negativeGames = useMemo(
-        () =>
-            Object.entries(games)
-                .filter(([_, v]) => isNegativeTB(v))
-                .map(([k]) => k as MTG_Game),
-        [games],
-    )
-    const gameFilterIsNotSet = useMemo(() => Object.values(games).every((v) => v === TernaryBoolean.UNSET), [games])
+    // const positiveGames = useMemo(
+    //     () =>
+    //         Object.entries(games)
+    //             .filter(([_, v]) => isPositiveTB(v))
+    //             .map(([k]) => k as MTG_Game),
+    //     [games],
+    // )
+    // const negativeGames = useMemo(
+    //     () =>
+    //         Object.entries(games)
+    //             .filter(([_, v]) => isNegativeTB(v))
+    //             .map(([k]) => k as MTG_Game),
+    //     [games],
+    // )
+    // const gameFilterIsNotSet = useMemo(() => Object.values(games).every((v) => v === TernaryBoolean.UNSET), [games])
 
     const grouped = useMemo(() => {
         return Object.entries(sets)
             .map(([code, s]) => ({ code, ...s }))
             .filter((s) => s.setName.toLowerCase().includes(search.toLowerCase()))
             .reduce<Record<string, Record<string, FilterSet[]>>>((acc, curr) => {
-                if (!gameFilterIsNotSet) {
-                    let allowed = true
-                    if (positiveGames.length) allowed = positiveGames.some((g) => curr.games.includes(g))
-                    if (negativeGames.length) allowed &&= !negativeGames.some((g) => curr.games.includes(g))
-                    if (!allowed) return acc
-                }
+                // if (!gameFilterIsNotSet) {
+                //     let allowed = true
+                //     if (positiveGames.length) allowed = positiveGames.some((g) => curr.games.includes(g))
+                //     if (negativeGames.length) allowed &&= !negativeGames.some((g) => curr.games.includes(g))
+                //     if (!allowed) return acc
+                // }
 
                 const year = new Date(curr.releasedAt).getFullYear().toString()
                 const typeLabel = TYPE_TO_GROUP[curr.setType] ?? curr.setType // fallback
@@ -104,7 +104,7 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
                 ;(acc[year][typeLabel] ??= []).push(curr as FilterSet)
                 return acc
             }, {})
-    }, [sets, gameFilterIsNotSet, positiveGames, negativeGames, search])
+    }, [sets, search])
 
     const howManyPositive = Object.values(selected).filter(isPositiveTB).length
     const howManyNegative = Object.values(selected).filter(isNegativeTB).length

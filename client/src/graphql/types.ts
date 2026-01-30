@@ -162,10 +162,10 @@ export type MTG_CreateDeckInput = {
 /** Input payload to create a new filter preset. */
 export type MTG_CreateFilterPresetInput = {
   deckID: Scalars['ID']['input'];
-  filter: Scalars['Map']['input'];
+  filterState: Scalars['Map']['input'];
   name: Scalars['String']['input'];
   page: Scalars['Int']['input'];
-  sort: Array<MTG_Filter_SortInput>;
+  sortState: Array<MTG_Filter_SortInput>;
 };
 
 /** A user deck with cards, positions, zones and optional front image. */
@@ -253,11 +253,11 @@ export type MTG_FilterPreset = {
   __typename?: 'MTG_FilterPreset';
   ID: Scalars['ID']['output'];
   deckID: Scalars['ID']['output'];
-  filter: Scalars['Map']['output'];
+  filterState: Scalars['Map']['output'];
   name: Scalars['String']['output'];
   page: Scalars['Int']['output'];
   savedAt: Scalars['String']['output'];
-  sort: Array<MTG_Filter_SortState>;
+  sortState: Array<MTG_Filter_SortState>;
 };
 
 /** Card type filter entry with ternary state. */
@@ -363,6 +363,7 @@ export type MTG_Filter_SearchInput = {
   deckID?: InputMaybe<Scalars['ID']['input']>;
   games: Array<MTG_Filter_GameInput>;
   hideIgnored: Scalars['Boolean']['input'];
+  hideUnreleased: Scalars['Boolean']['input'];
   isSelectingCommander: Scalars['Boolean']['input'];
   layouts: Array<MTG_Filter_LayoutInput>;
   legalities: Array<MTG_Filter_LegalityInput>;
@@ -484,11 +485,11 @@ export type MTG_UpdateDeckInput = {
 
 /** Fields allowed when updating an existing filter preset. */
 export type MTG_UpdateFilterPresetInput = {
-  filter?: InputMaybe<Scalars['Map']['input']>;
+  filterState?: InputMaybe<Scalars['Map']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
   presetID: Scalars['ID']['input'];
-  sort?: InputMaybe<Array<MTG_Filter_SortInput>>;
+  sortState?: InputMaybe<Array<MTG_Filter_SortInput>>;
 };
 
 /** Root-level write operations. */

@@ -173,13 +173,13 @@ type ComplexityRoot struct {
 	}
 
 	MTG_FilterPreset struct {
-		DeckID  func(childComplexity int) int
-		Filter  func(childComplexity int) int
-		ID      func(childComplexity int) int
-		Name    func(childComplexity int) int
-		Page    func(childComplexity int) int
-		SavedAt func(childComplexity int) int
-		Sort    func(childComplexity int) int
+		DeckID      func(childComplexity int) int
+		FilterState func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Name        func(childComplexity int) int
+		Page        func(childComplexity int) int
+		SavedAt     func(childComplexity int) int
+		SortState   func(childComplexity int) int
 	}
 
 	MTG_Filter_CardTypes struct {
@@ -941,12 +941,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MTG_FilterPreset.DeckID(childComplexity), true
 
-	case "MTG_FilterPreset.filter":
-		if e.complexity.MTG_FilterPreset.Filter == nil {
+	case "MTG_FilterPreset.filterState":
+		if e.complexity.MTG_FilterPreset.FilterState == nil {
 			break
 		}
 
-		return e.complexity.MTG_FilterPreset.Filter(childComplexity), true
+		return e.complexity.MTG_FilterPreset.FilterState(childComplexity), true
 
 	case "MTG_FilterPreset.ID":
 		if e.complexity.MTG_FilterPreset.ID == nil {
@@ -976,12 +976,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MTG_FilterPreset.SavedAt(childComplexity), true
 
-	case "MTG_FilterPreset.sort":
-		if e.complexity.MTG_FilterPreset.Sort == nil {
+	case "MTG_FilterPreset.sortState":
+		if e.complexity.MTG_FilterPreset.SortState == nil {
 			break
 		}
 
-		return e.complexity.MTG_FilterPreset.Sort(childComplexity), true
+		return e.complexity.MTG_FilterPreset.SortState(childComplexity), true
 
 	case "MTG_Filter_CardTypes.cardType":
 		if e.complexity.MTG_Filter_CardTypes.CardType == nil {
@@ -1502,8 +1502,8 @@ Input payload to create a new filter preset.
 input MTG_CreateFilterPresetInput {
     deckID: ID!
     name: String!
-    filter: Map!
-    sort: [MTG_Filter_SortInput!]!
+    filterState: Map!
+    sortState: [MTG_Filter_SortInput!]!
     page: Int!
 }
 
@@ -1513,8 +1513,8 @@ Fields allowed when updating an existing filter preset.
 input MTG_UpdateFilterPresetInput {
     presetID: ID!
     name: String
-    filter: Map
-    sort: [MTG_Filter_SortInput!]
+    filterState: Map
+    sortState: [MTG_Filter_SortInput!]
     page: Int
 }
 
@@ -1533,8 +1533,8 @@ type MTG_FilterPreset {
     deckID: ID!
     name: String!
     savedAt: String!
-    filter: Map!
-    sort: [MTG_Filter_SortState!]!
+    filterState: Map!
+    sortState: [MTG_Filter_SortState!]!
     page: Int!
 }
 
@@ -1939,6 +1939,7 @@ input MTG_Filter_SearchInput {
     layouts: [MTG_Filter_LayoutInput!]!
     games: [MTG_Filter_GameInput!]!
     hideIgnored: Boolean!
+    hideUnreleased: Boolean!
     commander: ID
     deckID: ID
     isSelectingCommander: Boolean!
@@ -7042,8 +7043,8 @@ func (ec *executionContext) fieldContext_MTG_FilterPreset_savedAt(_ context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _MTG_FilterPreset_filter(ctx context.Context, field graphql.CollectedField, obj *model.MtgFilterPreset) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_FilterPreset_filter(ctx, field)
+func (ec *executionContext) _MTG_FilterPreset_filterState(ctx context.Context, field graphql.CollectedField, obj *model.MtgFilterPreset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_FilterPreset_filterState(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -7056,7 +7057,7 @@ func (ec *executionContext) _MTG_FilterPreset_filter(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Filter, nil
+		return obj.FilterState, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7073,7 +7074,7 @@ func (ec *executionContext) _MTG_FilterPreset_filter(ctx context.Context, field 
 	return ec.marshalNMap2map(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MTG_FilterPreset_filter(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MTG_FilterPreset_filterState(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MTG_FilterPreset",
 		Field:      field,
@@ -7086,8 +7087,8 @@ func (ec *executionContext) fieldContext_MTG_FilterPreset_filter(_ context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _MTG_FilterPreset_sort(ctx context.Context, field graphql.CollectedField, obj *model.MtgFilterPreset) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_FilterPreset_sort(ctx, field)
+func (ec *executionContext) _MTG_FilterPreset_sortState(ctx context.Context, field graphql.CollectedField, obj *model.MtgFilterPreset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_FilterPreset_sortState(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -7100,7 +7101,7 @@ func (ec *executionContext) _MTG_FilterPreset_sort(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Sort, nil
+		return obj.SortState, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7117,7 +7118,7 @@ func (ec *executionContext) _MTG_FilterPreset_sort(ctx context.Context, field gr
 	return ec.marshalNMTG_Filter_SortState2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortStateᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MTG_FilterPreset_sort(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MTG_FilterPreset_sortState(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MTG_FilterPreset",
 		Field:      field,
@@ -8635,10 +8636,10 @@ func (ec *executionContext) fieldContext_Mutation_createMTGFilterPreset(ctx cont
 				return ec.fieldContext_MTG_FilterPreset_name(ctx, field)
 			case "savedAt":
 				return ec.fieldContext_MTG_FilterPreset_savedAt(ctx, field)
-			case "filter":
-				return ec.fieldContext_MTG_FilterPreset_filter(ctx, field)
-			case "sort":
-				return ec.fieldContext_MTG_FilterPreset_sort(ctx, field)
+			case "filterState":
+				return ec.fieldContext_MTG_FilterPreset_filterState(ctx, field)
+			case "sortState":
+				return ec.fieldContext_MTG_FilterPreset_sortState(ctx, field)
 			case "page":
 				return ec.fieldContext_MTG_FilterPreset_page(ctx, field)
 			}
@@ -8706,10 +8707,10 @@ func (ec *executionContext) fieldContext_Mutation_updateMTGFilterPreset(ctx cont
 				return ec.fieldContext_MTG_FilterPreset_name(ctx, field)
 			case "savedAt":
 				return ec.fieldContext_MTG_FilterPreset_savedAt(ctx, field)
-			case "filter":
-				return ec.fieldContext_MTG_FilterPreset_filter(ctx, field)
-			case "sort":
-				return ec.fieldContext_MTG_FilterPreset_sort(ctx, field)
+			case "filterState":
+				return ec.fieldContext_MTG_FilterPreset_filterState(ctx, field)
+			case "sortState":
+				return ec.fieldContext_MTG_FilterPreset_sortState(ctx, field)
 			case "page":
 				return ec.fieldContext_MTG_FilterPreset_page(ctx, field)
 			}
@@ -9464,10 +9465,10 @@ func (ec *executionContext) fieldContext_Query_getMTGFilterPresets(ctx context.C
 				return ec.fieldContext_MTG_FilterPreset_name(ctx, field)
 			case "savedAt":
 				return ec.fieldContext_MTG_FilterPreset_savedAt(ctx, field)
-			case "filter":
-				return ec.fieldContext_MTG_FilterPreset_filter(ctx, field)
-			case "sort":
-				return ec.fieldContext_MTG_FilterPreset_sort(ctx, field)
+			case "filterState":
+				return ec.fieldContext_MTG_FilterPreset_filterState(ctx, field)
+			case "sortState":
+				return ec.fieldContext_MTG_FilterPreset_sortState(ctx, field)
 			case "page":
 				return ec.fieldContext_MTG_FilterPreset_page(ctx, field)
 			}
@@ -11799,7 +11800,7 @@ func (ec *executionContext) unmarshalInputMTG_CreateFilterPresetInput(ctx contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"deckID", "name", "filter", "sort", "page"}
+	fieldsInOrder := [...]string{"deckID", "name", "filterState", "sortState", "page"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -11820,20 +11821,20 @@ func (ec *executionContext) unmarshalInputMTG_CreateFilterPresetInput(ctx contex
 				return it, err
 			}
 			it.Name = data
-		case "filter":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		case "filterState":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filterState"))
 			data, err := ec.unmarshalNMap2map(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Filter = data
-		case "sort":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sort"))
+			it.FilterState = data
+		case "sortState":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sortState"))
 			data, err := ec.unmarshalNMTG_Filter_SortInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Sort = data
+			it.SortState = data
 		case "page":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
 			data, err := ec.unmarshalNInt2int(ctx, v)
@@ -12310,7 +12311,7 @@ func (ec *executionContext) unmarshalInputMTG_Filter_SearchInput(ctx context.Con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"searchString", "rarity", "color", "multiColor", "manaCosts", "cardTypes", "subtypes", "sets", "legalities", "layouts", "games", "hideIgnored", "commander", "deckID", "isSelectingCommander"}
+	fieldsInOrder := [...]string{"searchString", "rarity", "color", "multiColor", "manaCosts", "cardTypes", "subtypes", "sets", "legalities", "layouts", "games", "hideIgnored", "hideUnreleased", "commander", "deckID", "isSelectingCommander"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -12401,6 +12402,13 @@ func (ec *executionContext) unmarshalInputMTG_Filter_SearchInput(ctx context.Con
 				return it, err
 			}
 			it.HideIgnored = data
+		case "hideUnreleased":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hideUnreleased"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HideUnreleased = data
 		case "commander":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("commander"))
 			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
@@ -12606,7 +12614,7 @@ func (ec *executionContext) unmarshalInputMTG_UpdateFilterPresetInput(ctx contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"presetID", "name", "filter", "sort", "page"}
+	fieldsInOrder := [...]string{"presetID", "name", "filterState", "sortState", "page"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -12627,20 +12635,20 @@ func (ec *executionContext) unmarshalInputMTG_UpdateFilterPresetInput(ctx contex
 				return it, err
 			}
 			it.Name = data
-		case "filter":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		case "filterState":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filterState"))
 			data, err := ec.unmarshalOMap2map(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Filter = data
-		case "sort":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sort"))
+			it.FilterState = data
+		case "sortState":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sortState"))
 			data, err := ec.unmarshalOMTG_Filter_SortInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Sort = data
+			it.SortState = data
 		case "page":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
@@ -13554,13 +13562,13 @@ func (ec *executionContext) _MTG_FilterPreset(ctx context.Context, sel ast.Selec
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "filter":
-			out.Values[i] = ec._MTG_FilterPreset_filter(ctx, field, obj)
+		case "filterState":
+			out.Values[i] = ec._MTG_FilterPreset_filterState(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "sort":
-			out.Values[i] = ec._MTG_FilterPreset_sort(ctx, field, obj)
+		case "sortState":
+			out.Values[i] = ec._MTG_FilterPreset_sortState(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

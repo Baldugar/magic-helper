@@ -6,8 +6,8 @@ type MTG_FilterPreset {
     deckID: ID!
     name: String!
     savedAt: String!
-    filter: Map!
-    sort: [MTG_Filter_SortState!]!
+    filterState: Map!
+    sortState: [MTG_Filter_SortState!]!
     page: Int!
 }
 

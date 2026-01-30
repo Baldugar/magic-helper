@@ -5,21 +5,20 @@ import { useMTGDeckFlowCreator } from '../../../../context/MTGA/DeckCreatorFlow/
 
 export const MIN_SIZE = 180
 
-export type GroupNodeData = {
+export type ZoneNodeData = {
     label: string
     cardChildren: string[]
     zoneChildren: string[]
 }
 
-export type GroupNodeProps = NodeProps & {
-    data: GroupNodeData
+export type ZoneNodeProps = NodeProps & {
+    data: ZoneNodeData
 }
 
-export const GroupNode = (props: GroupNodeProps) => {
-    const { data, id } = props
-    const { label, cardChildren } = data
-    const { draggingGroupId } = useMTGDeckFlowCreator()
-    const [resizable, setResizable] = useState(false)
+export const ZoneNode = (props: ZoneNodeProps) => {
+    const { data, id, selected } = props
+    const { label, cardChildren, zoneChildren } = data
+    const { draggingZoneIDs, temporarilyUnlockedZoneIDs } = useMTGDeckFlowCreator()
     const [lockedChildren, setLockedChildren] = useState(true)
     const reactFlow = useReactFlow()
     const CARD_WIDTH = 100
@@ -28,19 +27,28 @@ export const GroupNode = (props: GroupNodeProps) => {
     const MAX_COLS = 5
 
     useEffect(() => {
-        const constraints = {
-            extent: lockedChildren ? ('parent' as const) : undefined,
-            expandParent: lockedChildren,
-        }
         reactFlow.setNodes((nodes) => {
             return nodes.map((node) => {
                 if (cardChildren.includes(node.id)) {
-                    return { ...node, ...constraints }
+                    const enforceLock = lockedChildren
+                    return {
+                        ...node,
+                        extent: enforceLock ? ('parent' as const) : undefined,
+                        expandParent: enforceLock,
+                    }
+                }
+                if (zoneChildren.includes(node.id)) {
+                    const enforceLock = lockedChildren && !temporarilyUnlockedZoneIDs.includes(node.id)
+                    return {
+                        ...node,
+                        extent: enforceLock ? ('parent' as const) : undefined,
+                        expandParent: enforceLock,
+                    }
                 }
                 return node
             })
         })
-    }, [lockedChildren, cardChildren, reactFlow])
+    }, [lockedChildren, cardChildren, zoneChildren, reactFlow, temporarilyUnlockedZoneIDs])
 
     const handleAutosort = () => {
         const allNodes = reactFlow.getNodes() as Node[]
@@ -84,7 +92,7 @@ export const GroupNode = (props: GroupNodeProps) => {
                     },
                 }
             }
-            // If this is the group node, resize it
+            // If this is the zone node, resize it
             if (node.id === id) {
                 const cols = Math.min(childNodes.length, MAX_COLS)
                 const rows = Math.ceil(childNodes.length / MAX_COLS)
@@ -100,24 +108,20 @@ export const GroupNode = (props: GroupNodeProps) => {
     }
 
     // Handlers
-    const handleResizableChange = useCallback((evt: React.ChangeEvent<HTMLInputElement>) => {
-        setResizable(evt.target.checked)
-    }, [])
-
     const handleLockedChildrenChange = useCallback((evt: React.ChangeEvent<HTMLInputElement>) => {
         setLockedChildren(evt.target.checked)
     }, [])
 
     // Placeholder rendering logic
-    if (draggingGroupId && id === draggingGroupId) {
-        // This is the group node being dragged, render placeholder
+    if (draggingZoneIDs.includes(id)) {
+        // This is the zone node being dragged, render placeholder
         return (
             <div
                 style={{
                     width: '100%',
                     height: '100%',
                     border: '1px solid black',
-                    backgroundColor: '#f0f0f077',
+                    backgroundColor: '#f0f0f0',
                     borderRadius: 15,
                 }}
             />
@@ -147,10 +151,6 @@ export const GroupNode = (props: GroupNodeProps) => {
             <NodeToolbar position={Position.Right}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 8 }}>
                     <label>
-                        <input type="checkbox" checked={resizable} onChange={handleResizableChange} />
-                        resizable
-                    </label>
-                    <label>
                         <input type="checkbox" checked={lockedChildren} onChange={handleLockedChildrenChange} />
                         locked children
                     </label>
@@ -170,7 +170,7 @@ export const GroupNode = (props: GroupNodeProps) => {
                     boxSizing: 'border-box',
                 }}
             >
-                <NodeResizer isVisible={resizable} minWidth={MIN_SIZE} minHeight={MIN_SIZE} />
+                <NodeResizer isVisible={selected} minWidth={MIN_SIZE} minHeight={MIN_SIZE} />
             </Box>
         </>
     )

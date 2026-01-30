@@ -26,8 +26,8 @@ const mapPresetFromGraph = (preset: MTG_FilterPreset): FilterPreset => ({
     name: preset.name,
     savedAt: preset.savedAt,
     page: preset.page,
-    filter: preset.filter as unknown as FilterPreset['filter'],
-    sort: preset.sort,
+    filter: preset.filterState as unknown as FilterPreset['filter'],
+    sort: preset.sortState,
 })
 
 export const useFilterPresets = () => {
@@ -92,8 +92,8 @@ export const useFilterPresets = () => {
                 const created = await createMTGFilterPresetMutation({
                     deckID,
                     name: trimmed,
-                    filter: serializedFilter,
-                    sort: clone(sort).map((entry) => ({
+                    filterState: serializedFilter,
+                    sortState: clone(sort).map((entry) => ({
                         enabled: entry.enabled,
                         sortBy: entry.sortBy,
                         sortDirection: entry.sortDirection,

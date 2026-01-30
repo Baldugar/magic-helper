@@ -4,7 +4,7 @@ import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
 import { MTG_Card, MTG_CardVersion, MTG_Image, MTG_Layout } from '../../../graphql/types'
 import { CARD_SIZE_VALUES } from '../../../utils/constants'
 import { getCorrectCardImage } from '../../../utils/functions/cardFunctions'
-import { getRandomVersionFromFilter } from '../../../utils/functions/filterFunctions'
+import { getDisplayVersionFromFilter } from '../../../utils/functions/filterFunctions'
 import { HoverMouseComponent } from './HoverMouseComponent'
 import { ImageWithSkeleton } from './ImageWithSkeleton'
 
@@ -34,7 +34,7 @@ export type MTGCardWithHoverProps = {
  * and integrates with drag-and-drop when used within the deck creator.
  */
 export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
-    const { data, forceSize, forceImage, scale = 1, enableGlow = false } = props
+    const { data, forceSize, scale = 1, enableGlow = false } = props
     const { card, type, debugValue } = data
     const { filter } = useMTGFilter()
     let smallImageUrl: string | undefined = undefined
@@ -47,27 +47,28 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
     const mdVerticalScreen = useMediaQuery('(max-height: 1200px)')
     const smVerticalScreen = useMediaQuery('(max-height: 1000px)')
     const isMobileQuery = useMediaQuery('(max-width: 600px)')
-    const isMobileEffective = !forceSize && isMobileQuery
+    const isMobileEffective = isMobileQuery
     const shouldGlow = enableGlow && !isMobileEffective
 
-    // Select a version based on the current filter's set constraints (if any)
-    const randomVersion = useMemo(() => {
+    // Deterministic version when type is 'card': default > first (no random)
+    const displayVersion = useMemo(() => {
         if (type === 'card') {
-            return getRandomVersionFromFilter(filter, card)
+            return getDisplayVersionFromFilter(card, filter)
         }
         return undefined
     }, [card, filter, type])
 
-    const imageSizeFingerprint = forceSize ? forceSize : isMobileEffective ? 'large' : 'small'
+    const imageSizeFingerprint = isMobileEffective ? 'large' : forceSize ? forceSize : 'small'
 
     if (type === 'card') {
         const { card } = data
         typeLine = card.typeLine
-        if (randomVersion) {
-            version = randomVersion
+        if (displayVersion) {
+            version = displayVersion
         }
         if (!version) return null
-        smallImageUrl = getCorrectCardImage(version, forceImage ?? imageSizeFingerprint)
+        // smallImageUrl = getCorrectCardImage(version, imageSizeFingerprint ?? forceImage)
+        smallImageUrl = getCorrectCardImage(version, 'normal')
         if (!smallImageUrl) return null
         largeImageUrl = getCorrectCardImage(version, 'large')
         if (!largeImageUrl) return null
@@ -77,7 +78,8 @@ export const MTGCardWithHover: FC<MTGCardWithHoverProps> = (props) => {
         typeLine = cardTypeLine
         version = card
         try {
-            smallImageUrl = getCorrectCardImage(version, forceImage ?? imageSizeFingerprint)
+            // smallImageUrl = getCorrectCardImage(version, imageSizeFingerprint ?? forceImage)
+            smallImageUrl = getCorrectCardImage(version, 'normal')
             if (!smallImageUrl) return null
             largeImageUrl = getCorrectCardImage(version, 'large')
             if (!largeImageUrl) return null

@@ -19,9 +19,9 @@ func GetMTGCards(ctx context.Context) ([]*model.MtgCard, error) {
 	// Build the query
 	queryBuildStart := time.Now()
 	aq := arango.NewQuery( /* aql */ `
-		FOR doc IN MTG_Cards 
+		FOR doc IN mtg_cards 
 			OPTIONS {
-				indexHint: "MTG_Cards_Buildup"
+				indexHint: "mtg_cards_buildup"
 			}
 			FILTER (doc.manaCost == "" AND doc.layout != "meld") OR doc.manaCost != ""
 			RETURN doc
@@ -82,7 +82,7 @@ func GetMTGFilters(ctx context.Context) (*model.MtgFilterEntries, error) {
 		log.Info().Msg("GetMTGFilters: Index not ready, fetching cards from database")
 		// Query ArangoDB to get all typeLines
 		aq := arango.NewQuery( /* aql */ `
-			FOR card IN MTG_Cards
+			FOR card IN mtg_cards
 			RETURN {
 				name: card.name,
 				typeLine: card.typeLine,
@@ -202,7 +202,7 @@ func GetMTGExpansions(ctx context.Context) ([]*model.MtgFilterExpansion, error) 
 		log.Info().Msg("GetMTGExpansions: Index not ready, fetching basic cards from database")
 		// Fetch only the versions data we need, not full cards
 		aq := arango.NewQuery( /* aql */ `
-			FOR card IN MTG_Cards
+			FOR card IN mtg_cards
 				RETURN {
 					versions: card.versions
 				}
@@ -331,7 +331,7 @@ func fetchSetDetailsBatch(ctx context.Context, setCodes []string) (map[string]st
 
 	aq := arango.NewQuery( /* aql */ `
 		FOR setCode IN @setCodes
-			LET setDetails = DOCUMENT("MTG_Sets", LOWER(setCode))
+			LET setDetails = DOCUMENT("mtg_sets", LOWER(setCode))
 			FILTER setDetails != null
 			RETURN {
 				setCode: setCode,
@@ -387,7 +387,7 @@ func GetMTGLegalities(ctx context.Context) (*model.MtgFilterLegality, error) {
 
 	// AQL query to fetch legality formats and statuses for all cards
 	aq := arango.NewQuery( /* aql */ `
-        FOR card IN MTG_Cards
+        FOR card IN mtg_cards
             LET legalities = FIRST(card.versions).legalities
             FOR legalityFormat IN ATTRIBUTES(legalities)
                 LET legalityStatus = legalities[legalityFormat]
@@ -457,12 +457,22 @@ func GetMTGCardsFiltered(ctx context.Context, filter model.MtgFilterSearchInput,
 	// Try to use cached cards from index if available
 	if mtgCardSearch.IsIndexReady() {
 		log.Info().Msg("GetMTGCardsFiltered: Using cached cards from index")
+		cards = mtgCardSearch.GetAllCardsFromIndex()
+		if len(cards) == 0 {
+			log.Error().Msg("GetMTGCardsFiltered: No cards found in index")
+			cards, err = GetMTGCards(ctx)
+			if err != nil {
+				return nil, err
+			}
+			mtgCardSearch.BuildCardIndexWithCards(cards)
+		}
 	} else {
 		log.Info().Msg("GetMTGCardsFiltered: Index not ready, fetching basic cards from database")
 		cards, err = GetMTGCards(ctx)
 		if err != nil {
 			return nil, err
 		}
+		mtgCardSearch.BuildCardIndexWithCards(cards)
 	}
 	step1Duration := time.Since(step1Start)
 	log.Info().
@@ -470,31 +480,35 @@ func GetMTGCardsFiltered(ctx context.Context, filter model.MtgFilterSearchInput,
 		Dur("duration", step1Duration).
 		Msg("GetMTGCardsFiltered: Basic cards fetched")
 
-	// Step 2: Filter and sort cards using basic data
+	// Step 2: Filter, sort, and paginate in one pass (predicate + heap-based Top-K)
 	step2Start := time.Now()
-	filteredCards := mtgCardSearch.FilterCards(cards, filter, sort)
+	pagedCards, totalCount := mtgCardSearch.FilterCardsWithPagination(cards, filter, sort, pagination)
 	step2Duration := time.Since(step2Start)
 	log.Info().
-		Int("filteredCards", len(filteredCards)).
-		Dur("duration", step2Duration).
-		Msg("GetMTGCardsFiltered: Cards filtered")
-
-	// Step 3: Paginate the filtered results
-	step3Start := time.Now()
-	pagedCards := mtgCardSearch.PaginateCards(filteredCards, pagination)
-	step3Duration := time.Since(step3Start)
-	log.Info().
+		Int("totalCount", totalCount).
 		Int("pagedCards", len(pagedCards)).
-		Dur("duration", step3Duration).
-		Msg("GetMTGCardsFiltered: Cards paginated")
+		Dur("duration", step2Duration).
+		Msg("GetMTGCardsFiltered: Cards filtered and paginated")
 
-	totalDuration := step1Duration + step2Duration + step3Duration
+	// When games filter is set, return each card with only versions matching the filter
+	// (e.g. Arena only) so the client sees only those versions. Shallow-copy to avoid mutating cache.
+	if len(filter.Games) > 0 {
+		for i, card := range pagedCards {
+			effective := mtgCardSearch.EffectiveVersionsForGames(card, filter.Games)
+			if len(effective) < len(card.Versions) {
+				cardCopy := *card
+				cardCopy.Versions = effective
+				pagedCards[i] = &cardCopy
+			}
+		}
+	}
+
+	totalDuration := step1Duration + step2Duration
 	log.Info().
 		Dur("totalDuration", totalDuration).
 		Dur("step1Duration", step1Duration).
 		Dur("step2Duration", step2Duration).
-		Dur("step3Duration", step3Duration).
 		Msg("GetMTGCardsFiltered: Finished")
 
-	return &model.MtgFilterSearch{PagedCards: pagedCards, TotalCount: len(filteredCards)}, nil
+	return &model.MtgFilterSearch{PagedCards: pagedCards, TotalCount: totalCount}, nil
 }

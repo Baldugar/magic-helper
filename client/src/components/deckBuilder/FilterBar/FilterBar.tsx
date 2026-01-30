@@ -301,6 +301,19 @@ export const FilterBar = () => {
                     setIgnoredCardIDs(deck.ignoredCards)
                 }}
             />
+            <FormControlLabel
+                value={filter.hideUnreleased}
+                control={<Switch color="primary" />}
+                label="Hide Unreleased"
+                labelPlacement="bottom"
+                onChange={(_, c) => {
+                    setFilter((prev) => ({
+                        ...prev,
+                        hideUnreleased: c,
+                        page: 0,
+                    }))
+                }}
+            />
             {isMobile && (
                 <IconButton
                     onClick={() => setStickyCardsGrid((prev) => !prev)}

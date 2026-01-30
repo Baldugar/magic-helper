@@ -118,7 +118,7 @@ export const DeckCreator = () => {
                 deckCardType: c.deckCardType,
                 phantoms: c.phantoms,
                 position: c.position,
-                ID: c.card.ID,
+                selectedVersionID: c.selectedVersionID ?? undefined,
             })),
             deckID: deck.ID,
             name: deck.name,
@@ -374,15 +374,15 @@ export const DeckCreatorWrapper = () => {
     return (
         <MTGAFilterProvider>
             <MTGCardsProvider>
-                <ReactFlowProvider>
-                    <MTGDeckCreatorFlowProvider>
-                        <MTGDeckCreatorUIProvider>
-                            <MTGDeckCreatorLogicProvider initialDeck={deck}>
+                <MTGDeckCreatorUIProvider>
+                    <MTGDeckCreatorLogicProvider initialDeck={deck}>
+                        <ReactFlowProvider>
+                            <MTGDeckCreatorFlowProvider>
                                 <DeckCreator />
-                            </MTGDeckCreatorLogicProvider>
-                        </MTGDeckCreatorUIProvider>
-                    </MTGDeckCreatorFlowProvider>
-                </ReactFlowProvider>
+                            </MTGDeckCreatorFlowProvider>
+                        </ReactFlowProvider>
+                    </MTGDeckCreatorLogicProvider>
+                </MTGDeckCreatorUIProvider>
             </MTGCardsProvider>
         </MTGAFilterProvider>
     )

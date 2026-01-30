@@ -43,13 +43,13 @@ func ConvertMtgColorSlice(colors []*MtgColor) []MtgColor {
 }
 
 type MTGFilterPresetDB struct {
-	ID      *string               `json:"_key,omitempty"`
-	DeckID  string                `json:"deckID"`
-	Name    string                `json:"name"`
-	SavedAt string                `json:"savedAt"`
-	Filter  map[string]any        `json:"filter"`
-	Sort    []*MtgFilterSortState `json:"sort"`
-	Page    int                   `json:"page"`
+	ID          *string               `json:"_key,omitempty"`
+	DeckID      string                `json:"deckID"`
+	Name        string                `json:"name"`
+	SavedAt     string                `json:"savedAt"`
+	FilterState map[string]any        `json:"filterState"`
+	SortState   []*MtgFilterSortState `json:"sortState"`
+	Page        int                   `json:"page"`
 }
 
 func (db *MTGFilterPresetDB) ToModel() *MtgFilterPreset {
@@ -57,13 +57,13 @@ func (db *MTGFilterPresetDB) ToModel() *MtgFilterPreset {
 		return nil
 	}
 	return &MtgFilterPreset{
-		ID:      *db.ID,
-		DeckID:  db.DeckID,
-		Name:    db.Name,
-		SavedAt: db.SavedAt,
-		Filter:  db.Filter,
-		Sort:    db.Sort,
-		Page:    db.Page,
+		ID:          *db.ID,
+		DeckID:      db.DeckID,
+		Name:        db.Name,
+		SavedAt:     db.SavedAt,
+		FilterState: db.FilterState,
+		SortState:   db.SortState,
+		Page:        db.Page,
 	}
 }
 

@@ -16,6 +16,12 @@
 -   `cd client && npm run generate`: Produces TypeScript types from the current schema.
 -   `cd client && npm run lint`: ESLint plus strict TypeScript checks before committing.
 
+## Docker (non-standard ports)
+
+-   The stack uses host port **8530** for ArangoDB and **3001** for the app so you can run it alongside a local server (8080) and ArangoDB (8529).
+-   Copy `env.example` to `.env` to override: `ARANGO_HOST_PORT`, `PROXY_HOST_PORT`. `docker compose` loads `.env` automatically.
+-   To run the server locally against Docker ArangoDB: `docker compose up -d arangodb` then `cd server && ./magic-helper -settings settings.docker-arango.json` (ArangoDB on host port 8530).
+
 ## Coding Style & Naming Conventions
 
 -   Go code stays `gofmt`/`goimports` clean, prefers early returns, and documents exported or non-trivial functions with GoDoc.

@@ -1,185 +1,69 @@
-import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ReactNode, useCallback, useEffect, useState } from 'react'
 import { MTGFunctions } from '../../../graphql/MTGA/functions'
 import { MTG_Card } from '../../../graphql/types'
 import { useMTGFilter } from '../Filter/useMTGFilter'
 import { MTGCardsContext } from './MTGCardsContext'
 
-const PREFETCH_RADIUS = 2
-
-type PageCache = Record<number, MTG_Card[]>
-
 export const MTGCardsProvider = ({ children }: { children: ReactNode }) => {
     const [totalCount, setTotalCount] = useState(0)
     const [loading, setLoading] = useState(true)
-    const [pageCache, setPageCache] = useState<PageCache>({})
-
-    const pageCacheRef = useRef<PageCache>({})
-    const inFlightRef = useRef<Set<string>>(new Set())
-    const baseSignatureRef = useRef<string>('')
+    const [cards, setCards] = useState<MTG_Card[]>([])
 
     const { convertedFilters, setFilter } = useMTGFilter()
+    const { queries: { getMTGCardsFilteredQuery } } = MTGFunctions
 
-    const {
-        queries: { getMTGCardsFilteredQuery },
-    } = MTGFunctions
-
-    const filterArgs = convertedFilters.filter
-    const sortArgs = convertedFilters.sort
-    const paginationArgs = convertedFilters.pagination
-
+    const { filter: filterArgs, sort: sortArgs, pagination: paginationArgs } = convertedFilters
     const activePage = paginationArgs.page ?? 0
     const pageSize = paginationArgs.pageSize ?? 1
 
-    const baseFilterKey = useMemo(
-        () =>
-            JSON.stringify({
-                filter: filterArgs,
-                sort: sortArgs,
-                pageSize,
-            }),
-        [filterArgs, sortArgs, pageSize],
-    )
-
     useEffect(() => {
-        baseSignatureRef.current = baseFilterKey
-    }, [baseFilterKey])
-
-    useEffect(() => {
-        pageCacheRef.current = pageCache
-    }, [pageCache])
-
-    useEffect(() => {
-        setPageCache({})
-        pageCacheRef.current = {}
-        inFlightRef.current.clear()
-        setTotalCount(0)
+        let cancelled = false
         setLoading(true)
-    }, [baseFilterKey])
 
-    const fetchPage = useCallback(
-        async (page: number, options: { markActive?: boolean } = {}): Promise<void> => {
-            const { markActive = false } = options
-            const normalizedPage = Math.max(0, page)
-
-            if (pageCacheRef.current[normalizedPage]) {
-                if (markActive) {
+        const page = Math.max(0, activePage)
+        getMTGCardsFilteredQuery({
+            filter: filterArgs,
+            sort: sortArgs,
+            pagination: { ...paginationArgs, page },
+        })
+            .then((response) => {
+                if (!cancelled) {
+                    setCards(response.pagedCards)
+                    setTotalCount(response.totalCount)
+                }
+            })
+            .catch((err) => {
+                if (!cancelled) {
+                    console.error('Failed to fetch MTG cards', err)
+                    setCards([])
+                    setTotalCount(0)
+                }
+            })
+            .finally(() => {
+                if (!cancelled) {
                     setLoading(false)
                 }
-                return
-            }
+            })
 
-            const inFlightKey = baseFilterKey + ':' + normalizedPage
-            if (inFlightRef.current.has(inFlightKey)) {
-                return
-            }
-
-            inFlightRef.current.add(inFlightKey)
-            if (markActive) {
-                setLoading(true)
-            }
-
-            try {
-                const response = await getMTGCardsFilteredQuery({
-                    filter: filterArgs,
-                    sort: sortArgs,
-                    pagination: {
-                        ...paginationArgs,
-                        page: normalizedPage,
-                    },
-                })
-
-                if (baseSignatureRef.current !== baseFilterKey) {
-                    return
-                }
-
-                pageCacheRef.current = {
-                    ...pageCacheRef.current,
-                    [normalizedPage]: response.pagedCards,
-                }
-
-                setPageCache((prev) => ({
-                    ...prev,
-                    [normalizedPage]: response.pagedCards,
-                }))
-                setTotalCount(response.totalCount)
-            } catch (error) {
-                console.error('Failed to fetch MTG cards page', error)
-                throw error
-            } finally {
-                if (markActive) {
-                    setLoading(false)
-                }
-                inFlightRef.current.delete(inFlightKey)
-            }
-        },
-        [baseFilterKey, filterArgs, sortArgs, paginationArgs, getMTGCardsFilteredQuery],
-    )
-
-    useEffect(() => {
-        const normalizedPage = Math.max(0, activePage)
-        if (pageCacheRef.current[normalizedPage]) {
-            setLoading(false)
-            return
+        return () => {
+            cancelled = true
         }
-
-        fetchPage(normalizedPage, { markActive: true }).catch(() => undefined)
-    }, [activePage, fetchPage])
-
-    useEffect(() => {
-        const currentPageCards = pageCacheRef.current[activePage]
-        if (!currentPageCards || totalCount === 0) {
-            return
-        }
-
-        const totalPages = Math.ceil(totalCount / pageSize)
-        for (let offset = 1; offset <= PREFETCH_RADIUS; offset += 1) {
-            const prevPage = activePage - offset
-            const nextPage = activePage + offset
-
-            if (prevPage >= 0 && !pageCacheRef.current[prevPage]) {
-                fetchPage(prevPage).catch(() => undefined)
-            }
-
-            if (nextPage < totalPages && !pageCacheRef.current[nextPage]) {
-                fetchPage(nextPage).catch(() => undefined)
-            }
-        }
-    }, [activePage, fetchPage, pageSize, totalCount])
+    }, [activePage, filterArgs, sortArgs, paginationArgs, getMTGCardsFilteredQuery])
 
     const goToPage = useCallback(
-        async (targetPage: number) => {
-            let normalizedTarget = Math.max(0, targetPage)
-            const totalPages = totalCount > 0 ? Math.ceil(totalCount / pageSize) : null
-            if (totalPages !== null) {
-                normalizedTarget = Math.min(normalizedTarget, Math.max(0, totalPages - 1))
-            }
-
-            if (normalizedTarget === activePage) {
-                return
-            }
-
-            if (!pageCacheRef.current[normalizedTarget]) {
-                try {
-                    await fetchPage(normalizedTarget, { markActive: true })
-                } catch {
-                    return
-                }
-
-                if (!pageCacheRef.current[normalizedTarget]) {
-                    return
-                }
-            } else {
-                setLoading(false)
-            }
-
-            setFilter((prev) => ({ ...prev, page: normalizedTarget }))
+        (targetPage: number) => {
+            const normalized = Math.max(0, targetPage)
+            const totalPages = totalCount > 0 ? Math.ceil(totalCount / pageSize) : 0
+            const page = totalPages > 0 ? Math.min(normalized, totalPages - 1) : normalized
+            setFilter((prev) => ({ ...prev, page }))
+            return Promise.resolve()
         },
-        [activePage, fetchPage, pageSize, setFilter, totalCount],
+        [pageSize, setFilter, totalCount],
     )
 
-    const cards = pageCache[activePage] ?? []
-
     return (
-        <MTGCardsContext.Provider value={{ cards, loading, totalCount, goToPage }}>{children}</MTGCardsContext.Provider>
+        <MTGCardsContext.Provider value={{ cards, loading, totalCount, goToPage }}>
+            {children}
+        </MTGCardsContext.Provider>
     )
 }

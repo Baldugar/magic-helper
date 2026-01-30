@@ -34,6 +34,7 @@ export interface MTGFilterType {
     layouts: Partial<Record<MTG_Layout, TernaryBoolean>>
     games: Record<MTG_Game, TernaryBoolean>
     hideIgnored: boolean
+    hideUnreleased: boolean
     tags: Record<string, TernaryBoolean>
     rating: {
         min: number | null
@@ -116,6 +117,7 @@ export const initialMTGFilter: MTGFilterType = {
         paper: TernaryBoolean.UNSET,
     },
     hideIgnored: false,
+    hideUnreleased: false,
     tags: {},
     rating: {
         min: null,
@@ -136,6 +138,7 @@ export const initialConvertedFilter: QuerygetMTGCardsFilteredArgs = {
         manaCosts: [],
         games: [],
         hideIgnored: false,
+        hideUnreleased: false,
         layouts: [],
         legalities: [],
         multiColor: TernaryBoolean.UNSET,
@@ -174,6 +177,7 @@ export const MTGFilterContext = createContext<MTGFilterContextType>({
             manaCosts: [],
             games: [],
             hideIgnored: false,
+            hideUnreleased: true,
             layouts: [],
             legalities: [],
             multiColor: TernaryBoolean.UNSET,

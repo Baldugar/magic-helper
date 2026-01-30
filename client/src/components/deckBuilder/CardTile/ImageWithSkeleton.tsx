@@ -77,6 +77,7 @@ export const ImageWithSkeleton: FC<ImageWithSkeletonProps> = (props) => {
                     variant={'rectangular'}
                     width={isMobile ? '100%' : width}
                     height={isMobile ? 'auto' : height}
+                    sx={{ bgcolor: 'grey.700' }}
                 />
             )}
         </>

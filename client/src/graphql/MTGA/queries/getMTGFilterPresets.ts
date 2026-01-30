@@ -8,8 +8,8 @@ export default gql`
             name
             savedAt
             page
-            filter
-            sort {
+            filterState
+            sortState {
                 sortBy
                 sortDirection
                 enabled

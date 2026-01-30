@@ -143,7 +143,6 @@ func fetchMTGCards(ctx context.Context) bool {
 	}
 
 	rawCollections := bulkDataResponse.Data
-	processedCount := 0
 	for _, collection := range rawCollections {
 		var collectionMap map[string]any
 		err := json.Unmarshal(collection, &collectionMap)
@@ -163,7 +162,7 @@ func fetchMTGCards(ctx context.Context) bool {
 			log.Info().Msgf("Found 'default_cards' data. Fetching from: %s", downloadURI)
 
 			// Fetch and process card data
-			processedCount, err = fetchAndProcessCardData(ctx, downloadURI)
+			err = fetchAndProcessCardData(ctx, downloadURI)
 			if err != nil {
 				log.Error().Err(err).Msgf("Error processing card data from %s", downloadURI)
 				return false
@@ -175,10 +174,6 @@ func fetchMTGCards(ctx context.Context) bool {
 			break
 		}
 	} // End of loop through bulk data items
-
-	if processedCount > 0 {
-		log.Info().Msgf("Processed %d cards", processedCount)
-	}
 
 	// Update the last time we fetched cards (only if successful?)
 	// Move this inside the loop before the 'break' if we only process one file?
@@ -197,23 +192,23 @@ func fetchMTGCards(ctx context.Context) bool {
 // fetchAndProcessCardData fetches a bulk JSON file of cards and incrementally
 // decodes and upserts them into Arango in batches while logging progress.
 // It returns the number of card documents processed.
-func fetchAndProcessCardData(ctx context.Context, downloadURI string) (int, error) {
+func fetchAndProcessCardData(ctx context.Context, downloadURI string) error {
 	respData, err := fetchURLWithContext(ctx, downloadURI)
 	if err != nil {
 		log.Error().Err(err).Msgf("Error fetching card data file from %s", downloadURI)
-		return 0, err
+		return err
 	}
 	defer respData.Body.Close()
 
 	bodyBytes, err := io.ReadAll(respData.Body)
 	if err != nil {
 		log.Error().Err(err).Msg("Error reading response body")
-		return 0, err
+		return err
 	}
 
 	if err := downloadFile(bytes.NewReader(bodyBytes), "cards.json"); err != nil {
 		log.Error().Err(err).Msgf("Error downloading card data file from %s", downloadURI)
-		return 0, err
+		return err
 	}
 
 	contentLengthStr := respData.Header.Get("Content-Length")
@@ -235,11 +230,10 @@ func fetchAndProcessCardData(ctx context.Context, downloadURI string) (int, erro
 		} else {
 			log.Error().Err(err).Msg("Error decoding card data: expecting start of array `[`")
 		}
-		return 0, err
+		return err
 	}
 
 	batchSize := 1000
-	processedCount := 0
 
 	for decoder.More() {
 		var batchRaw []json.RawMessage
@@ -249,8 +243,8 @@ func fetchAndProcessCardData(ctx context.Context, downloadURI string) (int, erro
 				if err == io.EOF {
 					break
 				}
-				log.Error().Err(err).Msgf("Error decoding card JSON object at ~card %d", processedCount+len(batchRaw))
-				return processedCount, err
+				log.Error().Err(err).Msgf("Error decoding card JSON object")
+				return err
 			}
 			batchRaw = append(batchRaw, cardRaw)
 		}
@@ -261,8 +255,8 @@ func fetchAndProcessCardData(ctx context.Context, downloadURI string) (int, erro
 
 		parsedArr, parseErr := parseCardsFromRaw(batchRaw)
 		if parseErr != nil {
-			log.Error().Err(parseErr).Msgf("Error parsing raw cards batch starting at card %d", processedCount)
-			return processedCount, parseErr
+			log.Error().Err(parseErr).Msgf("Error parsing raw cards batch")
+			return parseErr
 		}
 
 		aq := arango.NewQuery( /* aql */ `
@@ -270,33 +264,32 @@ func fetchAndProcessCardData(ctx context.Context, downloadURI string) (int, erro
 				UPSERT { _key: c.id }
 					INSERT MERGE({ _key: c.id }, c)
 					UPDATE MERGE(OLD, c)
-				IN MTG_Original_Cards
+				IN mtg_original_cards
 		`)
 		aq.AddBindVar("cards", parsedArr)
 
 		_, err = arango.DB.Query(ctx, aq.Query, aq.BindVars)
 		if err != nil {
 			log.Error().Err(err).Msg("failed to upsert cards with diff")
-			return processedCount, err
+			return err
 		}
 
-		log.Info().Msgf("Processed %d cards...", processedCount)
 	}
 
-	log.Info().Msgf("Finished processing approximately %d cards from %s.", processedCount, downloadURI)
+	log.Info().Msgf("Finished processing cards from %s.", downloadURI)
 
-	return processedCount, nil
+	return nil
 }
 
-// collectCards rebuilds the curated MTG_Cards collection from MTG_Original_Cards
+// collectCards rebuilds the curated mtg_cards collection from mtg_original_cards
 // by grouping variants and picking a default version per group.
 func collectCards(ctx context.Context) {
 	log.Info().Msg("Collecting cards")
 
 	// Clear the collection
 	aq := arango.NewQuery( /* aql */ `
-		FOR c IN MTG_Cards
-			REMOVE c IN MTG_Cards
+		FOR c IN mtg_cards
+			REMOVE c IN mtg_cards
 	`)
 
 	_, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
@@ -306,7 +299,7 @@ func collectCards(ctx context.Context) {
 
 	// Collect the cards
 	aq = arango.NewQuery( /* aql */ `
-	FOR c IN MTG_Original_Cards
+	FOR c IN mtg_original_cards
 		FILTER c.lang == "en" // TODO: Remove this later
 		FILTER c.set_type NOT IN ["promo", "funny", "memorabilia", "vanguard", "token"]
 		FILTER "paper" IN c.games OR "mtgo" IN c.games OR "arena" IN c.games
@@ -427,6 +420,7 @@ func collectCards(ctx context.Context) {
 			continue
 		}
 
+		// First we create the card with the common fields
 		cardForGroup := scryfall.MTG_CardDB{
 			Layout:         scryfallModel.Layout(filteredGroupCards[0].Layout),
 			CMC:            filteredGroupCards[0].CMC,
@@ -445,12 +439,13 @@ func collectCards(ctx context.Context) {
 			TypeLine:       filteredGroupCards[0].TypeLine,
 		}
 
+		// If the card has no color identity, we set it to C (Colorless)
 		if len(cardForGroup.ColorIdentity) == 0 {
 			cardForGroup.ColorIdentity = []string{"C"}
 		}
 
+		// Then we create the versions for the card, selecting the best version based on the score function to be the default
 		for _, card := range filteredGroupCards {
-			// Create the DB version structure first (as done previously)
 			cardVersionDB := scryfall.MTG_CardVersionDB{
 				ID:         card.ID,
 				IsDefault:  false, // Will be set later by the default logic
@@ -578,7 +573,7 @@ func collectCards(ctx context.Context) {
 			UPSERT { _key: c._key }
 			INSERT MERGE({ _key: c._key }, c)
 			UPDATE c
-			IN MTG_Cards
+			IN mtg_cards
 		`)
 
 	aq.AddBindVar("cards", allCardsToSave)
@@ -624,15 +619,6 @@ func safeString(p *string) string {
 	return *p
 }
 
-// intForCollectorNumber converts a collector number to int or returns MaxInt32 on failure.
-func intForCollectorNumber(cn string) int {
-	n, err := strconv.Atoi(cn)
-	if err != nil {
-		return math.MaxInt32
-	}
-	return n
-}
-
 // containsGame checks whether target exists in the list of game platforms.
 func containsGame(games []scryfallModel.Game, target string) bool {
 	for _, g := range games {
@@ -643,24 +629,11 @@ func containsGame(games []scryfallModel.Game, target string) bool {
 	return false
 }
 
-// platformCount counts supported platforms among paper/mtgo/arena for a version.
-func platformCount(games []scryfallModel.Game) int {
-	count := 0
-	if containsGame(games, "paper") {
-		count++
-	}
-	if containsGame(games, "mtgo") {
-		count++
-	}
-	if containsGame(games, "arena") {
-		count++
-	}
-	return count
-}
-
 type groupStats struct {
+	// Only set when there is a "real" mode (count > 1).
 	modeIllustrationID string
-	topArtists         map[string]struct{}
+	// Only set when there is a "real" top artist (count > 1).
+	topArtists map[string]struct{}
 }
 
 func computeGroupStats(versions []scryfall.MTG_CardVersionDB) groupStats {
@@ -668,165 +641,286 @@ func computeGroupStats(versions []scryfall.MTG_CardVersionDB) groupStats {
 	artistCount := make(map[string]int)
 
 	for _, v := range versions {
-		id := safeString(v.IllustrationID)
-		if id != "" {
+		if id := safeString(v.IllustrationID); id != "" {
 			illCount[id]++
 		}
-		artist := safeString(v.Artist)
-		if artist != "" {
+		if artist := safeString(v.Artist); artist != "" {
 			artistCount[artist]++
 		}
 	}
 
-	stats := groupStats{topArtists: make(map[string]struct{})}
-	for id, c := range illCount {
-		if c > illCount[stats.modeIllustrationID] {
-			stats.modeIllustrationID = id
-		}
+	stats := groupStats{
+		topArtists: make(map[string]struct{}),
 	}
 
+	// Illustration mode: only meaningful if some illustration appears more than once.
+	// Deterministic tie-break: lexicographically smallest illustrationID.
+	bestIllCount := 0
+	bestIllID := ""
+	for id, c := range illCount {
+		if c > bestIllCount || (c == bestIllCount && bestIllCount > 0 && id < bestIllID) {
+			bestIllCount = c
+			bestIllID = id
+		}
+	}
+	if bestIllCount > 1 {
+		stats.modeIllustrationID = bestIllID
+	}
+
+	// Top artists: only meaningful if some artist appears more than once.
 	maxArtist := 0
-	for artist, c := range artistCount {
+	for _, c := range artistCount {
 		if c > maxArtist {
 			maxArtist = c
-			stats.topArtists = map[string]struct{}{artist: {}}
-		} else if c == maxArtist {
-			stats.topArtists[artist] = struct{}{}
+		}
+	}
+	if maxArtist > 1 {
+		for artist, c := range artistCount {
+			if c == maxArtist {
+				stats.topArtists[artist] = struct{}{}
+			}
 		}
 	}
 
 	return stats
 }
 
-var promoTypePenalties = []string{"portrait", "ripplefoil", "boosterfun", "showcase", "serial", "halo", "galaxy", "neon", "stainedglass"}
-
-func scoreVersion(v *scryfall.MTG_CardVersionDB, stats groupStats) int {
-	s := 0
-	if containsGame(v.Games, "paper") {
-		s += 6
-	}
-	if containsGame(v.Games, "mtgo") {
-		s += 3
-	}
-	if containsGame(v.Games, "arena") {
-		s += 2
-	}
-
-	hasNonfoil := has(v.Finishes, "nonfoil")
-	hasFoil := has(v.Finishes, "foil")
-	if hasNonfoil {
-		s += 6
-	}
-	if hasFoil {
-		s += 1
-	}
-	if hasNonfoil && hasFoil {
-		s += 2
-	}
-	if hasFoil && !hasNonfoil {
-		s -= 3
-	}
-	if has(v.Finishes, "etched") && len(v.Finishes) == 1 {
-		s -= 5
-	}
-
-	if v.FullArt {
-		s -= 4
-	}
-	if hasOpt(v.FrameEffects, "inverted") {
-		s -= 3
-	}
-	if hasOpt(v.FrameEffects, "extendedart") {
-		s -= 3
-	}
-	if hasOpt(v.FrameEffects, "etched") {
-		s -= 3
-	}
-
-	if v.PromoTypes != nil {
-		for _, pt := range *v.PromoTypes {
-			if has(promoTypePenalties, pt) {
-				s -= 6
-			}
-		}
-	}
-
-	if stats.modeIllustrationID != "" && safeString(v.IllustrationID) == stats.modeIllustrationID {
-		s += 3
-	}
-	if _, ok := stats.topArtists[safeString(v.Artist)]; ok {
-		s += 1
-	}
-
-	if v.IsDefault {
-		s += 1
-	}
-
-	return s
+var promoTypePenalties = []string{
+	"portrait", "ripplefoil", "boosterfun", "showcase", "serial", "halo", "galaxy", "neon", "stainedglass",
 }
 
-func tieBreak(bestIdx, challengerIdx int, versions []scryfall.MTG_CardVersionDB) int {
-	best := versions[bestIdx]
-	challenger := versions[challengerIdx]
-
-	bp := platformCount(best.Games)
-	cp := platformCount(challenger.Games)
-	if cp > bp {
-		return challengerIdx
-	}
-	if cp < bp {
-		return bestIdx
-	}
-
-	bNon := has(best.Finishes, "nonfoil")
-	cNon := has(challenger.Finishes, "nonfoil")
-	if cNon && !bNon {
-		return challengerIdx
-	}
-	if bNon && !cNon {
-		return bestIdx
-	}
-
-	if !challenger.FullArt && best.FullArt {
-		return challengerIdx
-	}
-	if !best.FullArt && challenger.FullArt {
-		return bestIdx
-	}
-
-	bInv := hasOpt(best.FrameEffects, "inverted")
-	cInv := hasOpt(challenger.FrameEffects, "inverted")
-	if !cInv && bInv {
-		return challengerIdx
-	}
-	if !bInv && cInv {
-		return bestIdx
-	}
-
-	bNum := intForCollectorNumber(best.CollectorNumber)
-	cNum := intForCollectorNumber(challenger.CollectorNumber)
-	if cNum < bNum {
-		return challengerIdx
-	}
-	return bestIdx
-}
-
-// pickDefaultIndex computes a ranked score for each version and returns the
-// best index. Ties are resolved deterministically via tieBreak.
+// pickDefaultIndex returns the best version index using a strict, deterministic ordering.
+// It uses a lexicographic comparator instead of scoreVersion+tieBreak.
 func pickDefaultIndex(versions []scryfall.MTG_CardVersionDB) int {
 	stats := computeGroupStats(versions)
 	bestIdx := 0
-	bestScore := math.MinInt
-	for i := range versions {
-		sc := scoreVersion(&versions[i], stats)
-		if sc > bestScore {
-			bestScore = sc
+	for i := 1; i < len(versions); i++ {
+		if defaultLess(versions[i], versions[bestIdx], stats) {
 			bestIdx = i
-		} else if sc == bestScore {
-			bestIdx = tieBreak(bestIdx, i, versions)
 		}
 	}
 	return bestIdx
+}
+
+// defaultLess returns true if a should be preferred as the default over b.
+func defaultLess(a, b scryfall.MTG_CardVersionDB, stats groupStats) bool {
+	// 1) Language (prefer English; future-proof when you remove AQL lang filter)
+	if ar, br := langRank(a.Lang), langRank(b.Lang); ar != br {
+		return ar < br
+	}
+
+	// 2) Prefer non-alchemy
+	if a.IsAlchemy != b.IsAlchemy {
+		return !a.IsAlchemy
+	}
+
+	// 3) Prefer paper > mtgo > arena > none
+	if ar, br := gameRank(a.Games), gameRank(b.Games); ar != br {
+		return ar < br
+	}
+
+	// 4) Prefer "normal" set types (expansion/core first, then masters, commander, etc.)
+	if ar, br := setTypeRank(a.SetType), setTypeRank(b.SetType); ar != br {
+		return ar < br
+	}
+
+	// 5) Prefer booster-available printings (more "normal")
+	if a.Booster != b.Booster {
+		return a.Booster
+	}
+
+	// 6) Prefer non-promo / non-showcase / non-boosterfun etc.
+	if ar, br := promoPenalty(a.PromoTypes), promoPenalty(b.PromoTypes); ar != br {
+		return ar < br
+	}
+
+	// 7) Prefer base (non-variation) printings
+	if ar, br := baseVariationRank(a), baseVariationRank(b); ar != br {
+		return ar < br
+	}
+
+	// 8) Prefer non-fullart
+	if a.FullArt != b.FullArt {
+		return !a.FullArt
+	}
+
+	// 9) Prefer "clean" frame effects (avoid inverted/extendedart/etched frames)
+	if ar, br := framePenalty(a.FrameEffects), framePenalty(b.FrameEffects); ar != br {
+		return ar < br
+	}
+
+	// 10) Prefer nonfoil availability; avoid etched-only
+	if ar, br := finishRank(a.Finishes), finishRank(b.Finishes); ar != br {
+		return ar < br
+	}
+
+	// 11) Prefer the group's "reused" art, if any (count > 1)
+	if stats.modeIllustrationID != "" {
+		am := safeString(a.IllustrationID) == stats.modeIllustrationID
+		bm := safeString(b.IllustrationID) == stats.modeIllustrationID
+		if am != bm {
+			return am
+		}
+	}
+
+	// 12) Prefer the most common artist in the group, if any (count > 1)
+	if len(stats.topArtists) > 0 {
+		_, aTop := stats.topArtists[safeString(a.Artist)]
+		_, bTop := stats.topArtists[safeString(b.Artist)]
+		if aTop != bTop {
+			return aTop
+		}
+	}
+
+	// 13) Prefer more recent printing (gives modern frame by default)
+	if ar, br := releasedAtUnix(a.ReleasedAt), releasedAtUnix(b.ReleasedAt); ar != br {
+		return ar > br
+	}
+
+	// 14) Stable ordering across sets
+	if a.Set != b.Set {
+		return a.Set < b.Set
+	}
+
+	// 15) Prefer lower collector number (within a set), supporting suffixes like "123a"
+	aNum, aSuf := splitCollectorNumber(a.CollectorNumber)
+	bNum, bSuf := splitCollectorNumber(b.CollectorNumber)
+	if aNum != bNum {
+		return aNum < bNum
+	}
+	if aSuf != bSuf {
+		return aSuf < bSuf
+	}
+
+	// 16) Final stable tie-breaker
+	return a.ID < b.ID
+}
+
+func langRank(l scryfallModel.CardLanguage) int {
+	// Prefer English; keep others stable.
+	if strings.ToLower(string(l)) == "en" {
+		return 0
+	}
+	return 1
+}
+
+func gameRank(games []scryfallModel.Game) int {
+	// Lower is better.
+	if containsGame(games, "paper") {
+		return 0
+	}
+	if containsGame(games, "mtgo") {
+		return 1
+	}
+	if containsGame(games, "arena") {
+		return 2
+	}
+	return 3
+}
+
+func setTypeRank(setType string) int {
+	// Lower is better. This is intentionally opinionated:
+	// prefer "real" pack sets first, then other constructed products, then esoteric.
+	switch strings.ToLower(setType) {
+	case "core", "expansion":
+		return 0
+	case "masters":
+		return 1
+	case "draft_innovation":
+		return 2
+	case "commander":
+		return 3
+	case "duel_deck", "from_the_vault", "premium_deck", "starter", "box", "planechase", "archenemy":
+		return 4
+	case "alchemy":
+		return 10
+	case "promo", "funny", "memorabilia", "vanguard", "token":
+		return 100
+	default:
+		return 50
+	}
+}
+
+func promoPenalty(promoTypes *[]string) int {
+	if promoTypes == nil || len(*promoTypes) == 0 {
+		return 0
+	}
+
+	// Base penalty for "any promo types", plus extra for known "special frames / treatments".
+	p := 10
+	for _, pt := range *promoTypes {
+		if has(promoTypePenalties, pt) {
+			p += 20
+		}
+	}
+	return p
+}
+
+func baseVariationRank(v scryfall.MTG_CardVersionDB) int {
+	// Lower is better.
+	// "base" means not a variation and not explicitly a variation of another printing.
+	if !v.Variation && v.VariationOf == nil {
+		return 0
+	}
+	return 1
+}
+
+func framePenalty(frameEffects *[]string) int {
+	// Lower is better. Larger penalties for more "weird" treatments.
+	if frameEffects == nil || len(*frameEffects) == 0 {
+		return 0
+	}
+	p := 0
+	if has(*frameEffects, "inverted") {
+		p += 100
+	}
+	if has(*frameEffects, "extendedart") {
+		p += 60
+	}
+	if has(*frameEffects, "etched") {
+		p += 50
+	}
+	return p
+}
+
+func finishRank(finishes []string) int {
+	// Lower is better:
+	// 0: has nonfoil
+	// 1: has foil (but no nonfoil)
+	// 2: etched-only or other weird-only
+	if has(finishes, "nonfoil") {
+		return 0
+	}
+	if has(finishes, "foil") {
+		return 1
+	}
+	// "etched" only (or no standard finishes)
+	return 2
+}
+
+func releasedAtUnix(releasedAt string) int64 {
+	// Scryfall is typically YYYY-MM-DD
+	t, err := time.Parse("2006-01-02", releasedAt)
+	if err != nil {
+		return 0
+	}
+	return t.Unix()
+}
+
+func splitCollectorNumber(cn string) (num int, suffix string) {
+	// Supports "123", "123a", "001", etc.
+	i := 0
+	for i < len(cn) && cn[i] >= '0' && cn[i] <= '9' {
+		i++
+	}
+	if i == 0 {
+		return math.MaxInt32, cn
+	}
+	n, err := strconv.Atoi(cn[:i])
+	if err != nil {
+		return math.MaxInt32, cn
+	}
+	return n, cn[i:]
 }
 
 // normalizeCardName normalizes a card name to be used as a document key in ArangoDB.

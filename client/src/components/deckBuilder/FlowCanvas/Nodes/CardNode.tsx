@@ -20,34 +20,19 @@ export type CardNodeProps = NodeProps & {
 
 export const CardNode = (props: CardNodeProps) => {
     const { data, id, parentId /* positionAbsoluteX, positionAbsoluteY */ } = props
-    console.log('data', data)
     const { card, selectedVersionID } = data
     const { removeCard } = useMTGDeckCreatorLogic()
-    const { draggingGroupId } = useMTGDeckFlowCreator()
+    const { draggingZoneIDs } = useMTGDeckFlowCreator()
     const { setNodes } = useReactFlow<NodeType>()
     const { anchorRef, handleClick, handleClose, handleContextMenu, open } = useContextMenu<HTMLDivElement>()
 
     const selectedVersion =
         card.versions.find((v) => v.ID === selectedVersionID) || card.versions.find((v) => v.isDefault)
 
-    console.log('selectedVersion', selectedVersion)
     if (!selectedVersion) return null
 
-    // Placeholder rendering logic
-    if (draggingGroupId && (parentId === draggingGroupId || id === draggingGroupId)) {
-        // This is a group node or its child, render placeholder
-        return (
-            <div
-                style={{
-                    width: 100,
-                    height: 140,
-                    background: `url(${getCorrectCardImage(selectedVersion, 'normal')}) no-repeat center center`,
-                    backgroundSize: 'contain',
-                    borderRadius: 5,
-                }}
-            />
-        )
-    }
+    const image = getCorrectCardImage(selectedVersion, 'normal')
+    const showContextMenu = !((parentId && draggingZoneIDs.includes(parentId)) || draggingZoneIDs.includes(id))
 
     const options: ContextMenuOption[] = [
         {
@@ -73,7 +58,7 @@ export const CardNode = (props: CardNodeProps) => {
         //     action: () => {
         //         const nodes = getNodes()
         //         const zone = nodes.find(
-        //             (n) => n.type === 'groupNode' && (n.data as GroupNodeData)?.cardChildren?.includes(card.ID),
+        //             (n) => n.type === 'zoneNode' && (n.data as ZoneNodeData)?.cardChildren?.includes(card.ID),
         //         )
         //         const newPosition: Position = {
         //             x: (zone?.position.x ?? 0) + positionAbsoluteX + 100,
@@ -106,20 +91,17 @@ export const CardNode = (props: CardNodeProps) => {
     return (
         <>
             <div ref={anchorRef} onContextMenu={handleContextMenu}>
-                <img
-                    src={getCorrectCardImage(selectedVersion, 'normal')}
-                    alt={card.name}
-                    width={100}
-                    style={{ borderRadius: 5 }}
-                />
+                <img src={image} alt={card.name} width={100} style={{ borderRadius: 5 }} />
             </div>
-            <ContextMenu
-                anchorRef={anchorRef}
-                options={options}
-                open={open}
-                handleClose={handleClose}
-                handleClick={handleClick}
-            />
+            {showContextMenu && (
+                <ContextMenu
+                    anchorRef={anchorRef}
+                    options={options}
+                    open={open}
+                    handleClose={handleClose}
+                    handleClick={handleClick}
+                />
+            )}
         </>
     )
 }

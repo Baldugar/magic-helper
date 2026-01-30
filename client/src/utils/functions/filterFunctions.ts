@@ -56,19 +56,18 @@ export const getCardVersionsMatchingFilter = (card: MTG_Card, filter: MTGFilterT
     return matchingVersions.length > 0 ? matchingVersions : allVersions
 }
 
-export const getRandomVersionFromFilter = (filter: MTGFilterType, card: MTG_Card) => {
+/** Deterministic: selectedVersion (if found) > default > first. Use for stable catalogue display. */
+export const getDisplayVersionFromFilter = (
+    card: MTG_Card,
+    filter: MTGFilterType,
+    selectedVersionID?: string | null,
+): MTG_CardVersion | undefined => {
     const versions = getCardVersionsMatchingFilter(card, filter)
-    if (versions.length === 0) {
-        return undefined
+    if (versions.length === 0) return undefined
+    if (selectedVersionID) {
+        const selected = versions.find((v) => v.ID === selectedVersionID)
+        if (selected) return selected
     }
-    if (versions.length === 1) {
-        return versions[0]
-    }
-
     const defaultVersion = versions.find((v) => v.isDefault)
-    if (defaultVersion) {
-        return defaultVersion
-    }
-
-    return versions[Math.floor(Math.random() * versions.length)]
+    return defaultVersion ?? versions[0]
 }

@@ -4,8 +4,8 @@ Input payload to create a new filter preset.
 input MTG_CreateFilterPresetInput {
     deckID: ID!
     name: String!
-    filter: Map!
-    sort: [MTG_Filter_SortInput!]!
+    filterState: Map!
+    sortState: [MTG_Filter_SortInput!]!
     page: Int!
 }
 
@@ -15,8 +15,8 @@ Fields allowed when updating an existing filter preset.
 input MTG_UpdateFilterPresetInput {
     presetID: ID!
     name: String
-    filter: Map
-    sort: [MTG_Filter_SortInput!]
+    filterState: Map
+    sortState: [MTG_Filter_SortInput!]
     page: Int
 }
 

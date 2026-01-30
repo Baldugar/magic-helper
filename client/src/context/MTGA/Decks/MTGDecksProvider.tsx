@@ -114,7 +114,7 @@ export const MTGDecksProvider = ({ children }: { children: ReactNode }) => {
                     deckCardType: c.deckCardType,
                     phantoms: c.phantoms,
                     position: c.position,
-                    ID: c.card.ID,
+                    selectedVersionID: c.selectedVersionID ?? undefined,
                 })),
                 deckID: deck.ID,
                 name: deck.name,

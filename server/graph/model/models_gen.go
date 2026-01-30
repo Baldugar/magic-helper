@@ -128,11 +128,11 @@ type MtgCreateDeckInput struct {
 
 // Input payload to create a new filter preset.
 type MtgCreateFilterPresetInput struct {
-	DeckID string                `json:"deckID"`
-	Name   string                `json:"name"`
-	Filter map[string]any        `json:"filter"`
-	Sort   []*MtgFilterSortInput `json:"sort"`
-	Page   int                   `json:"page"`
+	DeckID      string                `json:"deckID"`
+	Name        string                `json:"name"`
+	FilterState map[string]any        `json:"filterState"`
+	SortState   []*MtgFilterSortInput `json:"sortState"`
+	Page        int                   `json:"page"`
 }
 
 // A user deck with cards, positions, zones and optional front image.
@@ -206,13 +206,13 @@ type MtgDeleteFilterPresetInput struct {
 
 // Saved filter preset tied to a deck.
 type MtgFilterPreset struct {
-	ID      string                `json:"ID"`
-	DeckID  string                `json:"deckID"`
-	Name    string                `json:"name"`
-	SavedAt string                `json:"savedAt"`
-	Filter  map[string]any        `json:"filter"`
-	Sort    []*MtgFilterSortState `json:"sort"`
-	Page    int                   `json:"page"`
+	ID          string                `json:"ID"`
+	DeckID      string                `json:"deckID"`
+	Name        string                `json:"name"`
+	SavedAt     string                `json:"savedAt"`
+	FilterState map[string]any        `json:"filterState"`
+	SortState   []*MtgFilterSortState `json:"sortState"`
+	Page        int                   `json:"page"`
 }
 
 // Card type filter entry with ternary state.
@@ -319,6 +319,7 @@ type MtgFilterSearchInput struct {
 	Layouts              []*MtgFilterLayoutInput   `json:"layouts"`
 	Games                []*MtgFilterGameInput     `json:"games"`
 	HideIgnored          bool                      `json:"hideIgnored"`
+	HideUnreleased       bool                      `json:"hideUnreleased"`
 	Commander            *string                   `json:"commander,omitempty"`
 	DeckID               *string                   `json:"deckID,omitempty"`
 	IsSelectingCommander bool                      `json:"isSelectingCommander"`
@@ -372,11 +373,11 @@ type MtgUpdateDeckInput struct {
 
 // Fields allowed when updating an existing filter preset.
 type MtgUpdateFilterPresetInput struct {
-	PresetID string                `json:"presetID"`
-	Name     *string               `json:"name,omitempty"`
-	Filter   map[string]any        `json:"filter,omitempty"`
-	Sort     []*MtgFilterSortInput `json:"sort,omitempty"`
-	Page     *int                  `json:"page,omitempty"`
+	PresetID    string                `json:"presetID"`
+	Name        *string               `json:"name,omitempty"`
+	FilterState map[string]any        `json:"filterState,omitempty"`
+	SortState   []*MtgFilterSortInput `json:"sortState,omitempty"`
+	Page        *int                  `json:"page,omitempty"`
 }
 
 // Root-level write operations.

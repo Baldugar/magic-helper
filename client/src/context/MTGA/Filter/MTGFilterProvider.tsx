@@ -118,6 +118,7 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
                 value,
             }))
             toReturn.filter.hideIgnored = filter.hideIgnored
+            toReturn.filter.hideUnreleased = filter.hideUnreleased
             const layouts = Object.entries(filter.layouts).filter(([_, value]) => isNotUnsetTB(value))
             toReturn.filter.layouts = layouts.map(([key, value]) => ({
                 layout: key as MTG_Layout,

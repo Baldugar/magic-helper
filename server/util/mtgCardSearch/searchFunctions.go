@@ -1,9 +1,9 @@
 package mtgCardSearch
 
 import (
+	"container/heap"
 	"context"
 	"fmt"
-	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -16,137 +16,159 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type scoredCard struct {
-	card  *model.MtgCard
-	score float64
-}
-
-// FilterCards filters MTG cards using provided input and optional in-memory index.
-func FilterCards(cards []*model.MtgCard, filter model.MtgFilterSearchInput, sortInputs []*model.MtgFilterSortInput) []*model.MtgCard {
+// FilterCardsWithPagination filters cards with a pure predicate pipeline, sorts deterministically
+// (multi-level + mandatory ID tie-breaker), and returns the requested page plus total count of
+// passing cards. Uses a max-heap of size K=(page+1)*pageSize to avoid sorting the full match set.
+// No relevance scoring; pass/fail only.
+func FilterCardsWithPagination(cards []*model.MtgCard, filter model.MtgFilterSearchInput, sortInputs []*model.MtgFilterSortInput, pagination model.MtgFilterPaginationInput) (paged []*model.MtgCard, totalCount int) {
 	start := time.Now()
 
-	ignoredIDs, ignoredSet := fetchIgnoredCards(filter)
+	ignoredIDs, _ := fetchIgnoredCards(filter)
 	var ignoredForFilter []string
 	if filter.HideIgnored && len(ignoredIDs) > 0 {
 		ignoredForFilter = ignoredIDs
 	}
 
-	negativeSets := collectNegativeSets(filter)
-
-	var (
-		cardUniverse []*model.MtgCard
-		docs         map[string]*CardDocument
-		inverted     map[string][]posting
-		usingIndex   bool
-	)
-
+	var cardUniverse []*model.MtgCard
 	if len(cards) == 0 {
 		if !IsIndexReady() {
-			log.Warn().Msg("FilterCards: index not ready and no cards provided")
-			return []*model.MtgCard{}
+			log.Warn().Msg("FilterCardsWithPagination: index not ready and no cards provided")
+			return nil, 0
 		}
-
 		idx := GetCardIndex()
 		idx.mutex.RLock()
 		cardUniverse = append([]*model.MtgCard(nil), idx.AllCards...)
-		docs = idx.documents
-		inverted = idx.inverted
 		idx.mutex.RUnlock()
-		usingIndex = true
 	} else {
 		cardUniverse = cards
-		if IsIndexReady() {
-			idx := GetCardIndex()
-			idx.mutex.RLock()
-			docs = idx.documents
-			idx.mutex.RUnlock()
-		}
 	}
 
 	if len(cardUniverse) == 0 {
-		return []*model.MtgCard{}
+		return []*model.MtgCard{}, 0
 	}
 
-	var tokens []string
-	normalizedQuery := ""
-	if filter.SearchString != nil {
-		normalizedQuery = normalizeText(*filter.SearchString)
-		tokens = extractPlainTokens(*filter.SearchString)
-	}
-
-	var candidateSet map[string]struct{}
-	if usingIndex && len(tokens) > 0 && len(inverted) > 0 {
-		candidateSet = candidateIDsFromTokens(tokens, inverted)
-		if candidateSet != nil && len(candidateSet) == 0 {
-			candidateSet = nil
+	// Resolve commander once (O(n)) instead of inside passesFilter per card (was O(n^2))
+	var commanderCard *model.MtgCard
+	if filter.Commander != nil {
+		for _, c := range cardUniverse {
+			if c.ID == *filter.Commander {
+				commanderCard = c
+				break
+			}
 		}
 	}
 
-	scored := make([]scoredCard, 0, len(cardUniverse))
+	compare := buildCompare(sortInputs, filter.HideUnreleased, filter.Games)
+	K := (pagination.Page + 1) * pagination.PageSize
+	if pagination.PageSize <= 0 {
+		K = 0
+	}
+
+	h := &cardHeap{compare: compare}
+	totalCount = 0
+
 	for _, card := range cardUniverse {
 		if card == nil {
 			continue
 		}
-
-		if candidateSet != nil {
-			if _, ok := candidateSet[card.ID]; !ok {
-				continue
-			}
-		}
-
-		doc := docs[card.ID]
-		if doc == nil {
-			doc = newCardDocument(card)
-		}
-
-		if len(tokens) > 0 && !docContainsAllTokens(doc, tokens) {
+		if !passesFilter(card, filter, ignoredForFilter, commanderCard) {
 			continue
 		}
-
-		score := computeRelevanceScore(doc, tokens, normalizedQuery)
-		if _, ignored := ignoredSet[card.ID]; ignored && !filter.HideIgnored {
-			score -= 200
-		}
-
-		if len(negativeSets) > 0 && docHasNegativeSet(doc, negativeSets) {
-			score -= 50
-		}
-
-		if !passesFilter(card, filter, cardUniverse, ignoredForFilter) {
+		totalCount++
+		if K <= 0 {
 			continue
 		}
-
-		scored = append(scored, scoredCard{card: card, score: score})
-	}
-
-	if len(scored) == 0 {
-		return []*model.MtgCard{}
-	}
-
-	sort.SliceStable(scored, func(i, j int) bool {
-		if scored[i].score == scored[j].score {
-			if !strings.EqualFold(scored[i].card.Name, scored[j].card.Name) {
-				return strings.ToLower(scored[i].card.Name) < strings.ToLower(scored[j].card.Name)
-			}
-			return scored[i].card.ID < scored[j].card.ID
+		if h.Len() < K {
+			heap.Push(h, card)
+			continue
 		}
-		return scored[i].score > scored[j].score
-	})
-
-	ordered := make([]*model.MtgCard, len(scored))
-	for i, item := range scored {
-		ordered[i] = item.card
+		if compare(card, (*h).cards[0]) < 0 {
+			heap.Pop(h)
+			heap.Push(h, card)
+		}
 	}
 
-	ordered = applySorting(ordered, sortInputs)
+	if h.Len() == 0 {
+		log.Debug().
+			Int("input_cards", len(cardUniverse)).
+			Int("total_count", totalCount).
+			Dur("duration", time.Since(start)).
+			Msg("FilterCardsWithPagination completed")
+		return []*model.MtgCard{}, totalCount
+	}
+
+	slice := make([]*model.MtgCard, 0, h.Len())
+	for h.Len() > 0 {
+		slice = append(slice, heap.Pop(h).(*model.MtgCard))
+	}
+	sort.Slice(slice, func(i, j int) bool { return compare(slice[i], slice[j]) < 0 })
+
+	offset := pagination.Page * pagination.PageSize
+	end := offset + pagination.PageSize
+	if offset >= len(slice) {
+		paged = []*model.MtgCard{}
+	} else {
+		if end > len(slice) {
+			end = len(slice)
+		}
+		paged = slice[offset:end]
+	}
 
 	log.Debug().
 		Int("input_cards", len(cardUniverse)).
-		Int("filtered_cards", len(ordered)).
+		Int("total_count", totalCount).
+		Int("paged_len", len(paged)).
 		Dur("duration", time.Since(start)).
-		Msg("FilterCards completed")
+		Msg("FilterCardsWithPagination completed")
 
-	return ordered
+	return paged, totalCount
+}
+
+// cardHeap is a max-heap by sort order (worst element at root) for Top-K selection.
+type cardHeap struct {
+	cards   []*model.MtgCard
+	compare func(a, b *model.MtgCard) int
+}
+
+func (h cardHeap) Len() int { return len(h.cards) }
+
+// Less: root is the worst in sort order (max), so we evict it when a better card arrives.
+func (h cardHeap) Less(i, j int) bool { return h.compare(h.cards[i], h.cards[j]) > 0 }
+func (h cardHeap) Swap(i, j int)      { h.cards[i], h.cards[j] = h.cards[j], h.cards[i] }
+func (h *cardHeap) Push(x any)        { h.cards = append(h.cards, x.(*model.MtgCard)) }
+func (h *cardHeap) Pop() any {
+	n := len(h.cards)
+	x := h.cards[n-1]
+	h.cards = h.cards[:n-1]
+	return x
+}
+
+// buildCompare returns a comparator: -1 if a before b, 1 if a after b, 0 if equal.
+// Uses sortInputs for multi-level comparison and always ends with a.ID vs b.ID for total order.
+// When hideUnreleased is true, release-date sorting uses only released versions.
+// When gamesFilter is non-empty, release/rarity/set sorting use only effective versions (matching games filter).
+func buildCompare(sortInputs []*model.MtgFilterSortInput, hideUnreleased bool, gamesFilter []*model.MtgFilterGameInput) func(a, b *model.MtgCard) int {
+	enabled := make([]*model.MtgFilterSortInput, 0)
+	for _, s := range sortInputs {
+		if s != nil && s.Enabled {
+			enabled = append(enabled, s)
+		}
+	}
+	return func(a, b *model.MtgCard) int {
+		for _, level := range enabled {
+			cmp := compareBySortCriteria(a, b, level, hideUnreleased, gamesFilter)
+			if cmp != 0 {
+				return cmp
+			}
+		}
+		if a.ID < b.ID {
+			return -1
+		}
+		if a.ID > b.ID {
+			return 1
+		}
+		return 0
+	}
 }
 
 func fetchIgnoredCards(filter model.MtgFilterSearchInput) ([]string, map[string]struct{}) {
@@ -156,14 +178,14 @@ func fetchIgnoredCards(filter model.MtgFilterSearchInput) ([]string, map[string]
 
 	ctx := context.Background()
 	aq := arango.NewQuery( /* aql */ `
-		FOR card, edge IN 1..1 OUTBOUND CONCAT("MTG_Decks/", @deckID) MTG_Deck_Ignore_Card
+		FOR card, edge IN 1..1 OUTBOUND CONCAT("mtg_decks/", @deckID) mtg_deck_ignore_card
 		RETURN card._key
 	`)
 	aq.AddBindVar("deckID", *filter.DeckID)
 
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {
-		log.Error().Err(err).Msg("FilterCards: error loading ignored cards")
+		log.Error().Err(err).Msg("FilterCardsWithPagination: error loading ignored cards")
 		return nil, nil
 	}
 	defer cursor.Close()
@@ -174,7 +196,7 @@ func fetchIgnoredCards(filter model.MtgFilterSearchInput) ([]string, map[string]
 		var id string
 		_, err := cursor.ReadDocument(ctx, &id)
 		if err != nil {
-			log.Error().Err(err).Msg("FilterCards: error reading ignored card id")
+			log.Error().Err(err).Msg("FilterCardsWithPagination: error reading ignored card id")
 			continue
 		}
 		ids = append(ids, id)
@@ -206,140 +228,33 @@ func collectNegativeSets(filter model.MtgFilterSearchInput) map[string]struct{} 
 	return negatives
 }
 
-func extractPlainTokens(query string) []string {
-	query = strings.TrimSpace(query)
-	if query == "" {
-		return nil
-	}
-
-	tokenSet := make(map[string]struct{})
-	clauses := strings.Split(query, ";")
-	for _, clause := range clauses {
-		clause = strings.TrimSpace(clause)
-		if clause == "" {
-			continue
-		}
-		lower := strings.ToLower(clause)
-		if strings.ContainsAny(lower, ":<>!=") {
-			continue
-		}
-		for _, token := range tokenize(clause) {
-			if token == "" {
-				continue
-			}
-			tokenSet[token] = struct{}{}
-		}
-	}
-
-	if len(tokenSet) == 0 {
-		return nil
-	}
-
-	tokens := make([]string, 0, len(tokenSet))
-	for token := range tokenSet {
-		tokens = append(tokens, token)
-	}
-	sort.Strings(tokens)
-	return tokens
-}
-
-func candidateIDsFromTokens(tokens []string, inverted map[string][]posting) map[string]struct{} {
-	if len(tokens) == 0 {
-		return nil
-	}
-	candidates := make(map[string]struct{})
-	for _, token := range tokens {
-		entries, ok := inverted[token]
-		if !ok {
-			continue
-		}
-		for _, entry := range entries {
-			candidates[entry.cardID] = struct{}{}
-		}
-	}
-	return candidates
-}
-
-func docContainsAllTokens(doc *CardDocument, tokens []string) bool {
-	if len(tokens) == 0 {
-		return true
-	}
-	for _, token := range tokens {
-		if token == "" {
-			continue
-		}
-		if _, ok := doc.NameTokens[token]; ok {
-			continue
-		}
-		if _, ok := doc.OracleTokens[token]; ok {
-			continue
-		}
-		if _, ok := doc.TypeTokens[token]; ok {
-			continue
-		}
-		if _, ok := doc.SubtypeTokens[token]; ok {
-			continue
-		}
-		if containsString(doc.ColorTokens, token) {
-			continue
-		}
-		if containsString(doc.KeywordTokens, token) {
-			continue
-		}
+func cardHasNegativeSet(card *model.MtgCard, negatives map[string]struct{}) bool {
+	if len(negatives) == 0 || card == nil {
 		return false
 	}
-	return true
-}
-
-func computeRelevanceScore(doc *CardDocument, tokens []string, normalizedQuery string) float64 {
-	score := 1.0
-
-	if normalizedQuery != "" && normalizedQuery == doc.NormalizedName {
-		score += 1000
-	}
-
-	for _, token := range tokens {
-		if token == "" {
-			continue
-		}
-		if freq, ok := doc.NameTokens[token]; ok {
-			score += float64(freq) * 120
-		}
-		if freq, ok := doc.OracleTokens[token]; ok {
-			score += float64(freq) * 50
-		}
-		if freq, ok := doc.TypeTokens[token]; ok {
-			score += float64(freq) * 30
-		}
-		if freq, ok := doc.SubtypeTokens[token]; ok {
-			score += float64(freq) * 20
-		}
-		if containsString(doc.ColorTokens, token) {
-			score += 15
-		}
-		if containsString(doc.KeywordTokens, token) {
-			score += 18
-		}
-	}
-
-	if doc.LatestReleaseUnix > 0 {
-		age := time.Since(time.Unix(doc.LatestReleaseUnix, 0))
-		years := age.Hours() / (24 * 365)
-		if years < 0 {
-			years = 0
-		}
-		score += math.Max(0, 5.0-years)
-	}
-
-	return score
-}
-
-func docHasNegativeSet(doc *CardDocument, negatives map[string]struct{}) bool {
-	if len(negatives) == 0 || doc == nil {
-		return false
-	}
-	for _, setCode := range doc.SetCodes {
+	for _, setCode := range GetSetCodesForCard(card) {
 		if _, exists := negatives[setCode]; exists {
+			return true
+		}
+	}
+	return false
+}
+
+// cardHasReleasedVersionFromVersions returns true if at least one version has ReleasedAt <= today (UTC).
+func cardHasReleasedVersionFromVersions(versions []*model.MtgCardVersion) bool {
+	if len(versions) == 0 {
+		return false
+	}
+	today := time.Now().UTC().Truncate(24 * time.Hour)
+	for _, v := range versions {
+		if v == nil || v.ReleasedAt == "" {
+			continue
+		}
+		t, err := time.Parse("2006-01-02", v.ReleasedAt)
+		if err != nil {
+			continue
+		}
+		if t.UTC().Truncate(24*time.Hour).Before(today) || t.UTC().Truncate(24*time.Hour).Equal(today) {
 			return true
 		}
 	}
@@ -376,20 +291,16 @@ func PaginateCards(cards []*model.MtgCard, pagination model.MtgFilterPaginationI
 	return cards[start:end]
 }
 
-// passesFilter checks if a card passes all the filter criteria.
-func passesFilter(card *model.MtgCard, filter model.MtgFilterSearchInput, cards []*model.MtgCard, ignoredCardIDs []string) bool {
+// passesFilter checks if a card passes all the filter criteria. Deterministic, pass/fail only.
+// commanderCard must be pre-resolved by the caller when filter.Commander is set (avoids O(n^2) scan).
+func passesFilter(card *model.MtgCard, filter model.MtgFilterSearchInput, ignoredCardIDs []string, commanderCard *model.MtgCard) bool {
 	if slices.Contains(ignoredCardIDs, card.ID) {
 		return false
 	}
 
-	var commanderCard *model.MtgCard
-	if filter.Commander != nil {
-		for _, card := range cards {
-			if card.ID == *filter.Commander {
-				commanderCard = card
-				break
-			}
-		}
+	negativeSets := collectNegativeSets(filter)
+	if len(negativeSets) > 0 && cardHasNegativeSet(card, negativeSets) {
+		return false
 	}
 
 	if commanderCard != nil {
@@ -425,8 +336,15 @@ func passesFilter(card *model.MtgCard, filter model.MtgFilterSearchInput, cards 
 		return false
 	}
 
-	// Rarity filtering
-	if !passesRarityFilter(card, filter.Rarity) {
+	// Game filtering first: card must have at least one version matching games; then we use only those versions below
+	if !passesGameFilter(card, filter.Games) {
+		return false
+	}
+
+	versions := versionsToUse(card, filter.Games)
+
+	// Rarity filtering (over effective versions only when games filter is set)
+	if !passesRarityFilterWithVersions(filter.Rarity, versions) {
 		return false
 	}
 
@@ -435,13 +353,13 @@ func passesFilter(card *model.MtgCard, filter model.MtgFilterSearchInput, cards 
 		return false
 	}
 
-	// Set filtering
-	if !passesSetFilter(card, filter.Sets) {
+	// Set filtering (over effective versions)
+	if !passesSetFilterWithVersions(filter.Sets, versions) {
 		return false
 	}
 
-	// Legality filtering
-	if !passesLegalityFilter(card, filter.Legalities) {
+	// Legality filtering (over effective versions)
+	if !passesLegalityFilterWithVersions(filter.Legalities, versions) {
 		return false
 	}
 
@@ -450,14 +368,16 @@ func passesFilter(card *model.MtgCard, filter model.MtgFilterSearchInput, cards 
 		return false
 	}
 
-	// Layout filtering
-	if !passesLayoutFilter(card, filter.Layouts) {
+	// Layout filtering (over effective versions)
+	if !passesLayoutFilterWithVersions(card, filter.Layouts, versions) {
 		return false
 	}
 
-	// Game filtering
-	if !passesGameFilter(card, filter.Games) {
-		return false
+	// Hide unreleased: at least one effective version must have ReleasedAt <= today
+	if filter.HideUnreleased {
+		if !cardHasReleasedVersionFromVersions(versions) {
+			return false
+		}
 	}
 
 	return true
@@ -597,8 +517,7 @@ func passesSearchString(card *model.MtgCard, searchString string) bool {
 		case QueryTypeSearch:
 			if searchValue, ok := query.Value.(string); ok {
 				searchLower := strings.ToLower(searchValue)
-				matches := strings.Contains(strings.ToLower(card.Name), searchLower)
-
+				matches := defaultSearchMatches(card, searchLower)
 				if (query.Not && matches) || (!query.Not && !matches) {
 					return false
 				}
@@ -607,6 +526,48 @@ func passesSearchString(card *model.MtgCard, searchString string) bool {
 	}
 
 	return true
+}
+
+// defaultSearchMatches reproduces client default search: name, typeLine, set, setName, oracle, flavor, and cardFaces (name, typeLine, oracle, flavor).
+func defaultSearchMatches(card *model.MtgCard, searchLower string) bool {
+	if strings.Contains(strings.ToLower(card.Name), searchLower) {
+		return true
+	}
+	if strings.Contains(strings.ToLower(card.TypeLine), searchLower) {
+		return true
+	}
+	if card.OracleText != nil && strings.Contains(strings.ToLower(*card.OracleText), searchLower) {
+		return true
+	}
+	for _, v := range card.Versions {
+		if v == nil {
+			continue
+		}
+		if strings.EqualFold(v.Set, searchLower) || strings.Contains(strings.ToLower(v.SetName), searchLower) {
+			return true
+		}
+		if v.FlavorText != nil && strings.Contains(strings.ToLower(*v.FlavorText), searchLower) {
+			return true
+		}
+		for _, f := range v.CardFaces {
+			if f == nil {
+				continue
+			}
+			if strings.Contains(strings.ToLower(f.Name), searchLower) {
+				return true
+			}
+			if f.TypeLine != nil && strings.Contains(strings.ToLower(*f.TypeLine), searchLower) {
+				return true
+			}
+			if f.OracleText != nil && strings.Contains(strings.ToLower(*f.OracleText), searchLower) {
+				return true
+			}
+			if f.FlavorText != nil && strings.Contains(strings.ToLower(*f.FlavorText), searchLower) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // passesColorFilter checks if a card passes the color filtering criteria.
@@ -673,15 +634,13 @@ func passesColorFilter(card *model.MtgCard, colorFilters []*model.MtgFilterColor
 	return true
 }
 
-// passesRarityFilter checks if a card passes the rarity filtering criteria.
-func passesRarityFilter(card *model.MtgCard, rarityFilters []*model.MtgFilterRarityInput) bool {
+// passesRarityFilterWithVersions checks rarity over the given version set (e.g. effective versions when games filter is set).
+func passesRarityFilterWithVersions(rarityFilters []*model.MtgFilterRarityInput, versions []*model.MtgCardVersion) bool {
 	if len(rarityFilters) == 0 {
 		return true
 	}
-
 	positiveRarities := make([]model.MtgRarity, 0)
 	negativeRarities := make([]model.MtgRarity, 0)
-
 	for _, rarityFilter := range rarityFilters {
 		switch rarityFilter.Value {
 		case model.TernaryBooleanTrue:
@@ -690,13 +649,11 @@ func passesRarityFilter(card *model.MtgCard, rarityFilters []*model.MtgFilterRar
 			negativeRarities = append(negativeRarities, rarityFilter.Rarity)
 		}
 	}
-
-	// Check positive rarities
 	if len(positiveRarities) > 0 {
 		hasPositiveRarity := false
 		for _, posRarity := range positiveRarities {
-			for _, version := range card.Versions {
-				if version.Rarity == posRarity {
+			for _, version := range versions {
+				if version != nil && version.Rarity == posRarity {
 					hasPositiveRarity = true
 					break
 				}
@@ -709,16 +666,13 @@ func passesRarityFilter(card *model.MtgCard, rarityFilters []*model.MtgFilterRar
 			return false
 		}
 	}
-
-	// Check negative rarities
 	for _, negRarity := range negativeRarities {
-		for _, version := range card.Versions {
-			if version.Rarity == negRarity {
+		for _, version := range versions {
+			if version != nil && version.Rarity == negRarity {
 				return false
 			}
 		}
 	}
-
 	return true
 }
 
@@ -781,17 +735,15 @@ func passesManaCostFilter(card *model.MtgCard, manaCostFilters []*model.MtgFilte
 	return true
 }
 
-// passesLegalityFilter checks if a card satisfies requested format legalities.
-func passesLegalityFilter(card *model.MtgCard, legalityFilters []*model.MtgFilterLegalityInput) bool {
+// passesLegalityFilterWithVersions checks legality over the given version set.
+func passesLegalityFilterWithVersions(legalityFilters []*model.MtgFilterLegalityInput, versions []*model.MtgCardVersion) bool {
 	if len(legalityFilters) == 0 {
 		return true
 	}
-
 	for _, legalityFilter := range legalityFilters {
 		if legalityFilter == nil {
 			continue
 		}
-
 		positives := make([]string, 0)
 		negatives := make([]string, 0)
 		for _, entry := range legalityFilter.LegalityEntries {
@@ -805,8 +757,7 @@ func passesLegalityFilter(card *model.MtgCard, legalityFilters []*model.MtgFilte
 				negatives = append(negatives, strings.ToLower(entry.LegalityValue))
 			}
 		}
-
-		statuses := cardStatusesForFormat(card, legalityFilter.Format)
+		statuses := cardStatusesForFormatFromVersions(versions, legalityFilter.Format)
 		if len(positives) > 0 {
 			matched := false
 			for _, status := range statuses {
@@ -824,7 +775,6 @@ func passesLegalityFilter(card *model.MtgCard, legalityFilters []*model.MtgFilte
 				return false
 			}
 		}
-
 		if len(negatives) > 0 {
 			for _, status := range statuses {
 				for _, neg := range negatives {
@@ -835,20 +785,17 @@ func passesLegalityFilter(card *model.MtgCard, legalityFilters []*model.MtgFilte
 			}
 		}
 	}
-
 	return true
 }
 
-// cardStatusesForFormat returns distinct lower-cased legality statuses for a format.
-func cardStatusesForFormat(card *model.MtgCard, format string) []string {
-	if card == nil || format == "" {
+// cardStatusesForFormatFromVersions returns distinct lower-cased legality statuses for a format from the given versions.
+func cardStatusesForFormatFromVersions(versions []*model.MtgCardVersion, format string) []string {
+	if len(versions) == 0 || format == "" {
 		return nil
 	}
-
 	format = strings.ToLower(format)
 	statuses := make(map[string]struct{})
-
-	for _, version := range card.Versions {
+	for _, version := range versions {
 		if version == nil || version.Legalities == nil {
 			continue
 		}
@@ -863,11 +810,6 @@ func cardStatusesForFormat(card *model.MtgCard, format string) []string {
 			statuses[status] = struct{}{}
 		}
 	}
-
-	if len(statuses) == 0 {
-		return nil
-	}
-
 	result := make([]string, 0, len(statuses))
 	for status := range statuses {
 		result = append(result, status)
@@ -886,15 +828,13 @@ func normalizeLegalityValue(value any) string {
 	}
 }
 
-// passesSetFilter checks if a card passes the set filtering criteria.
-func passesSetFilter(card *model.MtgCard, setFilters []*model.MtgFilterSetInput) bool {
+// passesSetFilterWithVersions checks set filter over the given version set.
+func passesSetFilterWithVersions(setFilters []*model.MtgFilterSetInput, versions []*model.MtgCardVersion) bool {
 	if len(setFilters) == 0 {
 		return true
 	}
-
 	positiveSets := make([]string, 0)
 	negativeSets := make([]string, 0)
-
 	for _, setFilter := range setFilters {
 		switch setFilter.Value {
 		case model.TernaryBooleanTrue:
@@ -903,13 +843,11 @@ func passesSetFilter(card *model.MtgCard, setFilters []*model.MtgFilterSetInput)
 			negativeSets = append(negativeSets, strings.ToLower(setFilter.Set))
 		}
 	}
-
-	// Check positive sets
 	if len(positiveSets) > 0 {
 		hasPositiveSet := false
 		for _, posSet := range positiveSets {
-			for _, version := range card.Versions {
-				if strings.EqualFold(version.Set, posSet) {
+			for _, version := range versions {
+				if version != nil && strings.EqualFold(version.Set, posSet) {
 					hasPositiveSet = true
 					break
 				}
@@ -922,16 +860,13 @@ func passesSetFilter(card *model.MtgCard, setFilters []*model.MtgFilterSetInput)
 			return false
 		}
 	}
-
-	// Check negative sets
 	for _, negSet := range negativeSets {
-		for _, version := range card.Versions {
-			if strings.EqualFold(version.Set, negSet) {
+		for _, version := range versions {
+			if version != nil && strings.EqualFold(version.Set, negSet) {
 				return false
 			}
 		}
 	}
-
 	return true
 }
 
@@ -977,15 +912,13 @@ func passesCardTypeFilter(card *model.MtgCard, cardTypeFilters []*model.MtgFilte
 	return true
 }
 
-// passesLayoutFilter checks if a card passes the layout filtering criteria.
-func passesLayoutFilter(card *model.MtgCard, layoutFilters []*model.MtgFilterLayoutInput) bool {
+// passesLayoutFilterWithVersions checks layout over the given version set (card.Layout or version cardFaces).
+func passesLayoutFilterWithVersions(card *model.MtgCard, layoutFilters []*model.MtgFilterLayoutInput, versions []*model.MtgCardVersion) bool {
 	if len(layoutFilters) == 0 {
 		return true
 	}
-
 	positiveLayouts := make([]model.MtgLayout, 0)
 	negativeLayouts := make([]model.MtgLayout, 0)
-
 	for _, layoutFilter := range layoutFilters {
 		switch layoutFilter.Value {
 		case model.TernaryBooleanTrue:
@@ -994,13 +927,30 @@ func passesLayoutFilter(card *model.MtgCard, layoutFilters []*model.MtgFilterLay
 			negativeLayouts = append(negativeLayouts, layoutFilter.Layout)
 		}
 	}
-
-	// Check positive layouts
+	versionHasLayout := func(v *model.MtgCardVersion, layout model.MtgLayout) bool {
+		if v == nil {
+			return false
+		}
+		if card.Layout == layout {
+			return true
+		}
+		for _, f := range v.CardFaces {
+			if f != nil && f.Layout != nil && *f.Layout == layout {
+				return true
+			}
+		}
+		return false
+	}
 	if len(positiveLayouts) > 0 {
 		hasPositiveLayout := false
 		for _, posLayout := range positiveLayouts {
-			if card.Layout == posLayout {
-				hasPositiveLayout = true
+			for _, v := range versions {
+				if versionHasLayout(v, posLayout) {
+					hasPositiveLayout = true
+					break
+				}
+			}
+			if hasPositiveLayout {
 				break
 			}
 		}
@@ -1008,116 +958,115 @@ func passesLayoutFilter(card *model.MtgCard, layoutFilters []*model.MtgFilterLay
 			return false
 		}
 	}
-
-	// Check negative layouts
 	for _, negLayout := range negativeLayouts {
-		if card.Layout == negLayout {
-			return false
+		for _, v := range versions {
+			if versionHasLayout(v, negLayout) {
+				return false
+			}
 		}
 	}
-
 	return true
 }
 
-// passesGameFilter checks if a card passes the game filtering criteria.
+// EffectiveVersionsForGames returns versions that match the games filter: positive = version
+// must have that game, negative = version must not have that game. If gameFilters is nil or
+// empty, returns card.Versions (all versions). Exported for use in resolvers when building
+// response (e.g. return cards with only Arena versions to the client).
+func EffectiveVersionsForGames(card *model.MtgCard, gameFilters []*model.MtgFilterGameInput) []*model.MtgCardVersion {
+	return effectiveVersionsForGames(card, gameFilters)
+}
+
+func effectiveVersionsForGames(card *model.MtgCard, gameFilters []*model.MtgFilterGameInput) []*model.MtgCardVersion {
+	if card == nil || len(gameFilters) == 0 {
+		if card != nil {
+			return card.Versions
+		}
+		return nil
+	}
+	if card.Versions == nil {
+		return nil
+	}
+	positiveGames := make([]model.MtgGame, 0)
+	negativeGames := make([]model.MtgGame, 0)
+	for _, gf := range gameFilters {
+		if gf == nil {
+			continue
+		}
+		switch gf.Value {
+		case model.TernaryBooleanTrue:
+			positiveGames = append(positiveGames, gf.Game)
+		case model.TernaryBooleanFalse:
+			negativeGames = append(negativeGames, gf.Game)
+		}
+	}
+	out := make([]*model.MtgCardVersion, 0, len(card.Versions))
+	for _, v := range card.Versions {
+		if v == nil {
+			continue
+		}
+		hasPos := true
+		for _, g := range positiveGames {
+			found := false
+			for _, vg := range v.Games {
+				if vg == g {
+					found = true
+					break
+				}
+			}
+			if !found {
+				hasPos = false
+				break
+			}
+		}
+		if !hasPos {
+			continue
+		}
+		hasNeg := false
+		for _, g := range negativeGames {
+			for _, vg := range v.Games {
+				if vg == g {
+					hasNeg = true
+					break
+				}
+			}
+			if hasNeg {
+				break
+			}
+		}
+		if hasNeg {
+			continue
+		}
+		out = append(out, v)
+	}
+	return out
+}
+
+// versionsToUse returns the version set to use for a card: when gameFilters is non-empty,
+// only versions matching the games filter; otherwise all card.Versions.
+func versionsToUse(card *model.MtgCard, gameFilters []*model.MtgFilterGameInput) []*model.MtgCardVersion {
+	if card == nil {
+		return nil
+	}
+	if len(gameFilters) == 0 {
+		return card.Versions
+	}
+	return effectiveVersionsForGames(card, gameFilters)
+}
+
+// passesGameFilter checks if a card has at least one version matching the games filter.
+// When games filter is set, only those versions are considered for all other filters and sort.
 func passesGameFilter(card *model.MtgCard, gameFilters []*model.MtgFilterGameInput) bool {
 	if len(gameFilters) == 0 {
 		return true
 	}
-
-	positiveGames := make([]model.MtgGame, 0)
-	negativeGames := make([]model.MtgGame, 0)
-
-	for _, gameFilter := range gameFilters {
-		switch gameFilter.Value {
-		case model.TernaryBooleanTrue:
-			positiveGames = append(positiveGames, gameFilter.Game)
-		case model.TernaryBooleanFalse:
-			negativeGames = append(negativeGames, gameFilter.Game)
-		}
-	}
-
-	// Check positive games
-	if len(positiveGames) > 0 {
-		hasPositiveGame := false
-		for _, posGame := range positiveGames {
-			for _, version := range card.Versions {
-				for _, game := range version.Games {
-					if game == posGame {
-						hasPositiveGame = true
-						break
-					}
-				}
-				if hasPositiveGame {
-					break
-				}
-			}
-			if hasPositiveGame {
-				break
-			}
-		}
-		if !hasPositiveGame {
-			return false
-		}
-	}
-
-	// Check negative games
-	for _, negGame := range negativeGames {
-		for _, version := range card.Versions {
-			for _, game := range version.Games {
-				if game == negGame {
-					return false
-				}
-			}
-		}
-	}
-
-	return true
-}
-
-// applySorting applies sorting to the filtered cards.
-func applySorting(cards []*model.MtgCard, sortInputs []*model.MtgFilterSortInput) []*model.MtgCard {
-	if len(sortInputs) == 0 {
-		return cards
-	}
-
-	// Filter enabled sorts
-	enabledSorts := make([]*model.MtgFilterSortInput, 0)
-	for _, sortInput := range sortInputs {
-		if sortInput.Enabled {
-			enabledSorts = append(enabledSorts, sortInput)
-		}
-	}
-
-	if len(enabledSorts) == 0 {
-		return cards
-	}
-
-	// Create a copy to avoid modifying the original slice
-	sortedCards := make([]*model.MtgCard, len(cards))
-	copy(sortedCards, cards)
-
-	// Sort using Go's sort.Slice with custom comparison
-	sort.SliceStable(sortedCards, func(i, j int) bool {
-		cardA := sortedCards[i]
-		cardB := sortedCards[j]
-
-		// Apply each sort criteria in order
-		for _, sortCriteria := range enabledSorts {
-			comparison := compareBySortCriteria(cardA, cardB, sortCriteria)
-			if comparison != 0 {
-				return comparison < 0
-			}
-		}
-		return false // Equal
-	})
-
-	return sortedCards
+	return len(effectiveVersionsForGames(card, gameFilters)) > 0
 }
 
 // compareBySortCriteria compares two cards based on a sort criteria.
 // Returns: -1 if cardA < cardB, 1 if cardA > cardB, 0 if equal.
-func compareBySortCriteria(cardA, cardB *model.MtgCard, sortCriteria *model.MtgFilterSortInput) int {
+// When hideUnreleased is true, release-date and set sorting use only released versions.
+// When gamesFilter is non-empty, release/rarity/set use only effective versions.
+func compareBySortCriteria(cardA, cardB *model.MtgCard, sortCriteria *model.MtgFilterSortInput, hideUnreleased bool, gamesFilter []*model.MtgFilterGameInput) int {
 	isDesc := sortCriteria.SortDirection == model.MtgFilterSortDirectionDesc
 
 	var comparison int
@@ -1150,8 +1099,8 @@ func compareBySortCriteria(cardA, cardB *model.MtgCard, sortCriteria *model.MtgF
 		comparison = compareByColor(cardA, cardB)
 
 	case model.MtgFilterSortByRarity:
-		rarityA := getRarityValue(cardA)
-		rarityB := getRarityValue(cardB)
+		rarityA := getRarityValueWithVersions(cardA, gamesFilter)
+		rarityB := getRarityValueWithVersions(cardB, gamesFilter)
 		comparison = rarityA - rarityB
 
 	case model.MtgFilterSortByType:
@@ -1160,8 +1109,8 @@ func compareBySortCriteria(cardA, cardB *model.MtgCard, sortCriteria *model.MtgF
 		comparison = typeA - typeB
 
 	case model.MtgFilterSortBySet:
-		setA := getSetReleaseDate(cardA)
-		setB := getSetReleaseDate(cardB)
+		setA := getSetReleaseDateWithVersions(cardA, hideUnreleased, gamesFilter)
+		setB := getSetReleaseDateWithVersions(cardB, hideUnreleased, gamesFilter)
 		if setA < setB {
 			comparison = -1
 		} else if setA > setB {
@@ -1171,8 +1120,8 @@ func compareBySortCriteria(cardA, cardB *model.MtgCard, sortCriteria *model.MtgF
 		}
 
 	case model.MtgFilterSortByReleasedAt:
-		dateA := getReleasedAtValue(cardA, isDesc)
-		dateB := getReleasedAtValue(cardB, isDesc)
+		dateA := getReleasedAtValueWithVersions(cardA, isDesc, hideUnreleased, gamesFilter)
+		dateB := getReleasedAtValueWithVersions(cardB, isDesc, hideUnreleased, gamesFilter)
 		if dateA < dateB {
 			comparison = -1
 		} else if dateA > dateB {
@@ -1263,13 +1212,13 @@ func colorToValue(color model.MtgColor) rune {
 	}
 }
 
-// getRarityValue converts rarity to a sortable integer (matching TypeScript).
-func getRarityValue(card *model.MtgCard) int {
-	defaultVersion := getDefaultVersion(card)
+// getRarityValueWithVersions uses effective versions when gamesFilter is set, else all versions.
+func getRarityValueWithVersions(card *model.MtgCard, gamesFilter []*model.MtgFilterGameInput) int {
+	versions := versionsToUse(card, gamesFilter)
+	defaultVersion := getDefaultVersionFromVersions(versions)
 	if defaultVersion == nil {
 		return 0
 	}
-
 	switch defaultVersion.Rarity {
 	case model.MtgRarityCommon:
 		return 0
@@ -1282,6 +1231,19 @@ func getRarityValue(card *model.MtgCard) int {
 	default:
 		return 0
 	}
+}
+
+// getDefaultVersionFromVersions returns the default version from the slice, or the first if none marked default.
+func getDefaultVersionFromVersions(versions []*model.MtgCardVersion) *model.MtgCardVersion {
+	for _, v := range versions {
+		if v != nil && v.IsDefault {
+			return v
+		}
+	}
+	if len(versions) > 0 && versions[0] != nil {
+		return versions[0]
+	}
+	return nil
 }
 
 // getTypeValue calculates a type value based on the type line (matching TypeScript).
@@ -1330,39 +1292,67 @@ func typeToValue(typeName string) int {
 	}
 }
 
-// getSetReleaseDate gets the release date for set sorting.
-func getSetReleaseDate(card *model.MtgCard) int64 {
-	// For now, use the default version's release date
-	// In the future, this could be enhanced to match against expansions
-	defaultVersion := getDefaultVersion(card)
+// getSetReleaseDateWithVersions uses effective versions when gamesFilter is set.
+// When onlyReleased is true, uses latest released version from that set; otherwise default version's date.
+func getSetReleaseDateWithVersions(card *model.MtgCard, onlyReleased bool, gamesFilter []*model.MtgFilterGameInput) int64 {
+	versions := versionsToUse(card, gamesFilter)
+	today := time.Now().UTC().Truncate(24 * time.Hour)
+	pickVersion := func(v *model.MtgCardVersion) int64 {
+		if v == nil || v.ReleasedAt == "" {
+			return 0
+		}
+		t, err := time.Parse("2006-01-02", v.ReleasedAt)
+		if err != nil {
+			return 0
+		}
+		releaseUTC := t.UTC().Truncate(24 * time.Hour)
+		if onlyReleased && releaseUTC.After(today) {
+			return 0
+		}
+		return releaseUTC.Unix()
+	}
+	if onlyReleased {
+		var best int64
+		for _, v := range versions {
+			if d := pickVersion(v); d > 0 && (best == 0 || d > best) {
+				best = d
+			}
+		}
+		return best
+	}
+	defaultVersion := getDefaultVersionFromVersions(versions)
 	if defaultVersion == nil {
 		return 0
 	}
-
-	if releaseDate, err := time.Parse("2006-01-02", defaultVersion.ReleasedAt); err == nil {
-		return releaseDate.Unix()
-	}
-	return 0
+	return pickVersion(defaultVersion)
 }
 
-// getReleasedAtValue gets the release date value based on sort direction.
-func getReleasedAtValue(card *model.MtgCard, isDesc bool) int64 {
-	if len(card.Versions) == 0 {
+// getReleasedAtValueWithVersions uses effective versions when gamesFilter is set.
+// When onlyReleased is true, only versions with ReleasedAt <= today (UTC) are considered.
+func getReleasedAtValueWithVersions(card *model.MtgCard, isDesc bool, onlyReleased bool, gamesFilter []*model.MtgFilterGameInput) int64 {
+	versions := versionsToUse(card, gamesFilter)
+	if len(versions) == 0 {
 		return 0
 	}
-
-	dates := make([]int64, 0, len(card.Versions))
-	for _, version := range card.Versions {
-		if releaseDate, err := time.Parse("2006-01-02", version.ReleasedAt); err == nil {
-			dates = append(dates, releaseDate.Unix())
+	today := time.Now().UTC().Truncate(24 * time.Hour)
+	dates := make([]int64, 0, len(versions))
+	for _, version := range versions {
+		if version == nil || version.ReleasedAt == "" {
+			continue
 		}
+		t, err := time.Parse("2006-01-02", version.ReleasedAt)
+		if err != nil {
+			continue
+		}
+		releaseUTC := t.UTC().Truncate(24 * time.Hour)
+		if onlyReleased && releaseUTC.After(today) {
+			continue
+		}
+		dates = append(dates, releaseUTC.Unix())
 	}
-
 	if len(dates) == 0 {
 		return 0
 	}
-
-	// Return min for ASC, max for DESC (logic from TypeScript)
 	if isDesc {
 		max := dates[0]
 		for _, date := range dates[1:] {
@@ -1371,15 +1361,14 @@ func getReleasedAtValue(card *model.MtgCard, isDesc bool) int64 {
 			}
 		}
 		return max
-	} else {
-		min := dates[0]
-		for _, date := range dates[1:] {
-			if date < min {
-				min = date
-			}
-		}
-		return min
 	}
+	min := dates[0]
+	for _, date := range dates[1:] {
+		if date < min {
+			min = date
+		}
+	}
+	return min
 }
 
 // getDefaultVersion gets the default version of a card.

@@ -19,7 +19,7 @@ func GetMTGFilterPresets(ctx context.Context, deckID string) ([]*model.MtgFilter
 	}
 
 	aq := arango.NewQuery( /* aql */ `
-        FOR preset IN MTG_Filter_Presets
+        FOR preset IN mtg_filter_presets
             FILTER preset.deckID == @deckID
             SORT preset.savedAt DESC
             RETURN preset

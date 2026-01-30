@@ -4,15 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"magic-helper/arango"
 	"magic-helper/graph/model"
 	"magic-helper/util"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/rs/zerolog/log"
 )
@@ -121,14 +117,14 @@ func parseCardsFromRaw(allCards []json.RawMessage) ([]map[string]any, error) {
 	return cards, nil
 }
 
-// upsertOriginalCards upserts the provided card maps into MTG_Original_Cards.
+// upsertOriginalCards upserts the provided card maps into mtg_original_cards.
 func upsertOriginalCards(ctx context.Context, cards []map[string]any) error {
 	aq := arango.NewQuery( /* aql */ `
 		FOR c IN @cards
 			UPSERT { _key: c.id }
 			INSERT MERGE({ _key: c.id }, c)
 			UPDATE c
-			IN MTG_Original_Cards
+			IN mtg_original_cards
 	`)
 
 	aq.AddBindVar("cards", cards)
@@ -183,81 +179,4 @@ func SanitizeFilename(name string) string {
 	name = strings.ReplaceAll(name, ">", "_")
 	name = strings.ReplaceAll(name, "|", "_")
 	return name
-}
-
-// DownloadImage downloads an image via HTTP into the specified file path.
-func DownloadImage(url string, filePath string) error {
-	// Check if URL is empty
-	if url == "" {
-		return fmt.Errorf("empty URL provided for download")
-	}
-
-	log.Debug().Msgf("Downloading image from %s to %s", url, filePath)
-	// Use a client with a timeout
-	client := http.Client{
-		Timeout: 30 * time.Second, // Set a reasonable timeout
-	}
-	resp, err := client.Get(url)
-	if err != nil {
-		return fmt.Errorf("error fetching image URL %s: %w", url, err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		// Attempt to read body for more info, but don't fail if read fails
-		bodyBytes, _ := io.ReadAll(io.LimitReader(resp.Body, 1024)) // Limit read size
-		return fmt.Errorf("bad status fetching image %s: %s. Body sample: %s", url, resp.Status, string(bodyBytes))
-	}
-
-	// Create the file
-	out, err := os.Create(filePath)
-	if err != nil {
-		// Attempt to remove partially created file on error
-		_ = os.Remove(filePath)
-		return fmt.Errorf("error creating image file %s: %w", filePath, err)
-	}
-	defer out.Close() // Ensure file is closed
-
-	// Write the body to file
-	_, err = io.Copy(out, resp.Body)
-	if err != nil {
-		// Attempt to remove partially written file on error
-		_ = os.Remove(filePath)
-		return fmt.Errorf("error saving image file %s: %w", filePath, err)
-	}
-
-	// Explicitly close before returning nil to flush buffers
-	closeErr := out.Close()
-	if closeErr != nil {
-		// Report close error, but image might be mostly fine
-		log.Warn().Err(closeErr).Msgf("Error closing image file %s after writing", filePath)
-		// Don't necessarily return error here, as copy succeeded
-	}
-
-	return nil
-}
-
-// FindUniqueFilePath ensures a unique path by appending an incrementing suffix if needed.
-func FindUniqueFilePath(dir, baseName, extension string) string {
-	filePath := filepath.Join(dir, fmt.Sprintf("%s%s", baseName, extension))
-	counter := 1
-	// Check if the *base file* exists first
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		return filePath // Base name is unique
-	}
-
-	// If base file exists, start appending numbers
-	for {
-		filePath = filepath.Join(dir, fmt.Sprintf("%s_%d%s", baseName, counter, extension))
-		if _, err := os.Stat(filePath); os.IsNotExist(err) {
-			return filePath // Found a unique numbered path
-		}
-		counter++
-		// Safety break to prevent infinite loops in unexpected scenarios
-		if counter > 10000 {
-			log.Error().Msgf("Could not find unique filename for base %s in dir %s after 10000 attempts", baseName, dir)
-			// Return the last tried path, it will likely fail the download but prevents hanging
-			return filePath
-		}
-	}
 }

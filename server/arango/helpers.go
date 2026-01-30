@@ -2,10 +2,13 @@ package arango
 
 import (
 	"context"
+	"sync/atomic"
 
 	arangoDriver "github.com/arangodb/go-driver"
 	"github.com/rs/zerolog/log"
 )
+
+var integrityEnsured atomic.Bool
 
 // EnsureDatabaseIntegrity guarantees that all required collections and indexes
 // exist in the configured ArangoDB database. Safe to call multiple times.
@@ -14,74 +17,63 @@ func EnsureDatabaseIntegrity(ctx context.Context) {
 	ensureDocumentCollections(ctx)
 	ensureEdgeCollections(ctx)
 	ensureIndexes(ctx)
+	ensureGraphs(ctx)
+	integrityEnsured.Store(true)
 	log.Info().Msgf("Database integrity ensured")
 }
 
 // ensureDocumentCollections ensures presence of all document collections.
 func ensureDocumentCollections(ctx context.Context) {
-	for _, collection := range DOCUMENT_COLLECTIONS {
+	for _, collection := range DOCUMENT_COLLECTIONS_ARRAY {
 		EnsureDocumentCollection(ctx, collection)
 	}
 }
 
-// EnsureDocumentCollection ensures the document collection exists and returns it.
-// Special case: for USERS_COLLECTION, it also ensures a bootstrap doc with key "USER_ID".
+// EnsureDocumentCollection ensures that a document collection exists and returns it
 func EnsureDocumentCollection(ctx context.Context, collection ArangoDocument) (arangoDriver.Collection, error) {
-	log.Info().Msgf("Ensuring document collection %s", collection)
-	exists, err := DB.CollectionExists(ctx, string(collection))
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to check if collection exists")
-		return nil, err
-	}
-	if !exists {
-		c, err := DB.CreateCollection(ctx, string(collection), &arangoDriver.CreateCollectionOptions{})
+	if !integrityEnsured.Load() {
+		log.Debug().Msgf("Ensuring document collection %s", collection)
+		exists, err := DB.CollectionExists(ctx, collection.String())
 		if err != nil {
-			log.Fatal().Err(err).Msg("Failed to create collection")
+			log.Fatal().Err(err).Msgf("Failed to check if document collection %s exists", collection)
 			return nil, err
 		}
-		log.Info().Msgf("Created document collection %s", c.Name())
-		return c, nil
+		if !exists {
+			log.Info().Msgf("Creating document collection %s", collection)
+			col, err := DB.CreateCollection(ctx, collection.String(), nil)
+			if err != nil {
+				log.Fatal().Err(err).Msgf("Failed to create document collection %s", collection)
+			}
+			return col, nil
+		}
+		log.Debug().Msgf("Document collection %s exists", collection)
 	}
-	c, err := DB.Collection(ctx, string(collection))
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to get collection")
-		return nil, err
-	}
-	log.Info().Msgf("Document collection %s already exists", c.Name())
-	return c, nil
+	return DB.Collection(ctx, collection.String())
 }
 
 // ensureEdgeCollections ensures presence of all edge collections.
 func ensureEdgeCollections(ctx context.Context) {
-	for _, edge := range EDGE_COLLECTIONS {
+	for _, edge := range EDGE_COLLECTIONS_ARRAY {
 		EnsureEdgeCollection(ctx, edge)
 	}
 }
 
-// EnsureEdgeCollection ensures the edge collection exists and returns it.
-func EnsureEdgeCollection(ctx context.Context, edge ArangoEdge) (arangoDriver.Collection, error) {
-	log.Info().Msgf("Ensuring edge collection %s", edge)
-	exists, err := DB.CollectionExists(ctx, string(edge))
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to check if collection exists")
-		return nil, err
-	}
-	if !exists {
-		c, err := DB.CreateCollection(ctx, string(edge), &arangoDriver.CreateCollectionOptions{Type: arangoDriver.CollectionTypeEdge})
+// EnsureEdgeCollection ensures that an edge collection exists and returns it
+func EnsureEdgeCollection(ctx context.Context, collection ArangoEdge) (arangoDriver.Collection, error) {
+	if !integrityEnsured.Load() {
+		log.Debug().Msgf("Ensuring edge collection %s", collection)
+		exists, err := DB.CollectionExists(ctx, collection.String())
 		if err != nil {
-			log.Fatal().Err(err).Msg("Failed to create collection")
+			log.Fatal().Err(err).Msgf("Failed to check if edge collection %s exists", collection)
 			return nil, err
 		}
-		log.Info().Msgf("Created edge collection %s", c.Name())
-		return c, nil
+		if !exists {
+			log.Info().Msgf("Creating edge collection %s", collection)
+			return DB.CreateCollection(ctx, collection.String(), &arangoDriver.CreateCollectionOptions{Type: arangoDriver.CollectionTypeEdge})
+		}
+		log.Debug().Msgf("Edge collection %s exists", collection)
 	}
-	c, err := DB.Collection(ctx, string(edge))
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to get collection")
-		return nil, err
-	}
-	log.Info().Msgf("Edge collection %s already exists", c.Name())
-	return c, nil
+	return DB.Collection(ctx, collection.String())
 }
 
 // ensureIndexes ensures all configured persistent indexes are present.
@@ -91,33 +83,53 @@ func ensureIndexes(ctx context.Context) {
 	}
 }
 
-// EnsureIndex ensures a persistent index exists on the target collection.
-// It determines whether the collection is a document or edge type based on the index definition.
+// EnsureIndex ensures that an index exists and returns it
 func EnsureIndex(ctx context.Context, index ArangoIndexStruct) error {
 	log.Info().Msgf("Ensuring index %s", index.Options.Name)
-	if index.IsEdge {
-		col, err := EnsureEdgeCollection(ctx, ArangoEdge(index.CollectionName))
-		if err != nil {
-			log.Fatal().Err(err).Msg("Failed to ensure edge collection")
-			return err
-		}
 
-		_, _, err = col.EnsurePersistentIndex(ctx, index.Fields, index.Options)
-		if err != nil {
-			log.Fatal().Err(err).Msg("Failed to ensure persistent index")
-			return err
-		}
-	} else {
-		col, err := EnsureDocumentCollection(ctx, ArangoDocument(index.CollectionName))
-		if err != nil {
-			log.Fatal().Err(err).Msg("Failed to ensure document collection")
-			return err
-		}
-		_, _, err = col.EnsurePersistentIndex(ctx, index.Fields, index.Options)
-		if err != nil {
-			log.Fatal().Err(err).Msg("Failed to ensure persistent index")
-			return err
-		}
+	collection, err := EnsureCollection(ctx, index.CollectionName, index.IsEdge)
+	if err != nil {
+		log.Fatal().Err(err).Msgf("Ensuring index %s: failed to ensure collection", index.Options.Name)
+		return err
+	}
+
+	_, _, err = collection.EnsurePersistentIndex(ctx, index.Fields, index.Options)
+	if err != nil {
+		log.Fatal().Err(err).Msgf("Ensuring index %s: failed to ensure persistent index", index.Options.Name)
+		return err
 	}
 	return nil
+}
+
+// EnsureCollection ensures that a collection exists and returns it
+func EnsureCollection(ctx context.Context, name string, isEdgeCollection bool) (arangoDriver.Collection, error) {
+	if isEdgeCollection {
+		return EnsureEdgeCollection(ctx, ArangoEdge(name))
+	}
+	return EnsureDocumentCollection(ctx, ArangoDocument(name))
+}
+
+func ensureGraphs(ctx context.Context) {
+	for graphName, graph := range GRAPH_ARRAY {
+		EnsureGraph(ctx, graphName.String(), graph)
+	}
+}
+
+func EnsureGraph(ctx context.Context, graphName string, graph arangoDriver.CreateGraphOptions) (arangoDriver.Graph, error) {
+	log.Info().Msgf("Ensuring graph %s", graphName)
+	exists, err := DB.GraphExists(ctx, graphName)
+	if err != nil {
+		log.Fatal().Err(err).Msgf("Ensuring graph %s: failed to check if graph exists", graphName)
+		return nil, err
+	}
+	if !exists {
+		graph, err := DB.CreateGraphV2(ctx, graphName, &graph)
+		if err != nil {
+			log.Fatal().Err(err).Msgf("Ensuring graph %s: failed to create graph", graphName)
+			return nil, err
+		}
+		log.Info().Msgf("Graph %s created", graphName)
+		return graph, nil
+	}
+	return DB.Graph(ctx, graphName)
 }

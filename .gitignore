@@ -24,6 +24,9 @@ dist-ssr
 *.sw?
 .history
 
+# Docker env overrides (copy env.example to .env)
+.env
+
 # ArangoDB Data
 arangodb/arangodb
 arangodb/backup

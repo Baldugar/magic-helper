@@ -1,41 +1,54 @@
+# Non-standard host ports so you can run this stack alongside a local server (8080) and ArangoDB (8529).
+# Override via .env (copy env.example to .env). App: http://localhost:${PROXY_HOST_PORT:-3001}  |  ArangoDB: http://localhost:${ARANGO_HOST_PORT:-8530}
 services:
-  arangodb:
-    image: arangodb:latest
-    environment:
-      - ARANGO_ROOT_PASSWORD=arangodb
-    volumes:
-      - arango-data:/var/lib/arangodb3
-    ports:
-      - "8529:8529"
+    arangodb:
+        image: arangodb:latest
+        environment:
+            - ARANGO_ROOT_PASSWORD=arangodb
+        volumes:
+            - arango-data:/var/lib/arangodb3
+        ports:
+            - '${ARANGO_HOST_PORT:-8530}:8529'
 
-  server:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-    environment:
-      - ARANGO_ADDR=arangodb
-    depends_on:
-      - arangodb
+    server:
+        build:
+            context: ./server
+            dockerfile: Dockerfile
+        environment:
+            - ARANGO_ADDR=arangodb
+        depends_on:
+            - arangodb
+        # Sin limites de CPU/RAM el contenedor compite con el host; asignar mas si el arranque es lento
+        # deploy:
+        #   resources:
+        #     limits: { cpus: '2', memory: 1G }
 
-  client:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
-      args:
-        VITE_API_URL: "/graphql"
-    depends_on:
-      - server
-    # (no exponemos directamente el puerto 80)
+    client:
+        build:
+            context: ./client
+            dockerfile: Dockerfile
+            args:
+                VITE_API_URL: '/graphql'
+        depends_on:
+            - server
+        healthcheck:
+            test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:80/']
+            interval: 5s
+            timeout: 3s
+            retries: 3
+            start_period: 5s
 
-  proxy:
-    image: nginx:stable-alpine
-    volumes:
-      - ./nginx/proxy.conf:/etc/nginx/nginx.conf:ro
-    ports:
-      - "3000:80"   # Host:3000 → nginx:80
-    depends_on:
-      - client
-      - server
+    proxy:
+        image: nginx:stable-alpine
+        volumes:
+            - ./nginx/proxy.conf:/etc/nginx/nginx.conf:ro
+        ports:
+            - '${PROXY_HOST_PORT:-3001}:80'
+        depends_on:
+            client:
+                condition: service_healthy
+            server:
+                condition: service_started
 
 volumes:
-  arango-data:
+    arango-data:

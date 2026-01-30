@@ -2,16 +2,16 @@ import { Node, Rect, XYPosition } from '@xyflow/react'
 import { cloneDeep } from 'lodash'
 import { SetStateAction } from 'react'
 import { CardNodeData } from '../../components/deckBuilder/FlowCanvas/Nodes/CardNode'
-import { GroupNodeData } from '../../components/deckBuilder/FlowCanvas/Nodes/GroupNode'
 import { PhantomNodeData } from '../../components/deckBuilder/FlowCanvas/Nodes/PhantomNode'
+import { ZoneNodeData } from '../../components/deckBuilder/FlowCanvas/Nodes/ZoneNode'
 import { FlowZone, MTG_Deck, MTG_DeckCard, MTG_DeckCardInput, Position } from '../../graphql/types'
 
-export type NodeType = Node<CardNodeData | GroupNodeData | PhantomNodeData>
+export type NodeType = Node<CardNodeData | ZoneNodeData | PhantomNodeData>
 
-const isGroupNode = (node: NodeType): node is Node<GroupNodeData> => node.type === 'groupNode'
+export const isZoneNode = (node: NodeType): node is Node<ZoneNodeData> => node.type === 'zoneNode'
 
-const getGroupData = (node: NodeType): GroupNodeData => {
-    const data = node.data as GroupNodeData
+export const getZoneData = (node: NodeType): ZoneNodeData => {
+    const data = node.data as ZoneNodeData
     return {
         ...data,
         cardChildren: data.cardChildren ?? [],
@@ -19,9 +19,9 @@ const getGroupData = (node: NodeType): GroupNodeData => {
     }
 }
 
-const ensureUnique = (values: string[]): string[] => Array.from(new Set(values))
+export const ensureUnique = (values: string[]): string[] => Array.from(new Set(values))
 
-const buildNodeMap = (nodes: NodeType[]) => {
+export const buildNodeMap = (nodes: NodeType[]) => {
     const map = new Map<string, NodeType>()
     nodes.forEach((n) => {
         map.set(n.id, n)
@@ -29,7 +29,7 @@ const buildNodeMap = (nodes: NodeType[]) => {
     return map
 }
 
-const computeAbsolutePosition = (node: NodeType, nodeMap: Map<string, NodeType>): XYPosition => {
+export const computeAbsolutePosition = (node: NodeType, nodeMap: Map<string, NodeType>): XYPosition => {
     const position: XYPosition = { x: node.position.x, y: node.position.y }
     let parentId = node.parentId
     while (parentId) {
@@ -42,7 +42,7 @@ const computeAbsolutePosition = (node: NodeType, nodeMap: Map<string, NodeType>)
     return position
 }
 
-const computeRelativePosition = (
+export const computeRelativePosition = (
     absolute: XYPosition,
     parentId: string | undefined,
     nodeMap: Map<string, NodeType>,
@@ -63,16 +63,16 @@ const computeRelativePosition = (
     return { x: relX, y: relY }
 }
 
-const isDescendant = (nodeMap: Map<string, NodeType>, ancestorId: string, candidateId: string): boolean => {
+export const isDescendant = (nodeMap: Map<string, NodeType>, ancestorId: string, candidateId: string): boolean => {
     const ancestor = nodeMap.get(ancestorId)
-    if (!ancestor || !isGroupNode(ancestor)) return false
-    const stack = [...getGroupData(ancestor).zoneChildren]
+    if (!ancestor || !isZoneNode(ancestor)) return false
+    const stack = [...getZoneData(ancestor).zoneChildren]
     while (stack.length > 0) {
         const currentId = stack.pop()!
         if (currentId === candidateId) return true
         const currentNode = nodeMap.get(currentId)
-        if (currentNode && isGroupNode(currentNode)) {
-            stack.push(...getGroupData(currentNode).zoneChildren)
+        if (currentNode && isZoneNode(currentNode)) {
+            stack.push(...getZoneData(currentNode).zoneChildren)
         }
     }
     return false
@@ -107,11 +107,67 @@ export const sortNodesByNesting = (nodes: NodeType[]): NodeType[] => {
         // Nodes without parentId will come first, then by depth
         if (!a.parentId && b.parentId) return -1
         if (a.parentId && !b.parentId) return 1
-        if (a.type === 'group' && b.type !== 'group') return -1
-        if (a.type !== 'group' && b.type === 'group') return 1
+        if (a.type === 'zoneNode' && b.type !== 'zoneNode') return -1
+        if (a.type !== 'zoneNode' && b.type === 'zoneNode') return 1
 
         return depthA - depthB
     })
+}
+
+// Geometry helpers for intersection selection
+export const rectOf = (node: NodeType, nodeMap: Map<string, NodeType>) => {
+    const abs = computeAbsolutePosition(node, nodeMap)
+    const width = node.width ?? (node.type === 'cardNode' || node.type === 'phantomNode' ? 100 : 0)
+    const height = node.height ?? (node.type === 'cardNode' || node.type === 'phantomNode' ? 140 : 0)
+    return { x: abs.x, y: abs.y, w: width, h: height }
+}
+
+export const overlapArea = (
+    a: { x: number; y: number; w: number; h: number },
+    b: { x: number; y: number; w: number; h: number },
+) => {
+    const xOverlap = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x))
+    const yOverlap = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y))
+    return xOverlap * yOverlap
+}
+
+export const chooseCandidateZone = (
+    node: NodeType,
+    candidates: NodeType[],
+    allNodes: NodeType[],
+): NodeType | undefined => {
+    if (candidates.length === 0) return undefined
+    const nodeMap = buildNodeMap(allNodes)
+    // deepest first
+    const depthMap: Record<string, number> = {}
+    const asRecord: Record<string, Node> = Object.fromEntries(allNodes.map((n) => [n.id, n as unknown as Node]))
+    candidates.forEach((c) => (depthMap[c.id] = getDepth(c as unknown as Node, asRecord)))
+    const maxDepth = Math.max(...candidates.map((c) => depthMap[c.id]))
+    const pool = candidates.filter((c) => depthMap[c.id] === maxDepth)
+    if (pool.length === 1) return pool[0]
+    // largest overlap next
+    const rNode = rectOf(node, nodeMap)
+    let bestArea = -1
+    let best: NodeType[] = []
+    for (const c of pool) {
+        const area = overlapArea(rNode, rectOf(c, nodeMap))
+        if (area > bestArea) {
+            bestArea = area
+            best = [c]
+        } else if (area === bestArea) {
+            best.push(c)
+        }
+    }
+    if (best.length === 1) return best[0]
+    if (best.length === 0) return undefined
+    // tie-breaker: top-left (min y, then min x)
+    best.sort((a, b) => {
+        const ra = rectOf(a, nodeMap)
+        const rb = rectOf(b, nodeMap)
+        if (ra.y !== rb.y) return ra.y - rb.y
+        return ra.x - rb.x
+    })
+    return best[0]
 }
 
 export const onNodeDragStop = (
@@ -131,41 +187,41 @@ export const onNodeDragStop = (
 ) => {
     // Cases:
     // 1. Node is free and not intersecting any other node
-    // 2. Node is free and intersecting a group node
-    // 3. Node is bound to a group node and it is intersecting with it
-    // 4. Node is bound to a group node and it is not intersecting with any other node
-    // 5. Node is bound to a group node and it is intersecting with another group node
+    // 2. Node is free and intersecting a zone node
+    // 3. Node is bound to a zone node and it is intersecting with it
+    // 4. Node is bound to a zone node and it is not intersecting with any other node
+    // 5. Node is bound to a zone node and it is intersecting with another zone node
 
     // If the node is free, we need to check if it is intersecting with any other node
     // If it's not, we don't need to do anything
-    // If it is, we need to check if it's intersecting with a group node
+    // If it is, we need to check if it's intersecting with a zone node
     // If it's not, we don't need to do anything
-    // If it is, we need to bind the node to the group node
-    // In this case, we need to update the node's position to be relative to the group node, subtracting the group node's position from the node's position
-    // We also need to update the group node's data to include the node's id in the childrenIDs array
+    // If it is, we need to bind the node to the zone node
+    // In this case, we need to update the node's position to be relative to the zone node, subtracting the zone node's position from the node's position
+    // We also need to update the zone node's data to include the node's id in the childrenIDs array
 
-    // If the node is bound to a group node, we need to check if it is intersecting with any other node
-    // If it's not, we need to unbind the node from the group node
+    // If the node is bound to a zone node, we need to check if it is intersecting with any other node
+    // If it's not, we need to unbind the node from the zone node
     // In this case, we need to update the node's position to be absolute, setting it back to the original position
-    // We also need to update the group node's data to exclude the node's id from the childrenIDs array
+    // We also need to update the zone node's data to exclude the node's id from the childrenIDs array
 
-    // If the node is bound to a group node and it is intersecting with another group node
-    // We need to check if the node's parent is the same as the intersecting group node
+    // If the node is bound to a zone node and it is intersecting with another zone node
+    // We need to check if the node's parent is the same as the intersecting zone node
     // If it is, we don't need to do anything
-    // If it's not, we need to rebind the node to the intersecting group node
-    // In this case, we may need to update the node's position to be relative to the new group node, adding the original group node's position to the node's position and subtracting the new group node's position from the node's position
-    // We also need to update the group node's data to include the node's id in the childrenIDs array
-    // We also need to update the original group- node's data to exclude the node's id from the childrenIDs array
+    // If it's not, we need to rebind the node to the intersecting zone node
+    // In this case, we may need to update the node's position to be relative to the new zone node, adding the original zone node's position to the node's position and subtracting the new zone node's position from the node's position
+    // We also need to update the zone node's data to include the node's id in the childrenIDs array
+    // We also need to update the original zone node's data to exclude the node's id from the childrenIDs array
 
-    if (isGroupNode(node)) {
+    if (isZoneNode(node)) {
         const nodeMap = buildNodeMap(nodes)
         const currentParentId = node.parentId
         const absolutePosition = computeAbsolutePosition(node, nodeMap)
-        const intersectingGroups = getIntersectingNodes(node).filter(
-            (n) => n.type === 'groupNode' && n.id !== node.id,
+        const intersectingZones = getIntersectingNodes(node).filter(
+            (n) => n.type === 'zoneNode' && n.id !== node.id,
         ) as NodeType[]
 
-        const candidateParent = intersectingGroups.find((candidate) => !isDescendant(nodeMap, node.id, candidate.id))
+        const candidateParent = intersectingZones.find((candidate) => !isDescendant(nodeMap, node.id, candidate.id))
 
         if (!candidateParent && !currentParentId) {
             return
@@ -186,7 +242,7 @@ export const onNodeDragStop = (
                 }
             }
             if (targetParentId && n.id === targetParentId) {
-                const data = getGroupData(n)
+                const data = getZoneData(n)
                 return {
                     ...n,
                     data: {
@@ -196,7 +252,7 @@ export const onNodeDragStop = (
                 }
             }
             if (currentParentId && n.id === currentParentId) {
-                const data = getGroupData(n)
+                const data = getZoneData(n)
                 return {
                     ...n,
                     data: {
@@ -215,33 +271,33 @@ export const onNodeDragStop = (
     // Get the intersecting nodes
     const intersectingNodes = getIntersectingNodes(node)
 
-    // If the node is free and not intersecting any other node or group node
-    if (!node.parentId && (intersectingNodes.length === 0 || intersectingNodes.every((n) => n.type !== 'groupNode'))) {
+    // If the node is free and not intersecting any other node or zone node
+    if (!node.parentId && (intersectingNodes.length === 0 || intersectingNodes.every((n) => n.type !== 'zoneNode'))) {
         return
     }
 
-    // If the node is free and intersecting a group node
-    if (!node.parentId && intersectingNodes.some((n) => n.type === 'groupNode')) {
-        const groupNode = intersectingNodes.find((n) => n.type === 'groupNode') as Node
-        const groupNodeData = groupNode.data as { childrenIDs: string[] }
+    // If the node is free and intersecting a zone node
+    if (!node.parentId && intersectingNodes.some((n) => n.type === 'zoneNode')) {
+        const zoneNode = intersectingNodes.find((n) => n.type === 'zoneNode') as Node
+        const zoneNodeData = zoneNode.data as { childrenIDs: string[] }
         const newNodes = nodes.map((n) => {
             if (n.id === node.id) {
                 const endPosition: XYPosition = {
-                    x: n.position.x - groupNode.position.x,
-                    y: n.position.y - groupNode.position.y,
+                    x: n.position.x - zoneNode.position.x,
+                    y: n.position.y - zoneNode.position.y,
                 }
                 return {
                     ...n,
                     position: endPosition,
-                    parentId: groupNode.id,
+                    parentId: zoneNode.id,
                 }
             }
-            if (n.id === groupNode.id) {
+            if (n.id === zoneNode.id) {
                 return {
                     ...n,
                     data: {
                         ...n.data,
-                        childrenIDs: ensureUnique([...groupNodeData.childrenIDs, node.id]),
+                        childrenIDs: ensureUnique([...zoneNodeData.childrenIDs, node.id]),
                     },
                 }
             }
@@ -251,20 +307,20 @@ export const onNodeDragStop = (
         return
     }
 
-    // If the node is bound to a group node and it is intersecting with it
+    // If the node is bound to a zone node and it is intersecting with it
     if (node.parentId && intersectingNodes.some((n) => n.id === node.parentId)) {
         return
     }
 
-    // If the node is bound to a group node and it is not intersecting with any other node
+    // If the node is bound to a zone node and it is not intersecting with any other node
     if (node.parentId && intersectingNodes.length === 0) {
-        const groupNode = nodes.find((n) => n.id === node.parentId) as Node
-        const groupNodeData = groupNode.data as { childrenIDs: string[] }
+        const zoneNode = nodes.find((n) => n.id === node.parentId) as Node
+        const zoneNodeData = zoneNode.data as { childrenIDs: string[] }
         const newNodes = nodes.map((n) => {
             if (n.id === node.id) {
                 const endPosition: XYPosition = {
-                    x: n.position.x + groupNode.position.x,
-                    y: n.position.y + groupNode.position.y,
+                    x: n.position.x + zoneNode.position.x,
+                    y: n.position.y + zoneNode.position.y,
                 }
                 return {
                     ...n,
@@ -272,12 +328,12 @@ export const onNodeDragStop = (
                     parentId: undefined,
                 }
             }
-            if (n.id === groupNode.id) {
+            if (n.id === zoneNode.id) {
                 return {
                     ...n,
                     data: {
                         ...n.data,
-                        childrenIDs: groupNodeData.childrenIDs.filter((id) => id !== node.id),
+                        childrenIDs: zoneNodeData.childrenIDs.filter((id) => id !== node.id),
                     },
                 }
             }
@@ -287,40 +343,40 @@ export const onNodeDragStop = (
         return
     }
 
-    // If the node is bound to a group node and it is intersecting with another group node
-    // We can be sure that the node is intersecting with a group node, because we already checked for that
-    if (node.parentId && intersectingNodes.some((n) => n.type === 'groupNode')) {
-        const groupNode = intersectingNodes.find((n) => n.type === 'groupNode') as Node
-        const groupNodeData = groupNode.data as { childrenIDs: string[] }
-        const originalGroupNode = nodes.find((n) => n.id === node.parentId) as Node
-        const originalGroupNodeData = originalGroupNode.data as { childrenIDs: string[] }
+    // If the node is bound to a zone node and it is intersecting with another zone node
+    // We can be sure that the node is intersecting with a zone node, because we already checked for that
+    if (node.parentId && intersectingNodes.some((n) => n.type === 'zoneNode')) {
+        const zoneNode = intersectingNodes.find((n) => n.type === 'zoneNode') as Node
+        const zoneNodeData = zoneNode.data as { childrenIDs: string[] }
+        const originalZoneNode = nodes.find((n) => n.id === node.parentId) as Node
+        const originalZoneNodeData = originalZoneNode.data as { childrenIDs: string[] }
         const newNodes = nodes.map((n) => {
             if (n.id === node.id) {
                 const endPosition: XYPosition = {
-                    x: n.position.x + originalGroupNode.position.x - groupNode.position.x,
-                    y: n.position.y + originalGroupNode.position.y - groupNode.position.y,
+                    x: n.position.x + originalZoneNode.position.x - zoneNode.position.x,
+                    y: n.position.y + originalZoneNode.position.y - zoneNode.position.y,
                 }
                 return {
                     ...n,
                     position: endPosition,
-                    parentId: groupNode.id,
+                    parentId: zoneNode.id,
                 }
             }
-            if (n.id === groupNode.id) {
+            if (n.id === zoneNode.id) {
                 return {
                     ...n,
                     data: {
                         ...n.data,
-                        childrenIDs: ensureUnique([...groupNodeData.childrenIDs, node.id]),
+                        childrenIDs: ensureUnique([...zoneNodeData.childrenIDs, node.id]),
                     },
                 }
             }
-            if (n.id === originalGroupNode.id) {
+            if (n.id === originalZoneNode.id) {
                 return {
                     ...n,
                     data: {
                         ...n.data,
-                        childrenIDs: originalGroupNodeData.childrenIDs.filter((id) => id !== node.id),
+                        childrenIDs: originalZoneNodeData.childrenIDs.filter((id) => id !== node.id),
                     },
                 }
             }
@@ -380,12 +436,12 @@ export const organizeNodes = (deck: MTG_Deck | undefined, getNodes: () => NodeTy
     // =====================================================
     const zoneParentRelations: Record<string, string | undefined> = {}
     for (const zone of deck.zones) {
-        const data: GroupNodeData = {
+        const data: ZoneNodeData = {
             label: zone.name,
             cardChildren: zone.cardChildren,
             zoneChildren: zone.zoneChildren,
         }
-        ensureNode(zone.ID, 'groupNode', data, zone.position, undefined, zone.width, zone.height)
+        ensureNode(zone.ID, 'zoneNode', data, zone.position, undefined, zone.width, zone.height)
 
         // Registrar relaciones entre zonas
         zone.zoneChildren?.forEach((childID) => {
@@ -441,7 +497,7 @@ export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTG_DeckCar
     // Separamos los nodes según su tipo
     const cardNodes: Node<CardNodeData>[] = []
     const phantomNodes: Node<PhantomNodeData>[] = []
-    const groupNodes: Node<GroupNodeData>[] = []
+    const zoneNodes: Node<ZoneNodeData>[] = []
 
     for (const node of nodes) {
         if (node.type === 'cardNode') {
@@ -450,8 +506,8 @@ export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTG_DeckCar
         if (node.type === 'phantomNode') {
             phantomNodes.push(node as Node<PhantomNodeData>)
         }
-        if (node.type === 'groupNode') {
-            groupNodes.push(node as Node<GroupNodeData>)
+        if (node.type === 'zoneNode') {
+            zoneNodes.push(node as Node<ZoneNodeData>)
         }
     }
 
@@ -502,16 +558,16 @@ export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTG_DeckCar
 export const calculateZonesFromNodes = (nodes: Node[]): FlowZone[] => {
     const zones: FlowZone[] = []
     for (const node of nodes) {
-        if (node.type === 'groupNode') {
-            const groupNode = node as Node<GroupNodeData>
+        if (node.type === 'zoneNode') {
+            const zoneNode = node as Node<ZoneNodeData>
             zones.push({
-                ID: groupNode.id,
-                name: groupNode.data.label,
-                position: groupNode.position,
-                width: groupNode.width || 0,
-                height: groupNode.height || 0,
-                cardChildren: groupNode.data.cardChildren,
-                zoneChildren: groupNode.data.zoneChildren,
+                ID: zoneNode.id,
+                name: zoneNode.data.label,
+                position: zoneNode.position,
+                width: zoneNode.width || 0,
+                height: zoneNode.height || 0,
+                cardChildren: zoneNode.data.cardChildren,
+                zoneChildren: zoneNode.data.zoneChildren,
             })
         }
     }

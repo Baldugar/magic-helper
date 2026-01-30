@@ -121,7 +121,7 @@ func fetchSets(ctx context.Context) bool {
 			UPSERT { _key: c.code }
 			INSERT MERGE({ _key: c.code }, c)
 			UPDATE c
-			IN MTG_Original_Sets
+			IN mtg_original_sets
 	`)
 
 	aq.AddBindVar("sets", sets)
@@ -151,7 +151,7 @@ func updateDatabaseSets() {
 	log.Info().Msg("Updating database sets")
 
 	aq := arango.NewQuery( /* aql */ `
-		FOR s IN MTG_Original_Sets
+		FOR s IN mtg_original_sets
 			RETURN s
 	`)
 
@@ -208,7 +208,7 @@ func updateDatabaseSets() {
 			UPSERT { _key: s._key }
 			INSERT MERGE({ _key: s._key }, s)
 			UPDATE s
-			IN MTG_Sets
+			IN mtg_sets
 	`)
 
 	aq.AddBindVar("sets", dbSets)
