@@ -1,4 +1,4 @@
-import { Bookmark, Delete } from '@mui/icons-material'
+import { Bookmark, Delete, Save } from '@mui/icons-material'
 import {
     Box,
     Button,
@@ -18,7 +18,8 @@ import { useState } from 'react'
 import { useFilterPresets } from '../../../utils/hooks/useFilterPresets'
 
 export const SavedFiltersPopover = () => {
-    const { presets, savePreset, loadPreset, deletePreset, clearPresets, renamePreset, loading } = useFilterPresets()
+    const { presets, savePreset, loadPreset, updatePreset, deletePreset, clearPresets, renamePreset, loading } =
+        useFilterPresets()
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
     const [presetName, setPresetName] = useState('')
     const [renameTarget, setRenameTarget] = useState<string | null>(null)
@@ -157,10 +158,19 @@ export const SavedFiltersPopover = () => {
                                                     </Button>
                                                 </Stack>
                                             ) : (
-                                                <Stack direction="row" spacing={1}>
+                                                <Stack direction="row" spacing={1} alignItems="center">
                                                     <Button size="small" onClick={() => loadPreset(preset.id)}>
                                                         Aplicar
                                                     </Button>
+                                                    <Tooltip title="Guardar filtros actuales en este preset">
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => void updatePreset(preset.id)}
+                                                            aria-label="Actualizar preset"
+                                                        >
+                                                            <Save fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
                                                     <Button size="small" onClick={() => void handleRename(preset.id)}>
                                                         Renombrar
                                                     </Button>

@@ -153,6 +153,31 @@ export const useFilterPresets = () => {
         [updateMTGFilterPresetMutation],
     )
 
+    const updatePreset = useCallback(
+        async (presetId: string) => {
+            try {
+                const serializedFilter = clone(filter) as unknown as Record<string, unknown>
+                const updated = await updateMTGFilterPresetMutation({
+                    presetID: presetId,
+                    filterState: serializedFilter,
+                    sortState: clone(sort).map((entry) => ({
+                        enabled: entry.enabled,
+                        sortBy: entry.sortBy,
+                        sortDirection: entry.sortDirection,
+                    })),
+                    page: filter.page,
+                })
+                const mapped = mapPresetFromGraph(updated)
+                setPresets((prev) => prev.map((preset) => (preset.id === mapped.id ? mapped : preset)))
+                return true
+            } catch (error) {
+                console.warn('Failed to update filter preset', error)
+                return false
+            }
+        },
+        [updateMTGFilterPresetMutation, filter, sort],
+    )
+
     const sortedPresets = useMemo(
         () => [...presets].sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime()),
         [presets],
@@ -163,6 +188,7 @@ export const useFilterPresets = () => {
         loading,
         savePreset,
         loadPreset,
+        updatePreset,
         deletePreset,
         clearPresets,
         renamePreset,
