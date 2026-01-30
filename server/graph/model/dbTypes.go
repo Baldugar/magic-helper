@@ -84,3 +84,20 @@ func SortInputToState(input []*MtgFilterSortInput) []*MtgFilterSortState {
 	}
 	return states
 }
+
+// MTGTagDB is the persisted form of a tag document in ArangoDB.
+type MTGTagDB struct {
+	ID   *string `json:"_key,omitempty"`
+	Name string  `json:"name"`
+}
+
+// ToModel converts a tag DB document to the GraphQL model.
+func (db *MTGTagDB) ToModel() *MtgTag {
+	if db == nil || db.ID == nil {
+		return nil
+	}
+	return &MtgTag{
+		ID:   *db.ID,
+		Name: db.Name,
+	}
+}

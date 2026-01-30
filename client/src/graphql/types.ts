@@ -53,6 +53,18 @@ export type FlowZoneInput = {
   zoneChildren: Array<Scalars['ID']['input']>;
 };
 
+/** Assign a tag to a card. */
+export type MTG_AssignTagToCardInput = {
+  cardID: Scalars['ID']['input'];
+  tagID: Scalars['ID']['input'];
+};
+
+/** Assign a tag to a deck. */
+export type MTG_AssignTagToDeckInput = {
+  deckID: Scalars['ID']['input'];
+  tagID: Scalars['ID']['input'];
+};
+
 /** Aggregated MTG card entity with curated versions and user context. */
 export type MTG_Card = {
   __typename?: 'MTG_Card';
@@ -70,6 +82,7 @@ export type MTG_Card = {
   oracleText?: Maybe<Scalars['String']['output']>;
   power?: Maybe<Scalars['String']['output']>;
   producedMana?: Maybe<Array<MTG_Color>>;
+  tags: Array<MTG_Tag>;
   toughness?: Maybe<Scalars['String']['output']>;
   typeLine: Scalars['String']['output'];
   versions: Array<MTG_CardVersion>;
@@ -140,6 +153,7 @@ export type MTG_CardVersion_Dashboard = {
 export type MTG_Card_Dashboard = {
   __typename?: 'MTG_Card_Dashboard';
   ID: Scalars['ID']['output'];
+  tags: Array<MTG_Tag>;
   versions: Array<MTG_CardVersion_Dashboard>;
 };
 
@@ -168,6 +182,11 @@ export type MTG_CreateFilterPresetInput = {
   sortState: Array<MTG_Filter_SortInput>;
 };
 
+/** Input to create a new tag. */
+export type MTG_CreateTagInput = {
+  name: Scalars['String']['input'];
+};
+
 /** A user deck with cards, positions, zones and optional front image. */
 export type MTG_Deck = {
   __typename?: 'MTG_Deck';
@@ -176,6 +195,7 @@ export type MTG_Deck = {
   cards: Array<MTG_DeckCard>;
   ignoredCards: Array<Scalars['String']['output']>;
   name: Scalars['String']['output'];
+  tags: Array<MTG_Tag>;
   type: DeckType;
   zones: Array<FlowZone>;
 };
@@ -227,6 +247,7 @@ export type MTG_DeckDashboard = {
   cardFrontImage?: Maybe<MTG_Deck_CardFrontImage>;
   cards: Array<MTG_DeckCard_Dashboard>;
   name: Scalars['String']['output'];
+  tags: Array<MTG_Tag>;
   type: DeckType;
 };
 
@@ -246,6 +267,11 @@ export type MTG_DeleteDeckInput = {
 /** Identifier wrapper for deleting a filter preset. */
 export type MTG_DeleteFilterPresetInput = {
   presetID: Scalars['ID']['input'];
+};
+
+/** Input to delete a tag by ID. */
+export type MTG_DeleteTagInput = {
+  tagID: Scalars['ID']['input'];
 };
 
 /** Saved filter preset tied to a deck. */
@@ -373,6 +399,11 @@ export type MTG_Filter_SearchInput = {
   searchString?: InputMaybe<Scalars['String']['input']>;
   sets: Array<MTG_Filter_SetInput>;
   subtypes: Array<MTG_Filter_SubtypeInput>;
+  /**
+   * Filter by tags: each entry has tag ID and ternary value (TRUE = must have, FALSE = must not have, UNSET = ignore).
+   * Multiple TRUE tags are AND: card must have all of them.
+   */
+  tags: Array<MTG_Filter_TagInput>;
 };
 
 /** Set filter entry with ternary state. */
@@ -416,6 +447,12 @@ export type MTG_Filter_SortState = {
 /** Subtype filter entry with ternary state. */
 export type MTG_Filter_SubtypeInput = {
   subtype: Scalars['String']['input'];
+  value: TernaryBoolean;
+};
+
+/** Tag filter entry with ternary state (like sets). */
+export type MTG_Filter_TagInput = {
+  tagID: Scalars['ID']['input'];
   value: TernaryBoolean;
 };
 
@@ -473,6 +510,25 @@ export enum MTG_Rarity {
   uncommon = 'uncommon'
 }
 
+/** A tag that can be assigned to cards and decks. */
+export type MTG_Tag = {
+  __typename?: 'MTG_Tag';
+  ID: Scalars['ID']['output'];
+  name: Scalars['String']['output'];
+};
+
+/** Unassign a tag from a card. */
+export type MTG_UnassignTagFromCardInput = {
+  cardID: Scalars['ID']['input'];
+  tagID: Scalars['ID']['input'];
+};
+
+/** Unassign a tag from a deck. */
+export type MTG_UnassignTagFromDeckInput = {
+  deckID: Scalars['ID']['input'];
+  tagID: Scalars['ID']['input'];
+};
+
 /** Input to update deck fields, cards, zones and front image. */
 export type MTG_UpdateDeckInput = {
   cardFrontImage?: InputMaybe<MTG_DeckCardFrontImageInput>;
@@ -492,33 +548,65 @@ export type MTG_UpdateFilterPresetInput = {
   sortState?: InputMaybe<Array<MTG_Filter_SortInput>>;
 };
 
+/** Input to update an existing tag. */
+export type MTG_UpdateTagInput = {
+  name?: InputMaybe<Scalars['String']['input']>;
+  tagID: Scalars['ID']['input'];
+};
+
 /** Root-level write operations. */
 export type Mutation = {
   __typename?: 'Mutation';
   /** Mark a card as ignored for a deck. */
   addIgnoredCard: Response;
+  /** Assign a tag to a card. */
+  assignTagToCard: Response;
+  /** Assign a tag to a deck. */
+  assignTagToDeck: Response;
   /** Create a new deck and return its ID in Response.message. */
   createMTGDeck: Response;
   /** Save a new filter preset for a deck. */
   createMTGFilterPreset: MTG_FilterPreset;
+  /** Create a new tag. */
+  createMTGTag: MTG_Tag;
   /** Delete a deck by ID. */
   deleteMTGDeck: Response;
   /** Delete a filter preset. */
   deleteMTGFilterPreset: Response;
+  /** Delete a tag by ID. */
+  deleteMTGTag: Response;
   /** Remove ignored mark from a deck/card pair. */
   removeIgnoredCard: Response;
   /** Create a new deck by copying another deck's data. */
   saveMTGDeckAsCopy: Response;
+  /** Unassign a tag from a card. */
+  unassignTagFromCard: Response;
+  /** Unassign a tag from a deck. */
+  unassignTagFromDeck: Response;
   /** Replace deck fields and card edges. */
   updateMTGDeck: Response;
   /** Update an existing filter preset. */
   updateMTGFilterPreset: MTG_FilterPreset;
+  /** Update an existing tag. */
+  updateMTGTag?: Maybe<MTG_Tag>;
 };
 
 
 /** Root-level write operations. */
 export type MutationaddIgnoredCardArgs = {
   input: AddIgnoredCardInput;
+};
+
+
+/** Root-level write operations. */
+export type MutationassignTagToCardArgs = {
+  input: MTG_AssignTagToCardInput;
+};
+
+
+/** Root-level write operations. */
+export type MutationassignTagToDeckArgs = {
+  input: MTG_AssignTagToDeckInput;
 };
 
 
@@ -535,6 +623,12 @@ export type MutationcreateMTGFilterPresetArgs = {
 
 
 /** Root-level write operations. */
+export type MutationcreateMTGTagArgs = {
+  input: MTG_CreateTagInput;
+};
+
+
+/** Root-level write operations. */
 export type MutationdeleteMTGDeckArgs = {
   input: MTG_DeleteDeckInput;
 };
@@ -543,6 +637,12 @@ export type MutationdeleteMTGDeckArgs = {
 /** Root-level write operations. */
 export type MutationdeleteMTGFilterPresetArgs = {
   input: MTG_DeleteFilterPresetInput;
+};
+
+
+/** Root-level write operations. */
+export type MutationdeleteMTGTagArgs = {
+  input: MTG_DeleteTagInput;
 };
 
 
@@ -559,6 +659,18 @@ export type MutationsaveMTGDeckAsCopyArgs = {
 
 
 /** Root-level write operations. */
+export type MutationunassignTagFromCardArgs = {
+  input: MTG_UnassignTagFromCardInput;
+};
+
+
+/** Root-level write operations. */
+export type MutationunassignTagFromDeckArgs = {
+  input: MTG_UnassignTagFromDeckInput;
+};
+
+
+/** Root-level write operations. */
 export type MutationupdateMTGDeckArgs = {
   input: MTG_UpdateDeckInput;
 };
@@ -567,6 +679,12 @@ export type MutationupdateMTGDeckArgs = {
 /** Root-level write operations. */
 export type MutationupdateMTGFilterPresetArgs = {
   input: MTG_UpdateFilterPresetInput;
+};
+
+
+/** Root-level write operations. */
+export type MutationupdateMTGTagArgs = {
+  input: MTG_UpdateTagInput;
 };
 
 /** A phantom placeholder used for visual grouping on the board. */
@@ -609,6 +727,10 @@ export type Query = {
   getMTGFilterPresets: Array<MTG_FilterPreset>;
   /** Return available filter options (types, layouts, expansions, legalities). */
   getMTGFilters: MTG_Filter_Entries;
+  /** Return a single tag by ID. */
+  getMTGTag?: Maybe<MTG_Tag>;
+  /** List all tags. */
+  getMTGTags: Array<MTG_Tag>;
 };
 
 
@@ -629,6 +751,12 @@ export type QuerygetMTGDeckArgs = {
 /** Root-level read operations. */
 export type QuerygetMTGFilterPresetsArgs = {
   deckID: Scalars['ID']['input'];
+};
+
+
+/** Root-level read operations. */
+export type QuerygetMTGTagArgs = {
+  tagID: Scalars['ID']['input'];
 };
 
 /** Remove an ignored mark for a deck/card pair. */

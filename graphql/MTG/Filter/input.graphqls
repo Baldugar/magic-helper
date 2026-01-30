@@ -18,6 +18,19 @@ input MTG_Filter_SearchInput {
     commander: ID
     deckID: ID
     isSelectingCommander: Boolean!
+    """
+    Filter by tags: each entry has tag ID and ternary value (TRUE = must have, FALSE = must not have, UNSET = ignore).
+    Multiple TRUE tags are AND: card must have all of them.
+    """
+    tags: [MTG_Filter_TagInput!]!
+}
+
+"""
+Tag filter entry with ternary state (like sets).
+"""
+input MTG_Filter_TagInput {
+    tagID: ID!
+    value: TernaryBoolean!
 }
 
 """

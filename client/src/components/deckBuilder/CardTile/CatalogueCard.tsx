@@ -2,8 +2,9 @@ import { Close } from '@mui/icons-material'
 import { ButtonBase, Dialog, DialogContent, DialogTitle, Grid, useMediaQuery } from '@mui/material'
 import { useReactFlow } from '@xyflow/react'
 import { clone } from 'lodash'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
+import { useMTGCards } from '../../../context/MTGA/Cards/useMTGCards'
 import { useMTGDeckCreatorLogic } from '../../../context/MTGA/DeckCreator/Logic/useMTGDeckCreatorLogic'
 import { useMTGDeckCreatorUI } from '../../../context/MTGA/DeckCreator/UI/useMTGDeckCreatorUI'
 import { useMTGDecks } from '../../../context/MTGA/Decks/useMTGDecks'
@@ -16,6 +17,7 @@ import { findNextAvailablePosition, NodeType } from '../../../utils/functions/no
 import { ContextMenu } from '../../../utils/hooks/ContextMenu/ContextMenu'
 import { ContextMenuOption } from '../../../utils/hooks/ContextMenu/types'
 import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
+import { CreateTagDialog } from '../FilterBar/TagDialogs/CreateTagDialog'
 import { PhantomNodeData } from '../FlowCanvas/Nodes/PhantomNode'
 import { MTGCardWithHover } from './MTGCardWithHover'
 import { VersionCard } from './VersionCard'
@@ -43,6 +45,11 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
     const { setOpenedCardDialog } = useMTGDeckCreatorUI()
     const { setNodes } = useReactFlow<NodeType>()
     const { filter, setFilter } = useMTGFilter()
+    const { refetch: refetchCards } = useMTGCards()
+    const cardRef = useRef(card)
+    cardRef.current = card
+    const [tagOptionsForMenu, setTagOptionsForMenu] = useState<ContextMenuOption[] | null>(null)
+    const [openCreateTagDialog, setOpenCreateTagDialog] = useState(false)
     const {
         anchorRef: mainCardAnchorRef,
         handleClick: mainCardHandleClick,
@@ -57,6 +64,55 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
 
     // Track long-press position for mobile context menu
     const [mobilePosition, setMobilePosition] = useState<{ x: number; y: number } | undefined>(undefined)
+
+    useEffect(() => {
+        if (!mainCardOpen) {
+            setTagOptionsForMenu(null)
+            return
+        }
+        if (tagOptionsForMenu === null) {
+            setTagOptionsForMenu([{ label: 'Loading...' }])
+            MTGFunctions.queries
+                .getMTGTagsQuery()
+                .then((tags) => {
+                    const cardTagIds = new Set((card.tags ?? []).map((t) => t.ID))
+                    setTagOptionsForMenu(
+                        tags.map((tag) => ({
+                            id: tag.ID,
+                            label: tag.name,
+                            selected: cardTagIds.has(tag.ID),
+                            action: () => {
+                                const c = cardRef.current
+                                if (!c) return
+                                const currentlyHas = (c.tags ?? []).some((t) => t.ID === tag.ID)
+                                if (currentlyHas) {
+                                    MTGFunctions.mutations
+                                        .unassignTagFromCardMutation({ cardID: c.ID, tagID: tag.ID })
+                                        .then(() => refetchCards())
+                                } else {
+                                    MTGFunctions.mutations
+                                        .assignTagToCardMutation({ cardID: c.ID, tagID: tag.ID })
+                                        .then(() => refetchCards())
+                                }
+                            },
+                        })),
+                    )
+                })
+                .catch(() => setTagOptionsForMenu([{ label: 'Failed to load tags' }]))
+        } else if (
+            tagOptionsForMenu.length > 0 &&
+            tagOptionsForMenu.every((o) => o.id) &&
+            !tagOptionsForMenu.some((o) => o.label === 'Loading...' || o.label === 'Failed to load tags')
+        ) {
+            setTagOptionsForMenu((prev) =>
+                (prev ?? []).map((opt) => ({
+                    ...opt,
+                    selected: (card.tags ?? []).some((t) => t.ID === opt.id),
+                })),
+            )
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- tagOptionsForMenu intentionally omitted to trigger load when null
+    }, [mainCardOpen, card.ID, card.tags, refetchCards])
 
     // Use default-marked version, or first version when filter (e.g. games) leaves none marked default
     const defaultVersion = card.versions.find((v) => v.isDefault) ?? card.versions[0]
@@ -225,6 +281,27 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
             ],
         },
         {
+            id: 'assignTag',
+            label: 'Assign tag',
+            shouldKeepOpen: true,
+            subMenu: [
+                {
+                    id: 'createTag',
+                    label: 'Create new tag...',
+                    action: () => {
+                        mainCardHandleClose()
+                        setOpenCreateTagDialog(true)
+                    },
+                },
+                ...(tagOptionsForMenu === null ||
+                (tagOptionsForMenu.length === 1 && tagOptionsForMenu[0].label === 'Loading...')
+                    ? [{ label: 'Loading...' }]
+                    : tagOptionsForMenu.every((o) => !o.action)
+                      ? tagOptionsForMenu
+                      : tagOptionsForMenu),
+            ],
+        },
+        {
             label: 'Add as deck image',
             action: () => {
                 if (!deck) return
@@ -375,6 +452,20 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
                 }}
                 handleClick={mainCardHandleClick}
                 mobilePosition={mobilePosition}
+            />
+            <CreateTagDialog
+                open={openCreateTagDialog}
+                onClose={() => setOpenCreateTagDialog(false)}
+                onCreated={(tag) => {
+                    const c = cardRef.current
+                    if (c) {
+                        MTGFunctions.mutations
+                            .assignTagToCardMutation({ cardID: c.ID, tagID: tag.ID })
+                            .then(() => refetchCards())
+                    }
+                    setTagOptionsForMenu(null)
+                    setOpenCreateTagDialog(false)
+                }}
             />
             <Dialog
                 open={showAllVersions}

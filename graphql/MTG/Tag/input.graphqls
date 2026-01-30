@@ -1,0 +1,53 @@
+"""
+Input to create a new tag.
+"""
+input MTG_CreateTagInput {
+    name: String!
+}
+
+"""
+Input to update an existing tag.
+"""
+input MTG_UpdateTagInput {
+    tagID: ID!
+    name: String
+}
+
+"""
+Input to delete a tag by ID.
+"""
+input MTG_DeleteTagInput {
+    tagID: ID!
+}
+
+"""
+Assign a tag to a card.
+"""
+input MTG_AssignTagToCardInput {
+    tagID: ID!
+    cardID: ID!
+}
+
+"""
+Unassign a tag from a card.
+"""
+input MTG_UnassignTagFromCardInput {
+    tagID: ID!
+    cardID: ID!
+}
+
+"""
+Assign a tag to a deck.
+"""
+input MTG_AssignTagToDeckInput {
+    tagID: ID!
+    deckID: ID!
+}
+
+"""
+Unassign a tag from a deck.
+"""
+input MTG_UnassignTagFromDeckInput {
+    tagID: ID!
+    deckID: ID!
+}

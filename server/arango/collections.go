@@ -87,7 +87,8 @@ var EDGE_COLLECTIONS_ARRAY = []ArangoEdge{
 type ArangoIndexEnum string
 
 const (
-	MTG_CARDS_BUILDUP_INDEX ArangoIndexEnum = "mtg_cards_buildup"
+	MTG_CARDS_BUILDUP_INDEX   ArangoIndexEnum = "mtg_cards_buildup"
+	MTG_TAGS_NAME_UNIQUE_INDEX ArangoIndexEnum = "mtg_tags_name_unique"
 )
 
 func (i ArangoIndexEnum) String() string {
@@ -114,6 +115,16 @@ var INDEX_ARRAY ArangoIndexMap = map[ArangoIndexEnum]ArangoIndexStruct{
 			Unique: false,
 			Sparse: false,
 			Name:   MTG_CARDS_BUILDUP_INDEX.String(),
+		},
+	},
+	MTG_TAGS_NAME_UNIQUE_INDEX: {
+		CollectionName: MTG_TAGS_COLLECTION.String(),
+		IsEdge:         false,
+		Fields:         []string{"name"},
+		Options: &arangoDriver.EnsurePersistentIndexOptions{
+			Unique: true,
+			Sparse: false,
+			Name:   MTG_TAGS_NAME_UNIQUE_INDEX.String(),
 		},
 	},
 }

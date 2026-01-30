@@ -43,6 +43,16 @@ func (r *queryResolver) GetMTGFilterPresets(ctx context.Context, deckID string) 
 	return mtg.GetMTGFilterPresets(ctx, deckID)
 }
 
+// GetMTGTags is the resolver for the getMTGTags field.
+func (r *queryResolver) GetMTGTags(ctx context.Context) ([]*model.MtgTag, error) {
+	return mtg.GetMTGTags(ctx)
+}
+
+// GetMTGTag is the resolver for the getMTGTag field.
+func (r *queryResolver) GetMTGTag(ctx context.Context, tagID string) (*model.MtgTag, error) {
+	return mtg.GetMTGTag(ctx, tagID)
+}
+
 // Query returns gentypes.QueryResolver implementation.
 func (r *Resolver) Query() gentypes.QueryResolver { return &queryResolver{r} }
 

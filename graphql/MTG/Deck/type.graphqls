@@ -9,6 +9,7 @@ type MTG_Deck {
     cards: [MTG_DeckCard!]!
     zones: [FlowZone!]!
     ignoredCards: [String!]!
+    tags: [MTG_Tag!]!
 }
 
 """
@@ -40,6 +41,7 @@ type MTG_DeckDashboard {
     type: DeckType!
     cardFrontImage: MTG_Deck_CardFrontImage
     cards: [MTG_DeckCard_Dashboard!]!
+    tags: [MTG_Tag!]!
 }
 
 """

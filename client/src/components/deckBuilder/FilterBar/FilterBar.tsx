@@ -16,6 +16,7 @@ import {
     useMediaQuery,
 } from '@mui/material'
 import { MouseEvent, useState } from 'react'
+import { useMTGCards } from '../../../context/MTGA/Cards/useMTGCards'
 import { useMTGDeckCreatorLogic } from '../../../context/MTGA/DeckCreator/Logic/useMTGDeckCreatorLogic'
 import { useMTGDeckCreatorUI } from '../../../context/MTGA/DeckCreator/UI/useMTGDeckCreatorUI'
 import { initialMTGFilter } from '../../../context/MTGA/Filter/MTGFilterContext'
@@ -30,16 +31,20 @@ import ManaSelector from './controls/ManaSelector'
 import RaritySelector from './controls/RaritySelector'
 import SetSelector from './controls/SetSelector'
 import { SortBuilder } from './controls/SortBuilder'
+import TagSelector from './controls/TagSelector'
 import TypeSelector from './controls/TypeSelector'
 import { SavedFiltersPopover } from './SavedFiltersPopover'
+import { ManageTagsDialog } from './TagDialogs/ManageTagsDialog'
 
 export const FilterBar = () => {
     const { filter, setFilter, setIgnoredCardIDs } = useMTGFilter()
+    const { refetch: refetchCards } = useMTGCards()
     const { stickyCardsGrid, setStickyCardsGrid } = useMTGDeckCreatorUI()
     const { deck } = useMTGDeckCreatorLogic()
     const isMobile = useMediaQuery('(max-width: 600px)')
     const [searchAnchorEl, setSearchAnchorEl] = useState<null | HTMLElement>(null)
     const [search, setSearch] = useState<string>('')
+    const [manageTagsOpen, setManageTagsOpen] = useState(false)
     const searchOpen = Boolean(searchAnchorEl)
     const openSearchMenu = (event: MouseEvent<HTMLButtonElement>) => {
         setSearchAnchorEl(event.currentTarget)
@@ -267,6 +272,25 @@ export const FilterBar = () => {
                 }}
             />
             <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
+            <TagSelector
+                selected={filter.tags}
+                onNext={(tagID) => {
+                    setFilter((prev) => ({
+                        ...prev,
+                        tags: { ...prev.tags, [tagID]: nextTB(prev.tags[tagID]) },
+                        page: 0,
+                    }))
+                }}
+                onPrev={(tagID) => {
+                    setFilter((prev) => ({
+                        ...prev,
+                        tags: { ...prev.tags, [tagID]: prevTB(prev.tags[tagID]) },
+                        page: 0,
+                    }))
+                }}
+                onManageClick={() => setManageTagsOpen(true)}
+            />
+            <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
             <GameSelector
                 selected={filter.games}
                 onNext={(game) => {
@@ -323,6 +347,11 @@ export const FilterBar = () => {
                     {stickyCardsGrid ? <PushPinIcon color="primary" /> : <PushPinOutlinedIcon />}
                 </IconButton>
             )}
+            <ManageTagsDialog
+                open={manageTagsOpen}
+                onClose={() => setManageTagsOpen(false)}
+                onTagsChanged={() => void refetchCards()}
+            />
         </Grid>
     )
 }

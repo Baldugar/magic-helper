@@ -1,0 +1,7 @@
+"""
+A tag that can be assigned to cards and decks.
+"""
+type MTG_Tag {
+    ID: ID! @goTag(key: "json", value: "_key")
+    name: String!
+}

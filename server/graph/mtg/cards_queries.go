@@ -24,7 +24,12 @@ func GetMTGCards(ctx context.Context) ([]*model.MtgCard, error) {
 				indexHint: "mtg_cards_buildup"
 			}
 			FILTER (doc.manaCost == "" AND doc.layout != "meld") OR doc.manaCost != ""
-			RETURN doc
+			LET tags = (
+				FOR tag IN 1..1 INBOUND doc mtg_tag_to_card
+				SORT tag.name ASC
+				RETURN { _key: tag._key, name: tag.name }
+			)
+			RETURN MERGE(doc, { tags })
 	`)
 
 	// Build the query
@@ -49,6 +54,9 @@ func GetMTGCards(ctx context.Context) ([]*model.MtgCard, error) {
 		if err != nil {
 			log.Error().Err(err).Msgf("GetMTGCards: Error reading document")
 			return nil, err
+		}
+		if card.Tags == nil {
+			card.Tags = []*model.MtgTag{}
 		}
 		cards = append(cards, &card)
 	}
@@ -500,6 +508,12 @@ func GetMTGCardsFiltered(ctx context.Context, filter model.MtgFilterSearchInput,
 				cardCopy.Versions = effective
 				pagedCards[i] = &cardCopy
 			}
+		}
+	}
+	// Ensure tags slice is never nil (e.g. when cards come from index built without tags).
+	for _, card := range pagedCards {
+		if card.Tags == nil {
+			card.Tags = []*model.MtgTag{}
 		}
 	}
 

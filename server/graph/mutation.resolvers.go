@@ -58,6 +58,41 @@ func (r *mutationResolver) RemoveIgnoredCard(ctx context.Context, input model.Re
 	return mtg.RemoveIgnoredCard(ctx, input)
 }
 
+// CreateMTGTag is the resolver for the createMTGTag field.
+func (r *mutationResolver) CreateMTGTag(ctx context.Context, input model.MtgCreateTagInput) (*model.MtgTag, error) {
+	return mtg.CreateMTGTag(ctx, input)
+}
+
+// UpdateMTGTag is the resolver for the updateMTGTag field.
+func (r *mutationResolver) UpdateMTGTag(ctx context.Context, input model.MtgUpdateTagInput) (*model.MtgTag, error) {
+	return mtg.UpdateMTGTag(ctx, input)
+}
+
+// DeleteMTGTag is the resolver for the deleteMTGTag field.
+func (r *mutationResolver) DeleteMTGTag(ctx context.Context, input model.MtgDeleteTagInput) (*model.Response, error) {
+	return mtg.DeleteMTGTag(ctx, input)
+}
+
+// AssignTagToCard is the resolver for the assignTagToCard field.
+func (r *mutationResolver) AssignTagToCard(ctx context.Context, input model.MtgAssignTagToCardInput) (*model.Response, error) {
+	return mtg.AssignTagToCard(ctx, input)
+}
+
+// UnassignTagFromCard is the resolver for the unassignTagFromCard field.
+func (r *mutationResolver) UnassignTagFromCard(ctx context.Context, input model.MtgUnassignTagFromCardInput) (*model.Response, error) {
+	return mtg.UnassignTagFromCard(ctx, input)
+}
+
+// AssignTagToDeck is the resolver for the assignTagToDeck field.
+func (r *mutationResolver) AssignTagToDeck(ctx context.Context, input model.MtgAssignTagToDeckInput) (*model.Response, error) {
+	return mtg.AssignTagToDeck(ctx, input)
+}
+
+// UnassignTagFromDeck is the resolver for the unassignTagFromDeck field.
+func (r *mutationResolver) UnassignTagFromDeck(ctx context.Context, input model.MtgUnassignTagFromDeckInput) (*model.Response, error) {
+	return mtg.UnassignTagFromDeck(ctx, input)
+}
+
 // Mutation returns gentypes.MutationResolver implementation.
 func (r *Resolver) Mutation() gentypes.MutationResolver { return &mutationResolver{r} }
 

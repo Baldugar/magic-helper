@@ -6,6 +6,7 @@ type MTGCardsContextType = {
     totalCount: number
     loading: boolean
     goToPage: (page: number) => Promise<void>
+    refetch: () => Promise<void>
 }
 
 export const MTGCardsContext = createContext<MTGCardsContextType>({
@@ -13,4 +14,5 @@ export const MTGCardsContext = createContext<MTGCardsContextType>({
     totalCount: 0,
     loading: true,
     goToPage: async () => {},
+    refetch: async () => {},
 })

@@ -41,4 +41,33 @@ type Mutation {
     Remove ignored mark from a deck/card pair.
     """
     removeIgnoredCard(input: RemoveIgnoredCardInput!): Response!
+    # Tags
+    """
+    Create a new tag.
+    """
+    createMTGTag(input: MTG_CreateTagInput!): MTG_Tag!
+    """
+    Update an existing tag.
+    """
+    updateMTGTag(input: MTG_UpdateTagInput!): MTG_Tag
+    """
+    Delete a tag by ID.
+    """
+    deleteMTGTag(input: MTG_DeleteTagInput!): Response!
+    """
+    Assign a tag to a card.
+    """
+    assignTagToCard(input: MTG_AssignTagToCardInput!): Response!
+    """
+    Unassign a tag from a card.
+    """
+    unassignTagFromCard(input: MTG_UnassignTagFromCardInput!): Response!
+    """
+    Assign a tag to a deck.
+    """
+    assignTagToDeck(input: MTG_AssignTagToDeckInput!): Response!
+    """
+    Unassign a tag from a deck.
+    """
+    unassignTagFromDeck(input: MTG_UnassignTagFromDeckInput!): Response!
 }

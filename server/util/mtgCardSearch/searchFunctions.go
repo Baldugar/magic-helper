@@ -373,6 +373,11 @@ func passesFilter(card *model.MtgCard, filter model.MtgFilterSearchInput, ignore
 		return false
 	}
 
+	// Tag filtering: ternary like sets (TRUE = must have, FALSE = must not have, UNSET = ignore). Multiple TRUE = AND.
+	if !passesTagFilter(card, filter.Tags) {
+		return false
+	}
+
 	// Hide unreleased: at least one effective version must have ReleasedAt <= today
 	if filter.HideUnreleased {
 		if !cardHasReleasedVersionFromVersions(versions) {
@@ -1060,6 +1065,47 @@ func passesGameFilter(card *model.MtgCard, gameFilters []*model.MtgFilterGameInp
 		return true
 	}
 	return len(effectiveVersionsForGames(card, gameFilters)) > 0
+}
+
+// passesTagFilter returns true if no tag filter is set, or if the card matches (ternary like sets).
+// TRUE = card must have this tag (AND across all TRUE). FALSE = card must not have this tag. UNSET = ignore.
+func passesTagFilter(card *model.MtgCard, tagFilters []*model.MtgFilterTagInput) bool {
+	if len(tagFilters) == 0 {
+		return true
+	}
+	cardTagIDs := make(map[string]struct{}, len(card.Tags))
+	if card.Tags != nil {
+		for _, tag := range card.Tags {
+			if tag != nil {
+				cardTagIDs[tag.ID] = struct{}{}
+			}
+		}
+	}
+	var positiveTagIDs, negativeTagIDs []string
+	for _, entry := range tagFilters {
+		if entry == nil {
+			continue
+		}
+		switch entry.Value {
+		case model.TernaryBooleanTrue:
+			positiveTagIDs = append(positiveTagIDs, entry.TagID)
+		case model.TernaryBooleanFalse:
+			negativeTagIDs = append(negativeTagIDs, entry.TagID)
+		case model.TernaryBooleanUnset:
+			// ignore
+		}
+	}
+	for _, tagID := range positiveTagIDs {
+		if _, ok := cardTagIDs[tagID]; !ok {
+			return false
+		}
+	}
+	for _, tagID := range negativeTagIDs {
+		if _, ok := cardTagIDs[tagID]; ok {
+			return false
+		}
+	}
+	return true
 }
 
 // compareBySortCriteria compares two cards based on a sort criteria.

@@ -30,4 +30,13 @@ type Query {
     List saved filter presets for a deck.
     """
     getMTGFilterPresets(deckID: ID!): [MTG_FilterPreset!]!
+    # Tags
+    """
+    List all tags.
+    """
+    getMTGTags: [MTG_Tag!]!
+    """
+    Return a single tag by ID.
+    """
+    getMTGTag(tagID: ID!): MTG_Tag
 }

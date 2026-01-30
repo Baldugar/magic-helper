@@ -160,6 +160,9 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
             toReturn.filter.commander = filter.commander
             toReturn.filter.isSelectingCommander = filter.isSelectingCommander
 
+            const tags = Object.entries(filter.tags).filter(([_, value]) => isNotUnsetTB(value))
+            toReturn.filter.tags = tags.map(([tagID, value]) => ({ tagID, value }))
+
             return toReturn
         },
         // ignoredCardIDs is not used but is needed to trigger the filtering if the user has the "Hide Ignored" filter enabled

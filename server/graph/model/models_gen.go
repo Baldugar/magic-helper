@@ -36,6 +36,18 @@ type FlowZoneInput struct {
 	ZoneChildren []string       `json:"zoneChildren"`
 }
 
+// Assign a tag to a card.
+type MtgAssignTagToCardInput struct {
+	TagID  string `json:"tagID"`
+	CardID string `json:"cardID"`
+}
+
+// Assign a tag to a deck.
+type MtgAssignTagToDeckInput struct {
+	TagID  string `json:"tagID"`
+	DeckID string `json:"deckID"`
+}
+
 // Aggregated MTG card entity with curated versions and user context.
 type MtgCard struct {
 	ID             string            `json:"_key"`
@@ -55,6 +67,7 @@ type MtgCard struct {
 	Toughness      *string           `json:"toughness,omitempty"`
 	TypeLine       string            `json:"typeLine"`
 	Versions       []*MtgCardVersion `json:"versions"`
+	Tags           []*MtgTag         `json:"tags"`
 }
 
 // One face of a multi-faced card version.
@@ -118,6 +131,7 @@ type MtgCardVersionDashboard struct {
 type MtgCardDashboard struct {
 	ID       string                     `json:"_key"`
 	Versions []*MtgCardVersionDashboard `json:"versions"`
+	Tags     []*MtgTag                  `json:"tags"`
 }
 
 // Input to create a new deck.
@@ -135,6 +149,11 @@ type MtgCreateFilterPresetInput struct {
 	Page        int                   `json:"page"`
 }
 
+// Input to create a new tag.
+type MtgCreateTagInput struct {
+	Name string `json:"name"`
+}
+
 // A user deck with cards, positions, zones and optional front image.
 type MtgDeck struct {
 	ID             string                 `json:"_key"`
@@ -144,6 +163,7 @@ type MtgDeck struct {
 	Cards          []*MtgDeckCard         `json:"cards"`
 	Zones          []*FlowZone            `json:"zones"`
 	IgnoredCards   []string               `json:"ignoredCards"`
+	Tags           []*MtgTag              `json:"tags"`
 }
 
 // A card entry in a deck with selection and positioning metadata.
@@ -185,6 +205,7 @@ type MtgDeckDashboard struct {
 	Type           DeckType                `json:"type"`
 	CardFrontImage *MtgDeckCardFrontImage  `json:"cardFrontImage,omitempty"`
 	Cards          []*MtgDeckCardDashboard `json:"cards"`
+	Tags           []*MtgTag               `json:"tags"`
 }
 
 // Selected front image for a deck, referencing a card version.
@@ -202,6 +223,11 @@ type MtgDeleteDeckInput struct {
 // Identifier wrapper for deleting a filter preset.
 type MtgDeleteFilterPresetInput struct {
 	PresetID string `json:"presetID"`
+}
+
+// Input to delete a tag by ID.
+type MtgDeleteTagInput struct {
+	TagID string `json:"tagID"`
 }
 
 // Saved filter preset tied to a deck.
@@ -323,6 +349,9 @@ type MtgFilterSearchInput struct {
 	Commander            *string                   `json:"commander,omitempty"`
 	DeckID               *string                   `json:"deckID,omitempty"`
 	IsSelectingCommander bool                      `json:"isSelectingCommander"`
+	// Filter by tags: each entry has tag ID and ternary value (TRUE = must have, FALSE = must not have, UNSET = ignore).
+	// Multiple TRUE tags are AND: card must have all of them.
+	Tags []*MtgFilterTagInput `json:"tags"`
 }
 
 // Set filter entry with ternary state.
@@ -351,6 +380,12 @@ type MtgFilterSubtypeInput struct {
 	Value   TernaryBoolean `json:"value"`
 }
 
+// Tag filter entry with ternary state (like sets).
+type MtgFilterTagInput struct {
+	TagID string         `json:"tagID"`
+	Value TernaryBoolean `json:"value"`
+}
+
 // Image URLs in multiple sizes from Scryfall.
 type MtgImage struct {
 	ArtCrop    string `json:"artCrop"`
@@ -359,6 +394,24 @@ type MtgImage struct {
 	Normal     string `json:"normal"`
 	Png        string `json:"PNG"`
 	Small      string `json:"small"`
+}
+
+// A tag that can be assigned to cards and decks.
+type MtgTag struct {
+	ID   string `json:"_key"`
+	Name string `json:"name"`
+}
+
+// Unassign a tag from a card.
+type MtgUnassignTagFromCardInput struct {
+	TagID  string `json:"tagID"`
+	CardID string `json:"cardID"`
+}
+
+// Unassign a tag from a deck.
+type MtgUnassignTagFromDeckInput struct {
+	TagID  string `json:"tagID"`
+	DeckID string `json:"deckID"`
 }
 
 // Input to update deck fields, cards, zones and front image.
@@ -378,6 +431,12 @@ type MtgUpdateFilterPresetInput struct {
 	FilterState map[string]any        `json:"filterState,omitempty"`
 	SortState   []*MtgFilterSortInput `json:"sortState,omitempty"`
 	Page        *int                  `json:"page,omitempty"`
+}
+
+// Input to update an existing tag.
+type MtgUpdateTagInput struct {
+	TagID string  `json:"tagID"`
+	Name  *string `json:"name,omitempty"`
 }
 
 // Root-level write operations.

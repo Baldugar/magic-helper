@@ -79,6 +79,10 @@ export const MTG_CardFragments = gql`
         keywords
         loyalty
         manaCost
+        tags {
+            ID
+            name
+        }
     }
     ${MTG_ImageFragments}
 `

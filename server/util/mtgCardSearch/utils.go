@@ -231,6 +231,52 @@ func IsIndexReady() bool {
 	return len(index.AllCards) > 0
 }
 
+// UpdateCardTagsInIndex updates the Tags slice for the card with the given ID in the index.
+// No-op if the index is not ready or the card is not found.
+func UpdateCardTagsInIndex(cardID string, tags []*model.MtgTag) {
+	index := GetCardIndex()
+	index.mutex.Lock()
+	defer index.mutex.Unlock()
+
+	if len(index.AllCards) == 0 {
+		return
+	}
+	for _, card := range index.AllCards {
+		if card != nil && card.ID == cardID {
+			if tags == nil {
+				card.Tags = []*model.MtgTag{}
+			} else {
+				card.Tags = tags
+			}
+			return
+		}
+	}
+}
+
+// RemoveTagFromAllCardsInIndex removes the tag with the given ID from every card in the index that has it.
+// Called when a tag is deleted so the index stays in sync with the DB.
+func RemoveTagFromAllCardsInIndex(tagID string) {
+	index := GetCardIndex()
+	index.mutex.Lock()
+	defer index.mutex.Unlock()
+
+	if len(index.AllCards) == 0 {
+		return
+	}
+	for _, card := range index.AllCards {
+		if card == nil || card.Tags == nil {
+			continue
+		}
+		newTags := make([]*model.MtgTag, 0, len(card.Tags))
+		for _, t := range card.Tags {
+			if t != nil && t.ID != tagID {
+				newTags = append(newTags, t)
+			}
+		}
+		card.Tags = newTags
+	}
+}
+
 func CalculateQuery(s string) Query {
 	// Normalize input by converting to lowercase
 	s = strings.ToLower(s)

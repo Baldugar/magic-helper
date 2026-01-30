@@ -34,9 +34,19 @@ func GetMTGDecks(ctx context.Context) ([]*model.MtgDeckDashboard, error) {
 				FOR card, edge IN 1..1 INBOUND doc mtg_card_deck
 				FILTER card != null
 				SORT edge.position.x ASC, edge.position.y ASC
-				RETURN MERGE(edge, {card})
+				LET cardTags = (
+					FOR tag IN 1..1 INBOUND card mtg_tag_to_card
+					SORT tag.name ASC
+					RETURN { _key: tag._key, name: tag.name }
+				)
+				RETURN MERGE(edge, { card: MERGE(card, { tags: cardTags }) })
 			)
-		RETURN MERGE(doc, {cardFrontImage, cards})
+			LET tags = (
+				FOR tag IN 1..1 INBOUND doc mtg_tag_to_deck
+				SORT tag.name ASC
+				RETURN { _key: tag._key, name: tag.name }
+			)
+		RETURN MERGE(doc, {cardFrontImage, cards, tags})
 	`)
 
 	log.Info().Str("query", aq.Query).Msg("GetMTGADecks: Querying database")
@@ -56,7 +66,9 @@ func GetMTGDecks(ctx context.Context) ([]*model.MtgDeckDashboard, error) {
 			log.Error().Err(err).Msgf("GetMTGADecks: Error reading document")
 			return nil, err
 		}
-
+		if deck.Tags == nil {
+			deck.Tags = []*model.MtgTag{}
+		}
 		decks = append(decks, &deck)
 	}
 
@@ -90,8 +102,13 @@ func GetMTGDeck(ctx context.Context, deckID string) (*model.MtgDeck, error) {
 			LET cards = (
 				FOR card, edge IN 1..1 INBOUND doc mtg_card_deck
 				SORT edge.position.x ASC, edge.position.y ASC
-				RETURN MERGE(edge, {					
-					card,
+				LET cardTags = (
+					FOR tag IN 1..1 INBOUND card mtg_tag_to_card
+					SORT tag.name ASC
+					RETURN { _key: tag._key, name: tag.name }
+				)
+				RETURN MERGE(edge, {
+					card: MERGE(card, { tags: cardTags }),
 					count: edge.count,
 					position: edge.position,
 					deckCardType: edge.deckCardType,
@@ -102,7 +119,12 @@ func GetMTGDeck(ctx context.Context, deckID string) (*model.MtgDeck, error) {
 				FOR card, edge IN 1..1 OUTBOUND CONCAT("mtg_decks/", doc._key) mtg_deck_ignore_card
 				RETURN card._key
 			)
-		RETURN MERGE(doc, {cardFrontImage, cards, ignoredCards})
+			LET tags = (
+				FOR tag IN 1..1 INBOUND doc mtg_tag_to_deck
+				SORT tag.name ASC
+				RETURN { _key: tag._key, name: tag.name }
+			)
+		RETURN MERGE(doc, {cardFrontImage, cards, ignoredCards, tags})
 	`)
 
 	aq.AddBindVar("deckID", deckID)
@@ -120,6 +142,9 @@ func GetMTGDeck(ctx context.Context, deckID string) (*model.MtgDeck, error) {
 	if err != nil {
 		log.Error().Err(err).Msgf("GetMTGDeck: Error reading document")
 		return nil, err
+	}
+	if deck.Tags == nil {
+		deck.Tags = []*model.MtgTag{}
 	}
 
 	log.Info().Msg("GetMTGDeck: Finished")

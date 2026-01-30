@@ -61,8 +61,20 @@ export const MTGCardsProvider = ({ children }: { children: ReactNode }) => {
         [pageSize, setFilter, totalCount],
     )
 
+    const refetch = useCallback(() => {
+        const page = Math.max(0, activePage)
+        return getMTGCardsFilteredQuery({
+            filter: filterArgs,
+            sort: sortArgs,
+            pagination: { ...paginationArgs, page },
+        }).then((response) => {
+            setCards(response.pagedCards)
+            setTotalCount(response.totalCount)
+        })
+    }, [activePage, filterArgs, sortArgs, paginationArgs, getMTGCardsFilteredQuery])
+
     return (
-        <MTGCardsContext.Provider value={{ cards, loading, totalCount, goToPage }}>
+        <MTGCardsContext.Provider value={{ cards, loading, totalCount, goToPage, refetch }}>
             {children}
         </MTGCardsContext.Provider>
     )

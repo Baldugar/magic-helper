@@ -1,46 +1,71 @@
 import { fetchData } from '../../utils/functions/fetchData'
 import {
     AddIgnoredCardInput,
+    MTG_AssignTagToCardInput,
+    MTG_AssignTagToDeckInput,
     MTG_Card,
     MTG_CreateDeckInput,
     MTG_CreateFilterPresetInput,
+    MTG_CreateTagInput,
     MTG_Deck,
     MTG_DeckDashboard,
     MTG_DeleteFilterPresetInput,
+    MTG_DeleteTagInput,
     MTG_Filter_Search,
     MTG_FilterPreset,
+    MTG_Tag,
+    MTG_UnassignTagFromCardInput,
+    MTG_UnassignTagFromDeckInput,
     MTG_UpdateDeckInput,
     MTG_UpdateFilterPresetInput,
+    MTG_UpdateTagInput,
     Mutation,
     MutationaddIgnoredCardArgs,
+    MutationassignTagToCardArgs,
+    MutationassignTagToDeckArgs,
     MutationcreateMTGDeckArgs,
     MutationcreateMTGFilterPresetArgs,
+    MutationcreateMTGTagArgs,
     MutationdeleteMTGDeckArgs,
     MutationdeleteMTGFilterPresetArgs,
+    MutationdeleteMTGTagArgs,
     MutationremoveIgnoredCardArgs,
+    MutationunassignTagFromCardArgs,
+    MutationunassignTagFromDeckArgs,
     MutationupdateMTGDeckArgs,
     MutationupdateMTGFilterPresetArgs,
+    MutationupdateMTGTagArgs,
     Query,
     QuerygetMTGCardsFilteredArgs,
     QuerygetMTGDeckArgs,
     QuerygetMTGFilterPresetsArgs,
+    QuerygetMTGTagArgs,
     RemoveIgnoredCardInput,
     Response,
 } from '../types'
 import addIgnoredCard from './mutations/addIgnoredCard'
+import assignTagToCard from './mutations/assignTagToCard'
+import assignTagToDeck from './mutations/assignTagToDeck'
 import createMTGDeck from './mutations/createMTGDeck'
 import createMTGFilterPreset from './mutations/createMTGFilterPreset'
+import createMTGTag from './mutations/createMTGTag'
 import deleteMTGADeck from './mutations/deleteMTGDeck'
 import deleteMTGFilterPreset from './mutations/deleteMTGFilterPreset'
+import deleteMTGTag from './mutations/deleteMTGTag'
 import removeIgnoredCard from './mutations/removeIgnoredCard'
 import saveMTGDeckAsCopy from './mutations/saveMTGDeckAsCopy'
+import unassignTagFromCard from './mutations/unassignTagFromCard'
+import unassignTagFromDeck from './mutations/unassignTagFromDeck'
 import updateMTGDeck from './mutations/updateMTGDeck'
 import updateMTGFilterPreset from './mutations/updateMTGFilterPreset'
+import updateMTGTag from './mutations/updateMTGTag'
 import getMTGCards from './queries/getMTGCards'
 import getMTGCardsFiltered from './queries/getMTGCardsFiltered'
 import getMTGDeck from './queries/getMTGDeck'
 import getMTGDecks from './queries/getMTGDecks'
 import getMTGFilterPresets from './queries/getMTGFilterPresets'
+import getMTGTag from './queries/getMTGTag'
+import getMTGTags from './queries/getMTGTags'
 
 /**
  * MTG GraphQL API helpers
@@ -111,6 +136,30 @@ const getMTGFilterPresetsQuery = async (deckID: string): Promise<MTG_FilterPrese
                 resolve(response.data.getMTGFilterPresets)
             } else {
                 reject('Failed to fetch MTG filter presets')
+            }
+        })
+    })
+
+/** Fetch all tags. */
+const getMTGTagsQuery = async (): Promise<MTG_Tag[]> =>
+    new Promise((resolve, reject) => {
+        fetchData<Query>(getMTGTags).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.getMTGTags)
+            } else {
+                reject('Failed to fetch MTG tags')
+            }
+        })
+    })
+
+/** Fetch a single tag by ID. */
+const getMTGTagQuery = async (tagID: string): Promise<MTG_Tag | null | undefined> =>
+    new Promise((resolve, reject) => {
+        fetchData<Query, QuerygetMTGTagArgs>(getMTGTag, { tagID }).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.getMTGTag)
+            } else {
+                reject('Failed to fetch MTG tag')
             }
         })
     })
@@ -225,6 +274,90 @@ const removeIgnoredCardMutation = async (input: RemoveIgnoredCardInput): Promise
         })
     })
 
+/** Create a new tag. */
+const createMTGTagMutation = async (input: MTG_CreateTagInput): Promise<MTG_Tag> =>
+    new Promise((resolve, reject) => {
+        fetchData<Mutation, MutationcreateMTGTagArgs>(createMTGTag, { input }).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.createMTGTag)
+            } else {
+                reject(response?.errors?.[0]?.message ?? 'Failed to create tag')
+            }
+        })
+    })
+
+/** Update an existing tag. */
+const updateMTGTagMutation = async (input: MTG_UpdateTagInput): Promise<MTG_Tag | null | undefined> =>
+    new Promise((resolve, reject) => {
+        fetchData<Mutation, MutationupdateMTGTagArgs>(updateMTGTag, { input }).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.updateMTGTag)
+            } else {
+                reject(response?.errors?.[0]?.message ?? 'Failed to update tag')
+            }
+        })
+    })
+
+/** Delete a tag by ID. */
+const deleteMTGTagMutation = async (input: MTG_DeleteTagInput): Promise<Response> =>
+    new Promise((resolve, reject) => {
+        fetchData<Mutation, MutationdeleteMTGTagArgs>(deleteMTGTag, { input }).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.deleteMTGTag)
+            } else {
+                reject(response?.errors?.[0]?.message ?? 'Failed to delete tag')
+            }
+        })
+    })
+
+/** Assign a tag to a card. */
+const assignTagToCardMutation = async (input: MTG_AssignTagToCardInput): Promise<Response> =>
+    new Promise((resolve, reject) => {
+        fetchData<Mutation, MutationassignTagToCardArgs>(assignTagToCard, { input }).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.assignTagToCard)
+            } else {
+                reject(response?.errors?.[0]?.message ?? 'Failed to assign tag to card')
+            }
+        })
+    })
+
+/** Unassign a tag from a card. */
+const unassignTagFromCardMutation = async (input: MTG_UnassignTagFromCardInput): Promise<Response> =>
+    new Promise((resolve, reject) => {
+        fetchData<Mutation, MutationunassignTagFromCardArgs>(unassignTagFromCard, { input }).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.unassignTagFromCard)
+            } else {
+                reject(response?.errors?.[0]?.message ?? 'Failed to unassign tag from card')
+            }
+        })
+    })
+
+/** Assign a tag to a deck. */
+const assignTagToDeckMutation = async (input: MTG_AssignTagToDeckInput): Promise<Response> =>
+    new Promise((resolve, reject) => {
+        fetchData<Mutation, MutationassignTagToDeckArgs>(assignTagToDeck, { input }).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.assignTagToDeck)
+            } else {
+                reject(response?.errors?.[0]?.message ?? 'Failed to assign tag to deck')
+            }
+        })
+    })
+
+/** Unassign a tag from a deck. */
+const unassignTagFromDeckMutation = async (input: MTG_UnassignTagFromDeckInput): Promise<Response> =>
+    new Promise((resolve, reject) => {
+        fetchData<Mutation, MutationunassignTagFromDeckArgs>(unassignTagFromDeck, { input }).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.unassignTagFromDeck)
+            } else {
+                reject(response?.errors?.[0]?.message ?? 'Failed to unassign tag from deck')
+            }
+        })
+    })
+
 export const MTGFunctions = {
     queries: {
         getMTGCardsQuery,
@@ -232,6 +365,8 @@ export const MTGFunctions = {
         getMTGDecksQuery,
         getMTGDeckQuery,
         getMTGFilterPresetsQuery,
+        getMTGTagsQuery,
+        getMTGTagQuery,
     },
     mutations: {
         createMTGDeckMutation,
@@ -243,5 +378,12 @@ export const MTGFunctions = {
         deleteMTGFilterPresetMutation,
         addIgnoredCardMutation,
         removeIgnoredCardMutation,
+        createMTGTagMutation,
+        updateMTGTagMutation,
+        deleteMTGTagMutation,
+        assignTagToCardMutation,
+        unassignTagFromCardMutation,
+        assignTagToDeckMutation,
+        unassignTagFromDeckMutation,
     },
 }

@@ -20,6 +20,7 @@ import { ReactFlowProvider, useReactFlow } from '@xyflow/react'
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FilterBar } from '../../components/deckBuilder/FilterBar/FilterBar'
+import { ManageTagsDialog } from '../../components/deckBuilder/FilterBar/TagDialogs/ManageTagsDialog'
 import { FlowCanvas } from '../../components/deckBuilder/FlowCanvas/FlowCanvas'
 import { ExportDialog } from '../../components/deckBuilder/ImportExportDialog/ExportDialog'
 import { ImportDialog } from '../../components/deckBuilder/ImportExportDialog/ImportDialog'
@@ -52,7 +53,7 @@ import { Drawer } from './Components/Drawer'
  * - Responsive layout with a collapsible drawer for deck management
  */
 export const DeckCreator = () => {
-    const { cards, totalCount, goToPage } = useMTGCards()
+    const { cards, totalCount, goToPage, refetch: refetchCards } = useMTGCards()
     const { deck, setDeck } = useMTGDeckCreatorLogic()
     const { openDrawer, setOpenDrawer, setViewMode, viewMode, setOpenImportDialog, setOpenExportDialog } =
         useMTGDeckCreatorUI()
@@ -66,6 +67,7 @@ export const DeckCreator = () => {
     } = MTGFunctions
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
     const open = Boolean(anchorEl)
+    const [openTagManager, setOpenTagManager] = useState(false)
     const [pageSizeInput, setPageSizeInput] = useState(String(filter.pageSize))
 
     const isMobile = useMediaQuery('(max-width: 600px)')
@@ -330,6 +332,18 @@ export const DeckCreator = () => {
                         >
                             Clear filter
                         </MenuItem>
+                        <Divider />
+                        <Typography variant="caption" display="block" gutterBottom>
+                            Tag Operations
+                        </Typography>
+                        <MenuItem
+                            onClick={() => {
+                                setOpenTagManager(true)
+                                handleMenuClose()
+                            }}
+                        >
+                            Manage tags
+                        </MenuItem>
                     </Menu>
                     <Button variant={'contained'} color={'primary'} onClick={() => setOpenDrawer(!openDrawer)}>
                         Open Drawer
@@ -342,6 +356,11 @@ export const DeckCreator = () => {
             <ImportDialog />
             <ExportDialog />
             <CardDialog />
+            <ManageTagsDialog
+                open={openTagManager}
+                onClose={() => setOpenTagManager(false)}
+                onTagsChanged={() => void refetchCards()}
+            />
         </Box>
     )
 }

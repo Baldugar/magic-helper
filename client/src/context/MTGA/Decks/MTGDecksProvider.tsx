@@ -56,6 +56,7 @@ export const MTGDecksProvider = ({ children }: { children: ReactNode }) => {
                             type: type ?? DeckType.UNKNOWN,
                             name,
                             cardFrontImage: undefined,
+                            tags: [],
                         },
                     ])
                     resolve(newDeckID)
@@ -93,6 +94,7 @@ export const MTGDecksProvider = ({ children }: { children: ReactNode }) => {
                         imageUris: f.imageUris,
                     })) ?? [],
             })),
+            tags: c.card.tags ?? [],
         },
         selectedVersionID: c.selectedVersionID,
     })
@@ -140,6 +142,7 @@ export const MTGDecksProvider = ({ children }: { children: ReactNode }) => {
                               type: deck.type,
                               cardFrontImage: deck.cardFrontImage,
                               cards: deck.cards.map(convertDeckCardToDashboardDeckCard),
+                              tags: deck.tags,
                           }
                         : d,
                 ),
