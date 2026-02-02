@@ -19,7 +19,7 @@ export const CardsGrid = () => {
     const [gridSize, setGridSize] = useState({ width: 0, height: 0 })
     const [cardScale, setCardScale] = useState(1)
     const [forceImageSize, setForceImageSize] = useState<keyof Omit<MTG_Image, '__typename'> | undefined>(undefined)
-    const { stickyCardsGrid, openDrawer } = useMTGDeckCreatorUI()
+    const { stickyCardsGrid, openDrawer, catalogueContextMenuOpen } = useMTGDeckCreatorUI()
     const [lastIgnoredIndex, setLastIgnoredIndex] = useState<number | null>(null)
     const lastPageChangeInteractionRef = useRef<'swipeUp' | 'swipeDown' | 'other'>('other')
 
@@ -142,7 +142,7 @@ export const CardsGrid = () => {
     }, [cardsToShow.length, gridSize.height, gridSize.width, shouldFillAvailableSpace, spacingPx, isMobile, openDrawer])
 
     const handleHorizontalSwipe = (direction: 'left' | 'right') => {
-        if (!isMobile) return
+        if (!isMobile || catalogueContextMenuOpen) return
 
         if (direction === 'left' && filter.page < totalPages - 1) {
             lastPageChangeInteractionRef.current = 'other'
@@ -154,7 +154,7 @@ export const CardsGrid = () => {
     }
 
     const handleVerticalSwipe = (direction: 'up' | 'down') => {
-        if (!isMobile || !gridRef.current) {
+        if (!isMobile || catalogueContextMenuOpen || !gridRef.current) {
             return
         }
 
@@ -335,7 +335,7 @@ export const CardsGrid = () => {
             ref={setRefs}
             onScroll={handleScroll}
             onWheel={(e: WheelEvent) => {
-                if (!isMobile) {
+                if (!isMobile && !catalogueContextMenuOpen) {
                     const hasVerticalScrollbar = e.currentTarget.scrollHeight > e.currentTarget.clientHeight
                     if (hasVerticalScrollbar && !e.shiftKey) return
                     if (e.deltaY > 0 && filter.page < totalPages - 1) {

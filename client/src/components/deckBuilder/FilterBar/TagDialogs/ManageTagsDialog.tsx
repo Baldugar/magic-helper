@@ -8,12 +8,12 @@ import {
     IconButton,
     List,
     ListItem,
-    ListItemText,
     Typography,
 } from '@mui/material'
 import { useCallback, useEffect, useState } from 'react'
 import { MTGFunctions } from '../../../../graphql/MTGA/functions'
 import { MTG_Tag } from '../../../../graphql/types'
+import { TagChip } from '../../TagChip'
 import { CreateTagDialog } from './CreateTagDialog'
 import { DeleteTagDialog } from './DeleteTagDialog'
 import { EditTagDialog } from './EditTagDialog'
@@ -117,7 +117,7 @@ export const ManageTagsDialog = ({ open, onClose, onTagsChanged }: ManageTagsDia
                                         </>
                                     }
                                 >
-                                    <ListItemText primary={tag.name} />
+                                    <TagChip tag={tag} size="small" />
                                 </ListItem>
                             ))}
                         </List>

@@ -23,6 +23,10 @@ type MTGDeckCreatorUIContextType = {
     // Opened Card Dialog
     openedCardDialog: string | null
     setOpenedCardDialog: Dispatch<SetStateAction<string | null>>
+
+    // Catalogue context menu open (disables scroll-to-change-page in CardsGrid)
+    catalogueContextMenuOpen: boolean
+    setCatalogueContextMenuOpen: Dispatch<SetStateAction<boolean>>
 }
 
 export const MTGDeckCreatorUIContext = createContext<MTGDeckCreatorUIContextType>({
@@ -47,4 +51,7 @@ export const MTGDeckCreatorUIContext = createContext<MTGDeckCreatorUIContextType
     // Opened Card Dialog
     openedCardDialog: null,
     setOpenedCardDialog: () => {},
+
+    catalogueContextMenuOpen: false,
+    setCatalogueContextMenuOpen: () => {},
 })

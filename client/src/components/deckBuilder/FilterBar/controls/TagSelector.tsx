@@ -3,6 +3,7 @@ import { MouseEvent, useEffect, useState } from 'react'
 import { MTGFunctions } from '../../../../graphql/MTGA/functions'
 import { MTG_Tag, TernaryBoolean } from '../../../../graphql/types'
 import { isNegativeTB, isPositiveTB } from '../../../../types/ternaryBoolean'
+import { TagChip } from '../../TagChip'
 import { TernaryToggle } from './TernaryToggle'
 
 export interface TagSelectorProps {
@@ -91,7 +92,7 @@ const TagSelector = (props: TagSelectorProps): JSX.Element => {
                                                 e.preventDefault()
                                                 onPrev(tag.ID)
                                             },
-                                            children: tag.name,
+                                            children: <TagChip tag={tag} size="small" />,
                                         }}
                                     />
                                 </Grid>

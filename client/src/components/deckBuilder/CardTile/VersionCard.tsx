@@ -111,96 +111,93 @@ export const VersionCard = (props: VersionCardProps) => {
             },
         },
         {
+            id: 'createNewDeck',
+            label: 'Create new deck',
+            action: () => {
+                const name = prompt('Enter the name of the new deck')
+                if (!name) return
+                createDeck(name).then((deckID) => {
+                    const {
+                        queries: { getMTGDeckQuery },
+                    } = MTGFunctions
+                    getMTGDeckQuery(deckID).then((loadedDeck) => {
+                        const newDeck = clone(loadedDeck)
+                        newDeck.cards.push({
+                            card,
+                            count: 1,
+                            deckCardType: MTG_DeckCardType.NORMAL,
+                            phantoms: [],
+                            position: { x: 0, y: 0 },
+                            selectedVersionID: version.ID,
+                        })
+                        propagateChangesToDashboardDeck(newDeck, true)
+                    })
+                })
+            },
+        },
+        {
+            id: 'createTag',
+            label: 'Create new tag...',
+            action: () => {
+                versionCardHandleClose()
+                setOpenCreateTagDialog(true)
+            },
+        },
+        {
             id: 'addToOtherDeck',
             label: 'Add to other deck',
             shouldKeepOpen: true,
-            subMenu: [
-                {
-                    id: 'createNewDeck',
-                    label: 'Create new deck',
-                    shouldKeepOpen: true,
-                    action: () => {
-                        const name = prompt('Enter the name of the new deck')
-                        if (!name) return
-                        createDeck(name).then((deckID) => {
-                            const {
-                                queries: { getMTGDeckQuery },
-                            } = MTGFunctions
-                            getMTGDeckQuery(deckID).then((loadedDeck) => {
-                                const newDeck = clone(loadedDeck)
-                                newDeck.cards.push({
-                                    card,
-                                    count: 1,
-                                    deckCardType: MTG_DeckCardType.NORMAL,
-                                    phantoms: [],
-                                    position: { x: 0, y: 0 },
-                                    selectedVersionID: version.ID,
-                                })
-                                propagateChangesToDashboardDeck(newDeck, true)
-                            })
-                        })
-                    },
-                },
-                ...decks
-                    .filter((d) => d.ID !== deck?.ID)
-                    .map((otherDeck) => {
-                        const alreadyInDeck = otherDeck.cards.find((c) => c.card.ID === card.ID)
-                        const {
-                            queries: { getMTGDeckQuery },
-                        } = MTGFunctions
-                        return {
-                            label: otherDeck.name,
-                            selected: alreadyInDeck ? true : false,
-                            shouldKeepOpen: true,
-                            action: !alreadyInDeck
-                                ? () => {
-                                      getMTGDeckQuery(otherDeck.ID).then((loadedDeck) => {
-                                          const newDeck = clone(loadedDeck)
-                                          newDeck.cards.push({
-                                              card,
-                                              count: 1,
-                                              deckCardType: MTG_DeckCardType.NORMAL,
-                                              phantoms: [],
-                                              position: findNextAvailablePosition(loadedDeck.cards),
-                                              selectedVersionID: version.ID,
-                                          })
-                                          propagateChangesToDashboardDeck(newDeck, true)
+            subMenu: decks
+                .filter((d) => d.ID !== deck?.ID)
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((otherDeck) => {
+                    const alreadyInDeck = otherDeck.cards.find((c) => c.card.ID === card.ID)
+                    const {
+                        queries: { getMTGDeckQuery },
+                    } = MTGFunctions
+                    return {
+                        label: otherDeck.name,
+                        selected: alreadyInDeck ? true : false,
+                        shouldKeepOpen: true,
+                        action: !alreadyInDeck
+                            ? () => {
+                                  getMTGDeckQuery(otherDeck.ID).then((loadedDeck) => {
+                                      const newDeck = clone(loadedDeck)
+                                      newDeck.cards.push({
+                                          card,
+                                          count: 1,
+                                          deckCardType: MTG_DeckCardType.NORMAL,
+                                          phantoms: [],
+                                          position: findNextAvailablePosition(loadedDeck.cards),
+                                          selectedVersionID: version.ID,
                                       })
-                                  }
-                                : () => {
-                                      getMTGDeckQuery(otherDeck.ID).then((loadedDeck) => {
-                                          const newDeck = clone(loadedDeck)
-                                          const cardIndex = newDeck.cards.findIndex((c) => c.card.ID === card.ID)
-                                          if (cardIndex !== -1) {
-                                              newDeck.cards.splice(cardIndex, 1)
-                                          }
-                                          propagateChangesToDashboardDeck(newDeck, true)
-                                      })
-                                  },
-                        } as ContextMenuOption
-                    }),
-            ],
+                                      propagateChangesToDashboardDeck(newDeck, true)
+                                  })
+                              }
+                            : () => {
+                                  getMTGDeckQuery(otherDeck.ID).then((loadedDeck) => {
+                                      const newDeck = clone(loadedDeck)
+                                      const cardIndex = newDeck.cards.findIndex((c) => c.card.ID === card.ID)
+                                      if (cardIndex !== -1) {
+                                          newDeck.cards.splice(cardIndex, 1)
+                                      }
+                                      propagateChangesToDashboardDeck(newDeck, true)
+                                  })
+                              },
+                    } as ContextMenuOption
+                }),
         },
         {
             id: 'assignTag',
             label: 'Assign tag',
             shouldKeepOpen: true,
-            subMenu: [
-                {
-                    id: 'createTag',
-                    label: 'Create new tag...',
-                    action: () => {
-                        versionCardHandleClose()
-                        setOpenCreateTagDialog(true)
-                    },
-                },
-                ...(tagOptionsForMenu === null ||
+            subMenu:
+                tagOptionsForMenu === null ||
                 (tagOptionsForMenu.length === 1 && tagOptionsForMenu[0].label === 'Loading...')
                     ? [{ label: 'Loading...' }]
                     : tagOptionsForMenu.every((o) => !o.action)
                       ? tagOptionsForMenu
-                      : tagOptionsForMenu),
-            ],
+                      : tagOptionsForMenu,
         },
         {
             label: 'Log version',

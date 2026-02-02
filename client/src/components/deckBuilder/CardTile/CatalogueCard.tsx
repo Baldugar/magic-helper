@@ -1,5 +1,5 @@
 import { Close } from '@mui/icons-material'
-import { ButtonBase, Dialog, DialogContent, DialogTitle, Grid, useMediaQuery } from '@mui/material'
+import { ButtonBase, Dialog, DialogContent, DialogTitle, Grid, Tooltip, useMediaQuery } from '@mui/material'
 import { useReactFlow } from '@xyflow/react'
 import { clone } from 'lodash'
 import { useEffect, useRef, useState } from 'react'
@@ -19,6 +19,7 @@ import { ContextMenuOption } from '../../../utils/hooks/ContextMenu/types'
 import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
 import { CreateTagDialog } from '../FilterBar/TagDialogs/CreateTagDialog'
 import { PhantomNodeData } from '../FlowCanvas/Nodes/PhantomNode'
+import { TagChips } from '../TagChip'
 import { MTGCardWithHover } from './MTGCardWithHover'
 import { VersionCard } from './VersionCard'
 
@@ -42,7 +43,7 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
 
     const { decks, createDeck, propagateChangesToDashboardDeck } = useMTGDecks()
     const { onAddCard, deck, removeCard, setDeck } = useMTGDeckCreatorLogic()
-    const { setOpenedCardDialog } = useMTGDeckCreatorUI()
+    const { setOpenedCardDialog, setCatalogueContextMenuOpen } = useMTGDeckCreatorUI()
     const { setNodes } = useReactFlow<NodeType>()
     const { filter, setFilter } = useMTGFilter()
     const { refetch: refetchCards } = useMTGCards()
@@ -64,6 +65,10 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
 
     // Track long-press position for mobile context menu
     const [mobilePosition, setMobilePosition] = useState<{ x: number; y: number } | undefined>(undefined)
+
+    useEffect(() => {
+        setCatalogueContextMenuOpen(mainCardOpen)
+    }, [mainCardOpen, setCatalogueContextMenuOpen])
 
     useEffect(() => {
         if (!mainCardOpen) {
@@ -139,12 +144,12 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
 
     if (!deck) return null
 
-    const deckCardIDs = deck.cards.map((c) => c.card.ID)
+    const deckCardIDs = deck.cards.filter((c) => c?.card).map((c) => c.card.ID)
 
     const cardIsInDeck = isCardInDeck(card, deck)
 
     const selectedVersion = deckCardIDs.includes(card.ID)
-        ? card.versions.find((v) => v.ID === deck.cards.find((c) => c.card.ID === card.ID)?.selectedVersionID)
+        ? card.versions.find((v) => v.ID === deck.cards.find((c) => c?.card?.ID === card.ID)?.selectedVersionID)
         : null
 
     const cardIsIgnored = deck.ignoredCards.includes(card.ID)
@@ -165,7 +170,7 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
             action: () => {
                 if (!deck) return
                 let confirmation = true
-                if (deck && deck.cards.find((c) => c.card.ID === card.ID)) {
+                if (deck && deck.cards.find((c) => c?.card?.ID === card.ID)) {
                     confirmation = confirm('This card is in the deck, are you sure you want to ignore it?')
                 }
                 if (!confirmation) return
@@ -204,102 +209,99 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
             },
         },
         {
+            id: 'createNewDeck',
+            label: 'Create new deck',
+            action: () => {
+                const name = prompt('Enter the name of the new deck')
+                if (!name) return
+                createDeck(name).then((deckID) => {
+                    const {
+                        queries: { getMTGDeckQuery },
+                    } = MTGFunctions
+                    getMTGDeckQuery(deckID).then((deck) => {
+                        const newDeck = clone(deck)
+                        newDeck.cards.push({
+                            card,
+                            count: 1,
+                            deckCardType: MTG_DeckCardType.NORMAL,
+                            phantoms: [],
+                            position: { x: 0, y: 0 },
+                        })
+                        propagateChangesToDashboardDeck(newDeck, true)
+                    })
+                })
+            },
+        },
+        {
+            id: 'createTag',
+            label: 'Create new tag...',
+            action: () => {
+                mainCardHandleClose()
+                setOpenCreateTagDialog(true)
+            },
+        },
+        {
             id: 'addToOtherDeck',
             label: 'Add to other deck',
             shouldKeepOpen: true,
-            subMenu: [
-                {
-                    id: 'createNewDeck',
-                    label: 'Create new deck',
-                    shouldKeepOpen: true,
-                    action: () => {
-                        const name = prompt('Enter the name of the new deck')
-                        if (!name) return
-                        createDeck(name).then((deckID) => {
-                            const {
-                                queries: { getMTGDeckQuery },
-                            } = MTGFunctions
-                            getMTGDeckQuery(deckID).then((deck) => {
-                                const newDeck = clone(deck)
-                                newDeck.cards.push({
-                                    card,
-                                    count: 1,
-                                    deckCardType: MTG_DeckCardType.NORMAL,
-                                    phantoms: [],
-                                    position: { x: 0, y: 0 },
-                                })
-                                propagateChangesToDashboardDeck(newDeck, true)
-                            })
-                        })
-                    },
-                },
-                ...decks
-                    .filter((d) => d.ID !== deck?.ID)
-                    .map((deck) => {
-                        const alreadyInDeck = deck.cards.find((c) => c.card.ID === card.ID)
-                        const {
-                            queries: { getMTGDeckQuery },
-                        } = MTGFunctions
-                        let version: MTG_CardVersion | undefined
-                        const set = singleSetSelected(filter)
-                        if (set) {
-                            version = card.versions.find((v) => v.set === set)
-                        } else {
-                            version = card.versions.find((v) => v.isDefault)
-                        }
-                        return {
-                            label: deck.name,
-                            selected: alreadyInDeck ? true : false,
-                            shouldKeepOpen: true,
-                            action: !alreadyInDeck
-                                ? () => {
-                                      getMTGDeckQuery(deck.ID).then((loadedDeck) => {
-                                          const newDeck = clone(loadedDeck)
-                                          newDeck.cards.push({
-                                              card,
-                                              count: 1,
-                                              deckCardType: MTG_DeckCardType.NORMAL,
-                                              phantoms: [],
-                                              position: findNextAvailablePosition(loadedDeck.cards),
-                                              selectedVersionID: version?.ID,
-                                          })
-                                          propagateChangesToDashboardDeck(newDeck, true)
+            subMenu: decks
+                .filter((d) => d.ID !== deck?.ID)
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((deck) => {
+                    const alreadyInDeck = deck.cards.find((c) => c?.card?.ID === card.ID)
+                    const {
+                        queries: { getMTGDeckQuery },
+                    } = MTGFunctions
+                    let version: MTG_CardVersion | undefined
+                    const set = singleSetSelected(filter)
+                    if (set) {
+                        version = card.versions.find((v) => v.set === set)
+                    } else {
+                        version = card.versions.find((v) => v.isDefault)
+                    }
+                    return {
+                        label: deck.name,
+                        selected: alreadyInDeck ? true : false,
+                        shouldKeepOpen: true,
+                        action: !alreadyInDeck
+                            ? () => {
+                                  getMTGDeckQuery(deck.ID).then((loadedDeck) => {
+                                      const newDeck = clone(loadedDeck)
+                                      newDeck.cards.push({
+                                          card,
+                                          count: 1,
+                                          deckCardType: MTG_DeckCardType.NORMAL,
+                                          phantoms: [],
+                                          position: findNextAvailablePosition(loadedDeck.cards),
+                                          selectedVersionID: version?.ID,
                                       })
-                                  }
-                                : () => {
-                                      getMTGDeckQuery(deck.ID).then((loadedDeck) => {
-                                          const newDeck = clone(loadedDeck)
-                                          const cardIndex = newDeck.cards.findIndex((c) => c.card.ID === card.ID)
-                                          if (cardIndex !== -1) {
-                                              newDeck.cards.splice(cardIndex, 1)
-                                          }
-                                          propagateChangesToDashboardDeck(newDeck, true)
-                                      })
-                                  },
-                        } as ContextMenuOption
-                    }),
-            ],
+                                      propagateChangesToDashboardDeck(newDeck, true)
+                                  })
+                              }
+                            : () => {
+                                  getMTGDeckQuery(deck.ID).then((loadedDeck) => {
+                                      const newDeck = clone(loadedDeck)
+                                      const cardIndex = newDeck.cards.findIndex((c) => c.card.ID === card.ID)
+                                      if (cardIndex !== -1) {
+                                          newDeck.cards.splice(cardIndex, 1)
+                                      }
+                                      propagateChangesToDashboardDeck(newDeck, true)
+                                  })
+                              },
+                    } as ContextMenuOption
+                }),
         },
         {
             id: 'assignTag',
             label: 'Assign tag',
             shouldKeepOpen: true,
-            subMenu: [
-                {
-                    id: 'createTag',
-                    label: 'Create new tag...',
-                    action: () => {
-                        mainCardHandleClose()
-                        setOpenCreateTagDialog(true)
-                    },
-                },
-                ...(tagOptionsForMenu === null ||
+            subMenu:
+                tagOptionsForMenu === null ||
                 (tagOptionsForMenu.length === 1 && tagOptionsForMenu[0].label === 'Loading...')
                     ? [{ label: 'Loading...' }]
                     : tagOptionsForMenu.every((o) => !o.action)
                       ? tagOptionsForMenu
-                      : tagOptionsForMenu),
-            ],
+                      : tagOptionsForMenu,
         },
         {
             label: 'Add as deck image',
@@ -391,9 +393,20 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
                     </div>
                 }
             >
-                <div ref={mainCardAnchorRef} onContextMenu={handleContextMenu}>
-                    <ButtonBase
-                        onClick={() => handleAddCard(card)}
+                <Tooltip
+                    title={
+                        (card.tags ?? []).length > 0 ? (
+                            <TagChips tags={card.tags ?? []} />
+                        ) : (
+                            'No tags'
+                        )
+                    }
+                    disableHoverListener={isMobile}
+                    placement="top"
+                >
+                    <div ref={mainCardAnchorRef} onContextMenu={handleContextMenu}>
+                        <ButtonBase
+                            onClick={() => handleAddCard(card)}
                         sx={{
                             width: isMobile ? '100%' : 'auto',
                             filter: deckCardIDs.includes(card.ID) ? 'brightness(0.5)' : 'brightness(1)',
@@ -440,7 +453,8 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
                             />
                         )}
                     </ButtonBase>
-                </div>
+                    </div>
+                </Tooltip>
             </ErrorBoundary>
             <ContextMenu
                 anchorRef={mainCardAnchorRef}

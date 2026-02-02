@@ -51,6 +51,9 @@ export const NestedSubMenu = (props: NestedSubMenuProps) => {
                 vertical: 'top',
                 horizontal: 'left',
             }}
+            MenuListProps={{
+                sx: { maxHeight: 280, overflow: 'auto' },
+            }}
         >
             {option.subMenu?.map(renderMenuItem)}
         </Menu>

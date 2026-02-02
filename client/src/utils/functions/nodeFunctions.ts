@@ -514,7 +514,7 @@ export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTG_DeckCar
     // Procesamos los cardNodes para crear objetos con la info de cada card
     for (const node of cardNodes) {
         const cardId = node.id
-        const deckCard = currentCards.find((c) => c.card.ID === cardId)
+        const deckCard = currentCards.find((c) => c?.card?.ID === cardId)
         if (!deckCard) continue
         const position = { x: node.position.x, y: node.position.y }
 
@@ -524,7 +524,7 @@ export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTG_DeckCar
             .map((p) => ({ ID: p.id, position: p.position }))
 
         // Buscamos en currentCards para obtener el count (si existe)
-        const currentCard = currentCards.find((c) => c.card.ID === cardId)
+        const currentCard = currentCards.find((c) => c?.card?.ID === cardId)
 
         cardMap.set(cardId, {
             card: cardId,
@@ -539,6 +539,7 @@ export const calculateCardsFromNodes = (nodes: Node[], currentCards: MTG_DeckCar
     // Añadimos los cards que están en currentCards pero que no aparecieron en los nodes.
     // Si currentCard tiene position y phantoms, los usamos; si no, asignamos valores por defecto.
     for (const currentCard of currentCards) {
+        if (!currentCard?.card) continue
         const cardId = currentCard.card.ID
         if (!cardMap.has(cardId)) {
             cardMap.set(cardId, {

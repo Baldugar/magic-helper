@@ -4,6 +4,7 @@ import { ReactNode, useCallback, useState } from 'react'
 import { uuidv4 } from '../../../utils/functions/IDFunctions'
 import {
     buildNodeMap,
+    calculateZonesFromNodes,
     computeAbsolutePosition,
     computeRelativePosition,
     getDepth,
@@ -375,9 +376,13 @@ export const MTGDeckCreatorFlowProvider = ({ children }: { children: ReactNode }
             if (changed) {
                 const finalNodes = sortNodesByNesting(workingNodes)
                 reactFlow.setNodes(finalNodes)
+                setDeck((prev) => ({
+                    ...prev,
+                    zones: calculateZonesFromNodes(finalNodes),
+                }))
             }
         },
-        [reactFlow, readOnly],
+        [reactFlow, readOnly, setDeck],
     )
 
     const handleNodesChange = useCallback(
@@ -425,10 +430,15 @@ export const MTGDeckCreatorFlowProvider = ({ children }: { children: ReactNode }
                     return currentNodes
                 }
 
-                return currentNodes.map((node) => nodeMap.get(node.id) ?? node)
+                const finalNodes = currentNodes.map((node) => nodeMap.get(node.id) ?? node)
+                setDeck((prev) => ({
+                    ...prev,
+                    zones: calculateZonesFromNodes(finalNodes),
+                }))
+                return finalNodes
             })
         },
-        [reactFlow],
+        [reactFlow, setDeck],
     )
 
     return (

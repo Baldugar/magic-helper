@@ -2,7 +2,6 @@ import { Add } from '@mui/icons-material'
 import {
     Box,
     Button,
-    Chip,
     Dialog,
     DialogContent,
     DialogTitle,
@@ -16,10 +15,11 @@ import {
 } from '@mui/material'
 import { useCallback, useEffect, useState } from 'react'
 import { FlipCard } from '../../../components/deckBuilder/CardTile/FlipCard'
-import { MTGFunctions } from '../../../graphql/MTGA/functions'
-import { MTG_Tag } from '../../../graphql/types'
+import { TagChip } from '../../../components/deckBuilder/TagChip'
 import { useMTGCards } from '../../../context/MTGA/Cards/useMTGCards'
 import { useMTGDeckCreatorUI } from '../../../context/MTGA/DeckCreator/UI/useMTGDeckCreatorUI'
+import { MTGFunctions } from '../../../graphql/MTGA/functions'
+import { MTG_Tag } from '../../../graphql/types'
 
 export const CardDialog = () => {
     const { openedCardDialog, setOpenedCardDialog } = useMTGDeckCreatorUI()
@@ -81,9 +81,9 @@ export const CardDialog = () => {
                                 </Typography>
                                 <Box display="flex" flexWrap="wrap" gap={0.5} alignItems="center" mb={1}>
                                     {tagsOnCard.map((tag) => (
-                                        <Chip
+                                        <TagChip
                                             key={tag.ID}
-                                            label={tag.name}
+                                            tag={tag}
                                             size="small"
                                             onDelete={
                                                 unassigning === tag.ID

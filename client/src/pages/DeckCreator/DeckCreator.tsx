@@ -1,4 +1,4 @@
-import { ArrowLeft, DashboardCustomize, Edit, VerticalSplit, ViewCompact } from '@mui/icons-material'
+import { ArrowLeft, DashboardCustomize, Edit, ViewCompact } from '@mui/icons-material'
 import MenuIcon from '@mui/icons-material/Menu'
 import {
     Box,
@@ -53,7 +53,7 @@ import { Drawer } from './Components/Drawer'
  * - Responsive layout with a collapsible drawer for deck management
  */
 export const DeckCreator = () => {
-    const { cards, totalCount, goToPage, refetch: refetchCards } = useMTGCards()
+    const { totalCount, goToPage, refetch: refetchCards } = useMTGCards()
     const { deck, setDeck } = useMTGDeckCreatorLogic()
     const { openDrawer, setOpenDrawer, setViewMode, viewMode, setOpenImportDialog, setOpenExportDialog } =
         useMTGDeckCreatorUI()
@@ -104,7 +104,7 @@ export const DeckCreator = () => {
 
     const handleChangeView = (newViewMode: DeckCreatorView) => {
         if (viewMode === 'BOARD' || viewMode === 'CATALOGUE_BOARD') {
-            calculateNewDeck(cards, deck, getNodes, setDeck)
+            calculateNewDeck(deck, getNodes, setDeck)
         }
         setViewMode(newViewMode)
     }
@@ -274,13 +274,6 @@ export const DeckCreator = () => {
                                 <Box display={'flex'} justifyContent={'center'}>
                                     <IconButton onClick={() => handleChangeView('CATALOGUE')}>
                                         <ViewCompact />
-                                    </IconButton>
-                                </Box>
-                            </Grid>
-                            <Grid item xs={6} md={'auto'}>
-                                <Box display={'flex'} justifyContent={'center'}>
-                                    <IconButton onClick={() => handleChangeView('CATALOGUE_BOARD')}>
-                                        <VerticalSplit />
                                     </IconButton>
                                 </Box>
                             </Grid>

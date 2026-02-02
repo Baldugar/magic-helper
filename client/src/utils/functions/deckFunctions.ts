@@ -3,20 +3,35 @@ import { SetStateAction } from 'react'
 import { MTG_Card, MTG_Deck, MTG_DeckCard } from '../../graphql/types'
 import { calculateCardsFromNodes, calculateZonesFromNodes } from './nodeFunctions'
 
+/**
+ * Builds a map of card ID -> full MTG_Card from card nodes.
+ * Board nodes hold the full card in data.card, so we never depend on the paginated catalogue.
+ */
+function cardMapFromNodes(nodes: Node[]): Map<string, MTG_Card> {
+    const map = new Map<string, MTG_Card>()
+    for (const n of nodes) {
+        if (n.type === 'cardNode') {
+            const data = n.data as { card?: MTG_Card }
+            if (data?.card?.ID) map.set(n.id, data.card)
+        }
+    }
+    return map
+}
+
 export const calculateNewDeck = (
-    cards: MTG_Card[],
     deck: MTG_Deck,
     getNodes: () => Node[],
     setDeck: (value: SetStateAction<MTG_Deck>) => void,
 ) => {
     const nodes = getNodes()
-    const newCards = calculateCardsFromNodes(nodes, deck.cards).map((c) => {
-        const card: MTG_DeckCard = {
-            ...c,
-            card: cards.find((card) => card.ID === c.card)!,
-        }
-        return card
-    })
+    const cardById = cardMapFromNodes(nodes)
+    const newCards = calculateCardsFromNodes(nodes, deck.cards)
+        .map((c) => {
+            const fullCard = cardById.get(c.card)
+            if (!fullCard) return null
+            return { ...c, card: fullCard } as MTG_DeckCard
+        })
+        .filter((c): c is MTG_DeckCard => c != null)
     const newZones = calculateZonesFromNodes(nodes)
     setDeck({ ...deck, cards: [...newCards], zones: newZones })
 }

@@ -11,6 +11,7 @@ export const MTGDeckCreatorUIProvider = ({ children }: { children: ReactNode }) 
     const [stickyCardsGrid, setStickyCardsGrid] = useState(true)
 
     const [openedCardDialog, setOpenedCardDialog] = useState<string | null>(null)
+    const [catalogueContextMenuOpen, setCatalogueContextMenuOpen] = useState(false)
 
     return (
         <MTGDeckCreatorUIContext.Provider
@@ -29,6 +30,8 @@ export const MTGDeckCreatorUIProvider = ({ children }: { children: ReactNode }) 
                 // Opened Card Dialog
                 openedCardDialog,
                 setOpenedCardDialog,
+                catalogueContextMenuOpen,
+                setCatalogueContextMenuOpen,
             }}
         >
             {children}

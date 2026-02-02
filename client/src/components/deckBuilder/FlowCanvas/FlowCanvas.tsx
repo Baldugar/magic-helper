@@ -11,7 +11,7 @@ import {
     useReactFlow,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useMTGDeckCreatorLogic } from '../../../context/MTGA/DeckCreator/Logic/useMTGDeckCreatorLogic'
 import { useMTGDeckFlowCreator } from '../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
 import { NodeType, organizeNodes } from '../../../utils/functions/nodeFunctions'
@@ -37,10 +37,16 @@ export const FlowCanvas = () => {
 
     const nodes = useMemo(() => {
         if (!deck) return []
-        const newNodes = organizeNodes(deck, getNodes)
-        setNodes(newNodes)
-        return newNodes
-    }, [deck, getNodes, setNodes])
+        return organizeNodes(deck, getNodes)
+    }, [deck, getNodes])
+
+    useEffect(() => {
+        if (!deck) return
+        setNodes(organizeNodes(deck, getNodes))
+        // Intentionally omit getNodes from deps: we only want to rebuild nodes when deck changes.
+        // If getNodes were in deps it would run every render (new ref) and overwrite extent/expandParent set by ZoneNode.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [deck, setNodes])
 
     if (!deck) return null
 
@@ -56,6 +62,7 @@ export const FlowCanvas = () => {
                 fitView
                 minZoom={0.1}
                 maxZoom={4}
+                zoomOnPinch
                 nodesDraggable={!readOnly}
                 nodesConnectable={!readOnly}
             >
@@ -68,7 +75,7 @@ export const FlowCanvas = () => {
                         return '#888'
                     }}
                 />
-                <Controls position={'bottom-left'} orientation={'vertical'} showInteractive={false} showZoom={false}>
+                <Controls position={'bottom-left'} orientation={'vertical'} showInteractive={false} showZoom>
                     <ControlButton
                         onClick={() => {
                             onAddZone('New Zone')

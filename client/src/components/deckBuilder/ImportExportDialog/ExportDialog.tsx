@@ -18,13 +18,13 @@ export const ExportDialog = () => {
         const rest = cards.filter((c) => c.deckCardType === MTG_DeckCardType.NORMAL)
 
         let exportString = ''
-        if (commander) {
+        if (commander?.card) {
             exportString += `Commander\n1 ${nameForExport(commander.card.name)}\n\n`
         }
         if (rest.length) {
             exportString += 'Deck\n'
             rest.forEach((c) => {
-                exportString += `${c.count} ${nameForExport(c.card.name)}\n`
+                if (c?.card) exportString += `${c.count} ${nameForExport(c.card.name)}\n`
             })
         }
         return exportString

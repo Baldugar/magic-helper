@@ -1,6 +1,7 @@
 import { Box } from '@mui/material'
 import { Node, NodeProps, NodeResizer, NodeToolbar, Position, useReactFlow } from '@xyflow/react'
 import { useCallback, useEffect, useState } from 'react'
+import { useMTGDeckCreatorLogic } from '../../../../context/MTGA/DeckCreator/Logic/useMTGDeckCreatorLogic'
 import { useMTGDeckFlowCreator } from '../../../../context/MTGA/DeckCreatorFlow/useMTGDeckFlowCreator'
 
 export const MIN_SIZE = 180
@@ -18,37 +19,45 @@ export type ZoneNodeProps = NodeProps & {
 export const ZoneNode = (props: ZoneNodeProps) => {
     const { data, id, selected } = props
     const { label, cardChildren, zoneChildren } = data
+    const { setDeck } = useMTGDeckCreatorLogic()
     const { draggingZoneIDs, temporarilyUnlockedZoneIDs } = useMTGDeckFlowCreator()
     const [lockedChildren, setLockedChildren] = useState(true)
+    const [zoneName, setZoneName] = useState(label)
     const reactFlow = useReactFlow()
+
+    useEffect(() => {
+        setZoneName(label)
+    }, [label])
     const CARD_WIDTH = 100
     const CARD_HEIGHT = 140
     const CARD_MARGIN = 8
     const MAX_COLS = 5
 
+    const applyExtentToChildren = useCallback(
+        (locked: boolean) => {
+            reactFlow.setNodes((nodes) =>
+                nodes.map((node) => {
+                    if (cardChildren.includes(node.id)) {
+                        const nextExtent = locked ? ('parent' as const) : undefined
+                        if (node.extent === nextExtent && node.expandParent === locked) return node
+                        return { ...node, extent: nextExtent, expandParent: locked }
+                    }
+                    if (zoneChildren.includes(node.id)) {
+                        const enforceLock = locked && !temporarilyUnlockedZoneIDs.includes(node.id)
+                        const nextExtent = enforceLock ? ('parent' as const) : undefined
+                        if (node.extent === nextExtent && node.expandParent === enforceLock) return node
+                        return { ...node, extent: nextExtent, expandParent: enforceLock }
+                    }
+                    return node
+                }),
+            )
+        },
+        [cardChildren, zoneChildren, reactFlow, temporarilyUnlockedZoneIDs],
+    )
+
     useEffect(() => {
-        reactFlow.setNodes((nodes) => {
-            return nodes.map((node) => {
-                if (cardChildren.includes(node.id)) {
-                    const enforceLock = lockedChildren
-                    return {
-                        ...node,
-                        extent: enforceLock ? ('parent' as const) : undefined,
-                        expandParent: enforceLock,
-                    }
-                }
-                if (zoneChildren.includes(node.id)) {
-                    const enforceLock = lockedChildren && !temporarilyUnlockedZoneIDs.includes(node.id)
-                    return {
-                        ...node,
-                        extent: enforceLock ? ('parent' as const) : undefined,
-                        expandParent: enforceLock,
-                    }
-                }
-                return node
-            })
-        })
-    }, [lockedChildren, cardChildren, zoneChildren, reactFlow, temporarilyUnlockedZoneIDs])
+        applyExtentToChildren(lockedChildren)
+    }, [lockedChildren, applyExtentToChildren])
 
     const handleAutosort = () => {
         const allNodes = reactFlow.getNodes() as Node[]
@@ -56,24 +65,12 @@ export const ZoneNode = (props: ZoneNodeProps) => {
         const childNodes = allNodes.filter(
             (node) => cardChildren.includes(node.id) && (node.type === 'cardNode' || node.type === 'phantomNode'),
         )
-        // Sort by name
+        // Sort by name (cardNode: data.card.name, phantomNode: data.card.card.name)
         childNodes.sort((a, b) => {
-            function hasCardCardName(data: unknown): data is { card: { card: { name: string } } } {
-                if (typeof data === 'object' && data !== null && 'card' in data) {
-                    const cardField = (data as { card: unknown }).card
-                    if (typeof cardField === 'object' && cardField !== null && 'card' in cardField) {
-                        const cardCardField = (cardField as { card: unknown }).card
-                        if (typeof cardCardField === 'object' && cardCardField !== null && 'name' in cardCardField) {
-                            return true
-                        }
-                    }
-                }
-                return false
-            }
-            function getName(node: Node) {
-                if (hasCardCardName(node.data)) {
-                    return (node.data.card.card.name || '').toLowerCase()
-                }
+            const getName = (node: Node): string => {
+                const d = node.data as { card?: { name?: string; card?: { name?: string } } }
+                if (d?.card?.name) return (d.card.name || '').toLowerCase()
+                if (d?.card?.card?.name) return (d.card.card.name || '').toLowerCase()
                 return ''
             }
             return getName(a).localeCompare(getName(b))
@@ -107,10 +104,14 @@ export const ZoneNode = (props: ZoneNodeProps) => {
         reactFlow.setNodes(newNodes)
     }
 
-    // Handlers
-    const handleLockedChildrenChange = useCallback((evt: React.ChangeEvent<HTMLInputElement>) => {
-        setLockedChildren(evt.target.checked)
-    }, [])
+    const handleLockedChildrenChange = useCallback(
+        (evt: React.ChangeEvent<HTMLInputElement>) => {
+            const nextLocked = evt.target.checked
+            setLockedChildren(nextLocked)
+            applyExtentToChildren(nextLocked)
+        },
+        [applyExtentToChildren],
+    )
 
     // Placeholder rendering logic
     if (draggingZoneIDs.includes(id)) {
@@ -134,7 +135,27 @@ export const ZoneNode = (props: ZoneNodeProps) => {
                 <div style={{ padding: 4 }}>
                     <input
                         type="text"
-                        value={label}
+                        value={zoneName}
+                        onChange={(e) => setZoneName(e.target.value)}
+                        onBlur={() => {
+                            const trimmed = zoneName.trim()
+                            if (trimmed && trimmed !== label && setDeck) {
+                                setDeck((prev) => {
+                                    if (!prev) return prev
+                                    return {
+                                        ...prev,
+                                        zones: prev.zones.map((z) =>
+                                            z.ID === id ? { ...z, name: trimmed } : z,
+                                        ),
+                                    }
+                                })
+                            }
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.currentTarget.blur()
+                            }
+                        }}
                         style={{
                             width: '100%',
                             minWidth: 120,
