@@ -1,0 +1,52 @@
+"""
+Current phase of the import process.
+"""
+enum MTG_ImportPhase {
+    IDLE
+    RESETTING_TIMERS
+    FETCHING_SETS
+    PROCESSING_SETS
+    FETCHING_CARDS
+    PROCESSING_CARDS
+    REBUILDING_INDEX
+    COMPLETE
+    FAILED
+}
+
+"""
+Status response for import operations.
+"""
+type MTG_ImportStatus {
+    """
+    Whether the import was successfully started (only relevant for mutation response).
+    """
+    started: Boolean!
+    """
+    Human-readable message about the import status.
+    """
+    message: String!
+    """
+    Whether an import is currently in progress.
+    """
+    inProgress: Boolean!
+    """
+    Current phase of the import process.
+    """
+    phase: MTG_ImportPhase!
+    """
+    Progress percentage (0-100).
+    """
+    progress: Int!
+    """
+    When the import started (ISO timestamp).
+    """
+    startedAt: String
+    """
+    When the import completed (ISO timestamp).
+    """
+    completedAt: String
+    """
+    Error message if the import failed.
+    """
+    error: String
+}

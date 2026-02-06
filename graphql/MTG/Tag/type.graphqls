@@ -4,4 +4,14 @@ A tag that can be assigned to cards and decks.
 type MTG_Tag {
     ID: ID! @goTag(key: "json", value: "_key")
     name: String!
+    meta: Boolean!
+}
+
+"""
+Represents a tag assignment to a card, including the chain of meta tags.
+"""
+type MTG_TagAssignment {
+    tag: MTG_Tag!
+    chain: [MTG_Tag!]!
+    chainDisplay: String!
 }

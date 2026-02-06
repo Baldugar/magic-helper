@@ -144,4 +144,54 @@ The application is built with the MTG community in mind:
 
 ---
 
+## Roadmap and Missing Features
+
+Magic Helper is under active development. The following features are planned or in progress:
+
+### High Priority
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| **Unit Tests** | Not Started | No automated tests currently exist. Backend needs Go tests, frontend needs Vitest/RTL |
+| **Subtype Filtering** | Stubbed | Type filtering works, but subtype (Goblin, Elf, etc.) is not yet implemented |
+| **Deck Update Optimization** | TODO | Current implementation deletes and re-adds all cards on save. Needs incremental updates |
+
+### Medium Priority
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| **Multi-language Support** | Hardcoded | Currently shows English cards only. Language selector needed |
+| **Accessibility Audit** | Not Started | Keyboard navigation, ARIA labels, screen reader support needed |
+| **Context Menu Integration** | Partial | Basic actions work, but many context menu options are incomplete |
+| **ChainBuilder Enhancements** | In Progress | Tag chain creation UI needs polish and better visualization |
+
+### Lower Priority
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| **Storybook Integration** | Not Started | Component documentation and isolated development |
+| **Card Ignore Polish** | TODO | UI/UX for ignored cards needs refinement |
+| **Profile Features** | Planned | User profiles, pictures, descriptions, friend lists |
+
+### Technical Debt
+
+- Some Spanish comments remain in code (per coding guidelines, accents removed)
+- Filter logic duplicated between client and server
+- Database password in docker-compose needs changing for production
+
+### Recently Completed
+
+- Tag system with hierarchical chains
+- Filter presets (save/load configurations)
+- Deck cover picker
+- Warnings FAB for format legality
+- Manual Scryfall re-import trigger
+- SavedFiltersPopover with update functionality
+
+### Documentation
+
+Full technical and user documentation is available at `/docs/` (run `npm run docs:dev` to view).
+
+---
+
 _Magic Helper aims to bring the joy and intuition of physical deck building into the digital world, giving you the spatial freedom to build decks exactly the way your mind works._

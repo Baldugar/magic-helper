@@ -49,9 +49,18 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
     const [accordionOpenState, setAccordionOpenState] = useState<Record<string, boolean>>({})
     const [scrollPosition, setScrollPosition] = useState(0)
     const paperRef = useRef<HTMLDivElement>(null)
+    const buttonRef = useRef<HTMLButtonElement>(null)
 
     const handleClick = (event: MouseEvent<HTMLElement>) => {
         setAnchorEl(anchorEl ? null : event.currentTarget)
+    }
+
+    const handleClickAway = (event: globalThis.MouseEvent | globalThis.TouchEvent) => {
+        if (buttonRef.current?.contains(event.target as Node)) return
+        if (paperRef.current) {
+            setScrollPosition(paperRef.current.scrollTop)
+        }
+        setAnchorEl(null)
     }
 
     const open = Boolean(anchorEl)
@@ -138,22 +147,11 @@ const SetSelector = (props: SetSelectorProps): JSX.Element => {
                     color="error"
                     anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 >
-                    <Button onClick={handleClick}>Sets</Button>
+                    <Button ref={buttonRef} onClick={handleClick}>Sets</Button>
                 </Badge>
             </Badge>
             <Popper open={open} anchorEl={anchorEl}>
-                <ClickAwayListener
-                    onClickAway={
-                        open
-                            ? () => {
-                                  if (paperRef.current) {
-                                      setScrollPosition(paperRef.current.scrollTop)
-                                  }
-                                  setAnchorEl(null)
-                              }
-                            : () => {}
-                    }
-                >
+                <ClickAwayListener onClickAway={open ? handleClickAway : () => {}}>
                     <Paper ref={paperRef} sx={{ maxHeight: '70vh', maxWidth: '50vw', overflow: 'auto' }}>
                         <TextField
                             label="Search"

@@ -53,7 +53,7 @@ export const VersionCard = (props: VersionCardProps) => {
             MTGFunctions.queries
                 .getMTGTagsQuery()
                 .then((tags) => {
-                    const cardTagIds = new Set((card.tags ?? []).map((t) => t.ID))
+                    const cardTagIds = new Set((card.tagAssignments ?? []).map((a) => a.tag.ID))
                     setTagOptionsForMenu(
                         tags.map((tag) => ({
                             id: tag.ID,
@@ -62,7 +62,7 @@ export const VersionCard = (props: VersionCardProps) => {
                             action: () => {
                                 const c = cardRef.current
                                 if (!c) return
-                                const currentlyHas = (c.tags ?? []).some((t) => t.ID === tag.ID)
+                                const currentlyHas = (c.tagAssignments ?? []).some((a) => a.tag.ID === tag.ID)
                                 if (currentlyHas) {
                                     MTGFunctions.mutations
                                         .unassignTagFromCardMutation({ cardID: c.ID, tagID: tag.ID })
@@ -85,12 +85,12 @@ export const VersionCard = (props: VersionCardProps) => {
             setTagOptionsForMenu((prev) =>
                 (prev ?? []).map((opt) => ({
                     ...opt,
-                    selected: (card.tags ?? []).some((t) => t.ID === opt.id),
+                    selected: (card.tagAssignments ?? []).some((a) => a.tag.ID === opt.id),
                 })),
             )
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps -- tagOptionsForMenu intentionally omitted to trigger load when null
-    }, [versionCardOpen, card.ID, card.tags, refetchCards])
+    }, [versionCardOpen, card.ID, card.tagAssignments, refetchCards])
 
     const versionCardOptions: ContextMenuOption[] = [
         {

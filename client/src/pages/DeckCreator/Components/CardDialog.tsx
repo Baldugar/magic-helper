@@ -62,7 +62,7 @@ export const CardDialog = () => {
         [card, refetch],
     )
 
-    const tagsOnCard = card?.tags ?? []
+    const tagsOnCard = (card?.tagAssignments ?? []).map((a) => a.tag)
     const availableToAdd = allTags.filter((t) => !tagsOnCard.some((c) => c.ID === t.ID))
 
     return (

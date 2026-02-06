@@ -3,6 +3,7 @@ Input to create a new tag.
 """
 input MTG_CreateTagInput {
     name: String!
+    meta: Boolean
 }
 
 """
@@ -11,6 +12,7 @@ Input to update an existing tag.
 input MTG_UpdateTagInput {
     tagID: ID!
     name: String
+    meta: Boolean
 }
 
 """
@@ -21,11 +23,12 @@ input MTG_DeleteTagInput {
 }
 
 """
-Assign a tag to a card.
+Assign a tag to a card with optional chain of meta tags.
 """
 input MTG_AssignTagToCardInput {
     tagID: ID!
     cardID: ID!
+    chain: [ID!]
 }
 
 """
@@ -34,6 +37,7 @@ Unassign a tag from a card.
 input MTG_UnassignTagFromCardInput {
     tagID: ID!
     cardID: ID!
+    chain: [ID!]
 }
 
 """

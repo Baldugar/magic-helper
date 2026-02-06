@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Bash(go run:*)",
+      "Bash(go mod tidy:*)",
+      "Bash(go get:*)",
+      "Bash(git checkout:*)",
+      "Bash(go build:*)",
+      "Bash(npm run generate:*)",
+      "Bash(npm run lint:*)",
+      "Bash(./regenerate.sh:*)",
+      "Bash(bash:*)",
+      "Bash(npx tsc:*)",
+      "Bash(wc:*)",
+      "Bash(npm install:*)"
+    ]
+  }
+}

@@ -89,6 +89,14 @@ func SortInputToState(input []*MtgFilterSortInput) []*MtgFilterSortState {
 type MTGTagDB struct {
 	ID   *string `json:"_key,omitempty"`
 	Name string  `json:"name"`
+	Meta bool    `json:"meta"`
+}
+
+// MTGTagToCardEdgeDB is an edge that connects a tag to a card with optional chain metadata.
+type MTGTagToCardEdgeDB struct {
+	From  string   `json:"_from"`
+	To    string   `json:"_to"`
+	Chain []string `json:"chain,omitempty"`
 }
 
 // ToModel converts a tag DB document to the GraphQL model.
@@ -99,5 +107,6 @@ func (db *MTGTagDB) ToModel() *MtgTag {
 	return &MtgTag{
 		ID:   *db.ID,
 		Name: db.Name,
+		Meta: db.Meta,
 	}
 }

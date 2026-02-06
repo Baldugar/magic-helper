@@ -6,6 +6,8 @@ package graph
 
 import (
 	"context"
+
+	"magic-helper/daemons"
 	"magic-helper/graph/gentypes"
 	"magic-helper/graph/model"
 	"magic-helper/graph/mtg"
@@ -51,6 +53,57 @@ func (r *queryResolver) GetMTGTags(ctx context.Context) ([]*model.MtgTag, error)
 // GetMTGTag is the resolver for the getMTGTag field.
 func (r *queryResolver) GetMTGTag(ctx context.Context, tagID string) (*model.MtgTag, error) {
 	return mtg.GetMTGTag(ctx, tagID)
+}
+
+// GetMTGTagChains is the resolver for the getMTGTagChains field.
+func (r *queryResolver) GetMTGTagChains(ctx context.Context) ([]*model.MtgTagAssignment, error) {
+	return mtg.GetMTGTagChains(ctx)
+}
+
+// GetMTGImportStatus is the resolver for the getMTGImportStatus field.
+func (r *queryResolver) GetMTGImportStatus(ctx context.Context) (*model.MtgImportStatus, error) {
+	manager := daemons.GetImportManager()
+	status := manager.GetStatus()
+
+	// Map daemon phase to GraphQL enum
+	phaseMap := map[daemons.ImportPhase]model.MtgImportPhase{
+		daemons.PhaseIdle:            model.MtgImportPhaseIdle,
+		daemons.PhaseResettingTimers: model.MtgImportPhaseResettingTimers,
+		daemons.PhaseFetchingSets:    model.MtgImportPhaseFetchingSets,
+		daemons.PhaseProcessingSets:  model.MtgImportPhaseProcessingSets,
+		daemons.PhaseFetchingCards:   model.MtgImportPhaseFetchingCards,
+		daemons.PhaseProcessingCards: model.MtgImportPhaseProcessingCards,
+		daemons.PhaseRebuildingIndex: model.MtgImportPhaseRebuildingIndex,
+		daemons.PhaseComplete:        model.MtgImportPhaseComplete,
+		daemons.PhaseFailed:          model.MtgImportPhaseFailed,
+	}
+
+	phase, ok := phaseMap[status.Phase]
+	if !ok {
+		phase = model.MtgImportPhaseIdle
+	}
+
+	result := &model.MtgImportStatus{
+		Started:    false, // Not relevant for status query
+		Message:    status.PhaseMessage,
+		InProgress: status.InProgress,
+		Phase:      phase,
+		Progress:   status.Progress,
+	}
+
+	if status.StartedAt != nil {
+		startedAt := status.StartedAt.Format("2006-01-02T15:04:05Z07:00")
+		result.StartedAt = &startedAt
+	}
+	if status.CompletedAt != nil {
+		completedAt := status.CompletedAt.Format("2006-01-02T15:04:05Z07:00")
+		result.CompletedAt = &completedAt
+	}
+	if status.Error != "" {
+		result.Error = &status.Error
+	}
+
+	return result, nil
 }
 
 // Query returns gentypes.QueryResolver implementation.

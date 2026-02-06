@@ -18,8 +18,9 @@ import { ContextMenu } from '../../../utils/hooks/ContextMenu/ContextMenu'
 import { ContextMenuOption } from '../../../utils/hooks/ContextMenu/types'
 import { useContextMenu } from '../../../utils/hooks/ContextMenu/useContextMenu'
 import { CreateTagDialog } from '../FilterBar/TagDialogs/CreateTagDialog'
+import { ChainBuilderDialog } from '../FilterBar/TagDialogs/ChainBuilderDialog'
 import { PhantomNodeData } from '../FlowCanvas/Nodes/PhantomNode'
-import { TagChips } from '../TagChip'
+import { TagAssignmentChips } from '../TagChip'
 import { MTGCardWithHover } from './MTGCardWithHover'
 import { VersionCard } from './VersionCard'
 
@@ -45,12 +46,13 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
     const { onAddCard, deck, removeCard, setDeck } = useMTGDeckCreatorLogic()
     const { setOpenedCardDialog, setCatalogueContextMenuOpen } = useMTGDeckCreatorUI()
     const { setNodes } = useReactFlow<NodeType>()
-    const { filter, setFilter } = useMTGFilter()
+    const { filter, setFilter, refetchTagsAndChains } = useMTGFilter()
     const { refetch: refetchCards } = useMTGCards()
     const cardRef = useRef(card)
     cardRef.current = card
     const [tagOptionsForMenu, setTagOptionsForMenu] = useState<ContextMenuOption[] | null>(null)
     const [openCreateTagDialog, setOpenCreateTagDialog] = useState(false)
+    const [openChainBuilderDialog, setOpenChainBuilderDialog] = useState(false)
     const {
         anchorRef: mainCardAnchorRef,
         handleClick: mainCardHandleClick,
@@ -80,7 +82,7 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
             MTGFunctions.queries
                 .getMTGTagsQuery()
                 .then((tags) => {
-                    const cardTagIds = new Set((card.tags ?? []).map((t) => t.ID))
+                    const cardTagIds = new Set((card.tagAssignments ?? []).map((a) => a.tag.ID))
                     setTagOptionsForMenu(
                         tags.map((tag) => ({
                             id: tag.ID,
@@ -89,7 +91,7 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
                             action: () => {
                                 const c = cardRef.current
                                 if (!c) return
-                                const currentlyHas = (c.tags ?? []).some((t) => t.ID === tag.ID)
+                                const currentlyHas = (c.tagAssignments ?? []).some((a) => a.tag.ID === tag.ID)
                                 if (currentlyHas) {
                                     MTGFunctions.mutations
                                         .unassignTagFromCardMutation({ cardID: c.ID, tagID: tag.ID })
@@ -112,12 +114,12 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
             setTagOptionsForMenu((prev) =>
                 (prev ?? []).map((opt) => ({
                     ...opt,
-                    selected: (card.tags ?? []).some((t) => t.ID === opt.id),
+                    selected: (card.tagAssignments ?? []).some((a) => a.tag.ID === opt.id),
                 })),
             )
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps -- tagOptionsForMenu intentionally omitted to trigger load when null
-    }, [mainCardOpen, card.ID, card.tags, refetchCards])
+    }, [mainCardOpen, card.ID, card.tagAssignments, refetchCards])
 
     // Use default-marked version, or first version when filter (e.g. games) leaves none marked default
     const defaultVersion = card.versions.find((v) => v.isDefault) ?? card.versions[0]
@@ -304,6 +306,14 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
                       : tagOptionsForMenu,
         },
         {
+            id: 'assignTagChain',
+            label: 'Assign tag chain...',
+            action: () => {
+                mainCardHandleClose()
+                setOpenChainBuilderDialog(true)
+            },
+        },
+        {
             label: 'Add as deck image',
             action: () => {
                 if (!deck) return
@@ -395,8 +405,8 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
             >
                 <Tooltip
                     title={
-                        (card.tags ?? []).length > 0 ? (
-                            <TagChips tags={card.tags ?? []} />
+                        (card.tagAssignments ?? []).length > 0 ? (
+                            <TagAssignmentChips assignments={card.tagAssignments ?? []} />
                         ) : (
                             'No tags'
                         )
@@ -479,6 +489,17 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
                     }
                     setTagOptionsForMenu(null)
                     setOpenCreateTagDialog(false)
+                }}
+            />
+            <ChainBuilderDialog
+                open={openChainBuilderDialog}
+                onClose={() => setOpenChainBuilderDialog(false)}
+                cardID={card.ID}
+                cardName={card.name}
+                onAssigned={() => {
+                    refetchCards()
+                    refetchTagsAndChains()
+                    setTagOptionsForMenu(null)
                 }}
             />
             <Dialog

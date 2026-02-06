@@ -53,9 +53,10 @@ export type FlowZoneInput = {
   zoneChildren: Array<Scalars['ID']['input']>;
 };
 
-/** Assign a tag to a card. */
+/** Assign a tag to a card with optional chain of meta tags. */
 export type MTG_AssignTagToCardInput = {
   cardID: Scalars['ID']['input'];
+  chain?: InputMaybe<Array<Scalars['ID']['input']>>;
   tagID: Scalars['ID']['input'];
 };
 
@@ -82,7 +83,7 @@ export type MTG_Card = {
   oracleText?: Maybe<Scalars['String']['output']>;
   power?: Maybe<Scalars['String']['output']>;
   producedMana?: Maybe<Array<MTG_Color>>;
-  tags: Array<MTG_Tag>;
+  tagAssignments: Array<MTG_TagAssignment>;
   toughness?: Maybe<Scalars['String']['output']>;
   typeLine: Scalars['String']['output'];
   versions: Array<MTG_CardVersion>;
@@ -153,7 +154,7 @@ export type MTG_CardVersion_Dashboard = {
 export type MTG_Card_Dashboard = {
   __typename?: 'MTG_Card_Dashboard';
   ID: Scalars['ID']['output'];
-  tags: Array<MTG_Tag>;
+  tagAssignments: Array<MTG_TagAssignment>;
   versions: Array<MTG_CardVersion_Dashboard>;
 };
 
@@ -184,6 +185,7 @@ export type MTG_CreateFilterPresetInput = {
 
 /** Input to create a new tag. */
 export type MTG_CreateTagInput = {
+  meta?: InputMaybe<Scalars['Boolean']['input']>;
   name: Scalars['String']['input'];
 };
 
@@ -299,6 +301,13 @@ export type MTG_Filter_CardTypes = {
   subtypes: Array<Scalars['String']['output']>;
 };
 
+/** Chain filter entry - matches exact chain sequences. */
+export type MTG_Filter_ChainInput = {
+  chainTagIDs: Array<Scalars['ID']['input']>;
+  terminalTagID: Scalars['ID']['input'];
+  value: TernaryBoolean;
+};
+
 /** Color filter entry with ternary state. */
 export type MTG_Filter_ColorInput = {
   color: MTG_Color;
@@ -384,6 +393,8 @@ export type MTG_Filter_Search = {
 /** Combined filter input used to filter cards. */
 export type MTG_Filter_SearchInput = {
   cardTypes: Array<MTG_Filter_CardTypeInput>;
+  /** Filter by exact chain sequences. */
+  chains?: InputMaybe<Array<MTG_Filter_ChainInput>>;
   color: Array<MTG_Filter_ColorInput>;
   commander?: InputMaybe<Scalars['ID']['input']>;
   deckID?: InputMaybe<Scalars['ID']['input']>;
@@ -402,6 +413,7 @@ export type MTG_Filter_SearchInput = {
   /**
    * Filter by tags: each entry has tag ID and ternary value (TRUE = must have, FALSE = must not have, UNSET = ignore).
    * Multiple TRUE tags are AND: card must have all of them.
+   * Matches if tag appears ANYWHERE in chain (terminal or chain member).
    */
   tags: Array<MTG_Filter_TagInput>;
 };
@@ -450,7 +462,10 @@ export type MTG_Filter_SubtypeInput = {
   value: TernaryBoolean;
 };
 
-/** Tag filter entry with ternary state (like sets). */
+/**
+ * Tag filter entry with ternary state (like sets).
+ * Matches cards where the tag appears ANYWHERE (as terminal or in any chain).
+ */
 export type MTG_Filter_TagInput = {
   tagID: Scalars['ID']['input'];
   value: TernaryBoolean;
@@ -472,6 +487,40 @@ export type MTG_Image = {
   large: Scalars['String']['output'];
   normal: Scalars['String']['output'];
   small: Scalars['String']['output'];
+};
+
+/** Current phase of the import process. */
+export enum MTG_ImportPhase {
+  IDLE = 'IDLE',
+  RESETTING_TIMERS = 'RESETTING_TIMERS',
+  FETCHING_SETS = 'FETCHING_SETS',
+  PROCESSING_SETS = 'PROCESSING_SETS',
+  FETCHING_CARDS = 'FETCHING_CARDS',
+  PROCESSING_CARDS = 'PROCESSING_CARDS',
+  REBUILDING_INDEX = 'REBUILDING_INDEX',
+  COMPLETE = 'COMPLETE',
+  FAILED = 'FAILED'
+}
+
+/** Status response for import operations. */
+export type MTG_ImportStatus = {
+  __typename?: 'MTG_ImportStatus';
+  /** Whether the import was successfully started (only relevant for mutation response). */
+  started: Scalars['Boolean']['output'];
+  /** Human-readable message about the import status. */
+  message: Scalars['String']['output'];
+  /** Whether an import is currently in progress. */
+  inProgress: Scalars['Boolean']['output'];
+  /** Current phase of the import process. */
+  phase: MTG_ImportPhase;
+  /** Progress percentage (0-100). */
+  progress: Scalars['Int']['output'];
+  /** When the import started (ISO timestamp). */
+  startedAt?: Maybe<Scalars['String']['output']>;
+  /** When the import completed (ISO timestamp). */
+  completedAt?: Maybe<Scalars['String']['output']>;
+  /** Error message if the import failed. */
+  error?: Maybe<Scalars['String']['output']>;
 };
 
 /** Card layouts as defined by Scryfall. */
@@ -514,12 +563,22 @@ export enum MTG_Rarity {
 export type MTG_Tag = {
   __typename?: 'MTG_Tag';
   ID: Scalars['ID']['output'];
+  meta: Scalars['Boolean']['output'];
   name: Scalars['String']['output'];
+};
+
+/** Represents a tag assignment to a card, including the chain of meta tags. */
+export type MTG_TagAssignment = {
+  __typename?: 'MTG_TagAssignment';
+  chain: Array<MTG_Tag>;
+  chainDisplay: Scalars['String']['output'];
+  tag: MTG_Tag;
 };
 
 /** Unassign a tag from a card. */
 export type MTG_UnassignTagFromCardInput = {
   cardID: Scalars['ID']['input'];
+  chain?: InputMaybe<Array<Scalars['ID']['input']>>;
   tagID: Scalars['ID']['input'];
 };
 
@@ -550,6 +609,7 @@ export type MTG_UpdateFilterPresetInput = {
 
 /** Input to update an existing tag. */
 export type MTG_UpdateTagInput = {
+  meta?: InputMaybe<Scalars['Boolean']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   tagID: Scalars['ID']['input'];
 };
@@ -575,6 +635,8 @@ export type Mutation = {
   deleteMTGFilterPreset: Response;
   /** Delete a tag by ID. */
   deleteMTGTag: Response;
+  /** Trigger a manual re-import of MTG cards and sets from Scryfall. */
+  reimportMTGData: MTG_ImportStatus;
   /** Remove ignored mark from a deck/card pair. */
   removeIgnoredCard: Response;
   /** Create a new deck by copying another deck's data. */
@@ -729,8 +791,12 @@ export type Query = {
   getMTGFilters: MTG_Filter_Entries;
   /** Return a single tag by ID. */
   getMTGTag?: Maybe<MTG_Tag>;
+  /** Return all unique tag chains that exist on cards. */
+  getMTGTagChains: Array<MTG_TagAssignment>;
   /** List all tags. */
   getMTGTags: Array<MTG_Tag>;
+  /** Get current status of the card/set import process. */
+  getMTGImportStatus: MTG_ImportStatus;
 };
 
 

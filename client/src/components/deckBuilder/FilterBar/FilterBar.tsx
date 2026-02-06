@@ -19,7 +19,7 @@ import { MouseEvent, useState } from 'react'
 import { useMTGCards } from '../../../context/MTGA/Cards/useMTGCards'
 import { useMTGDeckCreatorLogic } from '../../../context/MTGA/DeckCreator/Logic/useMTGDeckCreatorLogic'
 import { useMTGDeckCreatorUI } from '../../../context/MTGA/DeckCreator/UI/useMTGDeckCreatorUI'
-import { initialMTGFilter } from '../../../context/MTGA/Filter/MTGFilterContext'
+import { ChainFilter, initialMTGFilter } from '../../../context/MTGA/Filter/MTGFilterContext'
 import { useMTGFilter } from '../../../context/MTGA/Filter/useMTGFilter'
 import { TernaryBoolean } from '../../../graphql/types'
 import { nextTB, prevTB } from '../../../types/ternaryBoolean'
@@ -32,12 +32,14 @@ import RaritySelector from './controls/RaritySelector'
 import SetSelector from './controls/SetSelector'
 import { SortBuilder } from './controls/SortBuilder'
 import TagSelector from './controls/TagSelector'
+import ChainSelector from './controls/ChainSelector'
 import TypeSelector from './controls/TypeSelector'
+import { ReimportButton } from '../ReimportButton/ReimportButton'
 import { SavedFiltersPopover } from './SavedFiltersPopover'
 import { ManageTagsDialog } from './TagDialogs/ManageTagsDialog'
 
 export const FilterBar = () => {
-    const { filter, setFilter, setIgnoredCardIDs } = useMTGFilter()
+    const { filter, setFilter, setIgnoredCardIDs, refetchTagsAndChains } = useMTGFilter()
     const { refetch: refetchCards } = useMTGCards()
     const { stickyCardsGrid, setStickyCardsGrid } = useMTGDeckCreatorUI()
     const { deck } = useMTGDeckCreatorLogic()
@@ -290,6 +292,35 @@ export const FilterBar = () => {
                 }}
                 onManageClick={() => setManageTagsOpen(true)}
             />
+            <ChainSelector
+                chains={filter.chains}
+                onChainToggle={(terminalTagID, chainTagIDs, value) => {
+                    setFilter((prev) => {
+                        const existingIndex = prev.chains.findIndex(
+                            (c) =>
+                                c.terminalTagID === terminalTagID &&
+                                c.chainTagIDs.length === chainTagIDs.length &&
+                                c.chainTagIDs.every((id, i) => id === chainTagIDs[i])
+                        )
+
+                        let newChains: ChainFilter[]
+                        if (value === TernaryBoolean.UNSET) {
+                            // Remove the chain if setting to UNSET
+                            newChains = prev.chains.filter((_, i) => i !== existingIndex)
+                        } else if (existingIndex >= 0) {
+                            // Update existing chain
+                            newChains = prev.chains.map((c, i) =>
+                                i === existingIndex ? { ...c, value } : c
+                            )
+                        } else {
+                            // Add new chain
+                            newChains = [...prev.chains, { terminalTagID, chainTagIDs, value }]
+                        }
+
+                        return { ...prev, chains: newChains, page: 0 }
+                    })
+                }}
+            />
             <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
             <GameSelector
                 selected={filter.games}
@@ -310,6 +341,8 @@ export const FilterBar = () => {
             />
             <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
             <SortBuilder />
+            <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
+            <ReimportButton onImportComplete={() => void refetchCards()} />
             <Divider orientation={'vertical'} flexItem sx={{ mx: 2 }} />
             <FormControlLabel
                 value={filter.hideIgnored}
@@ -350,7 +383,10 @@ export const FilterBar = () => {
             <ManageTagsDialog
                 open={manageTagsOpen}
                 onClose={() => setManageTagsOpen(false)}
-                onTagsChanged={() => void refetchCards()}
+                onTagsChanged={() => {
+                    void refetchCards()
+                    refetchTagsAndChains()
+                }}
             />
         </Grid>
     )

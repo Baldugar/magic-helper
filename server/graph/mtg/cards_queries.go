@@ -19,17 +19,30 @@ func GetMTGCards(ctx context.Context) ([]*model.MtgCard, error) {
 	// Build the query
 	queryBuildStart := time.Now()
 	aq := arango.NewQuery( /* aql */ `
-		FOR doc IN mtg_cards 
+		FOR doc IN mtg_cards
 			OPTIONS {
 				indexHint: "mtg_cards_buildup"
 			}
 			FILTER (doc.manaCost == "" AND doc.layout != "meld") OR doc.manaCost != ""
-			LET tags = (
-				FOR tag IN 1..1 INBOUND doc mtg_tag_to_card
+			LET tagAssignments = (
+				FOR tag, edge IN 1..1 INBOUND doc mtg_tag_to_card
+				LET chainTags = (
+					FOR chainTagID IN (edge.chain || [])
+						LET chainTag = DOCUMENT("mtg_tags", chainTagID)
+						RETURN { _key: chainTag._key, name: chainTag.name, meta: chainTag.meta || false }
+				)
+				LET allTagNames = APPEND(
+					(FOR ct IN chainTags RETURN ct.name),
+					[tag.name]
+				)
 				SORT tag.name ASC
-				RETURN { _key: tag._key, name: tag.name }
+				RETURN {
+					tag: { _key: tag._key, name: tag.name, meta: tag.meta || false },
+					chain: chainTags,
+					chainDisplay: CONCAT_SEPARATOR(" → ", allTagNames)
+				}
 			)
-			RETURN MERGE(doc, { tags })
+			RETURN MERGE(doc, { tagAssignments: tagAssignments })
 	`)
 
 	// Build the query
@@ -55,8 +68,8 @@ func GetMTGCards(ctx context.Context) ([]*model.MtgCard, error) {
 			log.Error().Err(err).Msgf("GetMTGCards: Error reading document")
 			return nil, err
 		}
-		if card.Tags == nil {
-			card.Tags = []*model.MtgTag{}
+		if card.TagAssignments == nil {
+			card.TagAssignments = []*model.MtgTagAssignment{}
 		}
 		cards = append(cards, &card)
 	}
@@ -510,10 +523,10 @@ func GetMTGCardsFiltered(ctx context.Context, filter model.MtgFilterSearchInput,
 			}
 		}
 	}
-	// Ensure tags slice is never nil (e.g. when cards come from index built without tags).
+	// Ensure tagAssignments slice is never nil (e.g. when cards come from index built without tags).
 	for _, card := range pagedCards {
-		if card.Tags == nil {
-			card.Tags = []*model.MtgTag{}
+		if card.TagAssignments == nil {
+			card.TagAssignments = []*model.MtgTagAssignment{}
 		}
 	}
 

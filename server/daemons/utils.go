@@ -61,6 +61,48 @@ func shouldDownloadStart(record string) (bool, error) {
 	}
 }
 
+// resetLastTimeFetched sets ApplicationConfig's LastTimeFetched to 0 for a record,
+// forcing the next fetch cycle to run regardless of when the last fetch occurred.
+func resetLastTimeFetched(record string) error {
+	ctx := context.Background()
+
+	col, err := arango.EnsureDocumentCollection(ctx, arango.APPLICATION_CONFIG_COLLECTION)
+	if err != nil {
+		log.Error().Err(err).Msgf("Error ensuring application config collection")
+		return err
+	}
+
+	exists, err := col.DocumentExists(ctx, record)
+	if err != nil {
+		log.Error().Err(err).Msgf("Error checking if document exists")
+		return err
+	}
+
+	if !exists {
+		// Create the record with 0 timestamp
+		appConfig := model.MTGApplicationConfig{
+			ID:              record,
+			LastTimeFetched: 0,
+		}
+		_, err := col.CreateDocument(ctx, appConfig)
+		return err
+	}
+
+	// Update existing record to 0
+	appConfig := model.MTGApplicationConfig{
+		ID:              record,
+		LastTimeFetched: 0,
+	}
+	_, err = col.UpdateDocument(ctx, record, appConfig)
+	if err != nil {
+		log.Error().Err(err).Msgf("Error resetting last time fetched")
+		return err
+	}
+
+	log.Info().Str("record", record).Msg("Reset last time fetched to 0")
+	return nil
+}
+
 // updateLastTimeFetched updates ApplicationConfig's LastTimeFetched for a record.
 func updateLastTimeFetched(record string) error {
 	var appConfig model.MTGApplicationConfig

@@ -19,7 +19,7 @@ type MTG_Card {
     toughness: String
     typeLine: String!
     versions: [MTG_CardVersion!]!
-    tags: [MTG_Tag!]!
+    tagAssignments: [MTG_TagAssignment!]!
 }
 
 """
@@ -87,7 +87,7 @@ Minimal card representation for dashboard listings.
 type MTG_Card_Dashboard {
     ID: ID! @goTag(key: "json", value: "_key")
     versions: [MTG_CardVersion_Dashboard!]!
-    tags: [MTG_Tag!]!
+    tagAssignments: [MTG_TagAssignment!]!
 }
 
 """

@@ -1,6 +1,7 @@
 import { useMediaQuery } from '@mui/material'
 import { cloneDeep } from 'lodash'
-import { ReactNode, useEffect, useMemo, useState } from 'react'
+import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import { MTGFunctions } from '../../../graphql/MTGA/functions'
 import getMTGAFilters from '../../../graphql/MTGA/queries/getMTGFilters'
 import {
     MTG_Color,
@@ -9,6 +10,8 @@ import {
     MTG_Game,
     MTG_Layout,
     MTG_Rarity,
+    MTG_Tag,
+    MTG_TagAssignment,
     Query,
     QuerygetMTGCardsFilteredArgs,
     TernaryBoolean,
@@ -31,6 +34,8 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
     const [filter, setFilter] = useState<MTGFilterType>(initialMTGFilter)
     const [originalFilter, setOriginalFilter] = useState<MTGFilterType>(initialMTGFilter)
     const [ignoredCardIDs, setIgnoredCardIDs] = useState<string[]>([])
+    const [availableTags, setAvailableTags] = useState<MTG_Tag[]>([])
+    const [existingChains, setExistingChains] = useState<MTG_TagAssignment[]>([])
     const isMobile = useMediaQuery('(max-width: 600px)')
 
     const [sort, setSort] = useState(
@@ -42,21 +47,42 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
     )
     const [zoom, setZoom] = useState<'IN' | 'OUT'>('OUT')
 
+    const fetchTagsAndChains = useCallback(() => {
+        Promise.all([
+            MTGFunctions.queries.getMTGTagsQuery(),
+            MTGFunctions.queries.getMTGTagChainsQuery(),
+        ])
+            .then(([tagsResult, chainsResult]) => {
+                setAvailableTags(tagsResult)
+                setExistingChains(chainsResult)
+            })
+            .catch(() => {
+                setAvailableTags([])
+                setExistingChains([])
+            })
+    }, [])
+
     useEffect(() => {
         fetchData<Query>(getMTGAFilters).then((data) => {
             if (!data) throw new Error('No data from getMTGFilters')
             const result = data.data.getMTGFilters
             setFilter((prev) => {
-                // prev = cloneDeep(initialMTGFilter) IS THIS NEEDED??
+                // Create new objects for nested properties to ensure reference changes
+                const newCardTypes = { ...prev.cardTypes }
+                const newSubtypes = { ...prev.subtypes }
+                const newSets = { ...prev.sets }
+                const newLegalities = { ...prev.legalities }
+                const newLayouts = { ...prev.layouts }
+
                 for (const key of result.types) {
-                    prev.cardTypes[key.cardType] = TernaryBoolean.UNSET
-                    prev.subtypes[key.cardType] = {}
+                    newCardTypes[key.cardType] = TernaryBoolean.UNSET
+                    newSubtypes[key.cardType] = {}
                     for (const subtype of key.subtypes) {
-                        prev.subtypes[key.cardType][subtype] = TernaryBoolean.UNSET
+                        newSubtypes[key.cardType][subtype] = TernaryBoolean.UNSET
                     }
                 }
                 for (const key of result.expansions) {
-                    prev.sets[key.set] = {
+                    newSets[key.set] = {
                         setName: key.setName,
                         value: TernaryBoolean.UNSET,
                         imageURL: key.imageURL,
@@ -66,20 +92,31 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
                     }
                 }
                 for (const format of result.legality.formats) {
-                    prev.legalities[format] = {}
+                    newLegalities[format] = {}
                     for (const legalityValue of result.legality.legalityValues) {
-                        prev.legalities[format][legalityValue] = TernaryBoolean.UNSET
+                        newLegalities[format][legalityValue] = TernaryBoolean.UNSET
                     }
                 }
                 for (const layout of result.layouts) {
-                    prev.layouts[layout] = TernaryBoolean.UNSET
+                    newLayouts[layout] = TernaryBoolean.UNSET
                 }
-                prev.page = 0
-                setOriginalFilter({ ...prev })
-                return { ...prev }
+
+                const newFilter = {
+                    ...prev,
+                    cardTypes: newCardTypes,
+                    subtypes: newSubtypes,
+                    sets: newSets,
+                    legalities: newLegalities,
+                    layouts: newLayouts,
+                    page: 0,
+                }
+                setOriginalFilter({ ...newFilter })
+                return newFilter
             })
         })
-    }, [])
+
+        fetchTagsAndChains()
+    }, [fetchTagsAndChains])
 
     const clearFilter = () => {
         setFilter(originalFilter)
@@ -163,6 +200,14 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
             const tags = Object.entries(filter.tags).filter(([_, value]) => isNotUnsetTB(value))
             toReturn.filter.tags = tags.map(([tagID, value]) => ({ tagID, value }))
 
+            // Convert chains - only include chains with non-UNSET values
+            const activeChains = filter.chains.filter((c) => isNotUnsetTB(c.value))
+            toReturn.filter.chains = activeChains.map((c) => ({
+                terminalTagID: c.terminalTagID,
+                chainTagIDs: c.chainTagIDs,
+                value: c.value,
+            }))
+
             return toReturn
         },
         // ignoredCardIDs is not used but is needed to trigger the filtering if the user has the "Hide Ignored" filter enabled
@@ -184,6 +229,9 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
                 zoom,
                 setZoom,
                 convertedFilters,
+                availableTags,
+                existingChains,
+                refetchTagsAndChains: fetchTagsAndChains,
             }}
         >
             {children}

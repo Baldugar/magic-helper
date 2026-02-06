@@ -36,10 +36,11 @@ type FlowZoneInput struct {
 	ZoneChildren []string       `json:"zoneChildren"`
 }
 
-// Assign a tag to a card.
+// Assign a tag to a card with optional chain of meta tags.
 type MtgAssignTagToCardInput struct {
-	TagID  string `json:"tagID"`
-	CardID string `json:"cardID"`
+	TagID  string   `json:"tagID"`
+	CardID string   `json:"cardID"`
+	Chain  []string `json:"chain,omitempty"`
 }
 
 // Assign a tag to a deck.
@@ -50,24 +51,24 @@ type MtgAssignTagToDeckInput struct {
 
 // Aggregated MTG card entity with curated versions and user context.
 type MtgCard struct {
-	ID             string            `json:"_key"`
-	Layout         MtgLayout         `json:"layout"`
-	Cmc            float64           `json:"CMC"`
-	ColorIdentity  []MtgColor        `json:"colorIdentity"`
-	ColorIndicator []string          `json:"colorIndicator,omitempty"`
-	Colors         []MtgColor        `json:"colors,omitempty"`
-	EDHRecRank     *int              `json:"EDHRecRank,omitempty"`
-	Keywords       []string          `json:"keywords"`
-	Loyalty        *string           `json:"loyalty,omitempty"`
-	ManaCost       *string           `json:"manaCost,omitempty"`
-	Name           string            `json:"name"`
-	OracleText     *string           `json:"oracleText,omitempty"`
-	Power          *string           `json:"power,omitempty"`
-	ProducedMana   []MtgColor        `json:"producedMana,omitempty"`
-	Toughness      *string           `json:"toughness,omitempty"`
-	TypeLine       string            `json:"typeLine"`
-	Versions       []*MtgCardVersion `json:"versions"`
-	Tags           []*MtgTag         `json:"tags"`
+	ID             string              `json:"_key"`
+	Layout         MtgLayout           `json:"layout"`
+	Cmc            float64             `json:"CMC"`
+	ColorIdentity  []MtgColor          `json:"colorIdentity"`
+	ColorIndicator []string            `json:"colorIndicator,omitempty"`
+	Colors         []MtgColor          `json:"colors,omitempty"`
+	EDHRecRank     *int                `json:"EDHRecRank,omitempty"`
+	Keywords       []string            `json:"keywords"`
+	Loyalty        *string             `json:"loyalty,omitempty"`
+	ManaCost       *string             `json:"manaCost,omitempty"`
+	Name           string              `json:"name"`
+	OracleText     *string             `json:"oracleText,omitempty"`
+	Power          *string             `json:"power,omitempty"`
+	ProducedMana   []MtgColor          `json:"producedMana,omitempty"`
+	Toughness      *string             `json:"toughness,omitempty"`
+	TypeLine       string              `json:"typeLine"`
+	Versions       []*MtgCardVersion   `json:"versions"`
+	TagAssignments []*MtgTagAssignment `json:"tagAssignments"`
 }
 
 // One face of a multi-faced card version.
@@ -129,9 +130,9 @@ type MtgCardVersionDashboard struct {
 
 // Minimal card representation for dashboard listings.
 type MtgCardDashboard struct {
-	ID       string                     `json:"_key"`
-	Versions []*MtgCardVersionDashboard `json:"versions"`
-	Tags     []*MtgTag                  `json:"tags"`
+	ID             string                     `json:"_key"`
+	Versions       []*MtgCardVersionDashboard `json:"versions"`
+	TagAssignments []*MtgTagAssignment        `json:"tagAssignments"`
 }
 
 // Input to create a new deck.
@@ -152,6 +153,7 @@ type MtgCreateFilterPresetInput struct {
 // Input to create a new tag.
 type MtgCreateTagInput struct {
 	Name string `json:"name"`
+	Meta *bool  `json:"meta,omitempty"`
 }
 
 // A user deck with cards, positions, zones and optional front image.
@@ -253,6 +255,13 @@ type MtgFilterCardTypes struct {
 	Subtypes []string `json:"subtypes"`
 }
 
+// Chain filter entry - matches exact chain sequences.
+type MtgFilterChainInput struct {
+	TerminalTagID string         `json:"terminalTagID"`
+	ChainTagIDs   []string       `json:"chainTagIDs"`
+	Value         TernaryBoolean `json:"value"`
+}
+
 // Color filter entry with ternary state.
 type MtgFilterColorInput struct {
 	Color MtgColor       `json:"color"`
@@ -351,7 +360,10 @@ type MtgFilterSearchInput struct {
 	IsSelectingCommander bool                      `json:"isSelectingCommander"`
 	// Filter by tags: each entry has tag ID and ternary value (TRUE = must have, FALSE = must not have, UNSET = ignore).
 	// Multiple TRUE tags are AND: card must have all of them.
+	// Matches if tag appears ANYWHERE in chain (terminal or chain member).
 	Tags []*MtgFilterTagInput `json:"tags"`
+	// Filter by exact chain sequences.
+	Chains []*MtgFilterChainInput `json:"chains,omitempty"`
 }
 
 // Set filter entry with ternary state.
@@ -381,6 +393,7 @@ type MtgFilterSubtypeInput struct {
 }
 
 // Tag filter entry with ternary state (like sets).
+// Matches cards where the tag appears ANYWHERE (as terminal or in any chain).
 type MtgFilterTagInput struct {
 	TagID string         `json:"tagID"`
 	Value TernaryBoolean `json:"value"`
@@ -396,16 +409,45 @@ type MtgImage struct {
 	Small      string `json:"small"`
 }
 
+// Status response for import operations.
+type MtgImportStatus struct {
+	// Whether the import was successfully started (only relevant for mutation response).
+	Started bool `json:"started"`
+	// Human-readable message about the import status.
+	Message string `json:"message"`
+	// Whether an import is currently in progress.
+	InProgress bool `json:"inProgress"`
+	// Current phase of the import process.
+	Phase MtgImportPhase `json:"phase"`
+	// Progress percentage (0-100).
+	Progress int `json:"progress"`
+	// When the import started (ISO timestamp).
+	StartedAt *string `json:"startedAt,omitempty"`
+	// When the import completed (ISO timestamp).
+	CompletedAt *string `json:"completedAt,omitempty"`
+	// Error message if the import failed.
+	Error *string `json:"error,omitempty"`
+}
+
 // A tag that can be assigned to cards and decks.
 type MtgTag struct {
 	ID   string `json:"_key"`
 	Name string `json:"name"`
+	Meta bool   `json:"meta"`
+}
+
+// Represents a tag assignment to a card, including the chain of meta tags.
+type MtgTagAssignment struct {
+	Tag          *MtgTag   `json:"tag"`
+	Chain        []*MtgTag `json:"chain"`
+	ChainDisplay string    `json:"chainDisplay"`
 }
 
 // Unassign a tag from a card.
 type MtgUnassignTagFromCardInput struct {
-	TagID  string `json:"tagID"`
-	CardID string `json:"cardID"`
+	TagID  string   `json:"tagID"`
+	CardID string   `json:"cardID"`
+	Chain  []string `json:"chain,omitempty"`
 }
 
 // Unassign a tag from a deck.
@@ -437,6 +479,7 @@ type MtgUpdateFilterPresetInput struct {
 type MtgUpdateTagInput struct {
 	TagID string  `json:"tagID"`
 	Name  *string `json:"name,omitempty"`
+	Meta  *bool   `json:"meta,omitempty"`
 }
 
 // Root-level write operations.
@@ -758,6 +801,62 @@ func (e *MtgGame) UnmarshalGQL(v any) error {
 }
 
 func (e MtgGame) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Current phase of the import process.
+type MtgImportPhase string
+
+const (
+	MtgImportPhaseIdle            MtgImportPhase = "IDLE"
+	MtgImportPhaseResettingTimers MtgImportPhase = "RESETTING_TIMERS"
+	MtgImportPhaseFetchingSets    MtgImportPhase = "FETCHING_SETS"
+	MtgImportPhaseProcessingSets  MtgImportPhase = "PROCESSING_SETS"
+	MtgImportPhaseFetchingCards   MtgImportPhase = "FETCHING_CARDS"
+	MtgImportPhaseProcessingCards MtgImportPhase = "PROCESSING_CARDS"
+	MtgImportPhaseRebuildingIndex MtgImportPhase = "REBUILDING_INDEX"
+	MtgImportPhaseComplete        MtgImportPhase = "COMPLETE"
+	MtgImportPhaseFailed          MtgImportPhase = "FAILED"
+)
+
+var AllMtgImportPhase = []MtgImportPhase{
+	MtgImportPhaseIdle,
+	MtgImportPhaseResettingTimers,
+	MtgImportPhaseFetchingSets,
+	MtgImportPhaseProcessingSets,
+	MtgImportPhaseFetchingCards,
+	MtgImportPhaseProcessingCards,
+	MtgImportPhaseRebuildingIndex,
+	MtgImportPhaseComplete,
+	MtgImportPhaseFailed,
+}
+
+func (e MtgImportPhase) IsValid() bool {
+	switch e {
+	case MtgImportPhaseIdle, MtgImportPhaseResettingTimers, MtgImportPhaseFetchingSets, MtgImportPhaseProcessingSets, MtgImportPhaseFetchingCards, MtgImportPhaseProcessingCards, MtgImportPhaseRebuildingIndex, MtgImportPhaseComplete, MtgImportPhaseFailed:
+		return true
+	}
+	return false
+}
+
+func (e MtgImportPhase) String() string {
+	return string(e)
+}
+
+func (e *MtgImportPhase) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MtgImportPhase(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MTG_ImportPhase", str)
+	}
+	return nil
+}
+
+func (e MtgImportPhase) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

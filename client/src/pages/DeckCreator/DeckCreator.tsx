@@ -58,7 +58,7 @@ export const DeckCreator = () => {
     const { openDrawer, setOpenDrawer, setViewMode, viewMode, setOpenImportDialog, setOpenExportDialog } =
         useMTGDeckCreatorUI()
     const { propagateChangesToDashboardDeck } = useMTGDecks()
-    const { filter, setFilter } = useMTGFilter()
+    const { filter, setFilter, refetchTagsAndChains } = useMTGFilter()
 
     const { clearFilter } = useMTGFilter()
     const { getNodes } = useReactFlow()
@@ -352,7 +352,10 @@ export const DeckCreator = () => {
             <ManageTagsDialog
                 open={openTagManager}
                 onClose={() => setOpenTagManager(false)}
-                onTagsChanged={() => void refetchCards()}
+                onTagsChanged={() => {
+                    void refetchCards()
+                    refetchTagsAndChains()
+                }}
             />
         </Box>
     )

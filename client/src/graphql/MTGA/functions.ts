@@ -13,7 +13,9 @@ import {
     MTG_DeleteTagInput,
     MTG_Filter_Search,
     MTG_FilterPreset,
+    MTG_ImportStatus,
     MTG_Tag,
+    MTG_TagAssignment,
     MTG_UnassignTagFromCardInput,
     MTG_UnassignTagFromDeckInput,
     MTG_UpdateDeckInput,
@@ -52,6 +54,7 @@ import createMTGTag from './mutations/createMTGTag'
 import deleteMTGADeck from './mutations/deleteMTGDeck'
 import deleteMTGFilterPreset from './mutations/deleteMTGFilterPreset'
 import deleteMTGTag from './mutations/deleteMTGTag'
+import reimportMTGData from './mutations/reimportMTGData'
 import removeIgnoredCard from './mutations/removeIgnoredCard'
 import saveMTGDeckAsCopy from './mutations/saveMTGDeckAsCopy'
 import unassignTagFromCard from './mutations/unassignTagFromCard'
@@ -64,7 +67,9 @@ import getMTGCardsFiltered from './queries/getMTGCardsFiltered'
 import getMTGDeck from './queries/getMTGDeck'
 import getMTGDecks from './queries/getMTGDecks'
 import getMTGFilterPresets from './queries/getMTGFilterPresets'
+import getMTGImportStatus from './queries/getMTGImportStatus'
 import getMTGTag from './queries/getMTGTag'
+import getMTGTagChains from './queries/getMTGTagChains'
 import getMTGTags from './queries/getMTGTags'
 
 /**
@@ -160,6 +165,30 @@ const getMTGTagQuery = async (tagID: string): Promise<MTG_Tag | null | undefined
                 resolve(response.data.getMTGTag)
             } else {
                 reject('Failed to fetch MTG tag')
+            }
+        })
+    })
+
+/** Fetch all unique tag chains from cards. */
+const getMTGTagChainsQuery = async (): Promise<MTG_TagAssignment[]> =>
+    new Promise((resolve, reject) => {
+        fetchData<Query>(getMTGTagChains).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.getMTGTagChains)
+            } else {
+                reject('Failed to fetch MTG tag chains')
+            }
+        })
+    })
+
+/** Get current status of the card/set import process. */
+const getMTGImportStatusQuery = async (): Promise<MTG_ImportStatus> =>
+    new Promise((resolve, reject) => {
+        fetchData<Query>(getMTGImportStatus).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.getMTGImportStatus)
+            } else {
+                reject('Failed to fetch import status')
             }
         })
     })
@@ -358,6 +387,18 @@ const unassignTagFromDeckMutation = async (input: MTG_UnassignTagFromDeckInput):
         })
     })
 
+/** Trigger manual re-import of MTG cards and sets from Scryfall. */
+const reimportMTGDataMutation = async (): Promise<MTG_ImportStatus> =>
+    new Promise((resolve, reject) => {
+        fetchData<Mutation>(reimportMTGData).then((response) => {
+            if (response && response.data && !response.errors) {
+                resolve(response.data.reimportMTGData)
+            } else {
+                reject(response?.errors?.[0]?.message ?? 'Failed to trigger import')
+            }
+        })
+    })
+
 export const MTGFunctions = {
     queries: {
         getMTGCardsQuery,
@@ -367,6 +408,8 @@ export const MTGFunctions = {
         getMTGFilterPresetsQuery,
         getMTGTagsQuery,
         getMTGTagQuery,
+        getMTGTagChainsQuery,
+        getMTGImportStatusQuery,
     },
     mutations: {
         createMTGDeckMutation,
@@ -385,5 +428,6 @@ export const MTGFunctions = {
         unassignTagFromCardMutation,
         assignTagToDeckMutation,
         unassignTagFromDeckMutation,
+        reimportMTGDataMutation,
     },
 }

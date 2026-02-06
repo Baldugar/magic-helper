@@ -36,3 +36,6 @@ arangodb/dumps
 server/magic-helper.exe
 server/cards/**
 server/public/images/sets/**
+
+# Docs
+docs/.vitepress*

@@ -51,7 +51,7 @@ export const CardNode = (props: CardNodeProps) => {
             MTGFunctions.queries
                 .getMTGTagsQuery()
                 .then((tags) => {
-                    const cardTagIds = new Set((card.tags ?? []).map((t) => t.ID))
+                    const cardTagIds = new Set((card.tagAssignments ?? []).map((a) => a.tag.ID))
                     setTagOptionsForMenu(
                         tags.map((tag) => ({
                             id: tag.ID,
@@ -60,7 +60,7 @@ export const CardNode = (props: CardNodeProps) => {
                             action: () => {
                                 const c = cardRef.current
                                 if (!c || !setDeck) return
-                                const currentlyHas = (c.tags ?? []).some((t) => t.ID === tag.ID)
+                                const currentlyHas = (c.tagAssignments ?? []).some((a) => a.tag.ID === tag.ID)
                                 if (currentlyHas) {
                                     MTGFunctions.mutations
                                         .unassignTagFromCardMutation({ cardID: c.ID, tagID: tag.ID })
@@ -75,8 +75,8 @@ export const CardNode = (props: CardNodeProps) => {
                                                                   ...deckCard,
                                                                   card: {
                                                                       ...deckCard.card,
-                                                                      tags: (deckCard.card.tags ?? []).filter(
-                                                                          (t) => t.ID !== tag.ID,
+                                                                      tagAssignments: (deckCard.card.tagAssignments ?? []).filter(
+                                                                          (a) => a.tag.ID !== tag.ID,
                                                                       ),
                                                                   },
                                                               }
@@ -100,7 +100,7 @@ export const CardNode = (props: CardNodeProps) => {
                                                                   ...deckCard,
                                                                   card: {
                                                                       ...deckCard.card,
-                                                                      tags: [...(deckCard.card.tags ?? []), tag],
+                                                                      tagAssignments: [...(deckCard.card.tagAssignments ?? []), { tag, chain: [], chainDisplay: tag.name }],
                                                                   },
                                                               }
                                                             : deckCard,
@@ -123,12 +123,12 @@ export const CardNode = (props: CardNodeProps) => {
             setTagOptionsForMenu((prev) =>
                 (prev ?? []).map((opt) => ({
                     ...opt,
-                    selected: (card.tags ?? []).some((t) => t.ID === opt.id),
+                    selected: (card.tagAssignments ?? []).some((a) => a.tag.ID === opt.id),
                 })),
             )
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps -- tagOptionsForMenu intentionally omitted to trigger load when null
-    }, [open, card.ID, card.tags, refetchCards])
+    }, [open, card.ID, card.tagAssignments, refetchCards])
 
     if (!selectedVersion) return null
 

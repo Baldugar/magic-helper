@@ -71,7 +71,7 @@ type ComplexityRoot struct {
 		OracleText     func(childComplexity int) int
 		Power          func(childComplexity int) int
 		ProducedMana   func(childComplexity int) int
-		Tags           func(childComplexity int) int
+		TagAssignments func(childComplexity int) int
 		Toughness      func(childComplexity int) int
 		TypeLine       func(childComplexity int) int
 		Versions       func(childComplexity int) int
@@ -131,9 +131,9 @@ type ComplexityRoot struct {
 	}
 
 	MTG_Card_Dashboard struct {
-		ID       func(childComplexity int) int
-		Tags     func(childComplexity int) int
-		Versions func(childComplexity int) int
+		ID             func(childComplexity int) int
+		TagAssignments func(childComplexity int) int
+		Versions       func(childComplexity int) int
 	}
 
 	MTG_Deck struct {
@@ -232,9 +232,27 @@ type ComplexityRoot struct {
 		Small      func(childComplexity int) int
 	}
 
+	MTG_ImportStatus struct {
+		CompletedAt func(childComplexity int) int
+		Error       func(childComplexity int) int
+		InProgress  func(childComplexity int) int
+		Message     func(childComplexity int) int
+		Phase       func(childComplexity int) int
+		Progress    func(childComplexity int) int
+		Started     func(childComplexity int) int
+		StartedAt   func(childComplexity int) int
+	}
+
 	MTG_Tag struct {
 		ID   func(childComplexity int) int
+		Meta func(childComplexity int) int
 		Name func(childComplexity int) int
+	}
+
+	MTG_TagAssignment struct {
+		Chain        func(childComplexity int) int
+		ChainDisplay func(childComplexity int) int
+		Tag          func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -247,6 +265,7 @@ type ComplexityRoot struct {
 		DeleteMTGDeck         func(childComplexity int, input model.MtgDeleteDeckInput) int
 		DeleteMTGFilterPreset func(childComplexity int, input model.MtgDeleteFilterPresetInput) int
 		DeleteMTGTag          func(childComplexity int, input model.MtgDeleteTagInput) int
+		ReimportMTGData       func(childComplexity int) int
 		RemoveIgnoredCard     func(childComplexity int, input model.RemoveIgnoredCardInput) int
 		SaveMTGDeckAsCopy     func(childComplexity int, input model.MtgUpdateDeckInput) int
 		UnassignTagFromCard   func(childComplexity int, input model.MtgUnassignTagFromCardInput) int
@@ -273,7 +292,9 @@ type ComplexityRoot struct {
 		GetMTGDecks         func(childComplexity int) int
 		GetMTGFilterPresets func(childComplexity int, deckID string) int
 		GetMTGFilters       func(childComplexity int) int
+		GetMTGImportStatus  func(childComplexity int) int
 		GetMTGTag           func(childComplexity int, tagID string) int
+		GetMTGTagChains     func(childComplexity int) int
 		GetMTGTags          func(childComplexity int) int
 	}
 
@@ -300,6 +321,7 @@ type MutationResolver interface {
 	UnassignTagFromCard(ctx context.Context, input model.MtgUnassignTagFromCardInput) (*model.Response, error)
 	AssignTagToDeck(ctx context.Context, input model.MtgAssignTagToDeckInput) (*model.Response, error)
 	UnassignTagFromDeck(ctx context.Context, input model.MtgUnassignTagFromDeckInput) (*model.Response, error)
+	ReimportMTGData(ctx context.Context) (*model.MtgImportStatus, error)
 }
 type QueryResolver interface {
 	GetMTGCards(ctx context.Context) ([]*model.MtgCard, error)
@@ -310,6 +332,8 @@ type QueryResolver interface {
 	GetMTGFilterPresets(ctx context.Context, deckID string) ([]*model.MtgFilterPreset, error)
 	GetMTGTags(ctx context.Context) ([]*model.MtgTag, error)
 	GetMTGTag(ctx context.Context, tagID string) (*model.MtgTag, error)
+	GetMTGTagChains(ctx context.Context) ([]*model.MtgTagAssignment, error)
+	GetMTGImportStatus(ctx context.Context) (*model.MtgImportStatus, error)
 }
 
 type executableSchema struct {
@@ -478,12 +502,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MTG_Card.ProducedMana(childComplexity), true
 
-	case "MTG_Card.tags":
-		if e.complexity.MTG_Card.Tags == nil {
+	case "MTG_Card.tagAssignments":
+		if e.complexity.MTG_Card.TagAssignments == nil {
 			break
 		}
 
-		return e.complexity.MTG_Card.Tags(childComplexity), true
+		return e.complexity.MTG_Card.TagAssignments(childComplexity), true
 
 	case "MTG_Card.toughness":
 		if e.complexity.MTG_Card.Toughness == nil {
@@ -800,12 +824,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MTG_Card_Dashboard.ID(childComplexity), true
 
-	case "MTG_Card_Dashboard.tags":
-		if e.complexity.MTG_Card_Dashboard.Tags == nil {
+	case "MTG_Card_Dashboard.tagAssignments":
+		if e.complexity.MTG_Card_Dashboard.TagAssignments == nil {
 			break
 		}
 
-		return e.complexity.MTG_Card_Dashboard.Tags(childComplexity), true
+		return e.complexity.MTG_Card_Dashboard.TagAssignments(childComplexity), true
 
 	case "MTG_Card_Dashboard.versions":
 		if e.complexity.MTG_Card_Dashboard.Versions == nil {
@@ -1213,6 +1237,62 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MTG_Image.Small(childComplexity), true
 
+	case "MTG_ImportStatus.completedAt":
+		if e.complexity.MTG_ImportStatus.CompletedAt == nil {
+			break
+		}
+
+		return e.complexity.MTG_ImportStatus.CompletedAt(childComplexity), true
+
+	case "MTG_ImportStatus.error":
+		if e.complexity.MTG_ImportStatus.Error == nil {
+			break
+		}
+
+		return e.complexity.MTG_ImportStatus.Error(childComplexity), true
+
+	case "MTG_ImportStatus.inProgress":
+		if e.complexity.MTG_ImportStatus.InProgress == nil {
+			break
+		}
+
+		return e.complexity.MTG_ImportStatus.InProgress(childComplexity), true
+
+	case "MTG_ImportStatus.message":
+		if e.complexity.MTG_ImportStatus.Message == nil {
+			break
+		}
+
+		return e.complexity.MTG_ImportStatus.Message(childComplexity), true
+
+	case "MTG_ImportStatus.phase":
+		if e.complexity.MTG_ImportStatus.Phase == nil {
+			break
+		}
+
+		return e.complexity.MTG_ImportStatus.Phase(childComplexity), true
+
+	case "MTG_ImportStatus.progress":
+		if e.complexity.MTG_ImportStatus.Progress == nil {
+			break
+		}
+
+		return e.complexity.MTG_ImportStatus.Progress(childComplexity), true
+
+	case "MTG_ImportStatus.started":
+		if e.complexity.MTG_ImportStatus.Started == nil {
+			break
+		}
+
+		return e.complexity.MTG_ImportStatus.Started(childComplexity), true
+
+	case "MTG_ImportStatus.startedAt":
+		if e.complexity.MTG_ImportStatus.StartedAt == nil {
+			break
+		}
+
+		return e.complexity.MTG_ImportStatus.StartedAt(childComplexity), true
+
 	case "MTG_Tag.ID":
 		if e.complexity.MTG_Tag.ID == nil {
 			break
@@ -1220,12 +1300,40 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MTG_Tag.ID(childComplexity), true
 
+	case "MTG_Tag.meta":
+		if e.complexity.MTG_Tag.Meta == nil {
+			break
+		}
+
+		return e.complexity.MTG_Tag.Meta(childComplexity), true
+
 	case "MTG_Tag.name":
 		if e.complexity.MTG_Tag.Name == nil {
 			break
 		}
 
 		return e.complexity.MTG_Tag.Name(childComplexity), true
+
+	case "MTG_TagAssignment.chain":
+		if e.complexity.MTG_TagAssignment.Chain == nil {
+			break
+		}
+
+		return e.complexity.MTG_TagAssignment.Chain(childComplexity), true
+
+	case "MTG_TagAssignment.chainDisplay":
+		if e.complexity.MTG_TagAssignment.ChainDisplay == nil {
+			break
+		}
+
+		return e.complexity.MTG_TagAssignment.ChainDisplay(childComplexity), true
+
+	case "MTG_TagAssignment.tag":
+		if e.complexity.MTG_TagAssignment.Tag == nil {
+			break
+		}
+
+		return e.complexity.MTG_TagAssignment.Tag(childComplexity), true
 
 	case "Mutation.addIgnoredCard":
 		if e.complexity.Mutation.AddIgnoredCard == nil {
@@ -1334,6 +1442,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteMTGTag(childComplexity, args["input"].(model.MtgDeleteTagInput)), true
+
+	case "Mutation.reimportMTGData":
+		if e.complexity.Mutation.ReimportMTGData == nil {
+			break
+		}
+
+		return e.complexity.Mutation.ReimportMTGData(childComplexity), true
 
 	case "Mutation.removeIgnoredCard":
 		if e.complexity.Mutation.RemoveIgnoredCard == nil {
@@ -1504,6 +1619,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetMTGFilters(childComplexity), true
 
+	case "Query.getMTGImportStatus":
+		if e.complexity.Query.GetMTGImportStatus == nil {
+			break
+		}
+
+		return e.complexity.Query.GetMTGImportStatus(childComplexity), true
+
 	case "Query.getMTGTag":
 		if e.complexity.Query.GetMTGTag == nil {
 			break
@@ -1515,6 +1637,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.GetMTGTag(childComplexity, args["tagID"].(string)), true
+
+	case "Query.getMTGTagChains":
+		if e.complexity.Query.GetMTGTagChains == nil {
+			break
+		}
+
+		return e.complexity.Query.GetMTGTagChains(childComplexity), true
 
 	case "Query.getMTGTags":
 		if e.complexity.Query.GetMTGTags == nil {
@@ -1558,6 +1687,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputMTG_DeleteFilterPresetInput,
 		ec.unmarshalInputMTG_DeleteTagInput,
 		ec.unmarshalInputMTG_Filter_CardTypeInput,
+		ec.unmarshalInputMTG_Filter_ChainInput,
 		ec.unmarshalInputMTG_Filter_ColorInput,
 		ec.unmarshalInputMTG_Filter_GameInput,
 		ec.unmarshalInputMTG_Filter_LayoutInput,
@@ -1851,7 +1981,7 @@ type MTG_Card {
     toughness: String
     typeLine: String!
     versions: [MTG_CardVersion!]!
-    tags: [MTG_Tag!]!
+    tagAssignments: [MTG_TagAssignment!]!
 }
 
 """
@@ -1919,7 +2049,7 @@ Minimal card representation for dashboard listings.
 type MTG_Card_Dashboard {
     ID: ID! @goTag(key: "json", value: "_key")
     versions: [MTG_CardVersion_Dashboard!]!
-    tags: [MTG_Tag!]!
+    tagAssignments: [MTG_TagAssignment!]!
 }
 
 """
@@ -2130,15 +2260,30 @@ input MTG_Filter_SearchInput {
     """
     Filter by tags: each entry has tag ID and ternary value (TRUE = must have, FALSE = must not have, UNSET = ignore).
     Multiple TRUE tags are AND: card must have all of them.
+    Matches if tag appears ANYWHERE in chain (terminal or chain member).
     """
     tags: [MTG_Filter_TagInput!]!
+    """
+    Filter by exact chain sequences.
+    """
+    chains: [MTG_Filter_ChainInput!]
 }
 
 """
 Tag filter entry with ternary state (like sets).
+Matches cards where the tag appears ANYWHERE (as terminal or in any chain).
 """
 input MTG_Filter_TagInput {
     tagID: ID!
+    value: TernaryBoolean!
+}
+
+"""
+Chain filter entry - matches exact chain sequences.
+"""
+input MTG_Filter_ChainInput {
+    terminalTagID: ID!
+    chainTagIDs: [ID!]!
     value: TernaryBoolean!
 }
 
@@ -2301,11 +2446,65 @@ input RemoveIgnoredCardInput {
     deckID: ID!
 }
 `, BuiltIn: false},
+	{Name: "../../../graphql/MTG/Import/type.graphqls", Input: `"""
+Current phase of the import process.
+"""
+enum MTG_ImportPhase {
+    IDLE
+    RESETTING_TIMERS
+    FETCHING_SETS
+    PROCESSING_SETS
+    FETCHING_CARDS
+    PROCESSING_CARDS
+    REBUILDING_INDEX
+    COMPLETE
+    FAILED
+}
+
+"""
+Status response for import operations.
+"""
+type MTG_ImportStatus {
+    """
+    Whether the import was successfully started (only relevant for mutation response).
+    """
+    started: Boolean!
+    """
+    Human-readable message about the import status.
+    """
+    message: String!
+    """
+    Whether an import is currently in progress.
+    """
+    inProgress: Boolean!
+    """
+    Current phase of the import process.
+    """
+    phase: MTG_ImportPhase!
+    """
+    Progress percentage (0-100).
+    """
+    progress: Int!
+    """
+    When the import started (ISO timestamp).
+    """
+    startedAt: String
+    """
+    When the import completed (ISO timestamp).
+    """
+    completedAt: String
+    """
+    Error message if the import failed.
+    """
+    error: String
+}
+`, BuiltIn: false},
 	{Name: "../../../graphql/MTG/Tag/input.graphqls", Input: `"""
 Input to create a new tag.
 """
 input MTG_CreateTagInput {
     name: String!
+    meta: Boolean
 }
 
 """
@@ -2314,6 +2513,7 @@ Input to update an existing tag.
 input MTG_UpdateTagInput {
     tagID: ID!
     name: String
+    meta: Boolean
 }
 
 """
@@ -2324,11 +2524,12 @@ input MTG_DeleteTagInput {
 }
 
 """
-Assign a tag to a card.
+Assign a tag to a card with optional chain of meta tags.
 """
 input MTG_AssignTagToCardInput {
     tagID: ID!
     cardID: ID!
+    chain: [ID!]
 }
 
 """
@@ -2337,6 +2538,7 @@ Unassign a tag from a card.
 input MTG_UnassignTagFromCardInput {
     tagID: ID!
     cardID: ID!
+    chain: [ID!]
 }
 
 """
@@ -2361,6 +2563,16 @@ A tag that can be assigned to cards and decks.
 type MTG_Tag {
     ID: ID! @goTag(key: "json", value: "_key")
     name: String!
+    meta: Boolean!
+}
+
+"""
+Represents a tag assignment to a card, including the chain of meta tags.
+"""
+type MTG_TagAssignment {
+    tag: MTG_Tag!
+    chain: [MTG_Tag!]!
+    chainDisplay: String!
 }
 `, BuiltIn: false},
 	{Name: "../../../graphql/mutation.graphqls", Input: `"""
@@ -2435,6 +2647,12 @@ type Mutation {
     Unassign a tag from a deck.
     """
     unassignTagFromDeck(input: MTG_UnassignTagFromDeckInput!): Response!
+    # Import
+    """
+    Trigger a manual re-import of MTG cards and sets from Scryfall.
+    Returns immediately; import runs in background.
+    """
+    reimportMTGData: MTG_ImportStatus!
 }
 `, BuiltIn: false},
 	{Name: "../../../graphql/query.graphqls", Input: `"""
@@ -2478,6 +2696,15 @@ type Query {
     Return a single tag by ID.
     """
     getMTGTag(tagID: ID!): MTG_Tag
+    """
+    Return all unique tag chains that exist on cards.
+    """
+    getMTGTagChains: [MTG_TagAssignment!]!
+    # Import
+    """
+    Get current status of the card/set import process.
+    """
+    getMTGImportStatus: MTG_ImportStatus!
 }
 `, BuiltIn: false},
 	{Name: "../../../graphql/type.base.graphqls", Input: `"""
@@ -4334,8 +4561,8 @@ func (ec *executionContext) fieldContext_MTG_Card_versions(_ context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _MTG_Card_tags(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_Card_tags(ctx, field)
+func (ec *executionContext) _MTG_Card_tagAssignments(ctx context.Context, field graphql.CollectedField, obj *model.MtgCard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_Card_tagAssignments(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -4348,7 +4575,7 @@ func (ec *executionContext) _MTG_Card_tags(ctx context.Context, field graphql.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Tags, nil
+		return obj.TagAssignments, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4360,12 +4587,12 @@ func (ec *executionContext) _MTG_Card_tags(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.MtgTag)
+	res := resTmp.([]*model.MtgTagAssignment)
 	fc.Result = res
-	return ec.marshalNMTG_Tag2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgTagᚄ(ctx, field.Selections, res)
+	return ec.marshalNMTG_TagAssignment2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgTagAssignmentᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MTG_Card_tags(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MTG_Card_tagAssignments(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MTG_Card",
 		Field:      field,
@@ -4373,12 +4600,14 @@ func (ec *executionContext) fieldContext_MTG_Card_tags(_ context.Context, field 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "ID":
-				return ec.fieldContext_MTG_Tag_ID(ctx, field)
-			case "name":
-				return ec.fieldContext_MTG_Tag_name(ctx, field)
+			case "tag":
+				return ec.fieldContext_MTG_TagAssignment_tag(ctx, field)
+			case "chain":
+				return ec.fieldContext_MTG_TagAssignment_chain(ctx, field)
+			case "chainDisplay":
+				return ec.fieldContext_MTG_TagAssignment_chainDisplay(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type MTG_Tag", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type MTG_TagAssignment", field.Name)
 		},
 	}
 	return fc, nil
@@ -6318,8 +6547,8 @@ func (ec *executionContext) fieldContext_MTG_Card_Dashboard_versions(_ context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _MTG_Card_Dashboard_tags(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardDashboard) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_MTG_Card_Dashboard_tags(ctx, field)
+func (ec *executionContext) _MTG_Card_Dashboard_tagAssignments(ctx context.Context, field graphql.CollectedField, obj *model.MtgCardDashboard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_Card_Dashboard_tagAssignments(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -6332,7 +6561,7 @@ func (ec *executionContext) _MTG_Card_Dashboard_tags(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Tags, nil
+		return obj.TagAssignments, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6344,12 +6573,12 @@ func (ec *executionContext) _MTG_Card_Dashboard_tags(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.MtgTag)
+	res := resTmp.([]*model.MtgTagAssignment)
 	fc.Result = res
-	return ec.marshalNMTG_Tag2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgTagᚄ(ctx, field.Selections, res)
+	return ec.marshalNMTG_TagAssignment2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgTagAssignmentᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MTG_Card_Dashboard_tags(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MTG_Card_Dashboard_tagAssignments(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MTG_Card_Dashboard",
 		Field:      field,
@@ -6357,12 +6586,14 @@ func (ec *executionContext) fieldContext_MTG_Card_Dashboard_tags(_ context.Conte
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "ID":
-				return ec.fieldContext_MTG_Tag_ID(ctx, field)
-			case "name":
-				return ec.fieldContext_MTG_Tag_name(ctx, field)
+			case "tag":
+				return ec.fieldContext_MTG_TagAssignment_tag(ctx, field)
+			case "chain":
+				return ec.fieldContext_MTG_TagAssignment_chain(ctx, field)
+			case "chainDisplay":
+				return ec.fieldContext_MTG_TagAssignment_chainDisplay(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type MTG_Tag", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type MTG_TagAssignment", field.Name)
 		},
 	}
 	return fc, nil
@@ -6754,6 +6985,8 @@ func (ec *executionContext) fieldContext_MTG_Deck_tags(_ context.Context, field 
 				return ec.fieldContext_MTG_Tag_ID(ctx, field)
 			case "name":
 				return ec.fieldContext_MTG_Tag_name(ctx, field)
+			case "meta":
+				return ec.fieldContext_MTG_Tag_meta(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTG_Tag", field.Name)
 		},
@@ -6834,8 +7067,8 @@ func (ec *executionContext) fieldContext_MTG_DeckCard_card(_ context.Context, fi
 				return ec.fieldContext_MTG_Card_typeLine(ctx, field)
 			case "versions":
 				return ec.fieldContext_MTG_Card_versions(ctx, field)
-			case "tags":
-				return ec.fieldContext_MTG_Card_tags(ctx, field)
+			case "tagAssignments":
+				return ec.fieldContext_MTG_Card_tagAssignments(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTG_Card", field.Name)
 		},
@@ -7115,8 +7348,8 @@ func (ec *executionContext) fieldContext_MTG_DeckCard_Dashboard_card(_ context.C
 				return ec.fieldContext_MTG_Card_Dashboard_ID(ctx, field)
 			case "versions":
 				return ec.fieldContext_MTG_Card_Dashboard_versions(ctx, field)
-			case "tags":
-				return ec.fieldContext_MTG_Card_Dashboard_tags(ctx, field)
+			case "tagAssignments":
+				return ec.fieldContext_MTG_Card_Dashboard_tagAssignments(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTG_Card_Dashboard", field.Name)
 		},
@@ -7439,6 +7672,8 @@ func (ec *executionContext) fieldContext_MTG_DeckDashboard_tags(_ context.Contex
 				return ec.fieldContext_MTG_Tag_ID(ctx, field)
 			case "name":
 				return ec.fieldContext_MTG_Tag_name(ctx, field)
+			case "meta":
+				return ec.fieldContext_MTG_Tag_meta(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTG_Tag", field.Name)
 		},
@@ -8623,8 +8858,8 @@ func (ec *executionContext) fieldContext_MTG_Filter_Search_pagedCards(_ context.
 				return ec.fieldContext_MTG_Card_typeLine(ctx, field)
 			case "versions":
 				return ec.fieldContext_MTG_Card_versions(ctx, field)
-			case "tags":
-				return ec.fieldContext_MTG_Card_tags(ctx, field)
+			case "tagAssignments":
+				return ec.fieldContext_MTG_Card_tagAssignments(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTG_Card", field.Name)
 		},
@@ -9072,6 +9307,349 @@ func (ec *executionContext) fieldContext_MTG_Image_small(_ context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _MTG_ImportStatus_started(ctx context.Context, field graphql.CollectedField, obj *model.MtgImportStatus) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_ImportStatus_started(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Started, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_ImportStatus_started(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_ImportStatus",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_ImportStatus_message(ctx context.Context, field graphql.CollectedField, obj *model.MtgImportStatus) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_ImportStatus_message(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_ImportStatus_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_ImportStatus",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_ImportStatus_inProgress(ctx context.Context, field graphql.CollectedField, obj *model.MtgImportStatus) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_ImportStatus_inProgress(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InProgress, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_ImportStatus_inProgress(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_ImportStatus",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_ImportStatus_phase(ctx context.Context, field graphql.CollectedField, obj *model.MtgImportStatus) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_ImportStatus_phase(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Phase, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.MtgImportPhase)
+	fc.Result = res
+	return ec.marshalNMTG_ImportPhase2magicᚑhelperᚋgraphᚋmodelᚐMtgImportPhase(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_ImportStatus_phase(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_ImportStatus",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MTG_ImportPhase does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_ImportStatus_progress(ctx context.Context, field graphql.CollectedField, obj *model.MtgImportStatus) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_ImportStatus_progress(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Progress, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_ImportStatus_progress(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_ImportStatus",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_ImportStatus_startedAt(ctx context.Context, field graphql.CollectedField, obj *model.MtgImportStatus) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_ImportStatus_startedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_ImportStatus_startedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_ImportStatus",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_ImportStatus_completedAt(ctx context.Context, field graphql.CollectedField, obj *model.MtgImportStatus) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_ImportStatus_completedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CompletedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_ImportStatus_completedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_ImportStatus",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_ImportStatus_error(ctx context.Context, field graphql.CollectedField, obj *model.MtgImportStatus) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_ImportStatus_error(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Error, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_ImportStatus_error(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_ImportStatus",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MTG_Tag_ID(ctx context.Context, field graphql.CollectedField, obj *model.MtgTag) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MTG_Tag_ID(ctx, field)
 	if err != nil {
@@ -9150,6 +9728,198 @@ func (ec *executionContext) _MTG_Tag_name(ctx context.Context, field graphql.Col
 func (ec *executionContext) fieldContext_MTG_Tag_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MTG_Tag",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_Tag_meta(ctx context.Context, field graphql.CollectedField, obj *model.MtgTag) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_Tag_meta(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Meta, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_Tag_meta(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_Tag",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_TagAssignment_tag(ctx context.Context, field graphql.CollectedField, obj *model.MtgTagAssignment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_TagAssignment_tag(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tag, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.MtgTag)
+	fc.Result = res
+	return ec.marshalNMTG_Tag2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgTag(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_TagAssignment_tag(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_TagAssignment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ID":
+				return ec.fieldContext_MTG_Tag_ID(ctx, field)
+			case "name":
+				return ec.fieldContext_MTG_Tag_name(ctx, field)
+			case "meta":
+				return ec.fieldContext_MTG_Tag_meta(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTG_Tag", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_TagAssignment_chain(ctx context.Context, field graphql.CollectedField, obj *model.MtgTagAssignment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_TagAssignment_chain(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Chain, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.MtgTag)
+	fc.Result = res
+	return ec.marshalNMTG_Tag2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgTagᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_TagAssignment_chain(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_TagAssignment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ID":
+				return ec.fieldContext_MTG_Tag_ID(ctx, field)
+			case "name":
+				return ec.fieldContext_MTG_Tag_name(ctx, field)
+			case "meta":
+				return ec.fieldContext_MTG_Tag_meta(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTG_Tag", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MTG_TagAssignment_chainDisplay(ctx context.Context, field graphql.CollectedField, obj *model.MtgTagAssignment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_TagAssignment_chainDisplay(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChainDisplay, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_TagAssignment_chainDisplay(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_TagAssignment",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -9772,6 +10542,8 @@ func (ec *executionContext) fieldContext_Mutation_createMTGTag(ctx context.Conte
 				return ec.fieldContext_MTG_Tag_ID(ctx, field)
 			case "name":
 				return ec.fieldContext_MTG_Tag_name(ctx, field)
+			case "meta":
+				return ec.fieldContext_MTG_Tag_meta(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTG_Tag", field.Name)
 		},
@@ -9830,6 +10602,8 @@ func (ec *executionContext) fieldContext_Mutation_updateMTGTag(ctx context.Conte
 				return ec.fieldContext_MTG_Tag_ID(ctx, field)
 			case "name":
 				return ec.fieldContext_MTG_Tag_name(ctx, field)
+			case "meta":
+				return ec.fieldContext_MTG_Tag_meta(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTG_Tag", field.Name)
 		},
@@ -10153,6 +10927,68 @@ func (ec *executionContext) fieldContext_Mutation_unassignTagFromDeck(ctx contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_reimportMTGData(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_reimportMTGData(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ReimportMTGData(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.MtgImportStatus)
+	fc.Result = res
+	return ec.marshalNMTG_ImportStatus2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgImportStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_reimportMTGData(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "started":
+				return ec.fieldContext_MTG_ImportStatus_started(ctx, field)
+			case "message":
+				return ec.fieldContext_MTG_ImportStatus_message(ctx, field)
+			case "inProgress":
+				return ec.fieldContext_MTG_ImportStatus_inProgress(ctx, field)
+			case "phase":
+				return ec.fieldContext_MTG_ImportStatus_phase(ctx, field)
+			case "progress":
+				return ec.fieldContext_MTG_ImportStatus_progress(ctx, field)
+			case "startedAt":
+				return ec.fieldContext_MTG_ImportStatus_startedAt(ctx, field)
+			case "completedAt":
+				return ec.fieldContext_MTG_ImportStatus_completedAt(ctx, field)
+			case "error":
+				return ec.fieldContext_MTG_ImportStatus_error(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTG_ImportStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Phantom_position(ctx context.Context, field graphql.CollectedField, obj *model.Phantom) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Phantom_position(ctx, field)
 	if err != nil {
@@ -10408,8 +11244,8 @@ func (ec *executionContext) fieldContext_Query_getMTGCards(_ context.Context, fi
 				return ec.fieldContext_MTG_Card_typeLine(ctx, field)
 			case "versions":
 				return ec.fieldContext_MTG_Card_versions(ctx, field)
-			case "tags":
-				return ec.fieldContext_MTG_Card_tags(ctx, field)
+			case "tagAssignments":
+				return ec.fieldContext_MTG_Card_tagAssignments(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTG_Card", field.Name)
 		},
@@ -10777,6 +11613,8 @@ func (ec *executionContext) fieldContext_Query_getMTGTags(_ context.Context, fie
 				return ec.fieldContext_MTG_Tag_ID(ctx, field)
 			case "name":
 				return ec.fieldContext_MTG_Tag_name(ctx, field)
+			case "meta":
+				return ec.fieldContext_MTG_Tag_meta(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTG_Tag", field.Name)
 		},
@@ -10824,6 +11662,8 @@ func (ec *executionContext) fieldContext_Query_getMTGTag(ctx context.Context, fi
 				return ec.fieldContext_MTG_Tag_ID(ctx, field)
 			case "name":
 				return ec.fieldContext_MTG_Tag_name(ctx, field)
+			case "meta":
+				return ec.fieldContext_MTG_Tag_meta(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTG_Tag", field.Name)
 		},
@@ -10838,6 +11678,120 @@ func (ec *executionContext) fieldContext_Query_getMTGTag(ctx context.Context, fi
 	if fc.Args, err = ec.field_Query_getMTGTag_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getMTGTagChains(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getMTGTagChains(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetMTGTagChains(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.MtgTagAssignment)
+	fc.Result = res
+	return ec.marshalNMTG_TagAssignment2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgTagAssignmentᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getMTGTagChains(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "tag":
+				return ec.fieldContext_MTG_TagAssignment_tag(ctx, field)
+			case "chain":
+				return ec.fieldContext_MTG_TagAssignment_chain(ctx, field)
+			case "chainDisplay":
+				return ec.fieldContext_MTG_TagAssignment_chainDisplay(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTG_TagAssignment", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getMTGImportStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getMTGImportStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetMTGImportStatus(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.MtgImportStatus)
+	fc.Result = res
+	return ec.marshalNMTG_ImportStatus2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgImportStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getMTGImportStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "started":
+				return ec.fieldContext_MTG_ImportStatus_started(ctx, field)
+			case "message":
+				return ec.fieldContext_MTG_ImportStatus_message(ctx, field)
+			case "inProgress":
+				return ec.fieldContext_MTG_ImportStatus_inProgress(ctx, field)
+			case "phase":
+				return ec.fieldContext_MTG_ImportStatus_phase(ctx, field)
+			case "progress":
+				return ec.fieldContext_MTG_ImportStatus_progress(ctx, field)
+			case "startedAt":
+				return ec.fieldContext_MTG_ImportStatus_startedAt(ctx, field)
+			case "completedAt":
+				return ec.fieldContext_MTG_ImportStatus_completedAt(ctx, field)
+			case "error":
+				return ec.fieldContext_MTG_ImportStatus_error(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MTG_ImportStatus", field.Name)
+		},
 	}
 	return fc, nil
 }
@@ -13119,7 +14073,7 @@ func (ec *executionContext) unmarshalInputMTG_AssignTagToCardInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"tagID", "cardID"}
+	fieldsInOrder := [...]string{"tagID", "cardID", "chain"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -13140,6 +14094,13 @@ func (ec *executionContext) unmarshalInputMTG_AssignTagToCardInput(ctx context.C
 				return it, err
 			}
 			it.CardID = data
+		case "chain":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chain"))
+			data, err := ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Chain = data
 		}
 	}
 
@@ -13276,7 +14237,7 @@ func (ec *executionContext) unmarshalInputMTG_CreateTagInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name"}
+	fieldsInOrder := [...]string{"name", "meta"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -13290,6 +14251,13 @@ func (ec *executionContext) unmarshalInputMTG_CreateTagInput(ctx context.Context
 				return it, err
 			}
 			it.Name = data
+		case "meta":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("meta"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Meta = data
 		}
 	}
 
@@ -13494,6 +14462,47 @@ func (ec *executionContext) unmarshalInputMTG_Filter_CardTypeInput(ctx context.C
 				return it, err
 			}
 			it.CardType = data
+		case "value":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
+			data, err := ec.unmarshalNTernaryBoolean2magicᚑhelperᚋgraphᚋmodelᚐTernaryBoolean(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Value = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMTG_Filter_ChainInput(ctx context.Context, obj any) (model.MtgFilterChainInput, error) {
+	var it model.MtgFilterChainInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"terminalTagID", "chainTagIDs", "value"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "terminalTagID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("terminalTagID"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TerminalTagID = data
+		case "chainTagIDs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chainTagIDs"))
+			data, err := ec.unmarshalNID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ChainTagIDs = data
 		case "value":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
 			data, err := ec.unmarshalNTernaryBoolean2magicᚑhelperᚋgraphᚋmodelᚐTernaryBoolean(ctx, v)
@@ -13786,7 +14795,7 @@ func (ec *executionContext) unmarshalInputMTG_Filter_SearchInput(ctx context.Con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"searchString", "rarity", "color", "multiColor", "manaCosts", "cardTypes", "subtypes", "sets", "legalities", "layouts", "games", "hideIgnored", "hideUnreleased", "commander", "deckID", "isSelectingCommander", "tags"}
+	fieldsInOrder := [...]string{"searchString", "rarity", "color", "multiColor", "manaCosts", "cardTypes", "subtypes", "sets", "legalities", "layouts", "games", "hideIgnored", "hideUnreleased", "commander", "deckID", "isSelectingCommander", "tags", "chains"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -13912,6 +14921,13 @@ func (ec *executionContext) unmarshalInputMTG_Filter_SearchInput(ctx context.Con
 				return it, err
 			}
 			it.Tags = data
+		case "chains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chains"))
+			data, err := ec.unmarshalOMTG_Filter_ChainInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterChainInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Chains = data
 		}
 	}
 
@@ -14068,7 +15084,7 @@ func (ec *executionContext) unmarshalInputMTG_UnassignTagFromCardInput(ctx conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"tagID", "cardID"}
+	fieldsInOrder := [...]string{"tagID", "cardID", "chain"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -14089,6 +15105,13 @@ func (ec *executionContext) unmarshalInputMTG_UnassignTagFromCardInput(ctx conte
 				return it, err
 			}
 			it.CardID = data
+		case "chain":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chain"))
+			data, err := ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Chain = data
 		}
 	}
 
@@ -14253,7 +15276,7 @@ func (ec *executionContext) unmarshalInputMTG_UpdateTagInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"tagID", "name"}
+	fieldsInOrder := [...]string{"tagID", "name", "meta"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -14274,6 +15297,13 @@ func (ec *executionContext) unmarshalInputMTG_UpdateTagInput(ctx context.Context
 				return it, err
 			}
 			it.Name = data
+		case "meta":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("meta"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Meta = data
 		}
 	}
 
@@ -14528,8 +15558,8 @@ func (ec *executionContext) _MTG_Card(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "tags":
-			out.Values[i] = ec._MTG_Card_tags(ctx, field, obj)
+		case "tagAssignments":
+			out.Values[i] = ec._MTG_Card_tagAssignments(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -14858,8 +15888,8 @@ func (ec *executionContext) _MTG_Card_Dashboard(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "tags":
-			out.Values[i] = ec._MTG_Card_Dashboard_tags(ctx, field, obj)
+		case "tagAssignments":
+			out.Values[i] = ec._MTG_Card_Dashboard_tagAssignments(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -15601,6 +16631,71 @@ func (ec *executionContext) _MTG_Image(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
+var mTG_ImportStatusImplementors = []string{"MTG_ImportStatus"}
+
+func (ec *executionContext) _MTG_ImportStatus(ctx context.Context, sel ast.SelectionSet, obj *model.MtgImportStatus) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mTG_ImportStatusImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MTG_ImportStatus")
+		case "started":
+			out.Values[i] = ec._MTG_ImportStatus_started(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "message":
+			out.Values[i] = ec._MTG_ImportStatus_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "inProgress":
+			out.Values[i] = ec._MTG_ImportStatus_inProgress(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "phase":
+			out.Values[i] = ec._MTG_ImportStatus_phase(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "progress":
+			out.Values[i] = ec._MTG_ImportStatus_progress(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "startedAt":
+			out.Values[i] = ec._MTG_ImportStatus_startedAt(ctx, field, obj)
+		case "completedAt":
+			out.Values[i] = ec._MTG_ImportStatus_completedAt(ctx, field, obj)
+		case "error":
+			out.Values[i] = ec._MTG_ImportStatus_error(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var mTG_TagImplementors = []string{"MTG_Tag"}
 
 func (ec *executionContext) _MTG_Tag(ctx context.Context, sel ast.SelectionSet, obj *model.MtgTag) graphql.Marshaler {
@@ -15619,6 +16714,60 @@ func (ec *executionContext) _MTG_Tag(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "name":
 			out.Values[i] = ec._MTG_Tag_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "meta":
+			out.Values[i] = ec._MTG_Tag_meta(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var mTG_TagAssignmentImplementors = []string{"MTG_TagAssignment"}
+
+func (ec *executionContext) _MTG_TagAssignment(ctx context.Context, sel ast.SelectionSet, obj *model.MtgTagAssignment) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mTG_TagAssignmentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MTG_TagAssignment")
+		case "tag":
+			out.Values[i] = ec._MTG_TagAssignment_tag(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "chain":
+			out.Values[i] = ec._MTG_TagAssignment_chain(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "chainDisplay":
+			out.Values[i] = ec._MTG_TagAssignment_chainDisplay(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -15769,6 +16918,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "unassignTagFromDeck":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_unassignTagFromDeck(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "reimportMTGData":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_reimportMTGData(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -16067,6 +17223,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_getMTGTag(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getMTGTagChains":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getMTGTagChains(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getMTGImportStatus":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getMTGImportStatus(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -17355,6 +18555,11 @@ func (ec *executionContext) marshalNMTG_Filter_CardTypes2ᚖmagicᚑhelperᚋgra
 	return ec._MTG_Filter_CardTypes(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNMTG_Filter_ChainInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterChainInput(ctx context.Context, v any) (*model.MtgFilterChainInput, error) {
+	res, err := ec.unmarshalInputMTG_Filter_ChainInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNMTG_Filter_ColorInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterColorInputᚄ(ctx context.Context, v any) ([]*model.MtgFilterColorInput, error) {
 	var vSlice []any
 	if v != nil {
@@ -17854,6 +19059,30 @@ func (ec *executionContext) marshalNMTG_Image2ᚖmagicᚑhelperᚋgraphᚋmodel�
 	return ec._MTG_Image(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNMTG_ImportPhase2magicᚑhelperᚋgraphᚋmodelᚐMtgImportPhase(ctx context.Context, v any) (model.MtgImportPhase, error) {
+	var res model.MtgImportPhase
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMTG_ImportPhase2magicᚑhelperᚋgraphᚋmodelᚐMtgImportPhase(ctx context.Context, sel ast.SelectionSet, v model.MtgImportPhase) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNMTG_ImportStatus2magicᚑhelperᚋgraphᚋmodelᚐMtgImportStatus(ctx context.Context, sel ast.SelectionSet, v model.MtgImportStatus) graphql.Marshaler {
+	return ec._MTG_ImportStatus(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMTG_ImportStatus2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgImportStatus(ctx context.Context, sel ast.SelectionSet, v *model.MtgImportStatus) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MTG_ImportStatus(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNMTG_Layout2magicᚑhelperᚋgraphᚋmodelᚐMtgLayout(ctx context.Context, v any) (model.MtgLayout, error) {
 	var res model.MtgLayout
 	err := res.UnmarshalGQL(v)
@@ -17991,6 +19220,60 @@ func (ec *executionContext) marshalNMTG_Tag2ᚖmagicᚑhelperᚋgraphᚋmodelᚐ
 		return graphql.Null
 	}
 	return ec._MTG_Tag(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNMTG_TagAssignment2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgTagAssignmentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MtgTagAssignment) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMTG_TagAssignment2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgTagAssignment(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNMTG_TagAssignment2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgTagAssignment(ctx context.Context, sel ast.SelectionSet, v *model.MtgTagAssignment) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MTG_TagAssignment(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNMTG_UnassignTagFromCardInput2magicᚑhelperᚋgraphᚋmodelᚐMtgUnassignTagFromCardInput(ctx context.Context, v any) (model.MtgUnassignTagFromCardInput, error) {
@@ -18501,6 +19784,44 @@ func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel as
 	return graphql.WrapContextMarshaler(ctx, res)
 }
 
+func (ec *executionContext) unmarshalOID2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNID2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOID2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNID2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v any) (*string, error) {
 	if v == nil {
 		return nil, nil
@@ -18660,6 +19981,26 @@ func (ec *executionContext) marshalOMTG_Deck_CardFrontImage2ᚖmagicᚑhelperᚋ
 		return graphql.Null
 	}
 	return ec._MTG_Deck_CardFrontImage(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOMTG_Filter_ChainInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterChainInputᚄ(ctx context.Context, v any) ([]*model.MtgFilterChainInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*model.MtgFilterChainInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNMTG_Filter_ChainInput2ᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterChainInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalOMTG_Filter_SortInput2ᚕᚖmagicᚑhelperᚋgraphᚋmodelᚐMtgFilterSortInputᚄ(ctx context.Context, v any) ([]*model.MtgFilterSortInput, error) {

@@ -1,9 +1,11 @@
 import {
     Button,
+    Checkbox,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
+    FormControlLabel,
     TextField,
 } from '@mui/material'
 import { useState } from 'react'
@@ -18,11 +20,13 @@ export interface CreateTagDialogProps {
 
 export const CreateTagDialog = ({ open, onClose, onCreated }: CreateTagDialogProps) => {
     const [name, setName] = useState('')
+    const [meta, setMeta] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
 
     const handleClose = () => {
         setName('')
+        setMeta(false)
         setError(null)
         onClose()
     }
@@ -36,7 +40,7 @@ export const CreateTagDialog = ({ open, onClose, onCreated }: CreateTagDialogPro
         setError(null)
         setLoading(true)
         try {
-            const tag = await MTGFunctions.mutations.createMTGTagMutation({ name: trimmed })
+            const tag = await MTGFunctions.mutations.createMTGTagMutation({ name: trimmed, meta })
             onCreated(tag)
             handleClose()
         } catch (err) {
@@ -61,6 +65,15 @@ export const CreateTagDialog = ({ open, onClose, onCreated }: CreateTagDialogPro
                     error={!!error}
                     helperText={error}
                     onKeyUp={(e) => e.key === 'Enter' && void handleCreate()}
+                />
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={meta}
+                            onChange={(e) => setMeta(e.target.checked)}
+                        />
+                    }
+                    label="Meta tag"
                 />
             </DialogContent>
             <DialogActions>

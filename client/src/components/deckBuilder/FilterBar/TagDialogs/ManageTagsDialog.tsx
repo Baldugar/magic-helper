@@ -1,13 +1,15 @@
-import { Add, Delete, Edit } from '@mui/icons-material'
+import { Add, Delete, Edit, LinkOutlined, LinkOff } from '@mui/icons-material'
 import {
     Box,
     Button,
+    Chip,
     Dialog,
     DialogContent,
     DialogTitle,
     IconButton,
     List,
     ListItem,
+    Tooltip,
     Typography,
 } from '@mui/material'
 import { useCallback, useEffect, useState } from 'react'
@@ -67,6 +69,25 @@ export const ManageTagsDialog = ({ open, onClose, onTagsChanged }: ManageTagsDia
         onTagsChanged?.()
     }
 
+    const handleToggleMeta = async (tag: MTG_Tag) => {
+        try {
+            const updated = await MTGFunctions.mutations.updateMTGTagMutation({
+                tagID: tag.ID,
+                meta: !tag.meta,
+            })
+            if (updated) {
+                setTags((prev) =>
+                    prev
+                        .map((t) => (t.ID === updated.ID ? updated : t))
+                        .sort((a, b) => a.name.localeCompare(b.name)),
+                )
+                onTagsChanged?.()
+            }
+        } catch {
+            // Silently fail - could add error handling UI if needed
+        }
+    }
+
     return (
         <>
             <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -100,6 +121,15 @@ export const ManageTagsDialog = ({ open, onClose, onTagsChanged }: ManageTagsDia
                                     key={tag.ID}
                                     secondaryAction={
                                         <>
+                                            <Tooltip title={tag.meta ? 'Remove meta status' : 'Make meta tag'}>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => void handleToggleMeta(tag)}
+                                                    aria-label={`Toggle meta for ${tag.name}`}
+                                                >
+                                                    {tag.meta ? <LinkOutlined fontSize="small" color="primary" /> : <LinkOff fontSize="small" />}
+                                                </IconButton>
+                                            </Tooltip>
                                             <IconButton
                                                 size="small"
                                                 onClick={() => setEditTag(tag)}
@@ -117,7 +147,18 @@ export const ManageTagsDialog = ({ open, onClose, onTagsChanged }: ManageTagsDia
                                         </>
                                     }
                                 >
-                                    <TagChip tag={tag} size="small" />
+                                    <Box display="flex" alignItems="center" gap={1}>
+                                        <TagChip tag={tag} size="small" />
+                                        {tag.meta && (
+                                            <Chip
+                                                label="meta"
+                                                size="small"
+                                                color="primary"
+                                                variant="outlined"
+                                                sx={{ height: 20, fontSize: '0.7rem' }}
+                                            />
+                                        )}
+                                    </Box>
                                 </ListItem>
                             ))}
                         </List>

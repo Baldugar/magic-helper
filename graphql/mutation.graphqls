@@ -70,4 +70,10 @@ type Mutation {
     Unassign a tag from a deck.
     """
     unassignTagFromDeck(input: MTG_UnassignTagFromDeckInput!): Response!
+    # Import
+    """
+    Trigger a manual re-import of MTG cards and sets from Scryfall.
+    Returns immediately; import runs in background.
+    """
+    reimportMTGData: MTG_ImportStatus!
 }

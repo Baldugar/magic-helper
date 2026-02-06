@@ -5,6 +5,7 @@ export default gql`
         getMTGTags {
             ID
             name
+            meta
         }
     }
 `

@@ -39,4 +39,13 @@ type Query {
     Return a single tag by ID.
     """
     getMTGTag(tagID: ID!): MTG_Tag
+    """
+    Return all unique tag chains that exist on cards.
+    """
+    getMTGTagChains: [MTG_TagAssignment!]!
+    # Import
+    """
+    Get current status of the card/set import process.
+    """
+    getMTGImportStatus: MTG_ImportStatus!
 }

@@ -1,4 +1,5 @@
 import { Stack } from '@mui/material'
+import { ReimportButton } from '../../components/deckBuilder/ReimportButton/ReimportButton'
 import { DeckList } from './Components/DeckList/DeckList'
 
 /**
@@ -8,6 +9,9 @@ import { DeckList } from './Components/DeckList/DeckList'
 const Dashboard = () => {
     return (
         <Stack padding={4} gap={2}>
+            <Stack direction="row" justifyContent="flex-end">
+                <ReimportButton />
+            </Stack>
             <DeckList />
         </Stack>
     )

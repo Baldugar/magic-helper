@@ -94,7 +94,7 @@ export const MTGDecksProvider = ({ children }: { children: ReactNode }) => {
                         imageUris: f.imageUris,
                     })) ?? [],
             })),
-            tags: c.card.tags ?? [],
+            tagAssignments: c.card.tagAssignments ?? [],
         },
         selectedVersionID: c.selectedVersionID,
     })

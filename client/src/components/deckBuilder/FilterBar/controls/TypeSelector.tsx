@@ -1,5 +1,5 @@
 import { Badge, Box, Button, ButtonBase, ClickAwayListener, Grid, Paper, Popper, Typography } from '@mui/material'
-import { MouseEvent, useState } from 'react'
+import { MouseEvent, useRef, useState } from 'react'
 import { TernaryBoolean } from '../../../../graphql/types'
 import { isNegativeTB, isPositiveTB } from '../../../../types/ternaryBoolean'
 import { TernaryToggle } from './TernaryToggle'
@@ -14,9 +14,15 @@ export interface TypeSelectorProps {
 const TypeSelector = (props: TypeSelectorProps): JSX.Element => {
     const { onNext, onPrev, selected, iconSize } = props
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+    const buttonRef = useRef<HTMLButtonElement>(null)
 
     const handleClick = (event: MouseEvent<HTMLElement>) => {
         setAnchorEl(anchorEl ? null : event.currentTarget)
+    }
+
+    const handleClickAway = (event: globalThis.MouseEvent | globalThis.TouchEvent) => {
+        if (buttonRef.current?.contains(event.target as Node)) return
+        setAnchorEl(null)
     }
 
     const open = Boolean(anchorEl)
@@ -48,11 +54,11 @@ const TypeSelector = (props: TypeSelectorProps): JSX.Element => {
                     color="error"
                     anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 >
-                    <Button onClick={handleClick}>Type</Button>
+                    <Button ref={buttonRef} onClick={handleClick}>Type</Button>
                 </Badge>
             </Badge>
             <Popper open={open} anchorEl={anchorEl}>
-                <ClickAwayListener onClickAway={() => setAnchorEl(null)}>
+                <ClickAwayListener onClickAway={handleClickAway}>
                     <Paper
                         sx={{
                             maxHeight: '80vh',

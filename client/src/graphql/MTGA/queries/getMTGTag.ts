@@ -5,6 +5,7 @@ export default gql`
         getMTGTag(tagID: $tagID) {
             ID
             name
+            meta
         }
     }
 `

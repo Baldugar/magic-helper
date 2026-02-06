@@ -378,6 +378,11 @@ func passesFilter(card *model.MtgCard, filter model.MtgFilterSearchInput, ignore
 		return false
 	}
 
+	// Chain filtering: exact chain match (terminal tag + chain path)
+	if !passesChainFilter(card, filter.Chains) {
+		return false
+	}
+
 	// Hide unreleased: at least one effective version must have ReleasedAt <= today
 	if filter.HideUnreleased {
 		if !cardHasReleasedVersionFromVersions(versions) {
@@ -1069,15 +1074,27 @@ func passesGameFilter(card *model.MtgCard, gameFilters []*model.MtgFilterGameInp
 
 // passesTagFilter returns true if no tag filter is set, or if the card matches (ternary like sets).
 // TRUE = card must have this tag (AND across all TRUE). FALSE = card must not have this tag. UNSET = ignore.
+// Now checks if tag appears ANYWHERE: as terminal tag OR in any chain.
 func passesTagFilter(card *model.MtgCard, tagFilters []*model.MtgFilterTagInput) bool {
 	if len(tagFilters) == 0 {
 		return true
 	}
-	cardTagIDs := make(map[string]struct{}, len(card.Tags))
-	if card.Tags != nil {
-		for _, tag := range card.Tags {
-			if tag != nil {
-				cardTagIDs[tag.ID] = struct{}{}
+	// Build a set of ALL tag IDs from card (both terminal tags and chain members)
+	cardTagIDs := make(map[string]struct{})
+	if card.TagAssignments != nil {
+		for _, assignment := range card.TagAssignments {
+			if assignment == nil {
+				continue
+			}
+			// Add the terminal tag
+			if assignment.Tag != nil {
+				cardTagIDs[assignment.Tag.ID] = struct{}{}
+			}
+			// Add all chain members (meta tags)
+			for _, chainTag := range assignment.Chain {
+				if chainTag != nil {
+					cardTagIDs[chainTag.ID] = struct{}{}
+				}
 			}
 		}
 	}
@@ -1106,6 +1123,82 @@ func passesTagFilter(card *model.MtgCard, tagFilters []*model.MtgFilterTagInput)
 		}
 	}
 	return true
+}
+
+// passesChainFilter returns true if no chain filter is set, or if the card matches.
+// Chain filter has: TerminalTagID, ChainTagIDs (array), and TernaryBoolean value.
+// Build a key for each chain: "terminalID:chainID1,chainID2,..." and compare against card's exact chains.
+// TRUE = card must have this exact chain, FALSE = card must not have this chain, UNSET = ignore.
+func passesChainFilter(card *model.MtgCard, chainFilters []*model.MtgFilterChainInput) bool {
+	if len(chainFilters) == 0 {
+		return true
+	}
+
+	// Build set of chain keys from card's tag assignments
+	cardChainKeys := make(map[string]struct{})
+	if card.TagAssignments != nil {
+		for _, assignment := range card.TagAssignments {
+			if assignment == nil || assignment.Tag == nil {
+				continue
+			}
+			key := buildChainKey(assignment.Tag.ID, assignment.Chain)
+			cardChainKeys[key] = struct{}{}
+		}
+	}
+
+	var positiveChainKeys, negativeChainKeys []string
+	for _, entry := range chainFilters {
+		if entry == nil {
+			continue
+		}
+		key := buildChainKeyFromFilter(entry.TerminalTagID, entry.ChainTagIDs)
+		switch entry.Value {
+		case model.TernaryBooleanTrue:
+			positiveChainKeys = append(positiveChainKeys, key)
+		case model.TernaryBooleanFalse:
+			negativeChainKeys = append(negativeChainKeys, key)
+		case model.TernaryBooleanUnset:
+			// ignore
+		}
+	}
+
+	// All positive chains must be present (AND logic)
+	for _, chainKey := range positiveChainKeys {
+		if _, ok := cardChainKeys[chainKey]; !ok {
+			return false
+		}
+	}
+
+	// No negative chains should be present
+	for _, chainKey := range negativeChainKeys {
+		if _, ok := cardChainKeys[chainKey]; ok {
+			return false
+		}
+	}
+
+	return true
+}
+
+// buildChainKey creates a unique key for a chain from terminal tag ID and chain tags.
+// Format: "terminalID:chainID1,chainID2,..." (chain IDs are sorted for consistency)
+func buildChainKey(terminalTagID string, chainTags []*model.MtgTag) string {
+	chainIDs := make([]string, 0, len(chainTags))
+	for _, tag := range chainTags {
+		if tag != nil {
+			chainIDs = append(chainIDs, tag.ID)
+		}
+	}
+	sort.Strings(chainIDs)
+	return terminalTagID + ":" + strings.Join(chainIDs, ",")
+}
+
+// buildChainKeyFromFilter creates a unique key for a chain filter.
+// Format: "terminalID:chainID1,chainID2,..." (chain IDs are sorted for consistency)
+func buildChainKeyFromFilter(terminalTagID string, chainTagIDs []string) string {
+	sortedIDs := make([]string, len(chainTagIDs))
+	copy(sortedIDs, chainTagIDs)
+	sort.Strings(sortedIDs)
+	return terminalTagID + ":" + strings.Join(sortedIDs, ",")
 }
 
 // compareBySortCriteria compares two cards based on a sort criteria.

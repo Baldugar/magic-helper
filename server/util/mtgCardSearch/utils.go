@@ -231,9 +231,9 @@ func IsIndexReady() bool {
 	return len(index.AllCards) > 0
 }
 
-// UpdateCardTagsInIndex updates the Tags slice for the card with the given ID in the index.
+// UpdateCardTagAssignmentsInIndex updates the TagAssignments slice for the card with the given ID in the index.
 // No-op if the index is not ready or the card is not found.
-func UpdateCardTagsInIndex(cardID string, tags []*model.MtgTag) {
+func UpdateCardTagAssignmentsInIndex(cardID string, assignments []*model.MtgTagAssignment) {
 	index := GetCardIndex()
 	index.mutex.Lock()
 	defer index.mutex.Unlock()
@@ -243,17 +243,18 @@ func UpdateCardTagsInIndex(cardID string, tags []*model.MtgTag) {
 	}
 	for _, card := range index.AllCards {
 		if card != nil && card.ID == cardID {
-			if tags == nil {
-				card.Tags = []*model.MtgTag{}
+			if assignments == nil {
+				card.TagAssignments = []*model.MtgTagAssignment{}
 			} else {
-				card.Tags = tags
+				card.TagAssignments = assignments
 			}
 			return
 		}
 	}
 }
 
-// RemoveTagFromAllCardsInIndex removes the tag with the given ID from every card in the index that has it.
+// RemoveTagFromAllCardsInIndex removes the tag with the given ID from every card in the index.
+// Removes tag assignments where the tag is the terminal tag, and removes from chains where it appears.
 // Called when a tag is deleted so the index stays in sync with the DB.
 func RemoveTagFromAllCardsInIndex(tagID string) {
 	index := GetCardIndex()
@@ -264,16 +265,29 @@ func RemoveTagFromAllCardsInIndex(tagID string) {
 		return
 	}
 	for _, card := range index.AllCards {
-		if card == nil || card.Tags == nil {
+		if card == nil || card.TagAssignments == nil {
 			continue
 		}
-		newTags := make([]*model.MtgTag, 0, len(card.Tags))
-		for _, t := range card.Tags {
-			if t != nil && t.ID != tagID {
-				newTags = append(newTags, t)
+		newAssignments := make([]*model.MtgTagAssignment, 0, len(card.TagAssignments))
+		for _, a := range card.TagAssignments {
+			if a == nil || a.Tag == nil {
+				continue
 			}
+			// Skip assignments where the terminal tag is the one being deleted
+			if a.Tag.ID == tagID {
+				continue
+			}
+			// Remove the tag from chain if present
+			newChain := make([]*model.MtgTag, 0, len(a.Chain))
+			for _, ct := range a.Chain {
+				if ct != nil && ct.ID != tagID {
+					newChain = append(newChain, ct)
+				}
+			}
+			a.Chain = newChain
+			newAssignments = append(newAssignments, a)
 		}
-		card.Tags = newTags
+		card.TagAssignments = newAssignments
 	}
 }
 

@@ -1,5 +1,5 @@
-import { Badge, Button, ClickAwayListener, Grid, Paper, Popper, Typography } from '@mui/material'
-import { MouseEvent, useEffect, useState } from 'react'
+import { Badge, Button, Chip, ClickAwayListener, Grid, Paper, Popper, Typography } from '@mui/material'
+import { MouseEvent, useEffect, useRef, useState } from 'react'
 import { MTGFunctions } from '../../../../graphql/MTGA/functions'
 import { MTG_Tag, TernaryBoolean } from '../../../../graphql/types'
 import { isNegativeTB, isPositiveTB } from '../../../../types/ternaryBoolean'
@@ -18,9 +18,16 @@ const TagSelector = (props: TagSelectorProps): JSX.Element => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
     const [tags, setTags] = useState<MTG_Tag[]>([])
     const [loading, setLoading] = useState(false)
+    const buttonRef = useRef<HTMLButtonElement>(null)
 
     const handleClick = (event: MouseEvent<HTMLElement>) => {
         setAnchorEl(anchorEl ? null : event.currentTarget)
+    }
+
+    const handleClickAway = (event: globalThis.MouseEvent | globalThis.TouchEvent) => {
+        // Don't close if clicking the button itself (it will toggle via handleClick)
+        if (buttonRef.current?.contains(event.target as Node)) return
+        setAnchorEl(null)
     }
 
     const open = Boolean(anchorEl)
@@ -53,11 +60,11 @@ const TagSelector = (props: TagSelectorProps): JSX.Element => {
                     color="error"
                     anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 >
-                    <Button onClick={handleClick}>Tags</Button>
+                    <Button ref={buttonRef} onClick={handleClick}>Tags</Button>
                 </Badge>
             </Badge>
             <Popper open={open} anchorEl={anchorEl} placement="bottom-start">
-                <ClickAwayListener onClickAway={() => setAnchorEl(null)}>
+                <ClickAwayListener onClickAway={handleClickAway}>
                     <Paper sx={{ maxHeight: '70vh', overflow: 'auto', minWidth: 220 }}>
                         {onManageClick && (
                             <Button
@@ -82,7 +89,7 @@ const TagSelector = (props: TagSelectorProps): JSX.Element => {
                             </Typography>
                         ) : (
                             sortedTags.map((tag) => (
-                                <Grid item container key={tag.ID} xs={12}>
+                                <Grid item container key={tag.ID} xs={12} alignItems="center">
                                     <TernaryToggle
                                         value={selected[tag.ID] ?? TernaryBoolean.UNSET}
                                         type="textButton"
@@ -92,7 +99,23 @@ const TagSelector = (props: TagSelectorProps): JSX.Element => {
                                                 e.preventDefault()
                                                 onPrev(tag.ID)
                                             },
-                                            children: <TagChip tag={tag} size="small" />,
+                                            children: (
+                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                                    <TagChip tag={tag} size="small" />
+                                                    {tag.meta && (
+                                                        <Chip
+                                                            label="meta"
+                                                            size="small"
+                                                            sx={{
+                                                                height: 18,
+                                                                fontSize: '0.65rem',
+                                                                backgroundColor: 'primary.main',
+                                                                color: 'primary.contrastText',
+                                                            }}
+                                                        />
+                                                    )}
+                                                </span>
+                                            ),
                                         }}
                                     />
                                 </Grid>

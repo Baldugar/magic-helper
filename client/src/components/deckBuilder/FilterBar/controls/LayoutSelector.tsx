@@ -1,5 +1,5 @@
 import { Badge, Button, ClickAwayListener, Grid, Paper, Popper } from '@mui/material'
-import { MouseEvent, useState } from 'react'
+import { MouseEvent, useRef, useState } from 'react'
 import { useMTGFilter } from '../../../../context/MTGA/Filter/useMTGFilter'
 import { MTG_Layout, TernaryBoolean } from '../../../../graphql/types'
 import { isNegativeTB, isPositiveTB } from '../../../../types/ternaryBoolean'
@@ -14,9 +14,15 @@ export interface LayoutSelectorProps {
 const LayoutSelector = (props: LayoutSelectorProps): JSX.Element => {
     const { selected, onNext, onPrev } = props
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+    const buttonRef = useRef<HTMLButtonElement>(null)
 
     const handleClick = (event: MouseEvent<HTMLElement>) => {
         setAnchorEl(anchorEl ? null : event.currentTarget)
+    }
+
+    const handleClickAway = (event: globalThis.MouseEvent | globalThis.TouchEvent) => {
+        if (buttonRef.current?.contains(event.target as Node)) return
+        setAnchorEl(null)
     }
 
     const open = Boolean(anchorEl)
@@ -44,11 +50,11 @@ const LayoutSelector = (props: LayoutSelectorProps): JSX.Element => {
                     color="error"
                     anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 >
-                    <Button onClick={handleClick}>Layouts</Button>
+                    <Button ref={buttonRef} onClick={handleClick}>Layouts</Button>
                 </Badge>
             </Badge>
             <Popper open={open} anchorEl={anchorEl}>
-                <ClickAwayListener onClickAway={() => setAnchorEl(null)}>
+                <ClickAwayListener onClickAway={handleClickAway}>
                     <Paper sx={{ maxHeight: '80vh', overflow: 'auto' }}>
                         {sortedLayouts.map(([layout]) => (
                             <Grid item container key={layout} xs={12}>

@@ -1,5 +1,5 @@
 import { Badge, Button, ClickAwayListener, Grid, Paper, Popper } from '@mui/material'
-import { MouseEvent, useState } from 'react'
+import { MouseEvent, useRef, useState } from 'react'
 import { useMTGFilter } from '../../../../context/MTGA/Filter/useMTGFilter'
 import { MTG_Game, TernaryBoolean } from '../../../../graphql/types'
 import { isNegativeTB, isPositiveTB } from '../../../../types/ternaryBoolean'
@@ -14,9 +14,15 @@ export interface GameSelectorProps {
 const GameSelector = (props: GameSelectorProps): JSX.Element => {
     const { selected, onNext, onPrev } = props
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+    const buttonRef = useRef<HTMLButtonElement>(null)
 
     const handleClick = (event: MouseEvent<HTMLElement>) => {
         setAnchorEl(anchorEl ? null : event.currentTarget)
+    }
+
+    const handleClickAway = (event: globalThis.MouseEvent | globalThis.TouchEvent) => {
+        if (buttonRef.current?.contains(event.target as Node)) return
+        setAnchorEl(null)
     }
 
     const open = Boolean(anchorEl)
@@ -41,11 +47,11 @@ const GameSelector = (props: GameSelectorProps): JSX.Element => {
                     color="error"
                     anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 >
-                    <Button onClick={handleClick}>Games</Button>
+                    <Button ref={buttonRef} onClick={handleClick}>Games</Button>
                 </Badge>
             </Badge>
             <Popper open={open} anchorEl={anchorEl}>
-                <ClickAwayListener onClickAway={() => setAnchorEl(null)}>
+                <ClickAwayListener onClickAway={handleClickAway}>
                     <Paper sx={{ maxHeight: '80vh', overflow: 'auto' }}>
                         {sortedGames.map(([game]) => (
                             <Grid item container key={game} xs={12}>

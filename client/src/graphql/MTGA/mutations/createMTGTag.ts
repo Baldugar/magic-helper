@@ -5,6 +5,7 @@ export default gql`
         createMTGTag(input: $input) {
             ID
             name
+            meta
         }
     }
 `

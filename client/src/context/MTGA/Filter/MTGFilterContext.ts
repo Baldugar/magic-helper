@@ -6,6 +6,8 @@ import {
     MTG_Game,
     MTG_Layout,
     MTG_Rarity,
+    MTG_Tag,
+    MTG_TagAssignment,
     QuerygetMTGCardsFilteredArgs,
     TernaryBoolean,
 } from '../../../graphql/types'
@@ -20,6 +22,12 @@ export type SetFilter = {
     releasedAt: number
     setType: string
     games: MTG_Game[]
+}
+
+export type ChainFilter = {
+    terminalTagID: string
+    chainTagIDs: string[]
+    value: TernaryBoolean
 }
 export interface MTGFilterType {
     searchString: string
@@ -36,6 +44,7 @@ export interface MTGFilterType {
     hideIgnored: boolean
     hideUnreleased: boolean
     tags: Record<string, TernaryBoolean>
+    chains: ChainFilter[]
     rating: {
         min: number | null
         max: number | null
@@ -74,6 +83,10 @@ export interface MTGFilterContextType {
     setZoom: Dispatch<SetStateAction<'IN' | 'OUT'>>
 
     convertedFilters: QuerygetMTGCardsFilteredArgs
+
+    availableTags: MTG_Tag[]
+    existingChains: MTG_TagAssignment[]
+    refetchTagsAndChains: () => void
 }
 
 export const initialMTGFilter: MTGFilterType = {
@@ -119,6 +132,7 @@ export const initialMTGFilter: MTGFilterType = {
     hideIgnored: false,
     hideUnreleased: false,
     tags: {},
+    chains: [],
     rating: {
         min: null,
         max: null,
@@ -146,6 +160,7 @@ export const initialConvertedFilter: QuerygetMTGCardsFilteredArgs = {
         sets: [],
         subtypes: [],
         tags: [],
+        chains: [],
         searchString: '',
         isSelectingCommander: false,
     },
@@ -186,6 +201,7 @@ export const MTGFilterContext = createContext<MTGFilterContextType>({
             sets: [],
             subtypes: [],
             tags: [],
+            chains: [],
             searchString: '',
             isSelectingCommander: false,
         },
@@ -195,4 +211,7 @@ export const MTGFilterContext = createContext<MTGFilterContextType>({
         },
         sort: [],
     },
+    availableTags: [],
+    existingChains: [],
+    refetchTagsAndChains: () => {},
 })

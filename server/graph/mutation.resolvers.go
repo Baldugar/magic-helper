@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"magic-helper/daemons"
 	"magic-helper/graph/gentypes"
 	"magic-helper/graph/model"
 	"magic-helper/graph/mtg"
@@ -91,6 +92,28 @@ func (r *mutationResolver) AssignTagToDeck(ctx context.Context, input model.MtgA
 // UnassignTagFromDeck is the resolver for the unassignTagFromDeck field.
 func (r *mutationResolver) UnassignTagFromDeck(ctx context.Context, input model.MtgUnassignTagFromDeckInput) (*model.Response, error) {
 	return mtg.UnassignTagFromDeck(ctx, input)
+}
+
+// ReimportMTGData is the resolver for the reimportMTGData field.
+func (r *mutationResolver) ReimportMTGData(ctx context.Context) (*model.MtgImportStatus, error) {
+	manager := daemons.GetImportManager()
+	started, message, inProgress := manager.TriggerImport()
+
+	// Determine the initial phase
+	phase := model.MtgImportPhaseIdle
+	progress := 0
+	if started {
+		phase = model.MtgImportPhaseResettingTimers
+		progress = 5
+	}
+
+	return &model.MtgImportStatus{
+		Started:    started,
+		Message:    message,
+		InProgress: inProgress,
+		Phase:      phase,
+		Progress:   progress,
+	}, nil
 }
 
 // Mutation returns gentypes.MutationResolver implementation.

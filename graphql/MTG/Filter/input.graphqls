@@ -21,15 +21,30 @@ input MTG_Filter_SearchInput {
     """
     Filter by tags: each entry has tag ID and ternary value (TRUE = must have, FALSE = must not have, UNSET = ignore).
     Multiple TRUE tags are AND: card must have all of them.
+    Matches if tag appears ANYWHERE in chain (terminal or chain member).
     """
     tags: [MTG_Filter_TagInput!]!
+    """
+    Filter by exact chain sequences.
+    """
+    chains: [MTG_Filter_ChainInput!]
 }
 
 """
 Tag filter entry with ternary state (like sets).
+Matches cards where the tag appears ANYWHERE (as terminal or in any chain).
 """
 input MTG_Filter_TagInput {
     tagID: ID!
+    value: TernaryBoolean!
+}
+
+"""
+Chain filter entry - matches exact chain sequences.
+"""
+input MTG_Filter_ChainInput {
+    terminalTagID: ID!
+    chainTagIDs: [ID!]!
     value: TernaryBoolean!
 }
 
