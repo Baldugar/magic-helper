@@ -9,10 +9,11 @@ import {
     IconButton,
     List,
     ListItem,
+    TextField,
     Tooltip,
     Typography,
 } from '@mui/material'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { MTGFunctions } from '../../../../graphql/MTGA/functions'
 import { MTG_Tag } from '../../../../graphql/types'
 import { TagChip } from '../../TagChip'
@@ -30,9 +31,16 @@ export interface ManageTagsDialogProps {
 export const ManageTagsDialog = ({ open, onClose, onTagsChanged }: ManageTagsDialogProps) => {
     const [tags, setTags] = useState<MTG_Tag[]>([])
     const [loading, setLoading] = useState(false)
+    const [search, setSearch] = useState('')
     const [createOpen, setCreateOpen] = useState(false)
     const [editTag, setEditTag] = useState<MTG_Tag | null>(null)
     const [deleteTag, setDeleteTag] = useState<MTG_Tag | null>(null)
+
+    const filteredTags = useMemo(() => {
+        if (!search.trim()) return tags
+        const lowerSearch = search.toLowerCase()
+        return tags.filter((tag) => tag.name.toLowerCase().includes(lowerSearch))
+    }, [tags, search])
 
     const loadTags = useCallback(() => {
         if (!open) return
@@ -106,17 +114,25 @@ export const ManageTagsDialog = ({ open, onClose, onTagsChanged }: ManageTagsDia
                             Create tag
                         </Button>
                     </Box>
+                    <TextField
+                        size="small"
+                        placeholder="Search tags..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        fullWidth
+                        sx={{ mb: 2 }}
+                    />
                     {loading ? (
                         <Typography variant="body2" color="text.secondary">
                             Loading...
                         </Typography>
-                    ) : tags.length === 0 ? (
+                    ) : filteredTags.length === 0 ? (
                         <Typography variant="body2" color="text.secondary">
-                            No tags yet. Create one to get started.
+                            {tags.length === 0 ? 'No tags yet. Create one to get started.' : 'No tags match your search.'}
                         </Typography>
                     ) : (
                         <List dense>
-                            {tags.map((tag) => (
+                            {filteredTags.map((tag) => (
                                 <ListItem
                                     key={tag.ID}
                                     secondaryAction={

@@ -22,6 +22,7 @@ export const MTGDeckCreatorLogicContext = createContext<MTGDeckCreatorLogicConte
         zones: [],
         ID: '',
         tags: [],
+        autosave: false,
     },
     setDeck: () => {},
     onAddCard: () => ({
@@ -32,6 +33,7 @@ export const MTGDeckCreatorLogicContext = createContext<MTGDeckCreatorLogicConte
         zones: [],
         ID: '',
         tags: [],
+        autosave: false,
     }),
     addOne: () => {},
     removeOne: () => {},

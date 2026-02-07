@@ -39,6 +39,7 @@ export const Drawer = () => {
         if (!deck) return
         const nodes = getNodes()
         const deckInput: MTG_UpdateDeckInput = {
+            autosave: deck.autosave,
             cards: calculateCardsFromNodes(nodes, deck.cards),
             deckID: deck.ID,
             name: deck.name,
@@ -62,6 +63,7 @@ export const Drawer = () => {
         if (!deck) return
         const nodes = getNodes()
         const deckInput: MTG_UpdateDeckInput = {
+            autosave: deck.autosave,
             cards: calculateCardsFromNodes(nodes, deck.cards),
             deckID: deck.ID,
             name: deck.name,

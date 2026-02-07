@@ -23,6 +23,7 @@ input MTG_UpdateDeckInput {
     type: DeckType!
     cards: [MTG_DeckCardInput!]!
     zones: [FlowZoneInput!]!
+    autosave: Boolean!
 }
 
 """

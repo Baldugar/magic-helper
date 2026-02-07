@@ -166,6 +166,7 @@ type MtgDeck struct {
 	Zones          []*FlowZone            `json:"zones"`
 	IgnoredCards   []string               `json:"ignoredCards"`
 	Tags           []*MtgTag              `json:"tags"`
+	Autosave       bool                   `json:"autosave"`
 }
 
 // A card entry in a deck with selection and positioning metadata.
@@ -464,6 +465,7 @@ type MtgUpdateDeckInput struct {
 	Type           DeckType                    `json:"type"`
 	Cards          []*MtgDeckCardInput         `json:"cards"`
 	Zones          []*FlowZoneInput            `json:"zones"`
+	Autosave       bool                        `json:"autosave"`
 }
 
 // Fields allowed when updating an existing filter preset.

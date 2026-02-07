@@ -8,10 +8,11 @@ import {
     DialogTitle,
     Divider,
     IconButton,
+    TextField,
     Typography,
 } from '@mui/material'
 import { Add, ArrowForward, Clear } from '@mui/icons-material'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { MTGFunctions } from '../../../../graphql/MTGA/functions'
 import { MTG_Tag } from '../../../../graphql/types'
 import { TagChip } from '../../TagChip'
@@ -34,6 +35,7 @@ export const ChainBuilderDialog = ({
     const [tags, setTags] = useState<MTG_Tag[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
+    const [search, setSearch] = useState('')
 
     // Chain building state
     const [chainTagIDs, setChainTagIDs] = useState<string[]>([]) // Meta tags in order
@@ -44,6 +46,7 @@ export const ChainBuilderDialog = ({
             setLoading(true)
             setChainTagIDs([])
             setTerminalTagID(null)
+            setSearch('')
             MTGFunctions.queries
                 .getMTGTagsQuery()
                 .then(setTags)
@@ -52,8 +55,19 @@ export const ChainBuilderDialog = ({
         }
     }, [open])
 
-    const metaTags = tags.filter((t) => t.meta)
-    const allTags = [...tags].sort((a, b) => a.name.localeCompare(b.name))
+    const lowerSearch = search.toLowerCase().trim()
+
+    const metaTags = useMemo(() => {
+        const meta = tags.filter((t) => t.meta)
+        if (!lowerSearch) return meta
+        return meta.filter((t) => t.name.toLowerCase().includes(lowerSearch))
+    }, [tags, lowerSearch])
+
+    const allTags = useMemo(() => {
+        const sorted = [...tags].sort((a, b) => a.name.localeCompare(b.name))
+        if (!lowerSearch) return sorted
+        return sorted.filter((t) => t.name.toLowerCase().includes(lowerSearch))
+    }, [tags, lowerSearch])
 
     const getTagById = (id: string) => tags.find((t) => t.ID === id)
 
@@ -112,6 +126,15 @@ export const ChainBuilderDialog = ({
                             Build a chain by adding meta tags in order, then select a terminal tag to
                             complete. You can also just select a terminal tag for a simple assignment.
                         </Typography>
+
+                        <TextField
+                            size="small"
+                            placeholder="Search tags..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            fullWidth
+                            sx={{ my: 1 }}
+                        />
 
                         {/* Current chain preview */}
                         <Box

@@ -353,7 +353,6 @@ export const FilterBar = () => {
                     setFilter((prev) => ({
                         ...prev,
                         hideIgnored: c,
-                        page: 0,
                     }))
                     setIgnoredCardIDs(deck.ignoredCards)
                 }}
@@ -367,7 +366,6 @@ export const FilterBar = () => {
                     setFilter((prev) => ({
                         ...prev,
                         hideUnreleased: c,
-                        page: 0,
                     }))
                 }}
             />

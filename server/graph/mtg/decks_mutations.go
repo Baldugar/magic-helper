@@ -118,6 +118,7 @@ func UpdateMTGDeck(ctx context.Context, input model.MtgUpdateDeckInput) (*model.
 			name: @name,
 			type: @type,
 			zones: @zones,
+			autosave: @autosave,
 		} IN mtg_decks
 		RETURN NEW
 	`)
@@ -129,6 +130,7 @@ func UpdateMTGDeck(ctx context.Context, input model.MtgUpdateDeckInput) (*model.
 	aq.AddBindVar("name", input.Name)
 	aq.AddBindVar("type", input.Type)
 	aq.AddBindVar("zones", input.Zones)
+	aq.AddBindVar("autosave", input.Autosave)
 
 	cursor, err := arango.DB.Query(ctx, aq.Query, aq.BindVars)
 	if err != nil {

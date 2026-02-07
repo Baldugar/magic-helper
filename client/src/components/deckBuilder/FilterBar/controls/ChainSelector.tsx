@@ -9,10 +9,11 @@ import {
     IconButton,
     Paper,
     Popper,
+    TextField,
     Typography,
 } from '@mui/material'
 import { Add, ArrowForward, Clear } from '@mui/icons-material'
-import { MouseEvent, useRef, useState } from 'react'
+import { MouseEvent, useMemo, useRef, useState } from 'react'
 import { TernaryBoolean } from '../../../../graphql/types'
 import { isNegativeTB, isPositiveTB } from '../../../../types/ternaryBoolean'
 import { TagChip } from '../../TagChip'
@@ -30,23 +31,46 @@ const ChainSelector = (props: ChainSelectorProps): JSX.Element => {
     const { availableTags: tags, existingChains } = useMTGFilter()
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
     const buttonRef = useRef<HTMLButtonElement>(null)
+    const [search, setSearch] = useState('')
 
     // Chain building state
     const [buildingChain, setBuildingChain] = useState<string[]>([]) // IDs of meta tags in order
 
     const handleClick = (event: MouseEvent<HTMLElement>) => {
-        setAnchorEl(anchorEl ? null : event.currentTarget)
+        if (anchorEl) {
+            setAnchorEl(null)
+            setSearch('')
+        } else {
+            setAnchorEl(event.currentTarget)
+        }
     }
 
     const handleClickAway = (event: globalThis.MouseEvent | globalThis.TouchEvent) => {
         if (buttonRef.current?.contains(event.target as Node)) return
         setAnchorEl(null)
+        setSearch('')
     }
 
     const open = Boolean(anchorEl)
 
-    const metaTags = tags.filter((t) => t.meta)
-    const allTags = [...tags].sort((a, b) => a.name.localeCompare(b.name))
+    const lowerSearch = search.toLowerCase().trim()
+
+    const filteredExistingChains = useMemo(() => {
+        if (!lowerSearch) return existingChains
+        return existingChains.filter((ec) => ec.chainDisplay.toLowerCase().includes(lowerSearch))
+    }, [existingChains, lowerSearch])
+
+    const metaTags = useMemo(() => {
+        const meta = tags.filter((t) => t.meta)
+        if (!lowerSearch) return meta
+        return meta.filter((t) => t.name.toLowerCase().includes(lowerSearch))
+    }, [tags, lowerSearch])
+
+    const allTags = useMemo(() => {
+        const sorted = [...tags].sort((a, b) => a.name.localeCompare(b.name))
+        if (!lowerSearch) return sorted
+        return sorted.filter((t) => t.name.toLowerCase().includes(lowerSearch))
+    }, [tags, lowerSearch])
 
     const howManyPositive = chains.filter((c) => isPositiveTB(c.value)).length
     const howManyNegative = chains.filter((c) => isNegativeTB(c.value)).length
@@ -131,13 +155,22 @@ const ChainSelector = (props: ChainSelectorProps): JSX.Element => {
             <Popper open={open} anchorEl={anchorEl} placement="bottom-start" sx={{ zIndex: 1300 }}>
                 <ClickAwayListener onClickAway={handleClickAway}>
                     <Paper sx={{ maxHeight: '70vh', overflow: 'auto', minWidth: 320, p: 2 }}>
+                        <TextField
+                            size="small"
+                            placeholder="Search chains/tags..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            fullWidth
+                            sx={{ mb: 2 }}
+                            autoFocus
+                        />
                         {/* Existing chains - shown like other filters */}
-                        {existingChains.length > 0 && (
+                        {filteredExistingChains.length > 0 && (
                             <>
                                 <Typography variant="subtitle2" gutterBottom>
                                     Chain Filters
                                 </Typography>
-                                {existingChains.map((ec, i) => {
+                                {filteredExistingChains.map((ec, i) => {
                                     const chainTagIDs = ec.chain.map((t) => t.ID)
                                     const terminalTagID = ec.tag.ID
                                     const value = getChainValue(terminalTagID, chainTagIDs)
@@ -232,9 +265,9 @@ const ChainSelector = (props: ChainSelectorProps): JSX.Element => {
                             </>
                         )}
 
-                        {existingChains.length === 0 && customChains.length === 0 && (
+                        {filteredExistingChains.length === 0 && customChains.length === 0 && (
                             <Typography variant="body2" color="text.secondary" mb={2}>
-                                No chains available. Build one below or assign chains to cards.
+                                {existingChains.length === 0 ? 'No chains available. Build one below or assign chains to cards.' : 'No chains match your search.'}
                             </Typography>
                         )}
 

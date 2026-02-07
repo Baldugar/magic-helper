@@ -17,4 +17,6 @@ export type ContextMenuOption = {
     shouldKeepOpen?: boolean
     subMenu?: ContextMenuOption[]
     selected?: boolean
+    /** If true, show a search field at the top of the submenu */
+    searchable?: boolean
 }

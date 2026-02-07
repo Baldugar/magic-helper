@@ -14,7 +14,8 @@
       "Bash(bash:*)",
       "Bash(npx tsc:*)",
       "Bash(wc:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(go generate:*)"
     ]
   }
 }

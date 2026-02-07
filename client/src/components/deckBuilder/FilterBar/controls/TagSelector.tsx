@@ -1,5 +1,5 @@
-import { Badge, Button, Chip, ClickAwayListener, Grid, Paper, Popper, Typography } from '@mui/material'
-import { MouseEvent, useEffect, useRef, useState } from 'react'
+import { Badge, Button, Chip, ClickAwayListener, Grid, Paper, Popper, TextField, Typography } from '@mui/material'
+import { MouseEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { MTGFunctions } from '../../../../graphql/MTGA/functions'
 import { MTG_Tag, TernaryBoolean } from '../../../../graphql/types'
 import { isNegativeTB, isPositiveTB } from '../../../../types/ternaryBoolean'
@@ -18,16 +18,23 @@ const TagSelector = (props: TagSelectorProps): JSX.Element => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
     const [tags, setTags] = useState<MTG_Tag[]>([])
     const [loading, setLoading] = useState(false)
+    const [search, setSearch] = useState('')
     const buttonRef = useRef<HTMLButtonElement>(null)
 
     const handleClick = (event: MouseEvent<HTMLElement>) => {
-        setAnchorEl(anchorEl ? null : event.currentTarget)
+        if (anchorEl) {
+            setAnchorEl(null)
+            setSearch('')
+        } else {
+            setAnchorEl(event.currentTarget)
+        }
     }
 
     const handleClickAway = (event: globalThis.MouseEvent | globalThis.TouchEvent) => {
         // Don't close if clicking the button itself (it will toggle via handleClick)
         if (buttonRef.current?.contains(event.target as Node)) return
         setAnchorEl(null)
+        setSearch('')
     }
 
     const open = Boolean(anchorEl)
@@ -46,7 +53,12 @@ const TagSelector = (props: TagSelectorProps): JSX.Element => {
     const howManyPositive = Object.values(selected).filter(isPositiveTB).length
     const howManyNegative = Object.values(selected).filter(isNegativeTB).length
 
-    const sortedTags = [...tags].sort((a, b) => a.name.localeCompare(b.name))
+    const filteredTags = useMemo(() => {
+        const sorted = [...tags].sort((a, b) => a.name.localeCompare(b.name))
+        if (!search.trim()) return sorted
+        const lowerSearch = search.toLowerCase()
+        return sorted.filter((tag) => tag.name.toLowerCase().includes(lowerSearch))
+    }, [tags, search])
 
     return (
         <Grid container item xs={'auto'}>
@@ -79,16 +91,25 @@ const TagSelector = (props: TagSelectorProps): JSX.Element => {
                                 Manage tags
                             </Button>
                         )}
+                        <TextField
+                            size="small"
+                            placeholder="Search tags..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            fullWidth
+                            sx={{ px: 2, py: 1 }}
+                            autoFocus
+                        />
                         {loading ? (
                             <Typography variant="body2" sx={{ p: 2 }}>
                                 Loading...
                             </Typography>
-                        ) : sortedTags.length === 0 ? (
+                        ) : filteredTags.length === 0 ? (
                             <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
-                                No tags yet. Create one in Manage tags.
+                                {tags.length === 0 ? 'No tags yet. Create one in Manage tags.' : 'No tags match your search.'}
                             </Typography>
                         ) : (
-                            sortedTags.map((tag) => (
+                            filteredTags.map((tag) => (
                                 <Grid item container key={tag.ID} xs={12} alignItems="center">
                                     <TernaryToggle
                                         value={selected[tag.ID] ?? TernaryBoolean.UNSET}

@@ -193,6 +193,7 @@ export type MTG_CreateTagInput = {
 export type MTG_Deck = {
   __typename?: 'MTG_Deck';
   ID: Scalars['ID']['output'];
+  autosave: Scalars['Boolean']['output'];
   cardFrontImage?: Maybe<MTG_Deck_CardFrontImage>;
   cards: Array<MTG_DeckCard>;
   ignoredCards: Array<Scalars['String']['output']>;
@@ -590,6 +591,7 @@ export type MTG_UnassignTagFromDeckInput = {
 
 /** Input to update deck fields, cards, zones and front image. */
 export type MTG_UpdateDeckInput = {
+  autosave: Scalars['Boolean']['input'];
   cardFrontImage?: InputMaybe<MTG_DeckCardFrontImageInput>;
   cards: Array<MTG_DeckCardInput>;
   deckID: Scalars['ID']['input'];

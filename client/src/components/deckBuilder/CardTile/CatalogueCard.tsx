@@ -246,6 +246,7 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
             id: 'addToOtherDeck',
             label: 'Add to other deck',
             shouldKeepOpen: true,
+            searchable: true,
             subMenu: decks
                 .filter((d) => d.ID !== deck?.ID)
                 .sort((a, b) => a.name.localeCompare(b.name))
@@ -297,6 +298,7 @@ export const CatalogueCard = (props: CatalogueCardProps) => {
             id: 'assignTag',
             label: 'Assign tag',
             shouldKeepOpen: true,
+            searchable: true,
             subMenu:
                 tagOptionsForMenu === null ||
                 (tagOptionsForMenu.length === 1 && tagOptionsForMenu[0].label === 'Loading...')

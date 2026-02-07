@@ -6,7 +6,6 @@ package graph
 
 import (
 	"context"
-
 	"magic-helper/daemons"
 	"magic-helper/graph/gentypes"
 	"magic-helper/graph/model"

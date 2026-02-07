@@ -11,7 +11,13 @@ import { CARD_SIZE_VALUES, PAGE_SIZE_MOBILE } from '../../../utils/constants'
 
 export const CardsGrid = () => {
     const { cards: filteredCards, totalCount, goToPage } = useMTGCards()
-    const { filter, originalFilter } = useMTGFilter()
+    const {
+        filter,
+        originalFilter,
+        setGetVisibleCardIndex,
+        scrollToCardIndexAfterLoad,
+        setScrollToCardIndexAfterLoad,
+    } = useMTGFilter()
     const gridRef = useRef<HTMLDivElement | null>(null)
     const scrollDebounceTimeout = useRef<NodeJS.Timeout | null>(null)
     const scrollAnimationFrameRef = useRef<number | null>(null)
@@ -235,16 +241,16 @@ export const CardsGrid = () => {
         e.preventDefault()
         e.stopPropagation()
 
-        // Debounce scroll event
+        // Debounce scroll event for snap behavior
         if (scrollDebounceTimeout.current) {
             clearTimeout(scrollDebounceTimeout.current)
         }
         scrollDebounceTimeout.current = setTimeout(() => {
             if (!gridRef.current) return
-            const currentScroll = gridRef.current.scrollTop
-            const cardHeight = gridRef.current.scrollHeight / cardsToShow.length
+            const scrollPos = gridRef.current.scrollTop
+            const height = gridRef.current.scrollHeight / cardsToShow.length
             // Snap to the nearest card
-            const nearestIndex = Math.round(currentScroll / cardHeight)
+            const nearestIndex = Math.round(scrollPos / height)
             scrollToCard(nearestIndex)
         }, 100) // 100ms debounce after scroll ends
     }
@@ -298,6 +304,33 @@ export const CardsGrid = () => {
             setLastIgnoredIndex(null)
         }
     }, [cardsToShow, scrollToCard, lastIgnoredIndex, isMobile])
+
+    // Handle scroll to specific card after preset load (mobile only)
+    useEffect(() => {
+        if (scrollToCardIndexAfterLoad !== null && isMobile && cardsToShow.length > 0 && gridRef.current) {
+            const targetIndex = Math.min(scrollToCardIndexAfterLoad, cardsToShow.length - 1)
+            // Use a slight delay to ensure the grid has rendered
+            const timeoutId = setTimeout(() => {
+                scrollToCard(targetIndex)
+                setScrollToCardIndexAfterLoad(null)
+            }, 50)
+            return () => clearTimeout(timeoutId)
+        }
+    }, [scrollToCardIndexAfterLoad, cardsToShow.length, isMobile, scrollToCard, setScrollToCardIndexAfterLoad])
+
+    // Register a function to calculate visible card index on-demand (for preset saving)
+    useEffect(() => {
+        const calculateVisibleCardIndex = () => {
+            if (!gridRef.current || cardsToShow.length === 0) return 0
+            const currentScroll = gridRef.current.scrollTop
+            const totalSpacing = Math.max(cardsToShow.length - 1, 0) * spacingPx
+            const cardHeight = (gridRef.current.scrollHeight - totalSpacing) / cardsToShow.length
+            if (cardHeight <= 0) return 0
+            const visibleIndex = Math.round(currentScroll / (cardHeight + spacingPx))
+            return Math.min(Math.max(visibleIndex, 0), cardsToShow.length - 1)
+        }
+        setGetVisibleCardIndex(() => calculateVisibleCardIndex)
+    }, [cardsToShow.length, spacingPx, setGetVisibleCardIndex])
 
     // Cleanup debounce timeout on unmount
     useEffect(() => {

@@ -110,6 +110,7 @@ export const MTGDecksProvider = ({ children }: { children: ReactNode }) => {
     const propagateChangesToDashboardDeck = (deck: MTG_Deck, shouldUpdate: boolean = true) => {
         if (shouldUpdate) {
             updateMTGDeckMutation({
+                autosave: deck.autosave,
                 cards: deck.cards.map((c) => ({
                     card: c.card.ID,
                     count: c.count,

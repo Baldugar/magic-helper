@@ -17,8 +17,9 @@ import {
     useMediaQuery,
 } from '@mui/material'
 import { ReactFlowProvider, useReactFlow } from '@xyflow/react'
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { ConfirmDialog } from '../../components/common/ConfirmDialog'
 import { FilterBar } from '../../components/deckBuilder/FilterBar/FilterBar'
 import { ManageTagsDialog } from '../../components/deckBuilder/FilterBar/TagDialogs/ManageTagsDialog'
 import { FlowCanvas } from '../../components/deckBuilder/FlowCanvas/FlowCanvas'
@@ -69,6 +70,16 @@ export const DeckCreator = () => {
     const open = Boolean(anchorEl)
     const [openTagManager, setOpenTagManager] = useState(false)
     const [pageSizeInput, setPageSizeInput] = useState(String(filter.pageSize))
+    const [showUnsavedDialog, setShowUnsavedDialog] = useState(false)
+
+    // Track the last saved state for comparison
+    const lastSavedDeckRef = useRef<string>(JSON.stringify(deck))
+
+    // Check if there are unsaved changes
+    const hasUnsavedChanges = useCallback(() => {
+        if (!deck) return false
+        return JSON.stringify(deck) !== lastSavedDeckRef.current
+    }, [deck])
 
     const isMobile = useMediaQuery('(max-width: 600px)')
     const pageSize = isMobile ? PAGE_SIZE_MOBILE : filter.pageSize
@@ -111,9 +122,10 @@ export const DeckCreator = () => {
 
     const navigate = useNavigate()
 
-    const saveDeck = () => {
+    const saveDeck = useCallback(() => {
         if (!deck) return
         const deckInput: MTG_UpdateDeckInput = {
+            autosave: deck.autosave,
             cards: deck.cards.map((c) => ({
                 card: c.card.ID,
                 count: c.count,
@@ -130,9 +142,63 @@ export const DeckCreator = () => {
         }
         updateMTGDeckMutation(deckInput).then((resp) => {
             if (resp.status) {
-                propagateChangesToDashboardDeck(deck)
+                propagateChangesToDashboardDeck(deck, false) // false = don't call mutation again, just update local state
+                lastSavedDeckRef.current = JSON.stringify(deck)
             }
         })
+    }, [deck, propagateChangesToDashboardDeck, updateMTGDeckMutation])
+
+    // Debounced autosave effect
+    useEffect(() => {
+        if (!deck?.autosave) return
+        if (!hasUnsavedChanges()) return
+
+        const timeout = setTimeout(() => {
+            saveDeck()
+        }, 2000) // 2 second debounce
+
+        return () => clearTimeout(timeout)
+    }, [deck, hasUnsavedChanges, saveDeck])
+
+    // Warn on browser close/refresh with unsaved changes
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (hasUnsavedChanges() && !deck?.autosave) {
+                e.preventDefault()
+                e.returnValue = ''
+            }
+        }
+        window.addEventListener('beforeunload', handleBeforeUnload)
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+    }, [hasUnsavedChanges, deck?.autosave])
+
+    // Block browser back button with unsaved changes
+    useEffect(() => {
+        if (!hasUnsavedChanges() || deck?.autosave) return
+
+        const handlePopState = () => {
+            // Push a new state to prevent navigation
+            window.history.pushState(null, '', window.location.href)
+            setShowUnsavedDialog(true)
+        }
+
+        // Push initial state so we can detect back button
+        window.history.pushState(null, '', window.location.href)
+        window.addEventListener('popstate', handlePopState)
+
+        return () => {
+            window.removeEventListener('popstate', handlePopState)
+        }
+    }, [hasUnsavedChanges, deck?.autosave])
+
+    const handleDiscardChanges = () => {
+        setShowUnsavedDialog(false)
+        // Allow navigation by going back
+        window.history.back()
+    }
+
+    const handleCancelNavigation = () => {
+        setShowUnsavedDialog(false)
     }
 
     const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -289,14 +355,29 @@ export const DeckCreator = () => {
                         <Typography variant="caption" display="block" gutterBottom>
                             Deck Operations
                         </Typography>
+                        <MenuItem>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={deck.autosave}
+                                        onChange={(e) => {
+                                            setDeck({ ...deck, autosave: e.target.checked })
+                                        }}
+                                        color="primary"
+                                        size="small"
+                                    />
+                                }
+                                label="Autosave"
+                            />
+                        </MenuItem>
                         <MenuItem
                             onClick={() => {
                                 saveDeck()
                                 handleMenuClose()
                             }}
+                            disabled={deck.autosave}
                         >
-                            Save Deck
-                        </MenuItem>
+                            Save Deck</MenuItem>
                         <MenuItem
                             onClick={() => {
                                 setOpenImportDialog(true)
@@ -357,6 +438,17 @@ export const DeckCreator = () => {
                     refetchTagsAndChains()
                 }}
             />
+            <ConfirmDialog
+                open={showUnsavedDialog}
+                title="Unsaved Changes"
+                onConfirm={handleDiscardChanges}
+                onClose={handleCancelNavigation}
+                confirmText="Leave"
+                cancelText="Stay"
+                confirmColor="error"
+            >
+                You have unsaved changes. Are you sure you want to leave? Your changes will be lost.
+            </ConfirmDialog>
         </Box>
     )
 }

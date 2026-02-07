@@ -1,5 +1,6 @@
 import { Check } from '@mui/icons-material'
-import { Menu, MenuItem } from '@mui/material'
+import { Box, Menu, MenuItem, TextField } from '@mui/material'
+import { useMemo, useState } from 'react'
 import { ContextMenuOption } from './types'
 
 type NestedSubMenuProps = {
@@ -12,6 +13,13 @@ type NestedSubMenuProps = {
 
 export const NestedSubMenu = (props: NestedSubMenuProps) => {
     const { option, anchorEl, onClose, handleClick, id } = props
+    const [search, setSearch] = useState('')
+
+    const filteredSubMenu = useMemo(() => {
+        if (!option.searchable || !search.trim()) return option.subMenu ?? []
+        const lowerSearch = search.toLowerCase()
+        return (option.subMenu ?? []).filter((item) => item.label.toLowerCase().includes(lowerSearch))
+    }, [option.subMenu, option.searchable, search])
 
     const renderMenuItem = (subOption: ContextMenuOption, index: number) => {
         const selected = subOption.selected ?? false
@@ -41,6 +49,7 @@ export const NestedSubMenu = (props: NestedSubMenuProps) => {
             onClose={(event) => {
                 // @ts-expect-error - TS doesn't know about stopPropagation
                 if (event.stopPropagation) event.stopPropagation()
+                setSearch('')
                 onClose()
             }}
             anchorOrigin={{
@@ -55,7 +64,21 @@ export const NestedSubMenu = (props: NestedSubMenuProps) => {
                 sx: { maxHeight: 280, overflow: 'auto' },
             }}
         >
-            {option.subMenu?.map(renderMenuItem)}
+            {option.searchable && (
+                <Box sx={{ px: 1, pb: 1 }}>
+                    <TextField
+                        size="small"
+                        placeholder="Search..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        fullWidth
+                        autoFocus
+                    />
+                </Box>
+            )}
+            {filteredSubMenu.map(renderMenuItem)}
         </Menu>
     )
 }

@@ -36,6 +36,9 @@ func CreateMux(settings settings.Settings) *mux.Router {
 
 	router.HandleFunc("/config.js", configHandler)
 
+	// Development endpoints
+	router.HandleFunc("/api/dev/clear-user-data", clearUserDataHandler).Methods("POST")
+
 	// Serve the set images
 	router.HandleFunc("/set/{code}", setHandler)
 

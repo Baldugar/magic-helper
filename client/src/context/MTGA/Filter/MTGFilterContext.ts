@@ -87,6 +87,17 @@ export interface MTGFilterContextType {
     availableTags: MTG_Tag[]
     existingChains: MTG_TagAssignment[]
     refetchTagsAndChains: () => void
+
+    // For mobile preset pagination - get the visible card index on demand
+    getVisibleCardIndex: () => number
+    setGetVisibleCardIndex: Dispatch<SetStateAction<() => number>>
+    // When set, CardsGrid should scroll to this card index after page load
+    scrollToCardIndexAfterLoad: number | null
+    setScrollToCardIndexAfterLoad: Dispatch<SetStateAction<number | null>>
+
+    // Active preset for autosave - when set, filter changes autosave to this preset
+    activePresetId: string | null
+    setActivePresetId: Dispatch<SetStateAction<string | null>>
 }
 
 export const initialMTGFilter: MTGFilterType = {
@@ -214,4 +225,10 @@ export const MTGFilterContext = createContext<MTGFilterContextType>({
     availableTags: [],
     existingChains: [],
     refetchTagsAndChains: () => {},
+    getVisibleCardIndex: () => 0,
+    setGetVisibleCardIndex: () => {},
+    scrollToCardIndexAfterLoad: null,
+    setScrollToCardIndexAfterLoad: () => {},
+    activePresetId: null,
+    setActivePresetId: () => {},
 })

@@ -1,4 +1,4 @@
-import { Bookmark, Delete, Save } from '@mui/icons-material'
+import { Bookmark, Delete, Save, Star, StarBorder } from '@mui/icons-material'
 import {
     Box,
     Button,
@@ -18,7 +18,7 @@ import { useState } from 'react'
 import { useFilterPresets } from '../../../utils/hooks/useFilterPresets'
 
 export const SavedFiltersPopover = () => {
-    const { presets, savePreset, loadPreset, updatePreset, deletePreset, clearPresets, renamePreset, loading } =
+    const { presets, savePreset, loadPreset, updatePreset, deletePreset, clearPresets, renamePreset, loading, activePresetId, setActivePreset, clearActivePreset } =
         useFilterPresets()
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
     const [presetName, setPresetName] = useState('')
@@ -84,10 +84,39 @@ export const SavedFiltersPopover = () => {
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'left' }}
             >
-                <Box sx={{ width: 360, p: 2 }}>
+                <Box sx={{ width: 400, p: 2 }}>
                     <Typography variant="subtitle1" gutterBottom>
                         Filtros guardados
                     </Typography>
+                    {activePresetId && (
+                        <Box
+                            sx={{
+                                mb: 2,
+                                p: 1,
+                                bgcolor: 'primary.main',
+                                color: 'primary.contrastText',
+                                borderRadius: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                            }}
+                        >
+                            <Box display="flex" alignItems="center" gap={1}>
+                                <Star fontSize="small" />
+                                <Typography variant="body2">
+                                    Autosave: {presets.find(p => p.id === activePresetId)?.name ?? 'Unknown'}
+                                </Typography>
+                            </Box>
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                sx={{ color: 'inherit', borderColor: 'inherit' }}
+                                onClick={clearActivePreset}
+                            >
+                                Desactivar
+                            </Button>
+                        </Box>
+                    )}
                     <Stack direction="row" spacing={1} alignItems="center" mb={2}>
                         <TextField
                             size="small"
@@ -115,11 +144,33 @@ export const SavedFiltersPopover = () => {
                             No tienes presets guardados todavía.
                         </Typography>
                     ) : (
-                        <List dense sx={{ maxHeight: 240, overflowY: 'auto' }}>
+                        <List dense sx={{ maxHeight: 280, overflowY: 'auto' }}>
                             {presets.map((preset) => {
                                 const isRenaming = renameTarget === preset.id
+                                const isActive = activePresetId === preset.id
                                 return (
-                                    <ListItem key={preset.id} disableGutters>
+                                    <ListItem
+                                        key={preset.id}
+                                        disableGutters
+                                        sx={{
+                                            bgcolor: isActive ? 'action.selected' : 'transparent',
+                                            borderRadius: 1,
+                                            mb: 0.5,
+                                        }}
+                                    >
+                                        <Tooltip title={isActive ? 'Desactivar autosave' : 'Activar autosave'}>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => isActive ? clearActivePreset() : setActivePreset(preset.id)}
+                                                sx={{ mr: 0.5 }}
+                                            >
+                                                {isActive ? (
+                                                    <Star fontSize="small" color="primary" />
+                                                ) : (
+                                                    <StarBorder fontSize="small" />
+                                                )}
+                                            </IconButton>
+                                        </Tooltip>
                                         {isRenaming ? (
                                             <TextField
                                                 size="small"
@@ -134,7 +185,16 @@ export const SavedFiltersPopover = () => {
                                             />
                                         ) : (
                                             <ListItemText
-                                                primary={preset.name}
+                                                primary={
+                                                    <Box display="flex" alignItems="center" gap={0.5}>
+                                                        {preset.name}
+                                                        {isActive && (
+                                                            <Typography variant="caption" color="primary" sx={{ fontWeight: 'bold' }}>
+                                                                (autosave)
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+                                                }
                                                 secondary={new Date(preset.savedAt).toLocaleString()}
                                                 onClick={() => loadPreset(preset.id)}
                                                 sx={{ cursor: 'pointer' }}
@@ -158,7 +218,7 @@ export const SavedFiltersPopover = () => {
                                                     </Button>
                                                 </Stack>
                                             ) : (
-                                                <Stack direction="row" spacing={1} alignItems="center">
+                                                <Stack direction="row" spacing={0.5} alignItems="center">
                                                     <Button size="small" onClick={() => loadPreset(preset.id)}>
                                                         Aplicar
                                                     </Button>
@@ -167,6 +227,7 @@ export const SavedFiltersPopover = () => {
                                                             size="small"
                                                             onClick={() => void updatePreset(preset.id)}
                                                             aria-label="Actualizar preset"
+                                                            disabled={isActive}
                                                         >
                                                             <Save fontSize="small" />
                                                         </IconButton>

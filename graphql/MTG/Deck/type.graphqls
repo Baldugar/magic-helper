@@ -10,6 +10,7 @@ type MTG_Deck {
     zones: [FlowZone!]!
     ignoredCards: [String!]!
     tags: [MTG_Tag!]!
+    autosave: Boolean!
 }
 
 """

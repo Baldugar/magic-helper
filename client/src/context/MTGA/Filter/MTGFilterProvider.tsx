@@ -47,6 +47,14 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
     )
     const [zoom, setZoom] = useState<'IN' | 'OUT'>('OUT')
 
+    // For mobile preset pagination - get the visible card index on demand (provided by CardsGrid)
+    const [getVisibleCardIndex, setGetVisibleCardIndex] = useState<() => number>(() => () => 0)
+    // When set, CardsGrid should scroll to this card index after page load
+    const [scrollToCardIndexAfterLoad, setScrollToCardIndexAfterLoad] = useState<number | null>(null)
+
+    // Active preset for autosave - when set, filter changes autosave to this preset
+    const [activePresetId, setActivePresetId] = useState<string | null>(null)
+
     const fetchTagsAndChains = useCallback(() => {
         Promise.all([
             MTGFunctions.queries.getMTGTagsQuery(),
@@ -232,6 +240,12 @@ export const MTGAFilterProvider = ({ children }: { children: ReactNode }) => {
                 availableTags,
                 existingChains,
                 refetchTagsAndChains: fetchTagsAndChains,
+                getVisibleCardIndex,
+                setGetVisibleCardIndex,
+                scrollToCardIndexAfterLoad,
+                setScrollToCardIndexAfterLoad,
+                activePresetId,
+                setActivePresetId,
             }}
         >
             {children}

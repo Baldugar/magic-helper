@@ -8,10 +8,11 @@ type MTGApplicationConfig struct {
 
 // MTGDeckDB is the persisted form of a deck document in ArangoDB.
 type MTGDeckDB struct {
-	ID    *string    `json:"_key,omitempty"`
-	Name  string     `json:"name"`
-	Zones []FlowZone `json:"zones"`
-	Type  DeckType   `json:"type"`
+	ID       *string    `json:"_key,omitempty"`
+	Name     string     `json:"name"`
+	Zones    []FlowZone `json:"zones"`
+	Type     DeckType   `json:"type"`
+	Autosave bool       `json:"autosave"`
 }
 
 // MTGDeckFrontCardImageDB is an edge storing the chosen front image for a deck.

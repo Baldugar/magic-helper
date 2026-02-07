@@ -98,6 +98,7 @@ export const MTG_DeckFragments = gql`
         ID
         name
         type
+        autosave
         cardFrontImage {
             cardID
             versionID

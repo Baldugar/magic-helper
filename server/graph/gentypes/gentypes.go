@@ -137,6 +137,7 @@ type ComplexityRoot struct {
 	}
 
 	MTG_Deck struct {
+		Autosave       func(childComplexity int) int
 		CardFrontImage func(childComplexity int) int
 		Cards          func(childComplexity int) int
 		ID             func(childComplexity int) int
@@ -837,6 +838,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MTG_Card_Dashboard.Versions(childComplexity), true
+
+	case "MTG_Deck.autosave":
+		if e.complexity.MTG_Deck.Autosave == nil {
+			break
+		}
+
+		return e.complexity.MTG_Deck.Autosave(childComplexity), true
 
 	case "MTG_Deck.cardFrontImage":
 		if e.complexity.MTG_Deck.CardFrontImage == nil {
@@ -2114,6 +2122,7 @@ input MTG_UpdateDeckInput {
     type: DeckType!
     cards: [MTG_DeckCardInput!]!
     zones: [FlowZoneInput!]!
+    autosave: Boolean!
 }
 
 """
@@ -2156,6 +2165,7 @@ type MTG_Deck {
     zones: [FlowZone!]!
     ignoredCards: [String!]!
     tags: [MTG_Tag!]!
+    autosave: Boolean!
 }
 
 """
@@ -6994,6 +7004,50 @@ func (ec *executionContext) fieldContext_MTG_Deck_tags(_ context.Context, field 
 	return fc, nil
 }
 
+func (ec *executionContext) _MTG_Deck_autosave(ctx context.Context, field graphql.CollectedField, obj *model.MtgDeck) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MTG_Deck_autosave(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Autosave, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MTG_Deck_autosave(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MTG_Deck",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MTG_DeckCard_card(ctx context.Context, field graphql.CollectedField, obj *model.MtgDeckCard) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MTG_DeckCard_card(ctx, field)
 	if err != nil {
@@ -11481,6 +11535,8 @@ func (ec *executionContext) fieldContext_Query_getMTGDeck(ctx context.Context, f
 				return ec.fieldContext_MTG_Deck_ignoredCards(ctx, field)
 			case "tags":
 				return ec.fieldContext_MTG_Deck_tags(ctx, field)
+			case "autosave":
+				return ec.fieldContext_MTG_Deck_autosave(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MTG_Deck", field.Name)
 		},
@@ -15159,7 +15215,7 @@ func (ec *executionContext) unmarshalInputMTG_UpdateDeckInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"deckID", "name", "cardFrontImage", "type", "cards", "zones"}
+	fieldsInOrder := [...]string{"deckID", "name", "cardFrontImage", "type", "cards", "zones", "autosave"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -15208,6 +15264,13 @@ func (ec *executionContext) unmarshalInputMTG_UpdateDeckInput(ctx context.Contex
 				return it, err
 			}
 			it.Zones = data
+		case "autosave":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autosave"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Autosave = data
 		}
 	}
 
@@ -15961,6 +16024,11 @@ func (ec *executionContext) _MTG_Deck(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "tags":
 			out.Values[i] = ec._MTG_Deck_tags(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "autosave":
+			out.Values[i] = ec._MTG_Deck_autosave(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
